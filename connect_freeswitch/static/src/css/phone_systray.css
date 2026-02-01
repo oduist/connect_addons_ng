@@ -1,0 +1,154 @@
+.o_phone_systray {
+    position: relative;
+}
+
+.o_phone_dialpad_overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1050;
+}
+
+.o_phone_dialpad {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 280px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 1051;
+    padding: 15px;
+}
+
+.o_phone_dialpad_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    gap: 8px;
+}
+
+.o_phone_dialpad_title {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.o_phone_status {
+    font-size: 11px;
+}
+
+.o_phone_dialpad_display {
+    margin-bottom: 15px;
+}
+
+.o_phone_number input {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    border: none;
+    background: #f8f9fa;
+}
+
+.o_phone_number input:focus {
+    box-shadow: none;
+    background: #f0f0f0;
+}
+
+.o_phone_call_status {
+    text-align: center;
+    font-size: 14px;
+    color: #6c757d;
+    margin-top: 8px;
+}
+
+.o_phone_incoming_info {
+    text-align: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.o_incoming_caller_name {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.o_incoming_caller_number {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.o_phone_dialpad_keys {
+    margin-bottom: 15px;
+}
+
+.o_dialpad_row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.o_dialpad_key {
+    width: 60px;
+    height: 50px;
+    font-size: 20px;
+    font-weight: 500;
+    border-radius: 8px;
+}
+
+.o_dialpad_key:hover {
+    background: #e9ecef;
+}
+
+.o_dialpad_key:active {
+    background: #dee2e6;
+}
+
+.o_dialpad_key_sm {
+    width: 50px;
+    height: 40px;
+    font-size: 16px;
+}
+
+.o_phone_incall_keys .o_dialpad_row {
+    margin-bottom: 5px;
+}
+
+.o_phone_dialpad_actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.o_phone_call_btn,
+.o_phone_answer_btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+}
+
+.o_phone_hangup_btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+}
+
+.o_phone_mute_btn {
+    width: 50px;
+    padding: 12px;
+}
+
+@keyframes pulse-incoming {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.o_phone_dialpad:has(.o_phone_answer_btn) .o_phone_incoming_info {
+    animation: pulse-incoming 1.5s ease-in-out infinite;
+    background: #d4edda;
+}

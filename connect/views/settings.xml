@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record model="ir.actions.server" id="connect_settings_action">
+        <field name="type">ir.actions.server</field>
+        <field name="name">General Settings</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="model_connect_settings"/>
+        <field name="code">action = model.open_settings_form()</field>
+    </record>
+
+    <menuitem id="menu_connect_settings"
+              name="Settings"
+              parent="menu_connect_root"
+              sequence="100"/>
+
+    <menuitem id="menu_connect_settings_general"
+              name="General"
+              parent="menu_connect_settings"
+              action="connect_settings_action"
+              sequence="10"/>
+
+    <record id="connect_settings_form" model="ir.ui.view">
+        <field name="name">connect.settings.form</field>
+        <field name="model">connect.settings</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <sheet>
+                    <notebook>
+                        <page name="general" string="General">
+                            <group>
+                                <group>
+                                    <field name="debug_mode"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

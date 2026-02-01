@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_endpoint_tree_freeswitch" model="ir.ui.view">
+        <field name="name">connect.endpoint.tree.freeswitch</field>
+        <field name="model">connect.endpoint</field>
+        <field name="inherit_id" ref="connect.view_connect_endpoint_tree"/>
+        <field name="arch" type="xml">
+            <field name="connect_user_id" position="after">
+                <field name="domain"/>
+                <field name="sip_enabled"/>
+                <field name="webrtc_enabled"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_connect_endpoint_form_freeswitch" model="ir.ui.view">
+        <field name="name">connect.endpoint.form.freeswitch</field>
+        <field name="model">connect.endpoint</field>
+        <field name="inherit_id" ref="connect.view_connect_endpoint_form"/>
+        <field name="arch" type="xml">
+            <field name="active" position="after">
+                <field name="domain"/>
+                <field name="sip_enabled"/>
+                <field name="webrtc_enabled"/>
+                <field name="auth_user" invisible="not sip_enabled and not webrtc_enabled"/>
+                <field name="auth_password" password="True" invisible="not sip_enabled and not webrtc_enabled"/>
+            </field>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="connect_settings_form_freeswitch" model="ir.ui.view">
+        <field name="name">connect.settings.form.freeswitch</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" ref="connect.connect_settings_form"/>
+        <field name="arch" type="xml">
+            <page name="general" position="after">
+                <page name="freeswitch" string="FreeSWITCH">
+                    <group>
+                        <group>
+                            <field name="freeswitch_socket_url"
+                                   placeholder="wss://your-fs-domain:8082"/>
+                        </group>
+                    </group>
+                </page>
+            </page>
+        </field>
+    </record>
+
+</odoo>

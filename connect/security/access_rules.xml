@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_call_user" model="ir.model.access">
+        <field name="name">connect.call user</field>
+        <field name="model_id" ref="model_connect_call"/>
+        <field name="group_id" ref="group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_call_manager" model="ir.model.access">
+        <field name="name">connect.call manager</field>
+        <field name="model_id" ref="model_connect_call"/>
+        <field name="group_id" ref="group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- connect.user access -->
+    <record id="access_connect_user_user" model="ir.model.access">
+        <field name="name">connect.user user</field>
+        <field name="model_id" ref="model_connect_user"/>
+        <field name="group_id" ref="group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_user_manager" model="ir.model.access">
+        <field name="name">connect.user manager</field>
+        <field name="model_id" ref="model_connect_user"/>
+        <field name="group_id" ref="group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- connect.endpoint access -->
+    <record id="access_connect_endpoint_user" model="ir.model.access">
+        <field name="name">connect.endpoint user</field>
+        <field name="model_id" ref="model_connect_endpoint"/>
+        <field name="group_id" ref="group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_endpoint_manager" model="ir.model.access">
+        <field name="name">connect.endpoint manager</field>
+        <field name="model_id" ref="model_connect_endpoint"/>
+        <field name="group_id" ref="group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- connect.settings access -->
+    <record id="access_connect_settings_user" model="ir.model.access">
+        <field name="name">connect.settings user</field>
+        <field name="model_id" ref="model_connect_settings"/>
+        <field name="group_id" ref="group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_settings_manager" model="ir.model.access">
+        <field name="name">connect.settings manager</field>
+        <field name="model_id" ref="model_connect_settings"/>
+        <field name="group_id" ref="group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+</odoo>

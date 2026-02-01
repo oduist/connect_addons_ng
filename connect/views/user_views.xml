@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_user_tree" model="ir.ui.view">
+        <field name="name">connect.user.tree</field>
+        <field name="model">connect.user</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="extension"/>
+                <field name="user_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_connect_user_form" model="ir.ui.view">
+        <field name="name">connect.user.form</field>
+        <field name="model">connect.user</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="extension"/>
+                        <field name="user_id"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_connect_user" model="ir.actions.act_window">
+        <field name="name">Users</field>
+        <field name="res_model">connect.user</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_connect_users"
+              name="Users"
+              parent="menu_connect_root"
+              action="action_connect_user"
+              sequence="20"/>
+</odoo>

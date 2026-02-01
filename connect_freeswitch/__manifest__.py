@@ -1,0 +1,23 @@
+{
+    'name': 'Oduist Connect FreeSWITCH',
+    'version': '19.0.1.0.0',
+    'category': 'Phone',
+    'summary': 'FreeSWITCH integration for Oduist Connect',
+    'depends': ['connect', 'web'],
+    'data': [
+        'security/access_rules.xml',
+        'views/endpoint_views.xml',
+        'views/settings.xml',
+    ],
+    'assets': {
+        'web.assets_backend': [
+            'connect_freeswitch/static/src/css/phone_systray.css',
+            'connect_freeswitch/static/src/js/verto_client.js',
+            'connect_freeswitch/static/src/js/phone_systray.js',
+            'connect_freeswitch/static/src/xml/phone_systray.xml',
+        ],
+    },
+    'installable': True,
+    'application': False,
+    'license': 'LGPL-3',
+}

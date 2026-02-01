@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_connect_root"
+              name="Connect"
+              sequence="10"
+              web_icon="connect,static/description/icon.png"/>
+
+    <menuitem id="menu_connect_calls"
+              name="Calls"
+              parent="menu_connect_root"
+              sequence="10"/>
+</odoo>
