@@ -1,0 +1,33 @@
+<configuration name="modules.conf" description="Modules">
+  <modules>
+    <!-- Loggers -->
+    <load module="mod_console"/>
+    <load module="mod_logfile"/>
+
+    <!-- XML Interfaces - для получения конфига из Odoo -->
+    <load module="mod_xml_curl"/>
+
+    <!-- Event Handlers -->
+    <load module="mod_event_socket"/>
+
+    <!-- Endpoints -->
+    <load module="mod_sofia"/>
+    <load module="mod_loopback"/>
+    <load module="mod_rtc"/>
+    <load module="mod_verto"/>
+
+    <!-- Applications -->
+    <load module="mod_commands"/>
+    <load module="mod_dptools"/>
+    <load module="mod_dialplan_xml"/>
+
+    <!-- Codecs -->
+    <load module="mod_opus"/>
+    <load module="mod_spandsp"/>
+
+    <!-- File Formats -->
+    <load module="mod_sndfile"/>
+    <load module="mod_native_file"/>
+    <load module="mod_tone_stream"/>
+  </modules>
+</configuration>

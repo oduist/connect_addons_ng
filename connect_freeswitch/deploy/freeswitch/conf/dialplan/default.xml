@@ -1,0 +1,40 @@
+<include>
+  <context name="default">
+    
+    <!-- Локальные звонки между пользователями -->
+    <extension name="local_extension">
+      <condition field="destination_number" expression="^(\d+)$">
+        <action application="set" data="call_timeout=30"/>
+        <action application="set" data="hangup_after_bridge=true"/>
+        <action application="set" data="continue_on_fail=true"/>
+        <action application="bridge" data="user/$1@$${domain}"/>
+      </condition>
+    </extension>
+
+    <!-- Echo test -->
+    <extension name="echo">
+      <condition field="destination_number" expression="^9196$">
+        <action application="answer"/>
+        <action application="echo"/>
+      </condition>
+    </extension>
+
+    <!-- Hold music test -->
+    <extension name="hold_music">
+      <condition field="destination_number" expression="^9664$">
+        <action application="answer"/>
+        <action application="playback" data="$${hold_music}"/>
+      </condition>
+    </extension>
+
+  </context>
+  
+  <!-- Public context для входящих неавторизованных -->
+  <context name="public">
+    <extension name="unloop">
+      <condition field="destination_number" expression="^(.*)$">
+        <action application="transfer" data="$1 XML default"/>
+      </condition>
+    </extension>
+  </context>
+</include>

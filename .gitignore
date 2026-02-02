@@ -1,1 +1,3 @@
 *.pyc
+connect_freeswitch/deploy/freeswitch/logs
+connect_freeswitch/deploy/freeswitch/conf.orig

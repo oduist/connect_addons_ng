@@ -1,11 +1,24 @@
 # -*- coding: utf-8 -*-
 import logging
 from xml.etree import ElementTree as ET
+from xml.dom import minidom
 
 from odoo import http
 from odoo.http import request, Response
 
 _logger = logging.getLogger(__name__)
+
+
+def pretty_xml(xml_str):
+    """Pretty-print XML string with proper indentation."""
+    try:
+        dom = minidom.parseString(xml_str)
+        pretty = dom.toprettyxml(indent='  ')
+        # Remove XML declaration and extra blank lines
+        return '\n'.join(line for line in pretty.split('\n') if line.strip() and not line.startswith('<?xml'))
+    except Exception as e:
+        _logger.warning("Failed to pretty-print XML: %s", e)
+        return xml_str
 
 
 class FreeSwitchXMLController(http.Controller):
@@ -207,6 +220,12 @@ class FreeSwitchXMLController(http.Controller):
         section = ET.SubElement(root, 'section', name='dialplan')
         context_el = ET.SubElement(section, 'context', name=context)
 
+        # Echo test
+        echo_ext = ET.SubElement(context_el, 'extension', name='echo')
+        echo_cond = ET.SubElement(echo_ext, 'condition', field='destination_number', expression='^9196$')
+        ET.SubElement(echo_cond, 'action', application='answer')
+        ET.SubElement(echo_cond, 'action', application='echo')
+
         # Local extension dialing
         extension = ET.SubElement(context_el, 'extension', name='local_extension')
         condition = ET.SubElement(extension, 'condition', field='destination_number', expression=r'^(\d+)$')
@@ -214,12 +233,6 @@ class FreeSwitchXMLController(http.Controller):
         ET.SubElement(condition, 'action', application='set', data='hangup_after_bridge=true')
         ET.SubElement(condition, 'action', application='set', data='continue_on_fail=true')
         ET.SubElement(condition, 'action', application='bridge', data='user/$1@$${domain}')
-
-        # Echo test
-        echo_ext = ET.SubElement(context_el, 'extension', name='echo')
-        echo_cond = ET.SubElement(echo_ext, 'condition', field='destination_number', expression='^9196$')
-        ET.SubElement(echo_cond, 'action', application='answer')
-        ET.SubElement(echo_cond, 'action', application='echo')
 
         return self._xml_response(root)
 
@@ -237,10 +250,8 @@ class FreeSwitchXMLController(http.Controller):
         xml_str = ET.tostring(root, encoding='unicode', method='xml')
 
         # Pretty-print XML for logging
-        from xml.dom import minidom
-        dom = minidom.parseString(xml_str)
-        pretty_xml = '\n'.join(line for line in dom.toprettyxml(indent='  ').split('\n') if line.strip() and not line.startswith('<?xml'))
-        _logger.debug("XML response:\n%s", pretty_xml)
+        pretty = pretty_xml(xml_str)
+        _logger.debug("XML response:\n%s", pretty)
 
         return Response(
             xml_str,

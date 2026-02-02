@@ -688,7 +688,7 @@ export class VertoClient {
             console.error('[Verto] Hangup error:', error);
         }
         
-        this._cleanup();
+        this._cleanupCall();
     }
 
     sendDTMF(digit) {
