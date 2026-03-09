@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="partner_connect_webhook" model="res.partner">
+        <field name="name">Connect Webhook</field>
+        <field name="active" eval="False"/>
+    </record>
+    <record id="user_connect_webhook" model="res.users">
+        <field name="name">Connect Webhook</field>
+        <field name="login">connect_webhook</field>
+        <field name="partner_id" ref="partner_connect_webhook"/>
+        <field name="active" eval="False"/>
+    </record>
+    <!-- Assign webhook user to webhook group (groups_id removed in Odoo 19) -->
+    <record id="group_webhook" model="res.groups">
+        <field name="user_ids" eval="[(4, ref('user_connect_webhook'))]"/>
+    </record>
+</odoo>

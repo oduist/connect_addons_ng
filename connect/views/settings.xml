@@ -9,13 +9,8 @@
         <field name="code">action = model.open_settings_form()</field>
     </record>
 
-    <menuitem id="menu_connect_settings"
-              name="Settings"
-              parent="menu_connect_root"
-              sequence="100"/>
-
     <menuitem id="menu_connect_settings_general"
-              name="General"
+              name="Settings"
               parent="menu_connect_settings"
               action="connect_settings_action"
               sequence="10"/>
@@ -30,8 +25,67 @@
                     <notebook>
                         <page name="general" string="General">
                             <group>
-                                <group>
+                                <group string="Call Settings">
                                     <field name="debug_mode"/>
+                                    <field name="number_search_operation"/>
+                                    <field name="proxy_recordings"/>
+                                </group>
+                                <group string="API">
+                                    <field name="api_url" readonly="1"/>
+                                    <field name="web_base_url" readonly="1"/>
+                                    <field name="instance_uid" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page name="transcription" string="Transcription">
+                            <group>
+                                <group string="Transcription Settings">
+                                    <field name="transcript_calls"/>
+                                    <field name="transcript_provider"/>
+                                    <field name="register_summary"/>
+                                </group>
+                                <group string="OpenAI">
+                                    <field name="display_openai_api_key" string="API Key"/>
+                                </group>
+                            </group>
+                            <group string="Summary Prompt">
+                                <field name="summary_prompt" nolabel="1" colspan="2"/>
+                            </group>
+                        </page>
+                        <page name="registration" string="Registration">
+                            <group>
+                                <group string="Registration Info">
+                                    <field name="is_registered" readonly="1"/>
+                                    <field name="customer_code"/>
+                                    <field name="registration_number" readonly="1"/>
+                                    <field name="registration_key" readonly="1"/>
+                                </group>
+                                <group string="Admin Contact">
+                                    <field name="admin_name"/>
+                                    <field name="admin_phone"/>
+                                    <field name="admin_email"/>
+                                    <field name="company_name"/>
+                                    <field name="company_country"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group>
+                                    <field name="i_agree_to_register"/>
+                                    <field name="i_agree_to_contact"/>
+                                    <field name="i_agree_to_receive"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page name="system" string="System">
+                            <group>
+                                <group string="System Info">
+                                    <field name="module_version" readonly="1"/>
+                                    <field name="odoo_version" readonly="1"/>
+                                    <field name="installation_date" readonly="1"/>
+                                    <field name="call_duration_limit" readonly="1"/>
+                                </group>
+                                <group string="Version Check">
+                                    <field name="latest_versions" readonly="1" nolabel="1"/>
                                 </group>
                             </group>
                         </page>

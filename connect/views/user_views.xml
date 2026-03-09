@@ -5,9 +5,14 @@
         <field name="model">connect.user</field>
         <field name="arch" type="xml">
             <list>
-                <field name="name"/>
-                <field name="extension"/>
-                <field name="user_id"/>
+                <field name="username"/>
+                <field name="user"/>
+                <field name="exten" optional="show"/>
+                <field name="outgoing_callerid" optional="show"/>
+                <field name="record_calls"/>
+                <field name="voicemail_enabled"/>
+                <field name="missed_calls_notify"/>
+                <field name="active" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -19,11 +24,30 @@
             <form>
                 <sheet>
                     <group>
-                        <field name="name"/>
-                        <field name="extension"/>
-                        <field name="user_id"/>
-                        <field name="active"/>
+                        <group string="User Info">
+                            <field name="username"/>
+                            <field name="user"/>
+                            <field name="exten" readonly="1"/>
+                            <field name="outgoing_callerid"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Call Settings">
+                            <field name="record_calls"/>
+                            <field name="voicemail_enabled"/>
+                            <field name="missed_calls_notify"/>
+                            <field name="greeting_message"/>
+                        </group>
                     </group>
+                    <notebook>
+                        <page name="organization" string="Organization">
+                            <group string="Voicemail Prompt">
+                                <field name="voicemail_prompt" nolabel="1" colspan="2"/>
+                            </group>
+                            <group string="Summary Prompt">
+                                <field name="summary_prompt" nolabel="1" colspan="2"/>
+                            </group>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
@@ -37,7 +61,7 @@
 
     <menuitem id="menu_connect_users"
               name="Users"
-              parent="menu_connect_root"
+              parent="menu_connect_pbx"
               action="action_connect_user"
-              sequence="20"/>
+              sequence="10"/>
 </odoo>

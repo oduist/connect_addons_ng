@@ -7,6 +7,7 @@
             <list>
                 <field name="name"/>
                 <field name="connect_user_id"/>
+                <field name="active" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -35,7 +36,7 @@
 
     <menuitem id="menu_connect_endpoints"
               name="Endpoints"
-              parent="menu_connect_root"
+              parent="menu_connect_pbx"
               action="action_connect_endpoint"
-              sequence="30"/>
+              sequence="60"/>
 </odoo>

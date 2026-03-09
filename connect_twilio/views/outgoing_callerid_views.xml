@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inherit core outgoing_callerid form to add Twilio validation -->
+    <record id="view_connect_outgoing_callerid_form_twilio" model="ir.ui.view">
+        <field name="name">connect.outgoing_callerid.form.twilio</field>
+        <field name="model">connect.outgoing_callerid</field>
+        <field name="inherit_id" ref="connect.view_connect_outgoing_callerid_form"/>
+        <field name="arch" type="xml">
+            <!-- Add validate button before sheet -->
+            <xpath expr="//form/sheet" position="before">
+                <header>
+                    <button name="validate" string="Validate" type="object" class="btn-primary"
+                        invisible="callerid_type != 'outgoing_callerid' or status == 'validated'"/>
+                </header>
+            </xpath>
+
+            <!-- Add validation_code after status -->
+            <xpath expr="//field[@name='is_default']" position="after">
+                <field name="validation_code"
+                       invisible="callerid_type != 'outgoing_callerid' or status == 'validated'"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

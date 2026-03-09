@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_transfer_wizard_form" model="ir.ui.view">
+        <field name="name">connect.transfer_wizard.form</field>
+        <field name="model">connect.transfer_wizard</field>
+        <field name="arch" type="xml">
+            <form string="Transfer Call">
+                <group>
+                    <field name="phone_number"/>
+                </group>
+                <footer>
+                    <button string="Transfer" type="object" name="action_confirm" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

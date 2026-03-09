@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_callflow_tree" model="ir.ui.view">
+        <field name="name">connect.callflow.tree</field>
+        <field name="model">connect.callflow</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="exten_number" string="Extension"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_connect_callflow_form" model="ir.ui.view">
+        <field name="name">connect.callflow.form</field>
+        <field name="model">connect.callflow</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="create_extension" type="object"
+                                class="oe_stat_button" icon="fa-phone"
+                                string="Extension"/>
+                    </div>
+                    <group>
+                        <group string="General">
+                            <field name="name"/>
+                            <field name="exten" readonly="1"/>
+                            <field name="exten_number" readonly="1"/>
+                            <field name="language"/>
+                            <field name="voice"/>
+                            <field name="record_calls"/>
+                        </group>
+                        <group string="Voicemail">
+                            <field name="voicemail_enabled"/>
+                            <field name="voicemail_prompt" invisible="not voicemail_enabled"/>
+                        </group>
+                    </group>
+                    <group string="Gather Input" invisible="not gather_input">
+                        <group>
+                            <field name="gather_input"/>
+                            <field name="gather_input_type"/>
+                            <field name="gather_timeout"/>
+                            <field name="gather_digits"/>
+                            <field name="gather_hints"/>
+                        </group>
+                    </group>
+                    <group invisible="not gather_input">
+                        <field name="gather_input" invisible="gather_input"/>
+                        <group string="Prompt Message" invisible="not gather_input">
+                            <field name="prompt_message" nolabel="1" colspan="2"/>
+                        </group>
+                        <group string="Invalid Input Message" invisible="not gather_input">
+                            <field name="invalid_input_message" nolabel="1" colspan="2"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="choices" string="Choices" invisible="not gather_input">
+                            <field name="choices">
+                                <list editable="bottom">
+                                    <field name="choice_digits"/>
+                                    <field name="exten"/>
+                                    <field name="speech"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="ring_users" string="Ring Users">
+                            <field name="ring_users">
+                                <list>
+                                    <field name="username"/>
+                                    <field name="user"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_connect_callflow" model="ir.actions.act_window">
+        <field name="name">Call Flows</field>
+        <field name="res_model">connect.callflow</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_connect_callflows"
+              name="Call Flows"
+              parent="menu_connect_pbx"
+              action="action_connect_callflow"
+              sequence="50"/>
+</odoo>

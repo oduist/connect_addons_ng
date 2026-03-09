@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_recording_tree" model="ir.ui.view">
+        <field name="name">connect.recording.tree</field>
+        <field name="model">connect.recording</field>
+        <field name="arch" type="xml">
+            <list default_order="id desc">
+                <field name="call"/>
+                <field name="caller_number"/>
+                <field name="called_number"/>
+                <field name="duration_human" string="Duration"/>
+                <field name="list_view_summary" string="Summary"/>
+                <field name="create_date" string="Date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_connect_recording_form" model="ir.ui.view">
+        <field name="name">connect.recording.form</field>
+        <field name="model">connect.recording</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="get_transcript" type="object" string="Transcribe"
+                            class="btn-primary" icon="fa-microphone"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Recording">
+                            <field name="recording_widget" nolabel="1" colspan="2"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Call Info">
+                            <field name="call"/>
+                            <field name="channel"/>
+                            <field name="partner"/>
+                            <field name="caller_user"/>
+                            <field name="called_user"/>
+                            <field name="caller_number"/>
+                            <field name="called_number"/>
+                            <field name="duration_human" string="Duration"/>
+                            <field name="status"/>
+                            <field name="start_time"/>
+                        </group>
+                        <group string="Details">
+                            <field name="sid"/>
+                            <field name="call_sid"/>
+                            <field name="media_url"/>
+                            <field name="source"/>
+                            <field name="price"/>
+                            <field name="price_unit"/>
+                            <field name="transcription_price"/>
+                            <field name="transcription_error" invisible="not transcription_error"/>
+                        </group>
+                    </group>
+                    <group string="Transcript" invisible="not transcript">
+                        <field name="transcript" nolabel="1" colspan="2"/>
+                    </group>
+                    <group string="Summary" invisible="not summary">
+                        <field name="summary" nolabel="1" colspan="2"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_connect_recording" model="ir.actions.act_window">
+        <field name="name">Recordings</field>
+        <field name="res_model">connect.recording</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_connect_recordings"
+              name="Recordings"
+              parent="menu_connect_calls"
+              action="action_connect_recording"
+              sequence="30"/>
+</odoo>

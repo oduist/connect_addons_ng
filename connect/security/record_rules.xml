@@ -1,3 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+
+    <!-- connect.user record rules -->
+    <record id="rule_connect_user_own" model="ir.rule">
+        <field name="name">Connect User: own record only</field>
+        <field name="model_id" ref="model_connect_user"/>
+        <field name="domain_force">[('user', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_connect_user_admin" model="ir.rule">
+        <field name="name">Connect User: admin sees all</field>
+        <field name="model_id" ref="model_connect_user"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_admin'))]"/>
+    </record>
+
+    <!-- connect.call record rules -->
+    <record id="rule_connect_call_user" model="ir.rule">
+        <field name="name">Connect Call: user sees own calls</field>
+        <field name="model_id" ref="model_connect_call"/>
+        <field name="domain_force">['|', '|',
+            ('caller_user', '=', user.id),
+            ('answered_user', '=', user.id),
+            ('called_users', 'in', [user.id])
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_user'))]"/>
+    </record>
+
+    <record id="rule_connect_call_admin" model="ir.rule">
+        <field name="name">Connect Call: admin sees all</field>
+        <field name="model_id" ref="model_connect_call"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_admin'))]"/>
+    </record>
+
+    <record id="rule_connect_call_webhook" model="ir.rule">
+        <field name="name">Connect Call: webhook access</field>
+        <field name="model_id" ref="model_connect_call"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_webhook'))]"/>
+    </record>
+
+    <!-- connect.channel record rules -->
+    <record id="rule_connect_channel_user" model="ir.rule">
+        <field name="name">Connect Channel: user sees own channels</field>
+        <field name="model_id" ref="model_connect_channel"/>
+        <field name="domain_force">['|',
+            ('caller_user', '=', user.id),
+            ('called_user', '=', user.id)
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_user'))]"/>
+    </record>
+
+    <record id="rule_connect_channel_admin" model="ir.rule">
+        <field name="name">Connect Channel: admin sees all</field>
+        <field name="model_id" ref="model_connect_channel"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_admin'))]"/>
+    </record>
+
+    <record id="rule_connect_channel_webhook" model="ir.rule">
+        <field name="name">Connect Channel: webhook access</field>
+        <field name="model_id" ref="model_connect_channel"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_webhook'))]"/>
+    </record>
+
+    <!-- connect.message record rules -->
+    <record id="rule_connect_message_user" model="ir.rule">
+        <field name="name">Connect Message: user sees own messages</field>
+        <field name="model_id" ref="model_connect_message"/>
+        <field name="domain_force">['|',
+            ('sender_user', '=', user.id),
+            ('sender_user', '=', False)
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_user'))]"/>
+    </record>
+
+    <record id="rule_connect_message_admin" model="ir.rule">
+        <field name="name">Connect Message: admin sees all</field>
+        <field name="model_id" ref="model_connect_message"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_admin'))]"/>
+    </record>
+
+    <record id="rule_connect_message_webhook" model="ir.rule">
+        <field name="name">Connect Message: webhook access</field>
+        <field name="model_id" ref="model_connect_message"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_webhook'))]"/>
+    </record>
+
+    <!-- connect.recording record rules -->
+    <record id="rule_connect_recording_user" model="ir.rule">
+        <field name="name">Connect Recording: user sees own recordings</field>
+        <field name="model_id" ref="model_connect_recording"/>
+        <field name="domain_force">['|',
+            ('caller_user', '=', user.id),
+            ('called_user', '=', user.id)
+        ]</field>
+        <field name="groups" eval="[(4, ref('group_user'))]"/>
+    </record>
+
+    <record id="rule_connect_recording_admin" model="ir.rule">
+        <field name="name">Connect Recording: admin sees all</field>
+        <field name="model_id" ref="model_connect_recording"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_admin'))]"/>
+    </record>
+
+    <record id="rule_connect_recording_webhook" model="ir.rule">
+        <field name="name">Connect Recording: webhook access</field>
+        <field name="model_id" ref="model_connect_recording"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_webhook'))]"/>
+    </record>
+
 </odoo>

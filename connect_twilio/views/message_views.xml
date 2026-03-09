@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_message_form_twilio" model="ir.ui.view">
+        <field name="name">connect.message.form.twilio</field>
+        <field name="model">connect.message</field>
+        <field name="inherit_id" ref="connect.view_connect_message_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='parent_message']" position="after">
+                <field name="account_sid"/>
+                <field name="messaging_service_sid"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

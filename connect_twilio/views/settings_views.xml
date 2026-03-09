@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inherit core settings form to add Twilio-specific fields -->
+    <record id="connect_settings_form_twilio" model="ir.ui.view">
+        <field name="name">connect.settings.form.twilio</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" ref="connect.connect_settings_form"/>
+        <field name="arch" type="xml">
+            <!-- Add Balance group to General page -->
+            <xpath expr="//page[@name='general']//group[1]" position="after">
+                <group string="Balance">
+                    <field name="twilio_balance" string="Current Balance" readonly="1"/>
+                    <button class="btn btn-info" colspan="2" name="get_twilio_balance"
+                            type="object" string="GET TWILIO BALANCE"/>
+                </group>
+            </xpath>
+
+            <!-- Add fetch_call_prices to General page Call Settings group -->
+            <xpath expr="//field[@name='proxy_recordings']" position="after">
+                <field name="fetch_call_prices"/>
+            </xpath>
+
+            <!-- Add Twilio API Keys page after General -->
+            <xpath expr="//page[@name='general']" position="after">
+                <page name="twilio_api" string="Twilio API">
+                    <group>
+                        <group string="Twilio Credentials" name="twilio_api">
+                            <div colspan="2">
+                                <small><strong>You can find your Twilio API data in
+                                    <a href="https://console.twilio.com/" target="_blank">your Twilio Console</a>
+                                </strong></small>
+                            </div>
+                            <field name="twilio_auto_sync" groups="base.group_no_one"/>
+                            <field name="account_sid"/>
+                            <field name="display_auth_token" string="Auth Token" password="1"/>
+                            <field name="twilio_api_key" string="API Key SID"/>
+                            <field name="display_twilio_api_secret" string="API Key Secret" password="1"/>
+                            <field name="twilio_region" string="Region"/>
+                            <field name="twilio_edge" string="Edge"/>
+                            <button colspan="2" name="sync" type="object"
+                                    string="SYNC TWILIO ACCOUNT" class="btn btn-primary"/>
+                        </group>
+                    </group>
+                </page>
+                <page string="Development" groups="base.group_no_one" name="twilio_dev">
+                    <group>
+                        <group>
+                            <field name="twilio_verify_requests"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
