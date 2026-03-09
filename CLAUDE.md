@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Modular telephony integration platform for **Odoo 19.0**. Recently refactored from a monolithic Twilio-coupled module into a technology-agnostic core plus provider-specific extensions.
+Modular telephony integration platform for Odoo with a technology-agnostic core plus provider-specific extensions.
 
 ## Modules
 
@@ -40,22 +40,7 @@ Twilio: _inherit = 'connect.foo'  → implements abstract methods, adds provider
 - `docs/connect_migrate.md` — Migration guide from monolithic to modular architecture
 
 ## Development Commands
-
-Standard Odoo module development. No dedicated build system, Makefile, or test runner config.
-
-```bash
-# Install/update modules (from Odoo instance)
-odoo-bin -i connect
-odoo-bin -i connect_twilio
-odoo-bin -i connect_freeswitch
-odoo-bin -u connect  # upgrade
-
-# Run tests for a specific module
-odoo-bin -i connect --test-enable --stop-after-init
-
-# Python dependencies
-pip install phonenumbers jinja2 openai twilio
-```
+Use oduflow to manage module development and deployment.
 
 ## Version Compatibility
 
