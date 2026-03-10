@@ -24,7 +24,7 @@
         <field name="arch" type="xml">
             <form create="false">
                 <header>
-                    <field name="status" widget="statusbar"/>
+                    <field name="status" widget="badge"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
