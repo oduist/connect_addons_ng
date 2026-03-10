@@ -136,7 +136,7 @@ export class Phone extends Component {
         }, 400)
 
         onWillStart(async () => {
-            await loadJS('/connect/static/src/lib/twilio.min.js')
+            await loadJS('/connect_twilio/static/src/lib/twilio.min.js')
 
             // EVENTS
             this.bus.addEventListener('busPhoneMakeCall', ({detail}) => this.prepareCall(detail))
