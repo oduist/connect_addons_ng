@@ -426,6 +426,21 @@ class User(models.Model):
         )
         response.append(dial_sip)
 
+    def render_voicemail_prompt(self):
+        self.ensure_one()
+        environment = jinja2.Environment()
+        template = environment.from_string(self.voicemail_prompt)
+        return template.render({'user': self})
+
+    def get_greeting_message(self, response):
+        self.ensure_one()
+        response.say(self.greeting_message)
+
+    def get_voicemail_prompt(self, response):
+        self.ensure_one()
+        voicemail_prompt = self.render_voicemail_prompt()
+        response.say(voicemail_prompt)
+
     def render_voicemail(self, response, request, params):
         api_url = (
             self.env['connect.settings']
@@ -625,6 +640,23 @@ class User(models.Model):
             self._manage_channel_callflow('client', True)
         else:
             self._manage_channel_callflow('client', False)
+
+    @api.constrains('voicemail_enabled')
+    def _manage_voicemail_enabled(self):
+        if self.voicemail_enabled:
+            if not self.env['connect.user_callflow'].search(
+                    [('user', '=', self.id),
+                     ('callflow_type', '=', 'voicemail')]):
+                self.env['connect.user_callflow'].create({
+                    'user': self.id,
+                    'prio': 10,
+                    'callflow_type': 'voicemail',
+                    'method': 'render_voicemail'
+                })
+        else:
+            self.env['connect.user_callflow'].search(
+                [('user', '=', self.id),
+                 ('callflow_type', '=', 'voicemail')]).unlink()
 
     def _manage_channel_callflow(self, channel, enable):
         if enable:

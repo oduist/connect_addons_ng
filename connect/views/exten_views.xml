@@ -25,9 +25,6 @@
                             <field name="model_friendly" string="Type" readonly="1"/>
                         </group>
                     </group>
-                    <group string="Dialplan Preview" invisible="not dialplan">
-                        <field name="dialplan" nolabel="1" colspan="2" readonly="1"/>
-                    </group>
                 </sheet>
             </form>
         </field>

@@ -8,8 +8,8 @@
     </record>
 
     <menuitem id="menu_connect_twiml"
-              sequence="60"
-              parent="connect.menu_connect_pbx"
+              sequence="10"
+              parent="menu_connect_twilio"
               name="TwiML"
               action="twiml_action"/>
 

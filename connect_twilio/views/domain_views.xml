@@ -8,8 +8,8 @@
     </record>
 
     <menuitem id="menu_connect_domains"
-              sequence="70"
-              parent="connect.menu_connect_pbx"
+              sequence="20"
+              parent="menu_connect_twilio"
               name="Domains"
               action="domain_action"/>
 

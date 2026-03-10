@@ -7,6 +7,8 @@ from datetime import timedelta
 from odoo import fields, models, api
 from odoo.exceptions import ValidationError
 
+from twilio.twiml.voice_response import VoiceResponse
+
 from odoo.addons.connect.models.settings import debug
 from odoo.addons.connect.models.call import CALL_END_STATUSES
 
@@ -17,6 +19,13 @@ IGNORE_ERROR_CODES = ['32009']
 
 class Call(models.Model):
     _inherit = 'connect.call'
+
+    @api.model
+    def on_call_action(self, params):
+        debug(self, 'On call action: %s' % params)
+        response = VoiceResponse()
+        response.hangup()
+        return response.to_xml()
 
     call_sid = fields.Char(
         string='Twilio Call SID', readonly=True,

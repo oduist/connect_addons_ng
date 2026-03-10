@@ -26,7 +26,6 @@ class Exten(models.Model):
         ],
         compute='_get_dst', inverse='_set_dst')
     dst_name = fields.Char(compute='_get_dst')
-    dialplan = fields.Text('Dialplan', compute='_get_dialplan', readonly=True)
 
     if release.version_info[0] >= 19:
         _number_uniq = Constraint('UNIQUE(number)', 'This extension number is already defined in the domain!')
@@ -113,23 +112,6 @@ class Exten(models.Model):
                     rec.dst.exten = rec
             else:
                 rec.write({'model': False, 'res_id': False})
-
-    def _get_dialplan(self):
-        for rec in self:
-            try:
-                result = rec.dst.render({})
-                rec.dialplan = str(result) if result else ''
-            except Exception as e:
-                logger.warning('Cannot render exten: %s', e)
-                rec.dialplan = 'Render error (normal case with dynamic values)'
-
-    def render(self, request={}, params={}):
-        self.ensure_one()
-        if not self.dst:
-            return '<Response><Say>Extension not configured!</Say></Response>'
-        params['ExtenID'] = self.id
-        params['ExtenNumber'] = self.number
-        return self.dst.render(request=request, params=params)
 
     @api.model
     def create_extension(self, rec, ext_type):

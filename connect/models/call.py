@@ -1,8 +1,5 @@
-import json
 import logging
-import re
-from odoo import fields, models, api, release, SUPERUSER_ID, tools
-from odoo.exceptions import ValidationError
+from odoo import fields, models, api, release, SUPERUSER_ID
 from .settings import debug
 
 logger = logging.getLogger(__name__)
@@ -242,11 +239,6 @@ class Call(models.Model):
         elif channel.technical_direction == 'inbound' and not channel.caller_pbx_user:
             return 'incoming'
         return 'outgoing'
-
-    @api.model
-    def on_call_action(self, params):
-        debug(self, 'On call action: %s' % params)
-        return '<Response><Hangup/></Response>'
 
     def register_call(self, channel, params):
         try:

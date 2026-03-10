@@ -1,4 +1,3 @@
-import jinja2
 import logging
 import re
 from odoo import fields, models, api, release
@@ -130,60 +129,3 @@ class User(models.Model):
     def create_extension(self):
         self.ensure_one()
         return self.env['connect.exten'].create_extension(self, 'user')
-
-    def render_voicemail_prompt(self):
-        self.ensure_one()
-        environment = jinja2.Environment()
-        template = environment.from_string(self.voicemail_prompt)
-        return template.render({'user': self})
-
-    def get_greeting_message(self, response):
-        self.ensure_one()
-        response.say(self.greeting_message)
-
-    def get_voicemail_prompt(self, response):
-        self.ensure_one()
-        voicemail_prompt = self.render_voicemail_prompt()
-        response.say(voicemail_prompt)
-
-    @api.model
-    def on_call_action(self, record_id, request):
-        user = self.browse(record_id)
-        call_status = request.get('CallStatus')
-        if not call_status:
-            call_status = request.get('DialCallStatus')
-        if call_status != 'completed':
-            dialplan = user.render(request)
-            return dialplan
-        else:
-            return '<Response><Hangup/></Response>'
-
-    def _manage_channel_callflow(self, channel, enable):
-        if enable:
-            callflow = self.env['connect.user_callflow'].search(
-                    [('user', '=', self.id), ('callflow_type', '=', channel)])
-            if not callflow:
-                self.env['connect.user_callflow'].create({
-                    'user': self.id,
-                    'callflow_type': channel,
-                    'prio': 1,
-                    'method': 'render_{}'.format(channel),
-                })
-        else:
-            self.env['connect.user_callflow'].search(
-                [('user', '=', self.id), ('callflow_type', '=', channel)]).unlink()
-
-    @api.constrains('voicemail_enabled')
-    def _manage_voicemail_enabled(self):
-        if self.voicemail_enabled:
-            if not self.env['connect.user_callflow'].search(
-                    [('user', '=', self.id), ('callflow_type', '=', 'voicemail')]):
-                self.env['connect.user_callflow'].create({
-                    'user': self.id,
-                    'prio': 10,
-                    'callflow_type': 'voicemail',
-                    'method': 'render_voicemail'
-                })
-        else:
-            self.env['connect.user_callflow'].search(
-                [('user', '=', self.id), ('callflow_type', '=', 'voicemail')]).unlink()
