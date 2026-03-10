@@ -25,6 +25,7 @@
                     <group>
                         <group string="General">
                             <field name="name"/>
+                            <field name="prompt_message"/>
                             <field name="exten" readonly="1"/>
                             <field name="exten_number" readonly="1"/>
                             <field name="language"/>
