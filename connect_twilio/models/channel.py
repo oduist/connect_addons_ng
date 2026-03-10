@@ -2,7 +2,7 @@
 import json
 import logging
 
-from odoo import fields, models, api, release
+from odoo import models, api, release
 
 from odoo.addons.connect.models.settings import debug
 
@@ -12,13 +12,15 @@ logger = logging.getLogger(__name__)
 class Channel(models.Model):
     _inherit = 'connect.channel'
 
-    sid = fields.Char('SID', readonly=True)
-
     @api.model
     def on_call_status(self, params):
+        """Twilio webhook adapter: map Twilio params and delegate to core."""
         debug(self, 'On channel status: %s' % json.dumps(params, indent=2))
+        generic = self._map_twilio_params(params)
+        return self.process_channel_event(generic)
 
-        # Pre-process for WhatsApp and E.164 normalization
+    def _map_twilio_params(self, params):
+        """Map Twilio webhook params to generic channel event dict."""
         def strip_whatsapp(v):
             return (
                 v.split(':', 1)[1]
@@ -29,9 +31,6 @@ class Channel(models.Model):
         caller_raw = params.get('Caller')
         called_raw = params.get('Called')
         to_raw = params.get('To')
-        caller_clean = strip_whatsapp(caller_raw)
-        called_clean = strip_whatsapp(called_raw)
-        to_clean = strip_whatsapp(to_raw)
         call_type = (
             'whatsapp'
             if any(
@@ -41,114 +40,17 @@ class Channel(models.Model):
             else 'phone'
         )
 
-        channel = self.search(
-            [('sid', '=', params['CallSid'])], limit=1, order='id asc'
-        )
-        if channel:
-            # Update channel data.
-            data = {
-                'called': called_clean,
-                'to': to_clean,
-                'technical_direction': params['Direction'],
-                'status': params['CallStatus'],
-                'duration': int(params.get('CallDuration', 0)),
-                'caller': caller_clean,
-                'call_type': call_type,
-            }
-            # Find an existing parent channel.
-            if not channel.parent_channel:
-                if channel.parent_sid:
-                    parent_channel = self.search(
-                        [('sid', '=', channel.parent_sid)]
-                    )
-                    data['parent_channel'] = parent_channel.id
-                elif params.get('ParentCallSid'):
-                    parent_channel = self.search(
-                        [('sid', '=', params.get('ParentCallSid'))]
-                    )
-                    data['parent_channel'] = parent_channel.id
-                    data['parent_sid'] = parent_channel.parent_channel.sid
-            channel.write(data)
-            debug(self, 'Channel %s updated.' % channel.id)
-        else:
-            # Channel not found by sid, create it.
-            data = {
-                'sid': params['CallSid'],
-                'called': called_clean,
-                'to': to_clean,
-                'technical_direction': params['Direction'],
-                'status': params['CallStatus'],
-                'duration': int(params.get('CallDuration', 0)),
-                'caller': caller_clean,
-                'call_type': call_type,
-            }
-            if channel.parent_sid:
-                parent_channel = self.search(
-                    [('sid', '=', channel.parent_sid)]
-                )
-                data['parent_channel'] = parent_channel.id
-            elif params.get('ParentCallSid'):
-                parent_channel = self.search(
-                    [('sid', '=', params.get('ParentCallSid'))]
-                )
-                data['parent_channel'] = parent_channel.id
-                data['parent_sid'] = parent_channel.parent_channel.sid
-            # Find caller user
-            caller_pbx_user = None
-            called_pbx_user = None
-            if params.get('Caller'):
-                caller_pbx_user = self.env[
-                    'connect.user'
-                ].get_user_by_uri(params['Caller'])
-                data['caller_pbx_user'] = caller_pbx_user.id
-                data['caller_user'] = caller_pbx_user.user.id
-            # Find called user
-            if params.get('Called'):
-                called_pbx_user = self.env[
-                    'connect.user'
-                ].get_user_by_uri(params['Called'])
-                data['called_pbx_user'] = called_pbx_user.id
-                data['called_user'] = called_pbx_user.user.id
-            # Find the partner
-            if caller_pbx_user and called_clean:
-                if (called_clean or '').startswith('+'):
-                    data['partner'] = self.env[
-                        'res.partner'
-                    ].get_partner_by_number(called_clean).id
-                    debug(self, 'Setting partner caller user by called.')
-            elif called_pbx_user and caller_clean:
-                if (caller_clean or '').startswith('+'):
-                    data['partner'] = self.env[
-                        'res.partner'
-                    ].get_partner_by_number(caller_clean).id
-                    debug(self, 'Setting partner called user by caller.')
-            elif (
-                params.get('Direction') == 'outbound-dial' and called_clean
-            ):
-                data['partner'] = self.env[
-                    'res.partner'
-                ].get_partner_by_number(called_clean).id
-                debug(self, 'Setting partner for outbound dial by called.')
-            elif (
-                params.get('Direction') == 'inbound'
-                and (called_clean or '').startswith('+')
-                and (caller_clean or '').startswith('+')
-            ):
-                debug(
-                    self,
-                    'Incoming DID/WhatsApp call. Get the partner from caller number.',
-                )
-                data['partner'] = self.env[
-                    'res.partner'
-                ].get_partner_by_number(caller_clean).id
-            else:
-                debug(
-                    self,
-                    'Not setting channel partner without channel users.',
-                )
-            channel = self.with_context(tracking_disable=True).create(data)
-            debug(self, 'Channel %s created.' % channel.id)
-        return channel
+        return {
+            'sid': params['CallSid'],
+            'caller': strip_whatsapp(caller_raw),
+            'called': strip_whatsapp(called_raw),
+            'to': strip_whatsapp(to_raw),
+            'technical_direction': params['Direction'],
+            'status': params['CallStatus'],
+            'duration': int(params.get('CallDuration', 0)),
+            'call_type': call_type,
+            'parent_sid': params.get('ParentCallSid'),
+        }
 
     def transfer(self, to=None):
         self.ensure_one()

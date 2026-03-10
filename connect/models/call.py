@@ -133,6 +133,117 @@ class Call(models.Model):
         return super().write(vals)
 
     @api.model
+    def process_call_event(self, channel, error_data=None):
+        """Process call event after channel has been created/updated.
+
+        Provider modules call this after process_channel_event() to create
+        or update the call record from channel data.
+
+        Args:
+            channel: connect.channel record
+            error_data: optional dict with 'error_code', 'error_message'
+
+        Returns:
+            call id or False
+        """
+        self = self.sudo()
+
+        if not channel:
+            logger.error('No channel passed to process_call_event!')
+            return False
+
+        if not channel.parent_channel and not channel.call:
+            # First leg: create a new call
+            direction = self._determine_direction(channel)
+            call = self.with_context(tracking_disable=True).create({
+                'partner': channel.partner.id,
+                'called': channel.called_number,
+                'caller': channel.caller_number,
+                'status': channel.status,
+                'caller_pbx_user': channel.caller_pbx_user.id,
+                'caller_user': channel.caller_user.id,
+                'direction': direction,
+                'call_type': channel.call_type or 'phone',
+            })
+            channel.call = call
+        elif channel.parent_channel and channel.parent_channel.call:
+            # Secondary leg: assign call from parent
+            channel.call = channel.parent_channel.call
+            # Detect internal calls
+            if ((channel.caller_pbx_user
+                    and channel.parent_channel.called_pbx_user)
+                    or (channel.called_pbx_user
+                        and channel.parent_channel.caller_pbx_user)):
+                channel.call.direction = 'internal'
+
+        if not channel.call:
+            logger.warning('Channel %s has no associated call.', channel.id)
+            return False
+
+        # Update call status from the latest channel
+        channel.call.status = channel.call.channels.sorted(
+            key='id', reverse=True)[0].status
+        # Update call duration from the first channel
+        channel.call.duration = channel.call.channels.sorted(
+            key='id', reverse=False)[0].duration
+
+        # Set called from 2nd leg for click2call external calls
+        if (channel.parent_channel
+                and channel.parent_channel.technical_direction == 'outbound-api'):
+            channel.call.called = channel.called_number
+
+        # Add called users (avoid duplicates)
+        if (channel.called_user
+                and channel.called_user not in channel.call.called_users):
+            channel.call.called_users = [(4, channel.called_user.id)]
+        if (channel.called_pbx_user
+                and channel.called_pbx_user not in channel.call.called_pbx_users):
+            channel.call.called_pbx_users = [(4, channel.called_pbx_user.id)]
+
+        # Set the answered user on completed calls
+        if channel.call.status == 'completed':
+            answered_pbx_user = channel.call.channels[0].called_pbx_user
+            if answered_pbx_user:
+                channel.call.answered_pbx_user = answered_pbx_user
+                channel.call.answered_user = answered_pbx_user.user
+
+        # Copy partner from child channel if missing on call
+        if not channel.call.partner and channel.partner:
+            channel.call.partner = channel.partner
+
+        # Handle errors
+        if error_data:
+            channel.call.update({
+                'has_error': True,
+                'error_code': error_data.get('error_code'),
+                'error_message': error_data.get('error_message'),
+            })
+
+        # Register call when ALL channels have ended
+        if channel.status in CALL_END_STATUSES:
+            all_ended = all(
+                ch.status in CALL_END_STATUSES
+                for ch in channel.call.channels
+            )
+            if all_ended:
+                self.register_call(channel, {})
+
+        # Reload call view
+        self.env['connect.settings'].connect_reload_view('connect.call')
+
+        return channel.call.id
+
+    def _determine_direction(self, channel):
+        """Determine call direction from channel metadata."""
+        if channel.technical_direction == 'outbound-api':
+            return 'outgoing'
+        elif channel.technical_direction == 'inbound' and channel.caller_pbx_user:
+            return 'outgoing'
+        elif channel.technical_direction == 'inbound' and not channel.caller_pbx_user:
+            return 'incoming'
+        return 'outgoing'
+
+    @api.model
     def on_call_action(self, params):
         debug(self, 'On call action: %s' % params)
         return '<Response><Hangup/></Response>'

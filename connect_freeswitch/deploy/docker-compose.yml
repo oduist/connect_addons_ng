@@ -39,6 +39,7 @@ services:
       - SOUND_TYPES=music:en-us-callie
       - EPMD=false
       - DUMPCAP=false
+      - ODOO_URL=${ODOO_URL}
     volumes:
       - freeswitch-sounds:/usr/share/freeswitch/sounds
       - ./freeswitch/conf:/etc/freeswitch

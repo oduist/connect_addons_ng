@@ -3,16 +3,15 @@ import json
 import logging
 import re
 from datetime import timedelta
-from urllib.parse import urljoin
 
-from odoo import fields, models, api, release
+from odoo import fields, models, api
 from odoo.exceptions import ValidationError
 
 from odoo.addons.connect.models.settings import debug
+from odoo.addons.connect.models.call import CALL_END_STATUSES
 
 logger = logging.getLogger(__name__)
 
-CALL_END_STATUSES = ['completed', 'busy', 'failed', 'no-answer', 'canceled']
 IGNORE_ERROR_CODES = ['32009']
 
 
@@ -40,125 +39,42 @@ class Call(models.Model):
 
     @api.model
     def on_call_status(self, params):
+        """Twilio webhook adapter: map params, delegate to core, handle Twilio-specific logic."""
         self = self.sudo()
-        # Create channel
+        # Channel processing via Twilio adapter → core
         channel = self.env['connect.channel'].on_call_status(params)
         if not channel:
             logger.error('No channel returned from on_call_status!')
             return False
-        if not channel.parent_channel and not channel.call:
-            # Create a new call.
-            if channel.technical_direction == 'outbound-api':
-                debug(self, 'outbound-api channel direction.')
-                direction = 'outgoing'
-            elif (
-                channel.technical_direction == 'inbound'
-                and channel.caller_pbx_user
-            ):
-                debug(self, 'inbound channel direction with caller_pbx_user.')
-                direction = 'outgoing'
-            elif (
-                channel.technical_direction == 'inbound'
-                and not channel.caller_pbx_user
-            ):
-                debug(
-                    self,
-                    'inbound channel direction without caller_pbx_user. '
-                    'Assuming DID call.',
-                )
-                direction = 'incoming'
-            else:
-                debug(self, 'Setting default call direction to outgoing.')
-                direction = 'outgoing'
-            call = self.with_context(tracking_disable=True).create(
-                {
-                    'partner': channel.partner.id,
-                    'called': channel.called_number,
-                    'caller': channel.caller_number,
-                    'status': channel.status,
-                    'caller_pbx_user': channel.caller_pbx_user.id,
-                    'caller_user': channel.caller_user.id,
-                    'direction': direction,
-                    'call_type': channel.call_type or 'phone',
-                }
-            )
-            channel.call = call
-        elif channel.parent_channel and channel.parent_channel.call:
-            # Secondary channel, assign the call from the parent.
-            channel.call = channel.parent_channel.call
-            if (
-                channel.caller_pbx_user
-                and channel.parent_channel.called_pbx_user
-            ):
-                channel.call.direction = 'internal'
-            elif (
-                channel.called_pbx_user
-                and channel.parent_channel.caller_pbx_user
-            ):
-                channel.call.direction = 'internal'
-        # Set call status from the last channel
-        channel.call.status = channel.call.channels.sorted(
-            key='id', reverse=True
-        )[0].status
-        # Set call duration from the first channel
-        channel.call.duration = channel.call.channels.sorted(
-            key='id', reverse=False
-        )[0].duration
-        # Set called from 2nd call leg for click2call external calls.
-        if channel.parent_channel.technical_direction == 'outbound-api':
-            channel.call.called = channel.called_number
-        # Set called users (avoid duplicates)
-        if (
-            channel.called_user
-            and channel.called_user not in channel.call.called_users
-        ):
-            channel.call.called_users = [(4, channel.called_user.id)]
-        if (
-            channel.called_pbx_user
-            and channel.called_pbx_user not in channel.call.called_pbx_users
-        ):
-            channel.call.called_pbx_users = [(4, channel.called_pbx_user.id)]
-        # Set the answered user
-        if channel.call.status == 'completed':
-            answered_user = channel.call.channels[0].called_pbx_user
-            channel.call.answered_pbx_user = answered_user
-            channel.call.answered_user = answered_user.user
-        # Check if we need to set a partner from child channel
-        if not channel.call.partner and channel.partner:
-            channel.call.partner = channel.partner
-        if (
-            channel.call.direction == 'incoming'
-            and params.get('CallStatus') == 'initiated'
-            and params.get('To', '').startswith('sip:')
-        ):
-            # Desktop notification only for SIP calls.
+
+        # Extract Twilio-specific error data
+        error_data = None
+        if (params.get('ErrorCode')
+                and params.get('ErrorCode') not in IGNORE_ERROR_CODES):
+            error_data = {
+                'error_code': params.get('ErrorCode'),
+                'error_message': params.get('ErrorMessage'),
+            }
+
+        # Core call processing
+        call_id = self.process_call_event(channel, error_data)
+
+        # Twilio-specific: Desktop notification for incoming SIP calls
+        if (channel.call
+                and channel.call.direction == 'incoming'
+                and params.get('CallStatus') == 'initiated'
+                and params.get('To', '').startswith('sip:')):
             channel.connect_notify()
-        # Register call when ALL channels have ended.
+
+        # Twilio-specific: Price fetching on call end
         if params.get('CallStatus') in CALL_END_STATUSES:
-            all_channels_ended = all(
-                ch.status in CALL_END_STATUSES
-                for ch in channel.call.channels
-            )
-            if all_channels_ended:
-                self.register_call(channel, params)
-            # Fetch call price if enabled in settings
             if self.env['connect.settings'].sudo().get_param(
                 'fetch_call_prices'
             ):
                 self.save_call_price(channel.call, params)
-        # Reload call view
-        self.env['connect.settings'].connect_reload_view('connect.call')
-        if params.get('ErrorCode') and params.get(
-            'ErrorCode'
-        ) not in IGNORE_ERROR_CODES:
-            channel.call.update(
-                {
-                    'has_error': True,
-                    'error_code': params.get('ErrorCode'),
-                    'error_message': params.get('ErrorMessage'),
-                }
-            )
-            # Notify caller user on errors on outgoing calls.
+
+        # Twilio-specific: Error notification to caller
+        if error_data and channel.call:
             user = channel.caller_user or channel.call.caller_user
             if channel.call.direction == 'outgoing' and user:
                 if 'No International Permission' in params.get(
@@ -178,7 +94,8 @@ class Call(models.Model):
                     message=message_text,
                     warning=True,
                 )
-        return channel.call.id
+
+        return call_id
 
     @api.model
     def on_vm_recording_status(self, params):
