@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inherit core user list to add Twilio-specific columns -->
+    <record id="view_connect_user_tree_twilio" model="ir.ui.view">
+        <field name="name">connect.user.tree.twilio</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='outgoing_callerid']" position="after">
+                <field name="sip_enabled" string="SIP"/>
+                <field name="client_enabled" string="Web"/>
+                <field name="application" optional="hide"/>
+                <field name="domain" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit core user form to add Twilio-specific fields -->
+    <record id="view_connect_user_form_twilio" model="ir.ui.view">
+        <field name="name">connect.user.form.twilio</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_form"/>
+        <field name="arch" type="xml">
+            <!-- Add extension button before the sheet -->
+            <xpath expr="//form/sheet" position="before">
+                <header>
+                    <button name="create_extension" type="object" string="Extension" class="btn btn-primary"/>
+                </header>
+            </xpath>
+
+            <!-- Add domain and twilio_edge to User Info group -->
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="domain"/>
+                <field name="twilio_edge"
+                       help="Choose the closest Twilio Edge or use Global Low-latency routing."/>
+            </xpath>
+
+            <!-- Add whatsapp_sender_id and application to Call Settings group -->
+            <xpath expr="//field[@name='missed_calls_notify']" position="after">
+                <field name="whatsapp_sender_id"/>
+                <field name="application"/>
+            </xpath>
+
+            <!-- Add Phone tab with SIP/Client settings to notebook -->
+            <xpath expr="//page[@name='organization']" position="before">
+                <page name="phone" string="Phone">
+                    <group>
+                        <group string="SIP Phone">
+                            <field name="sip_enabled" string="Enabled"/>
+                            <field name="sip_priority" string="Priority"/>
+                            <field name="password" password="1"
+                                   invisible="sip_enabled == False"/>
+                            <field name="sip_ring_timeout" string="Ring Timeout"
+                                   invisible="sip_enabled == False"
+                                   required="sip_enabled == True"/>
+                            <field name="connect_uri" string="SIP URI"
+                                   invisible="sip_enabled == False"/>
+                        </group>
+                        <group string="Web Phone">
+                            <field name="client_enabled" string="Enabled"/>
+                            <field name="client_priority" string="Priority"/>
+                            <field name="client_ring_timeout" string="Ring Timeout"
+                                   invisible="client_enabled == False"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

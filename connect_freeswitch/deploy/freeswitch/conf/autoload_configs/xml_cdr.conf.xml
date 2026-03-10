@@ -1,0 +1,11 @@
+<configuration name="xml_cdr.conf" description="XML CDR">
+  <settings>
+    <param name="url" value="$${odoo_url}/freeswitch/webhook/cdr"/>
+    <param name="retries" value="2"/>
+    <param name="delay" value="5"/>
+    <param name="log-b-leg" value="true"/>
+    <param name="prefix-a-leg" value="true"/>
+    <param name="encode" value="true"/>
+    <param name="err-log-dir" value="/var/log/freeswitch/xml_cdr"/>
+  </settings>
+</configuration>

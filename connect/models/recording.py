@@ -1,0 +1,187 @@
+import json
+import logging
+import os
+import requests
+from tempfile import NamedTemporaryFile
+from odoo import fields, models, api, release, SUPERUSER_ID
+from odoo.exceptions import ValidationError
+from .settings import format_connect_response, debug
+
+logger = logging.getLogger(__name__)
+
+
+class Recording(models.Model):
+    _name = 'connect.recording'
+    _description = 'Recording'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _rec_name = 'id'
+    _order = 'id desc'
+
+    call = fields.Many2one('connect.call', ondelete='set null')
+    channel = fields.Many2one('connect.channel', ondelete='set null')
+    partner = fields.Many2one('res.partner', ondelete='set null')
+    sid = fields.Char('SID', readonly=True)
+    call_sid = fields.Char(string='Channel SID', readonly=True)
+    caller_user = fields.Many2one(related='call.caller_user', store=True, readonly=False)
+    called_user = fields.Many2one('res.users', ondelete='set null')
+    caller_number = fields.Char()
+    called_number = fields.Char()
+    media_url = fields.Char()
+    price = fields.Char()
+    price_unit = fields.Char()
+    source = fields.Char()
+    duration = fields.Integer()
+    duration_human = fields.Char(compute='_get_duration_human')
+    start_time = fields.Datetime()
+    status = fields.Char()
+    if release.version_info[0] >= 17.0:
+        recording_widget = fields.Html(compute='_get_recording_widget', string='Recording', sanitize=False)
+    else:
+        recording_widget = fields.Char(compute='_get_recording_widget', string='Recording')
+    transcript = fields.Text()
+    transcription_token = fields.Char()
+    transcription_error = fields.Char()
+    transcription_price = fields.Char()
+    summary = fields.Html()
+    list_view_summary = fields.Html(compute='_get_list_view_summary')
+
+    def transcribe_recording(self, openai_api_key, summary_prompt):
+        result = {}
+        try:
+            client = self.env['connect.settings'].get_openai_client()
+            response = requests.get(self.media_url, stream=True)
+            response.raise_for_status()
+            with NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        temp_file.write(chunk)
+                temp_file_path = temp_file.name
+            with open(temp_file_path, 'rb') as audio_file:
+                transcript = client.audio.transcriptions.create(
+                    model="whisper-1", file=audio_file,
+                    response_format='verbose_json', timestamp_granularities=["segment"])
+            segments = ''
+            for s in transcript.segments:
+                seconds = int(s.start)
+                ts = f"{int(seconds // 3600):02d}:{int((seconds % 3600) // 60):02d}:{int(seconds % 60):02d}"
+                segments += '{} {}\n'.format(ts, s.text)
+            result['transcript'] = segments
+            result.update(self.make_summary(client, summary_prompt, result['transcript']))
+            result['transcription_error'] = False
+        except Exception as e:
+            logger.exception(f'Transcribe error: {e}')
+            result['transcription_error'] = str(e)
+        finally:
+            self.write(result)
+
+    def make_summary(self, client, summary_prompt, transcript):
+        logger.info('Make summary!')
+        try:
+            response = client.chat.completions.create(
+                model=os.environ.get('OPENAI_COMPLETION_MODEL', 'gpt-4o'),
+                messages=[
+                    {
+                        'role': 'user',
+                        'content': summary_prompt
+                    },
+                    {
+                        'role': 'user',
+                        'content': transcript,
+                    },
+                ],
+                temperature=float(os.environ.get('OPENAI_COMPLETION_TEMPERATURE', 0.5)),
+                max_tokens=int(os.environ.get('OPENAI_COMPLETION_MAX_TOKENS', 4096)),
+                top_p=float(os.environ.get('OPENAI_COMPLETION_TOP_P', 1.0)),
+                frequency_penalty=float(os.environ.get('OPENAI_COMPLETION_FREQUENCY_PENALTY', 0.0)),
+                presence_penalty=float(os.environ.get('OPENAI_COMPLETION_PRESENSE_PENALTY', 0.0)),
+            )
+            logger.info('%s', response.usage)
+            return {'summary': response.choices[0].message.content.strip('\n\n')}
+        except Exception as e:
+            logger.exception(f'Summary error: {e}')
+            return {'transcription_error': str(e)}
+
+    def get_transcript(self, fail_silently=False):
+        self.ensure_one()
+        openai_key = self.env['connect.settings'].sudo().get_param('openai_api_key')
+        if not openai_key:
+            if fail_silently:
+                logger.warning('OpenAI key is not set! Transcription will not be available.')
+                return False
+            else:
+                raise ValidationError('OpenAI key is not set!')
+        summary_prompt = self.env['connect.settings'].get_param('summary_prompt')
+        if not self.media_url:
+            raise ValidationError('Recording is not available yet!')
+        self.transcribe_recording(openai_key, summary_prompt)
+
+    def update_transcript(self, data):
+        self.ensure_one()
+        transcription_price = data.get('transcription_price')
+        if transcription_price:
+            transcription_price = round(transcription_price, 2)
+        vals = {
+            'transcript': data.get('transcript'),
+            'transcription_price': str(transcription_price),
+            'summary': data.get('summary'),
+            'transcription_token': False,
+            'transcription_error': data.get('transcription_error')
+        }
+        self.with_context(tracking_disable=True).write(vals)
+        if self.call:
+            self.call.summary = data.get('summary')
+            self.env['connect.settings'].connect_reload_view('connect.call')
+        self.env['connect.settings'].connect_reload_view('connect.recording')
+        if data.get('notify_uid'):
+            self.env['connect.settings'].connect_notify(
+                'Transcript updated', notify_uid=data['notify_uid'])
+
+    def _get_recording_widget(self):
+        proxy_recordings = self.env['connect.settings'].sudo().get_param('proxy_recordings')
+        for rec in self:
+            if not rec.media_url:
+                rec.recording_widget = ''
+                continue
+            if proxy_recordings:
+                media_url = '/connect/recording/{}'.format(rec.id)
+            else:
+                media_url = rec.media_url
+            rec.recording_widget = '<audio id="sound_file" preload="auto" ' \
+                'controls="controls"> ' \
+                '<source src="{}"/>' \
+                '</audio>'.format(media_url)
+
+    def _get_list_view_summary(self):
+        for rec in self:
+            rec.list_view_summary = rec.summary
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if self.env.context.get('skip_transcription'):
+            return super().create(vals_list)
+        transcript_calls = self.env['connect.settings'].sudo().get_param('transcript_calls')
+        recs = super(Recording, self.with_context(
+            mail_create_nosubscribe=True, mail_create_nolog=True)).create(vals_list)
+        self.env.cr.commit()
+        if transcript_calls:
+            for rec in recs:
+                try:
+                    rec.get_transcript(fail_silently=True)
+                except Exception as e:
+                    logger.exception('Transcript error: %s', e)
+        return recs
+
+    @api.depends('duration')
+    def _get_duration_human(self):
+        for record in self:
+            if record.duration is not None:
+                minutes = record.duration // 60
+                seconds = record.duration % 60
+                record.duration_human = '{:02}:{:02}'.format(minutes, seconds)
+            else:
+                record.duration_human = "00:00"
+
+    @api.constrains('summary')
+    def _sync_summary(self):
+        if self.call:
+            self.with_user(SUPERUSER_ID).call.summary = self.summary

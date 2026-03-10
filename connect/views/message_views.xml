@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_message_tree" model="ir.ui.view">
+        <field name="name">connect.message.tree</field>
+        <field name="model">connect.message</field>
+        <field name="arch" type="xml">
+            <list default_order="create_date desc">
+                <field name="direction_display" string=" " width="30px"/>
+                <field name="status_display" string=" " width="30px"/>
+                <field name="from_number"/>
+                <field name="to_number"/>
+                <field name="body"/>
+                <field name="message_type"/>
+                <field name="partner"/>
+                <field name="create_date" string="Date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_connect_message_form" model="ir.ui.view">
+        <field name="name">connect.message.form</field>
+        <field name="model">connect.message</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_retry" type="object" string="Retry"
+                            class="btn-primary" invisible="status != 'failed'"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Message Info">
+                            <field name="direction"/>
+                            <field name="status"/>
+                            <field name="message_type"/>
+                            <field name="message_sid"/>
+                            <field name="from_number"/>
+                            <field name="to_number"/>
+                            <field name="partner"/>
+                            <field name="sender_user"/>
+                            <field name="ref"/>
+                            <field name="parent_message"/>
+                        </group>
+                        <group string="Geographic Info">
+                            <field name="from_city"/>
+                            <field name="from_state"/>
+                            <field name="from_zip"/>
+                            <field name="from_country"/>
+                        </group>
+                    </group>
+                    <group string="Body">
+                        <field name="body" nolabel="1" colspan="2"/>
+                    </group>
+                    <group string="Media" invisible="not media_url">
+                        <field name="media_widget" nolabel="1" colspan="2"/>
+                        <field name="media_url"/>
+                        <field name="media_content_type"/>
+                    </group>
+                    <group string="Error" invisible="not has_error">
+                        <field name="has_error"/>
+                        <field name="error_code"/>
+                        <field name="error_message"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_connect_message" model="ir.actions.act_window">
+        <field name="name">Messages</field>
+        <field name="res_model">connect.message</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_connect_messages"
+              name="Messages"
+              parent="menu_connect_messages_parent"
+              action="action_connect_message"
+              sequence="10"/>
+</odoo>

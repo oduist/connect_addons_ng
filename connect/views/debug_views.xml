@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_debug_tree" model="ir.ui.view">
+        <field name="name">connect.debug.tree</field>
+        <field name="model">connect.debug</field>
+        <field name="arch" type="xml">
+            <list default_order="id desc" create="false" edit="false" delete="false">
+                <field name="create_date" string="Date"/>
+                <field name="model"/>
+                <field name="message"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_connect_debug" model="ir.actions.act_window">
+        <field name="name">Debug Log</field>
+        <field name="res_model">connect.debug</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <menuitem id="menu_connect_debug"
+              name="Debug Log"
+              parent="menu_connect_settings"
+              action="action_connect_debug"
+              sequence="30"/>
+</odoo>

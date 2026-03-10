@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inherit core number list to add twiml column -->
+    <record id="view_connect_number_tree_twilio" model="ir.ui.view">
+        <field name="name">connect.number.tree.twilio</field>
+        <field name="model">connect.number</field>
+        <field name="inherit_id" ref="connect.view_connect_number_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='callflow']" position="after">
+                <field name="twiml"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit core number form to add twiml routing option -->
+    <record id="view_connect_number_form_twilio" model="ir.ui.view">
+        <field name="name">connect.number.form.twilio</field>
+        <field name="model">connect.number</field>
+        <field name="inherit_id" ref="connect.view_connect_number_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='callflow']" position="after">
+                <field name="twiml"
+                       invisible="destination != 'twiml'"
+                       required="destination == 'twiml'"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

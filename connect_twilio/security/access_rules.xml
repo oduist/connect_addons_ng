@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- connect.twiml access rules -->
+    <record id="access_connect_twiml_admin" model="ir.model.access">
+        <field name="name">connect.twiml admin</field>
+        <field name="model_id" ref="model_connect_twiml"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_twiml_user" model="ir.model.access">
+        <field name="name">connect.twiml user</field>
+        <field name="model_id" ref="model_connect_twiml"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_twiml_webhook" model="ir.model.access">
+        <field name="name">connect.twiml webhook</field>
+        <field name="model_id" ref="model_connect_twiml"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.domain access rules -->
+    <record id="access_connect_domain_admin" model="ir.model.access">
+        <field name="name">connect.domain admin</field>
+        <field name="model_id" ref="model_connect_domain"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_domain_user" model="ir.model.access">
+        <field name="name">connect.domain user</field>
+        <field name="model_id" ref="model_connect_domain"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_domain_webhook" model="ir.model.access">
+        <field name="name">connect.domain webhook</field>
+        <field name="model_id" ref="model_connect_domain"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.whatsapp_sender access rules -->
+    <record id="access_connect_whatsapp_sender_admin" model="ir.model.access">
+        <field name="name">connect.whatsapp_sender admin</field>
+        <field name="model_id" ref="model_connect_whatsapp_sender"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_whatsapp_sender_user" model="ir.model.access">
+        <field name="name">connect.whatsapp_sender user</field>
+        <field name="model_id" ref="model_connect_whatsapp_sender"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_whatsapp_sender_webhook" model="ir.model.access">
+        <field name="name">connect.whatsapp_sender webhook</field>
+        <field name="model_id" ref="model_connect_whatsapp_sender"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.message_content_template access rules -->
+    <record id="access_connect_message_content_template_admin" model="ir.model.access">
+        <field name="name">connect.message_content_template admin</field>
+        <field name="model_id" ref="model_connect_message_content_template"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_message_content_template_user" model="ir.model.access">
+        <field name="name">connect.message_content_template user</field>
+        <field name="model_id" ref="model_connect_message_content_template"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.whatsapp_composer access rules -->
+    <record id="access_connect_whatsapp_composer_admin" model="ir.model.access">
+        <field name="name">connect.whatsapp_composer admin</field>
+        <field name="model_id" ref="model_connect_whatsapp_composer"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_whatsapp_composer_user" model="ir.model.access">
+        <field name="name">connect.whatsapp_composer user</field>
+        <field name="model_id" ref="model_connect_whatsapp_composer"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+</odoo>
