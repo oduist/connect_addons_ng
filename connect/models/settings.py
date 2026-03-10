@@ -14,6 +14,9 @@ import requests
 from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError, UserError
 
+from odoo.addons.connect.models.license import ODUIST_MODULES
+ODUIST_MODULES.append('connect')
+
 logger = logging.getLogger(__name__)
 
 MODULE_NAME = "connect"

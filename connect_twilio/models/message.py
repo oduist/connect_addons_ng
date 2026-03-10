@@ -41,6 +41,8 @@ class ConnectMessage(models.Model):
 
     @api.model
     def receive(self, params):
+        if not self.env['oduist.license'].check_license('connect', silent=True):
+            return str(MessagingResponse())
         try:
             if params.get('AccountSid') != self.env[
                 'connect.settings'
@@ -290,6 +292,7 @@ class ConnectMessage(models.Model):
         res_model=None,
         outgoing_callerid=None,
     ):
+        self.env['oduist.license'].check_license('connect', silent=False)
         sender_user = self.env.user
         message_data = {
             'message_type': 'WhatsApp',

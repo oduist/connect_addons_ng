@@ -193,6 +193,8 @@ class Number(models.Model):
 
     def render(self, request={}, params={}):
         self.ensure_one()
+        if not self.env["oduist.license"].check_license('connect'):
+            return '<Response><Say>Service unavailable.</Say></Response>'
         if self.destination == 'twiml' and self.twiml:
             return self.twiml.render(request)
         elif self.destination == 'user' and self.user:
