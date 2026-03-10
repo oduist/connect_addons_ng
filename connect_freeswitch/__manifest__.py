@@ -7,6 +7,8 @@
     'data': [
         'security/access_rules.xml',
         'views/endpoint_views.xml',
+        'views/gateway_views.xml',
+        'views/outgoing_route_views.xml',
         'views/settings.xml',
     ],
     'assets': {
