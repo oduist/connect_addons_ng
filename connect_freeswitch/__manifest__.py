@@ -19,6 +19,7 @@
             'connect_freeswitch/static/src/xml/phone_systray.xml',
         ],
     },
+    'post_init_hook': 'post_init_hook',
     'installable': True,
     'application': False,
     'license': 'LGPL-3',

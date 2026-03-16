@@ -7,7 +7,11 @@ from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError
 from twilio.rest import Client
 
+from odoo.addons.connect.models.license import ODUIST_MODULES
 from odoo.addons.connect.models.settings import debug
+
+ODUIST_MODULES.append('connect_twilio')
+
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +150,7 @@ class Settings(models.Model):
 
     @api.model
     def originate_call(self, number, res_model=None, res_id=None, user=None, whatsapp_call=False):
+        self.env["oduist.license"].check_license("connect", silent=False)
         number = strip_number(number)
         if len(number) > MAX_EXTEN_LEN:
             number = "+{}".format(number)

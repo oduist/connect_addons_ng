@@ -238,6 +238,7 @@ class ConnectWhatsappSender(models.Model):
             connect.message record or False on error when raise_on_error=False
         """
         self.ensure_one()
+        self.env['oduist.license'].check_license('connect', silent=False)
         if not self.number:
             raise ValidationError('WhatsApp sender has no number configured.')
         # Check 24-hour window for WhatsApp - only if not using a content template

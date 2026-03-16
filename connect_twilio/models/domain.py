@@ -504,6 +504,8 @@ class Domain(models.Model):
 
     @api.model
     def route_call(self, request, params={}):
+        if not self.env["oduist.license"].check_license('connect'):
+            return '<Response><Say>Service unavailable.</Say></Response>'
         debug(self, "Domain call to %s" % request.get("To"))
         # Create call + channel
         self.env["connect.call"].on_call_status(request)

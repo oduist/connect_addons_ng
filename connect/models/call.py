@@ -149,6 +149,10 @@ class Call(models.Model):
             logger.error('No channel passed to process_call_event!')
             return False
 
+        if not self.env['oduist.license'].check_license('connect', silent=True):
+            return False
+
+
         if not channel.parent_channel and not channel.call:
             # First leg: create a new call
             direction = self._determine_direction(channel)
