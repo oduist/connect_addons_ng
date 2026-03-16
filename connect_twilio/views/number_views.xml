@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Inherit core number list to add twiml column -->
+    <!-- Inherit core number list to add twilio columns -->
     <record id="view_connect_number_tree_twilio" model="ir.ui.view">
         <field name="name">connect.number.tree.twilio</field>
         <field name="model">connect.number</field>
@@ -9,11 +9,12 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='callflow']" position="after">
                 <field name="twiml"/>
+                <field name="is_ignored"/>
             </xpath>
         </field>
     </record>
 
-    <!-- Inherit core number form to add twiml routing option -->
+    <!-- Inherit core number form to add twilio fields -->
     <record id="view_connect_number_form_twilio" model="ir.ui.view">
         <field name="name">connect.number.form.twilio</field>
         <field name="model">connect.number</field>
@@ -23,6 +24,9 @@
                 <field name="twiml"
                        invisible="destination != 'twiml'"
                        required="destination == 'twiml'"/>
+            </xpath>
+            <xpath expr="//field[@name='is_default']" position="before">
+                <field name="is_ignored"/>
             </xpath>
         </field>
     </record>

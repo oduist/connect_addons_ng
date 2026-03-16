@@ -408,7 +408,6 @@ Keep as-is from current module.
 |-------|------|-------|
 | `phone_number` | Char | Required |
 | `friendly_name` | Char | |
-| `is_ignored` | Boolean | |
 | `is_default` | Boolean | |
 | `destination` | Selection | `user`, `callflow` |
 | `callflow` | Many2one | `connect.callflow` |

@@ -7,7 +7,6 @@ class Number(models.Model):
     _rec_name = 'phone_number'
     _order = 'phone_number'
 
-    is_ignored = fields.Boolean('Ignored')
     is_default = fields.Boolean(string='Default')
     phone_number = fields.Char(required=True)
     friendly_name = fields.Char()

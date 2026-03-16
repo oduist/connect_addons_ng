@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <!-- Inherit core outgoing_callerid list to add status column -->
+    <record id="view_connect_outgoing_callerid_tree_twilio" model="ir.ui.view">
+        <field name="name">connect.outgoing_callerid.tree.twilio</field>
+        <field name="model">connect.outgoing_callerid</field>
+        <field name="inherit_id" ref="connect.view_connect_outgoing_callerid_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='callerid_type']" position="before">
+                <field name="status"/>
+            </xpath>
+        </field>
+    </record>
+
     <!-- Inherit core outgoing_callerid form to add Twilio validation -->
     <record id="view_connect_outgoing_callerid_form_twilio" model="ir.ui.view">
         <field name="name">connect.outgoing_callerid.form.twilio</field>
@@ -15,7 +27,10 @@
                 </header>
             </xpath>
 
-            <!-- Add validation_code after status -->
+            <!-- Add status and validation_code fields -->
+            <xpath expr="//field[@name='is_default']" position="before">
+                <field name="status" readonly="1"/>
+            </xpath>
             <xpath expr="//field[@name='is_default']" position="after">
                 <field name="validation_code"
                        invisible="callerid_type != 'outgoing_callerid' or status == 'validated'"/>

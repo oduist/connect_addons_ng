@@ -243,14 +243,12 @@ class FreeSwitchXMLController(http.Controller):
         # Try exact match on phone number
         number = Number.search([
             ('phone_number', '=', destination),
-            ('is_ignored', '=', False),
         ], limit=1)
 
         # Try with + prefix if not found
         if not number and not destination.startswith('+'):
             number = Number.search([
                 ('phone_number', '=', '+' + destination),
-                ('is_ignored', '=', False),
             ], limit=1)
 
         if number:
