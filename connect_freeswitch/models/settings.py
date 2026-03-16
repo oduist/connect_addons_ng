@@ -36,8 +36,7 @@ class Settings(models.Model):
         if not endpoint:
             return {'enabled': False, 'reason': 'no_webrtc_endpoint'}
 
-        settings = self._get_settings_record()
-        socket_url = settings.freeswitch_socket_url
+        socket_url = self.get_param('freeswitch_socket_url')
 
         if not socket_url:
             return {'enabled': False, 'reason': 'no_socket_url'}
