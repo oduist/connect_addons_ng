@@ -20,7 +20,7 @@ class Settings(models.Model):
         user = self.env.user
 
         connect_user = self.env['connect.user'].search([
-            ('user_id', '=', user.id),
+            ('user', '=', user.id),
             ('active', '=', True)
         ], limit=1)
 

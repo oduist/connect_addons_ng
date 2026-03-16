@@ -19,7 +19,7 @@ class WebRTCController(http.Controller):
         user = request.env.user
         
         connect_user = request.env['connect.user'].search([
-            ('user_id', '=', user.id),
+            ('user', '=', user.id),
             ('active', '=', True)
         ], limit=1)
         
