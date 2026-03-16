@@ -76,21 +76,21 @@ class FreeSwitchXMLController(http.Controller):
         Endpoint = request.env['connect.endpoint'].sudo()
         ConnectUser = request.env['connect.user'].sudo()
 
-        # 1. Сначала ищем по auth_user (для регистрации/логина)
+        # 1. Search by auth_user (for registration/login)
         endpoint = Endpoint.search([
             ('auth_user', '=', user),
             ('active', '=', True),
             '|', ('sip_enabled', '=', True), ('webrtc_enabled', '=', True)
         ], limit=1)
 
-        # 2. Если не нашли, ищем по exten_number (для входящего звонка/bridge)
+        # 2. If not found, search by exten_number (for incoming call/bridge)
         if not endpoint:
             connect_user = ConnectUser.search([
                 ('exten_number', '=', user),
                 ('active', '=', True)
             ], limit=1)
             if connect_user:
-                # Берем первый активный эндпоинт этого человека
+                # Get the first active endpoint for this user
                 endpoint = Endpoint.search([
                     ('connect_user_id', '=', connect_user.id),
                     ('active', '=', True),
@@ -103,8 +103,8 @@ class FreeSwitchXMLController(http.Controller):
 
         connect_user = endpoint.connect_user_id
 
-        # КРИТИЧНО: FS ожидает, что ID в XML совпадет с запрашиваемым 'user'
-        # Если запрашивали '1000', отдаем '1000', даже если это эндпоинт 'admin'
+        # CRITICAL: FS expects the XML ID to match the requested 'user'
+        # If '1000' was requested, return '1000' even if the endpoint is 'admin'
         xml_user_id = user
 
         actual_domain = endpoint.domain or domain or params.get('sip_auth_realm') or '80.246.208.201'
@@ -113,7 +113,7 @@ class FreeSwitchXMLController(http.Controller):
         section = ET.SubElement(root, 'section', name='directory')
         domain_el = ET.SubElement(section, 'domain', name=actual_domain)
 
-        # User ID теперь динамический
+        # User ID is dynamic
         user_el = ET.SubElement(domain_el, 'user', id=xml_user_id)
 
         # Params
@@ -121,8 +121,8 @@ class FreeSwitchXMLController(http.Controller):
         ET.SubElement(user_params, 'param', name='password', value=endpoint.auth_password or '')
         ET.SubElement(user_params, 'param', name='vm-password', value=endpoint.auth_password or '')
 
-        # Конструируем dial-string, чтобы работал bridge(user/1000)
-        # Это говорит FS: "Чтобы найти этого юзера, звони и на SIP, и на Verto"
+        # Build dial-string so that bridge(user/1000) works
+        # This tells FS to ring both SIP and Verto endpoints for this user
         dial_parts = []
         if endpoint.sip_enabled:
             dial_parts.append(f"${{sofia_contact(*/{xml_user_id}@{actual_domain})}}")
@@ -142,7 +142,7 @@ class FreeSwitchXMLController(http.Controller):
         variables = ET.SubElement(user_el, 'variables')
         ET.SubElement(variables, 'variable', name='user_context', value='default')
 
-        # Caller ID берем из связанного сотрудника
+        # Caller ID from the associated connect user
         cid_name = connect_user.name or endpoint.auth_user
         cid_num = connect_user.exten_number or endpoint.auth_user
 
@@ -154,8 +154,8 @@ class FreeSwitchXMLController(http.Controller):
         # Odoo Tracking
         ET.SubElement(variables, 'variable', name='odoo_connect_user_id', value=str(connect_user.id))
         ET.SubElement(variables, 'variable', name='odoo_endpoint_id', value=str(endpoint.id))
-        if connect_user.user_id:
-            ET.SubElement(variables, 'variable', name='odoo_user_id', value=str(connect_user.user_id.id))
+        if connect_user.user:
+            ET.SubElement(variables, 'variable', name='odoo_user_id', value=str(connect_user.user.id))
 
         return self._xml_response(root)
 
@@ -205,8 +205,8 @@ class FreeSwitchXMLController(http.Controller):
             ET.SubElement(variables, 'variable', name='outbound_caller_id_number', value=connect_user.exten_number or endpoint.auth_user)
             ET.SubElement(variables, 'variable', name='odoo_connect_user_id', value=str(connect_user.id))
             ET.SubElement(variables, 'variable', name='odoo_endpoint_id', value=str(endpoint.id))
-            if connect_user.user_id:
-                ET.SubElement(variables, 'variable', name='odoo_user_id', value=str(connect_user.user_id.id))
+            if connect_user.user:
+                ET.SubElement(variables, 'variable', name='odoo_user_id', value=str(connect_user.user.id))
 
         return self._xml_response(root)
 

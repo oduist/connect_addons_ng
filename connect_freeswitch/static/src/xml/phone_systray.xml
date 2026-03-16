@@ -20,7 +20,7 @@
         <div class="o_phone_dialpad_overlay" t-on-click="props.close"/>
         <div class="o_phone_dialpad">
             <div class="o_phone_dialpad_header">
-                <span class="o_phone_dialpad_title">Телефон</span>
+                <span class="o_phone_dialpad_title">Phone</span>
                 <span t-att-class="'o_phone_status badge ' + (isConnected ? 'bg-success' : 'bg-secondary')">
                     <t t-esc="getStateText()"/>
                 </span>
@@ -32,11 +32,11 @@
                     <input type="text" 
                            class="form-control form-control-lg text-center" 
                            t-model="state.number" 
-                           placeholder="Введите номер"
+                           placeholder="Enter number"
                            t-att-readonly="isCallActive"/>
                 </div>
                 <div class="o_phone_incoming_info" t-if="isIncoming">
-                    <div class="o_incoming_caller_name" t-esc="state.incomingCallerName || 'Неизвестный'"/>
+                    <div class="o_incoming_caller_name" t-esc="state.incomingCallerName || 'Unknown'"/>
                     <div class="o_incoming_caller_number" t-esc="state.incomingCallerNumber"/>
                 </div>
                 <div class="o_phone_call_status" t-if="props.callState !== 'idle'">
@@ -95,15 +95,15 @@
                     <button class="btn btn-success o_phone_call_btn" 
                             t-on-click="onCall"
                             t-att-disabled="!state.number or !isConnected">
-                        <i class="fa fa-phone"/> Вызов
+                        <i class="fa fa-phone"/> Call
                     </button>
                 </t>
                 <t t-elif="isIncoming">
                     <button class="btn btn-success o_phone_answer_btn" t-on-click="onAnswer">
-                        <i class="fa fa-phone"/> Ответить
+                        <i class="fa fa-phone"/> Answer
                     </button>
                     <button class="btn btn-danger o_phone_hangup_btn" t-on-click="onHangup">
-                        <i class="fa fa-phone-slash"/> Отклонить
+                        <i class="fa fa-phone-slash"/> Decline
                     </button>
                 </t>
                 <t t-else="">
@@ -113,7 +113,7 @@
                         <i t-att-class="state.muted ? 'fa fa-microphone-slash' : 'fa fa-microphone'"/>
                     </button>
                     <button class="btn btn-danger o_phone_hangup_btn" t-on-click="onHangup">
-                        <i class="fa fa-phone-slash"/> Завершить
+                        <i class="fa fa-phone-slash"/> End
                     </button>
                 </t>
             </div>
