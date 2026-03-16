@@ -47,5 +47,5 @@ class Settings(models.Model):
             'login': endpoint.auth_user,
             'password': endpoint.auth_password,
             'callerName': connect_user.name,
-            'callerNumber': connect_user.extension or endpoint.auth_user,
+            'callerNumber': connect_user.exten_number or endpoint.auth_user,
         }
