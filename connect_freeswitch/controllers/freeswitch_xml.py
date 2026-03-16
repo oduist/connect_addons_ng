@@ -6,6 +6,7 @@ from xml.dom import minidom
 
 from odoo import http
 from odoo.http import request, Response
+from odoo.addons.connect.models.settings import debug
 
 _logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class FreeSwitchXMLController(http.Controller):
         - action: for specific actions (e.g., sip_auth)
         """
         section = kwargs.get('section', '')
-        _logger.info("FreeSWITCH XML request: section=%s, params=%s", section, kwargs)
+        debug(request.env['connect.settings'].sudo(), "FreeSWITCH XML request: section=%s, params=%s" % (section, kwargs))
 
         if section == 'directory':
             return self._handle_directory(kwargs)
@@ -59,7 +60,7 @@ class FreeSwitchXMLController(http.Controller):
         user = params.get('user') or params.get('key_value', '')
         domain = params.get('domain') or params.get('sip_auth_realm', '')
 
-        _logger.debug("Directory request: action=%s, user=%s, domain=%s", action, user, domain)
+        debug(request.env['connect.settings'].sudo(), "Directory request: action=%s, user=%s, domain=%s" % (action, user, domain))
 
         # User lookup/authentication - user is enough, domain can be empty
         if user:
@@ -98,7 +99,7 @@ class FreeSwitchXMLController(http.Controller):
                 ], limit=1)
 
         if not endpoint:
-            _logger.debug("User not found in Odoo: %s", user)
+            debug(request.env['connect.settings'].sudo(), "User not found in Odoo: %s" % user)
             return self._not_found()
 
         connect_user = endpoint.connect_user_id
@@ -220,7 +221,7 @@ class FreeSwitchXMLController(http.Controller):
         context = params.get('Caller-Context', params.get('Hunt-Context', 'default'))
         destination = params.get('Caller-Destination-Number', '')
 
-        _logger.info("Dialplan request: context=%s, destination=%s", context, destination)
+        debug(request.env['connect.settings'].sudo(), "Dialplan request: context=%s, destination=%s" % (context, destination))
 
         root = ET.Element('document', type='freeswitch/xml')
         section = ET.SubElement(root, 'section', name='dialplan')
@@ -315,7 +316,7 @@ class FreeSwitchXMLController(http.Controller):
         """
         key_value = params.get('key_value', '')
 
-        _logger.debug("Configuration request: key_value=%s", key_value)
+        debug(request.env['connect.settings'].sudo(), "Configuration request: key_value=%s" % key_value)
 
         if key_value == 'sofia.conf':
             return self._get_sofia_config(params)
@@ -366,7 +367,7 @@ class FreeSwitchXMLController(http.Controller):
 
         # Pretty-print XML for logging
         pretty = pretty_xml(xml_str)
-        _logger.debug("XML response:\n%s", pretty)
+        debug(request.env['connect.settings'].sudo(), "XML response:\n%s" % pretty)
 
         return Response(
             xml_str,
