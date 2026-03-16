@@ -19,7 +19,7 @@ class WebRTCController(http.Controller):
         user = request.env.user
         
         connect_user = request.env['connect.user'].search([
-            ('user_id', '=', user.id),
+            ('user', '=', user.id),
             ('active', '=', True)
         ], limit=1)
         
@@ -35,8 +35,7 @@ class WebRTCController(http.Controller):
         if not endpoint:
             return {'enabled': False, 'reason': 'no_webrtc_endpoint'}
         
-        settings = request.env['connect.settings']._get_settings_record()
-        socket_url = settings.freeswitch_socket_url
+        socket_url = request.env['connect.settings'].get_param('freeswitch_socket_url')
         
         if not socket_url:
             return {'enabled': False, 'reason': 'no_socket_url'}
@@ -47,5 +46,5 @@ class WebRTCController(http.Controller):
             'login': endpoint.auth_user,
             'password': endpoint.auth_password,
             'callerName': connect_user.name,
-            'callerNumber': connect_user.extension or endpoint.auth_user,
+            'callerNumber': connect_user.exten_number or endpoint.auth_user,
         }

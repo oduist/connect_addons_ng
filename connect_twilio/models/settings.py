@@ -12,6 +12,7 @@ from odoo.addons.connect.models.settings import debug
 
 ODUIST_MODULES.append('connect_twilio')
 
+
 logger = logging.getLogger(__name__)
 
 TWILIO_LOG_LEVEL = logging.WARNING

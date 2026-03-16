@@ -23,7 +23,7 @@ class Settings(models.Model):
         user = self.env.user
 
         connect_user = self.env['connect.user'].search([
-            ('user_id', '=', user.id),
+            ('user', '=', user.id),
             ('active', '=', True)
         ], limit=1)
 
@@ -39,8 +39,7 @@ class Settings(models.Model):
         if not endpoint:
             return {'enabled': False, 'reason': 'no_webrtc_endpoint'}
 
-        settings = self._get_settings_record()
-        socket_url = settings.freeswitch_socket_url
+        socket_url = self.get_param('freeswitch_socket_url')
 
         if not socket_url:
             return {'enabled': False, 'reason': 'no_socket_url'}
@@ -51,5 +50,5 @@ class Settings(models.Model):
             'login': endpoint.auth_user,
             'password': endpoint.auth_password,
             'callerName': connect_user.name,
-            'callerNumber': connect_user.extension or endpoint.auth_user,
+            'callerNumber': connect_user.exten_number or endpoint.auth_user,
         }

@@ -1,0 +1,59 @@
+import logging
+import re
+from xml.etree import ElementTree as ET
+from odoo import models
+
+logger = logging.getLogger(__name__)
+
+
+class User(models.Model):
+    _inherit = 'connect.user'
+
+    def generate_dialplan(self, context_el, params, exten=None):
+        """Generate FreeSWITCH dialplan to bridge to this user's endpoints."""
+        self.ensure_one()
+        number = exten.number if exten else self.exten_number or self.username
+        api_url = self.env['connect.settings'].sudo().get_param('api_url') or ''
+
+        ext = ET.SubElement(context_el, 'extension', name='user_{}'.format(number))
+        condition = ET.SubElement(ext, 'condition',
+            field='destination_number', expression='^{}$'.format(re.escape(number)))
+
+        # Tracking variables
+        ET.SubElement(condition, 'action', application='set',
+            data='odoo_called_user_id={}'.format(self.id))
+        if exten:
+            ET.SubElement(condition, 'action', application='set',
+                data='odoo_exten_id={}'.format(exten.id))
+
+        # Call recording
+        if self.record_calls and api_url:
+            recording_url = '{}freeswitch/webhook/recording'.format(
+                api_url if api_url.endswith('/') else api_url + '/')
+            ET.SubElement(condition, 'action', application='set',
+                data='RECORD_STEREO=true')
+            ET.SubElement(condition, 'action', application='set',
+                data='media_bug_answer_req=true')
+            ET.SubElement(condition, 'action', application='export',
+                data='execute_on_answer=record_session {}/{}.wav'.format(
+                    recording_url, '${uuid}'))
+
+        # Bridge settings
+        ET.SubElement(condition, 'action', application='set',
+            data='call_timeout=30')
+        ET.SubElement(condition, 'action', application='set',
+            data='hangup_after_bridge=true')
+        ET.SubElement(condition, 'action', application='set',
+            data='continue_on_fail=true')
+
+        # Determine endpoint domain
+        endpoint = self.env['connect.endpoint'].sudo().search([
+            ('connect_user_id', '=', self.id),
+            ('active', '=', True),
+            '|', ('sip_enabled', '=', True), ('webrtc_enabled', '=', True)
+        ], limit=1)
+        domain = endpoint.domain if endpoint else '${domain}'
+
+        # Bridge to user (uses dial-string from directory which includes SIP + Verto)
+        ET.SubElement(condition, 'action', application='bridge',
+            data='user/{}@{}'.format(number, domain))

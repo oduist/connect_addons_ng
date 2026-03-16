@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_freeswitch_gateway_tree" model="ir.ui.view">
+        <field name="name">connect.freeswitch.gateway.tree</field>
+        <field name="model">connect.freeswitch.gateway</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="proxy"/>
+                <field name="username"/>
+                <field name="register"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_freeswitch_gateway_form" model="ir.ui.view">
+        <field name="name">connect.freeswitch.gateway.form</field>
+        <field name="model">connect.freeswitch.gateway</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Gateway Name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Connection">
+                            <field name="proxy"/>
+                            <field name="username"/>
+                            <field name="password" password="True"/>
+                            <field name="realm"/>
+                            <field name="from_domain"/>
+                        </group>
+                        <group string="Options">
+                            <field name="register"/>
+                            <field name="caller_id_in_from"/>
+                            <field name="expire_seconds"/>
+                            <field name="retry_seconds"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_freeswitch_gateway" model="ir.actions.act_window">
+        <field name="name">SIP Gateways</field>
+        <field name="res_model">connect.freeswitch.gateway</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_freeswitch_gateway"
+              name="SIP Gateways"
+              parent="connect.menu_connect_pbx"
+              action="action_freeswitch_gateway"
+              sequence="70"
+              groups="connect.group_admin"/>
+
+</odoo>

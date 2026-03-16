@@ -114,11 +114,11 @@ class PhoneDialpad extends Component {
 
     getStateText() {
         switch (this.props.state) {
-            case "disconnected": return "Отключен";
-            case "connecting": return "Подключение...";
-            case "reconnecting": return "Переподключение...";
-            case "registered": return "Готов";
-            case "error": return "Ошибка";
+            case "disconnected": return "Disconnected";
+            case "connecting": return "Connecting...";
+            case "reconnecting": return "Reconnecting...";
+            case "registered": return "Ready";
+            case "error": return "Error";
             default: return this.props.state;
         }
     }
@@ -126,10 +126,10 @@ class PhoneDialpad extends Component {
     getCallStateText() {
         switch (this.props.callState) {
             case "idle": return "";
-            case "calling": return "Вызов...";
-            case "ringing": return "Звонок...";
+            case "calling": return "Calling...";
+            case "ringing": return "Ringing...";
             case "active": return this.formatDuration(this.state.callDuration);
-            case "incoming": return "Входящий вызов";
+            case "incoming": return "Incoming call";
             default: return this.props.callState;
         }
     }
