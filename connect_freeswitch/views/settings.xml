@@ -9,9 +9,17 @@
             <page name="general" position="after">
                 <page name="freeswitch" string="FreeSWITCH">
                     <group>
-                        <group>
+                        <group string="Connection">
                             <field name="freeswitch_socket_url"
                                    placeholder="wss://your-fs-domain:8082"/>
+                            <field name="freeswitch_domain"
+                                   placeholder="fs.example.com"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Log Levels">
+                            <field name="freeswitch_log_level"/>
+                            <field name="freeswitch_sofia_log_level"/>
                         </group>
                     </group>
                 </page>

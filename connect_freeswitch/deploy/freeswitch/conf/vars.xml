@@ -20,5 +20,7 @@
 
   <X-PRE-PROCESS cmd="set" data="hold_music=silence_stream://0"/>
   <X-PRE-PROCESS cmd="set" data="use_profile=internal"/>
-  <X-PRE-PROCESS cmd="set" data="console_loglevel=info"/>
+  <!-- Log levels: read from Docker env vars (defaults in Dockerfile) -->
+  <X-PRE-PROCESS cmd="env-set" data="core_loglevel=$FS_LOG_LEVEL"/>
+  <X-PRE-PROCESS cmd="env-set" data="sofia_loglevel=$FS_SOFIA_LOG_LEVEL"/>
 </include>

@@ -108,7 +108,8 @@ class FreeSwitchXMLController(http.Controller):
         # If '1000' was requested, return '1000' even if the endpoint is 'admin'
         xml_user_id = user
 
-        actual_domain = endpoint.domain or domain or params.get('sip_auth_realm') or '80.246.208.201'
+        fs_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain')
+        actual_domain = fs_domain or domain or params.get('sip_auth_realm', '')
 
         root = ET.Element('document', type='freeswitch/xml')
         section = ET.SubElement(root, 'section', name='directory')
@@ -174,9 +175,7 @@ class FreeSwitchXMLController(http.Controller):
         if not endpoints:
             return self._not_found()
 
-        # Use endpoint domain if available, fallback to request domain or IP
-        actual_domain = domain or '80.246.208.201'
-        # Note: Full directory uses request domain; individual endpoints use their own domain
+        actual_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain') or domain
 
         root = ET.Element('document', type='freeswitch/xml')
         section = ET.SubElement(root, 'section', name='directory')
@@ -363,6 +362,12 @@ class FreeSwitchXMLController(http.Controller):
         ET.SubElement(settings, 'param', name='sip-port', value='5080')
         ET.SubElement(settings, 'param', name='rtp-timer-name', value='soft')
         ET.SubElement(settings, 'param', name='codec-prefs', value='OPUS,PCMU,PCMA')
+
+        fs_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain')
+        if fs_domain:
+            ET.SubElement(settings, 'param', name='force-register-domain', value=fs_domain)
+            ET.SubElement(settings, 'param', name='force-realm', value=fs_domain)
+            ET.SubElement(settings, 'param', name='force-register-db-domain', value=fs_domain)
 
         gateways_el = ET.SubElement(profile, 'gateways')
         for gw in gateways:

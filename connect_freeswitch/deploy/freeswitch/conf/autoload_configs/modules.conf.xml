@@ -1,7 +1,6 @@
 <configuration name="modules.conf" description="Modules">
   <modules>
-    <!-- Loggers -->
-    <load module="mod_console"/>
+    <!-- Loggers (stdout via mod_logfile → /dev/stdout) -->
     <load module="mod_logfile"/>
 
     <!-- XML Interfaces - для получения конфига из Odoo -->

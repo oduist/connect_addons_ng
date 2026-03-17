@@ -127,9 +127,9 @@ class CallFlow(models.Model):
                 ('active', '=', True),
                 '|', ('sip_enabled', '=', True), ('webrtc_enabled', '=', True)
             ], limit=1)
-            domain = endpoint.domain if endpoint else '${domain}'
+            fs_domain = self.env['connect.settings'].sudo().get_param('freeswitch_domain') or '${domain}'
             user_number = user.exten_number or user.username
-            bridge_parts.append('user/{}@{}'.format(user_number, domain))
+            bridge_parts.append('user/{}@{}'.format(user_number, fs_domain))
 
         if bridge_parts:
             ET.SubElement(condition, 'action', application='bridge',
@@ -137,12 +137,7 @@ class CallFlow(models.Model):
 
     def _add_user_bridge_actions(self, parent_el, user):
         """Add bridge actions for a user directly into a parent XML element."""
-        endpoint = self.env['connect.endpoint'].sudo().search([
-            ('connect_user_id', '=', user.id),
-            ('active', '=', True),
-            '|', ('sip_enabled', '=', True), ('webrtc_enabled', '=', True)
-        ], limit=1)
-        domain = endpoint.domain if endpoint else '${domain}'
+        fs_domain = self.env['connect.settings'].sudo().get_param('freeswitch_domain') or '${domain}'
         user_number = user.exten_number or user.username
 
         ET.SubElement(parent_el, 'action', application='set',
@@ -151,4 +146,4 @@ class CallFlow(models.Model):
         ET.SubElement(parent_el, 'action', application='set', data='hangup_after_bridge=true')
         ET.SubElement(parent_el, 'action', application='set', data='continue_on_fail=true')
         ET.SubElement(parent_el, 'action', application='bridge',
-            data='user/{}@{}'.format(user_number, domain))
+            data='user/{}@{}'.format(user_number, fs_domain))

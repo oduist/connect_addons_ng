@@ -46,14 +46,8 @@ class User(models.Model):
         ET.SubElement(condition, 'action', application='set',
             data='continue_on_fail=true')
 
-        # Determine endpoint domain
-        endpoint = self.env['connect.endpoint'].sudo().search([
-            ('connect_user_id', '=', self.id),
-            ('active', '=', True),
-            '|', ('sip_enabled', '=', True), ('webrtc_enabled', '=', True)
-        ], limit=1)
-        domain = endpoint.domain if endpoint else '${domain}'
+        fs_domain = self.env['connect.settings'].sudo().get_param('freeswitch_domain') or '${domain}'
 
         # Bridge to user (uses dial-string from directory which includes SIP + Verto)
         ET.SubElement(condition, 'action', application='bridge',
-            data='user/{}@{}'.format(number, domain))
+            data='user/{}@{}'.format(number, fs_domain))

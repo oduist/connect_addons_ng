@@ -54,6 +54,25 @@ Code includes `release.version_info[0]` checks to support Odoo 17.0, 18.0, and 1
 - Twilio webhook routes are all under `/twilio/webhook/*` and validate `X-Twilio-Signature` when enabled
 - Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`
 
+## FreeSWITCH Docker Image
+
+- Image: `oduist/freeswitch`
+- Dockerfile: `connect_freeswitch/deploy/Dockerfile`
+- Config files: `connect_freeswitch/deploy/freeswitch/conf/`
+
+**Workflow** when changing FreeSWITCH config or Dockerfile:
+1. Increment version in `connect_freeswitch/__manifest__.py` (e.g. `19.0.1.0.2` → `19.0.1.0.3`)
+2. Build image using the short version (strip Odoo prefix): `docker build --platform linux/amd64 -t oduist/freeswitch:1.0.3 -t oduist/freeswitch:latest connect_freeswitch/deploy/`
+3. Push both tags: `docker push oduist/freeswitch:1.0.3 && docker push oduist/freeswitch:latest`
+
+## Decision Log (ADR)
+
+Architecture Decision Records are stored in `specs/decisions/`. Each file documents one decision: the problem, options considered, and chosen approach with rationale.
+
+**Format:** `NNN-short-title.md` (e.g. `001-freeswitch-log-levels.md`)
+
+**Workflow:** Every development session must start in plan mode. The plan produces an ADR entry before implementation begins. This ensures design decisions are captured with their context while it's fresh.
+
 ## Documentation & Specs Maintenance
 
 When making code changes, **always** keep these in sync:

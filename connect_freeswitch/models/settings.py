@@ -12,6 +12,44 @@ class Settings(models.Model):
         string="FreeSWITCH Socket URL",
         help="WebSocket URL for FreeSWITCH connection",
     )
+    freeswitch_domain = fields.Char(
+        string="FreeSWITCH Domain",
+        help="SIP domain for FreeSWITCH registrations and routing. "
+             "Used in sofia profile (force-register-domain) and directory XML.",
+    )
+    freeswitch_log_level = fields.Selection(
+        selection=[
+            ('alert', 'ALERT'),
+            ('crit', 'CRIT'),
+            ('err', 'ERR'),
+            ('warning', 'WARNING'),
+            ('notice', 'NOTICE'),
+            ('info', 'INFO'),
+            ('debug', 'DEBUG'),
+        ],
+        string="Log Level",
+        default='info',
+        help="FreeSWITCH core and console log level. "
+             "Pass as FS_LOG_LEVEL env var to the container.",
+    )
+    freeswitch_sofia_log_level = fields.Selection(
+        selection=[
+            ('0', '0 - Minimal'),
+            ('1', '1'),
+            ('2', '2'),
+            ('3', '3'),
+            ('4', '4'),
+            ('5', '5'),
+            ('6', '6'),
+            ('7', '7'),
+            ('8', '8'),
+            ('9', '9 - Maximum'),
+        ],
+        string="Sofia Log Level",
+        default='0',
+        help="Sofia SIP module log verbosity (0-9). "
+             "Pass as FS_SOFIA_LOG_LEVEL env var to the container.",
+    )
 
     @api.model
     def get_webrtc_config(self):
