@@ -43,6 +43,9 @@ class FreeSwitchOutgoingRoute(models.Model):
                 field='destination_number', expression=route.pattern)
             ET.SubElement(condition, 'action', application='set',
                 data='odoo_call_direction=outgoing')
+            # Force PSTN-compatible codecs for the outbound leg
+            ET.SubElement(condition, 'action', application='export',
+                data='nolocal:absolute_codec_string=PCMU,PCMA')
 
             bridge_data = self._build_bridge_data(
                 route.gateway.name, destination,
