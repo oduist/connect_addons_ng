@@ -323,6 +323,11 @@ class FreeSwitchXMLController(http.Controller):
         """
         key_value = params.get('key_value', '')
 
+        # Configs handled by local static files — skip debug logging
+        IGNORED_CONFIGS = ('spandsp.conf', 'fax.conf', 'loopback.conf', 'timezones.conf')
+        if key_value in IGNORED_CONFIGS:
+            return self._not_found()
+
         debug(request.env['connect.settings'].sudo(), "Configuration request: key_value=%s" % key_value)
 
         if key_value == 'sofia.conf':
