@@ -62,7 +62,7 @@ Code includes `release.version_info[0]` checks to support Odoo 17.0, 18.0, and 1
 
 **Workflow** when changing FreeSWITCH config or Dockerfile:
 1. Increment version in `connect_freeswitch/__manifest__.py` (e.g. `19.0.1.0.2` → `19.0.1.0.3`)
-2. Build image using the short version (strip Odoo prefix): `docker build --platform linux/amd64 -t oduist/freeswitch:1.0.3 -t oduist/freeswitch:latest connect_freeswitch/deploy/`
+2. Build image using the short version (strip Odoo prefix): `docker build --platform linux/amd64 --provenance=false --sbom=false -t oduist/freeswitch:1.0.3 -t oduist/freeswitch:latest connect_freeswitch/deploy/`
 3. Push both tags: `docker push oduist/freeswitch:1.0.3 && docker push oduist/freeswitch:latest`
 
 ## Decision Log (ADR)

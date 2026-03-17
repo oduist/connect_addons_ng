@@ -9,6 +9,7 @@ ENV SOUND_RATES=8000:16000 \
     EPMD=false \
     DUMPCAP=false \
     ODOO_URL=http://localhost:8069 \
+    FS_DOMAIN=localhost \
     FS_LOG_LEVEL=info \
     FS_SOFIA_LOG_LEVEL=0
 

@@ -187,6 +187,7 @@ export class PhoneSystray extends Component {
 
         this.vertoClient = new VertoClient({
             socketUrl: this.state.config.socketUrl,
+            domain: this.state.config.domain,
             login: this.state.config.login,
             password: this.state.config.password,
             callerName: this.state.config.callerName,

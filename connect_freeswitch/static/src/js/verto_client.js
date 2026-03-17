@@ -9,6 +9,7 @@ export class VertoClient {
     constructor(options) {
         this.socketUrl = options.socketUrl;
         this.login = options.login;
+        this.domain = (options.domain || '').trim();
         this.password = options.password;
         this.callerName = options.callerName || options.login;
         this.callerNumber = options.callerNumber || options.login;
@@ -82,6 +83,13 @@ export class VertoClient {
     _setCallState(state) {
         this.callState = state;
         this.onCallStateChange(state);
+    }
+
+    _appendDomain(value) {
+        if (!value || !this.domain || value.includes('@')) {
+            return value;
+        }
+        return `${value}@${this.domain}`;
     }
 
     async connect() {
@@ -289,7 +297,7 @@ export class VertoClient {
     async _login() {
         try {
             const result = await this._sendRpc('login', {
-                login: this.login,
+                login: this._appendDomain(this.login),
                 passwd: this.password,
                 sessid: this.sessionId
             });
@@ -601,19 +609,20 @@ export class VertoClient {
             
             await this._waitForIceGathering();
             
+            const destinationWithDomain = this._appendDomain(destination);
             const callId = this._generateUUID();
-            this.currentCall = { callId, destination };
-            
+            this.currentCall = { callId, destination: destinationWithDomain };
+
             await this._sendRpc('verto.invite', {
                 sessid: this.sessionId,
                 sdp: this.peerConnection.localDescription.sdp,
                 dialogParams: {
                     callID: callId,
-                    destination_number: destination,
+                    destination_number: destinationWithDomain,
                     caller_id_name: this.callerName,
                     caller_id_number: this.callerNumber,
-                    remote_caller_id_name: destination,
-                    remote_caller_id_number: destination,
+                    remote_caller_id_name: destinationWithDomain,
+                    remote_caller_id_number: destinationWithDomain,
                     useVideo: false,
                     useStereo: false
                 }

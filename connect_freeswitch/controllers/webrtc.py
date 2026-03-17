@@ -36,13 +36,15 @@ class WebRTCController(http.Controller):
             return {'enabled': False, 'reason': 'no_webrtc_endpoint'}
         
         socket_url = request.env['connect.settings'].get_param('freeswitch_socket_url')
-        
+        domain = request.env['connect.settings'].get_param('freeswitch_domain')
+
         if not socket_url:
             return {'enabled': False, 'reason': 'no_socket_url'}
-        
+
         return {
             'enabled': True,
             'socketUrl': socket_url,
+            'domain': domain,
             'login': endpoint.auth_user,
             'password': endpoint.auth_password,
             'callerName': connect_user.name,
