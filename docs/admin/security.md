@@ -1,0 +1,72 @@
+# Security
+
+## Security Groups
+
+Connect defines three security groups:
+
+| Group | XML ID | Purpose |
+|-------|--------|---------|
+| **Connect User** | `connect.group_user` | Read access to calls, messages, recordings. Can make calls and send messages. |
+| **Connect Admin** | `connect.group_admin` | Full CRUD on all Connect models. Can configure settings, users, callflows. |
+| **Connect Webhook** | `connect.group_webhook` | Create and read access for webhook-created records. Used by the system webhook user. |
+
+### Assigning Groups
+
+When you create a PBX user and link it to an Odoo user, the Connect User group is automatically assigned. Admins must be assigned the Connect Admin group manually via Odoo user settings.
+
+## Access Control Matrix
+
+| Model | User | Admin | Webhook |
+|-------|------|-------|---------|
+| Calls | Read, Write, Create | Full | Read, Write, Create |
+| Channels | Read | Full | Read, Write, Create |
+| Messages | Read, Write, Create | Full | Read, Write, Create |
+| Recordings | Read | Full | Read, Write, Create |
+| PBX Users | Read | Full | — |
+| Numbers | Read | Full | — |
+| Caller IDs | Read | Full | — |
+| Extensions | Read | Full | — |
+| Call Flows | Read | Full | — |
+| Endpoints | Read | Full | — |
+| Settings | Read | Full | — |
+| Favorites | Full | Full | — |
+| Debug Log | Read | Full | Read, Create |
+
+## Protected Fields
+
+Sensitive fields are masked in the UI for non-managers (`base.group_erp_manager`):
+
+- **OpenAI API Key** — displays `****` unless user is an ERP Manager
+- **Twilio Auth Token** — displays `****` unless user is an ERP Manager
+- **Twilio API Secret** — displays `****` unless user is an ERP Manager
+
+## Webhook Security
+
+### Twilio
+
+When **Verify Requests** is enabled in settings, all incoming Twilio webhooks are validated using the `X-Twilio-Signature` header. This ensures requests genuinely come from Twilio.
+
+!!! warning
+    Always enable request verification in production. Disable only for development/debugging.
+
+### FreeSWITCH
+
+FreeSWITCH webhooks (`/freeswitch/xml`, `/freeswitch/webhook/*`) do not have signature verification. Ensure FreeSWITCH and Odoo communicate over a trusted network or use firewall rules to restrict access.
+
+### Webhook User
+
+A special inactive Odoo user (`connect.user_connect_webhook`) is defined in core data. All webhook handlers use this user's context (via `sudo()`) to create and update records with proper permissions. This user belongs to the Connect Webhook group.
+
+## Record Rules
+
+- **Users** see only calls, messages, and recordings associated with their PBX user account
+- **Admins** see all records across all users
+- PBX user records are restricted: each user can only see their own PBX user record
+
+## Best Practices
+
+1. **Use HTTPS** — Both Twilio and Verto WebRTC require secure connections
+2. **Enable request verification** for Twilio webhooks in production
+3. **Restrict FreeSWITCH access** — Use firewall rules to limit which IPs can reach `/freeswitch/*` endpoints
+4. **Rotate API keys** regularly
+5. **Limit admin access** — Only grant Connect Admin to users who need to configure the system

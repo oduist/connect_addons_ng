@@ -37,7 +37,7 @@ Twilio: _inherit = 'connect.foo'  → implements abstract methods, adds provider
 - `specs/architecture.md` — Authoritative design specification (boundaries, extension pattern, data flow)
 - `specs/connect_core.md` — Core module spec (models, fields, methods, security, views)
 - `specs/connect_twilio.md` — Twilio module spec (models, webhooks, controllers, frontend)
-- `docs/connect_migrate.md` — Migration guide from monolithic to modular architecture
+- `docs/` — User and admin documentation (MkDocs Material), see `docs/mkdocs.yml` for structure
 
 ## Development Commands
 Use oduflow to manage module development and deployment.
@@ -53,3 +53,13 @@ Code includes `release.version_info[0]` checks to support Odoo 17.0, 18.0, and 1
 - Debug logging uses `connect.debug` model with daily cron cleanup
 - Twilio webhook routes are all under `/twilio/webhook/*` and validate `X-Twilio-Signature` when enabled
 - Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`
+
+## Documentation & Specs Maintenance
+
+When making code changes, **always** keep these in sync:
+
+1. **User documentation** (`docs/user/`) — Update if the change affects what users see or do (UI, workflows, features)
+2. **Admin documentation** (`docs/admin/`) — Update if the change affects installation, configuration, or infrastructure
+3. **Specifications** (`specs/`) — Update if the change affects models, fields, methods, security, controllers, or architecture
+
+If a code change adds, removes, or modifies a feature, the corresponding documentation and spec files must be updated in the same commit.

@@ -4,7 +4,7 @@
     <param name="max-sessions" value="1000"/>
     <param name="sessions-per-second" value="30"/>
     <param name="loglevel" value="info"/>
-    <param name="rtp-start-port" value="16384"/>
-    <param name="rtp-end-port" value="32768"/>
+    <param name="rtp-start-port" value="16000"/>
+    <param name="rtp-end-port" value="17000"/>
   </settings>
 </configuration>
