@@ -367,6 +367,7 @@ class FreeSwitchXMLController(http.Controller):
         ET.SubElement(settings, 'param', name='sip-port', value='5080')
         ET.SubElement(settings, 'param', name='rtp-timer-name', value='soft')
         ET.SubElement(settings, 'param', name='codec-prefs', value='OPUS,PCMU,PCMA')
+        ET.SubElement(settings, 'param', name='auth-calls', value='true')
 
         fs_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain')
         if fs_domain:
