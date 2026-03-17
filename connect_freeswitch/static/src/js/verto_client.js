@@ -609,20 +609,19 @@ export class VertoClient {
             
             await this._waitForIceGathering();
             
-            const destinationWithDomain = this._appendDomain(destination);
             const callId = this._generateUUID();
-            this.currentCall = { callId, destination: destinationWithDomain };
+            this.currentCall = { callId, destination };
 
             await this._sendRpc('verto.invite', {
                 sessid: this.sessionId,
                 sdp: this.peerConnection.localDescription.sdp,
                 dialogParams: {
                     callID: callId,
-                    destination_number: destinationWithDomain,
+                    destination_number: destination,
                     caller_id_name: this.callerName,
                     caller_id_number: this.callerNumber,
-                    remote_caller_id_name: destinationWithDomain,
-                    remote_caller_id_number: destinationWithDomain,
+                    remote_caller_id_name: destination,
+                    remote_caller_id_number: destination,
                     useVideo: false,
                     useStereo: false
                 }
