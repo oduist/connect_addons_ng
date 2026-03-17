@@ -29,5 +29,8 @@
     <load module="mod_sndfile"/>
     <load module="mod_native_file"/>
     <load module="mod_tone_stream"/>
+
+    <!-- TTS -->
+    <load module="mod_piper_tts"/>
   </modules>
 </configuration>

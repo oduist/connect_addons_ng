@@ -2,6 +2,8 @@
 
 Docker image of FreeSWITCH with configuration for integration with Odoo connect_freeswitch module.
 
+Includes [mod_piper_tts](https://github.com/aks-devs/mod_piper_tts) for local neural text-to-speech via [Piper](https://github.com/rhasspy/piper), compiled in a multi-stage Docker build with English and Russian voice models.
+
 ## Building the Image
 
 ```bash
