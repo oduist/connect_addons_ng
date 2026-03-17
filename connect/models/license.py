@@ -371,7 +371,7 @@ class OduistLicense(models.Model):
             if subscribe_email:
                 request_data["subscribe_email"] = subscribe_email
 
-        license_check_url = urljoin(base_url, "/license/v2/check")
+        license_check_url = urljoin(base_url, "/license/v1/check")
         response = rpc(license_check_url, request_data)
         if response.get("error"):
             error_msg = response.get("error")
@@ -472,7 +472,7 @@ class OduistLicense(models.Model):
             if main_company.zip:
                 request_data["vat_postcode"] = main_company.zip
 
-        license_buy_url = urljoin(base_url, "/license/v2/buy")
+        license_buy_url = urljoin(base_url, "/license/v1/buy")
         response = rpc(license_buy_url, request_data)
         if response.get("error"):
             raise ValidationError(response.get("error"))
