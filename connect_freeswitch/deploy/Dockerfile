@@ -1,4 +1,4 @@
-FROM safarov/freeswitch:latest
+FROM --platform=linux/amd64 safarov/freeswitch:latest
 
 # Copy FreeSWITCH configuration files
 COPY freeswitch/conf /etc/freeswitch
