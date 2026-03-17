@@ -263,6 +263,7 @@ class FreeSwitchXMLController(http.Controller):
     def _route_internal(self, context_el, destination, params):
         """Route internal calls: extensions, outgoing routes, system extensions."""
         Exten = request.env['connect.exten'].sudo()
+        ConnectUser = request.env['connect.user'].sudo()
 
         # System extensions
         self._add_system_extensions(context_el)
@@ -271,6 +272,15 @@ class FreeSwitchXMLController(http.Controller):
         exten = Exten.search([('number', '=', destination)], limit=1)
         if exten:
             exten.generate_dialplan(context_el, params)
+            return
+
+        # Try user by username (handles transfers that use username instead of extension)
+        connect_user = ConnectUser.search([
+            ('username', '=', destination),
+            ('active', '=', True)
+        ], limit=1)
+        if connect_user:
+            connect_user.generate_dialplan(context_el, params)
             return
 
         # Try regex pattern match against all extensions
@@ -341,7 +351,8 @@ class FreeSwitchXMLController(http.Controller):
 
         # Global settings
         global_settings = ET.SubElement(config, 'global_settings')
-        ET.SubElement(global_settings, 'param', name='log-level', value='0')
+        sofia_log_level = request.env['connect.settings'].sudo().get_param('freeswitch_sofia_log_level') or '0'
+        ET.SubElement(global_settings, 'param', name='log-level', value=sofia_log_level)
 
         profiles = ET.SubElement(config, 'profiles')
 
