@@ -22,6 +22,9 @@
         <field name="model">connect.user</field>
         <field name="arch" type="xml">
             <form>
+                <header>
+                    <button name="create_extension" type="object" string="Extension" class="btn btn-primary"/>
+                </header>
                 <sheet>
                     <group>
                         <group string="User Info">

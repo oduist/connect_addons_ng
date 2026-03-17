@@ -22,13 +22,6 @@
         <field name="model">connect.user</field>
         <field name="inherit_id" ref="connect.view_connect_user_form"/>
         <field name="arch" type="xml">
-            <!-- Add extension button before the sheet -->
-            <xpath expr="//form/sheet" position="before">
-                <header>
-                    <button name="create_extension" type="object" string="Extension" class="btn btn-primary"/>
-                </header>
-            </xpath>
-
             <!-- Add domain and twilio_edge to User Info group -->
             <xpath expr="//field[@name='active']" position="after">
                 <field name="domain"/>
