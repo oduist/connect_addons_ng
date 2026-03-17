@@ -34,7 +34,8 @@
                                 invisible="partner"/>
                         <button name="transfer_button" type="object"
                                 class="oe_stat_button" icon="fa-exchange"
-                                string="Transfer"/>
+                                string="Transfer"
+                                invisible="status == 'completed'"/>
                     </div>
                     <group>
                         <group string="Call Info">
