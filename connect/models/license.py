@@ -14,17 +14,12 @@ PUBLIC_KEY_PARAM = "oduist_license.public_key"
 ODUIST_MODULES = []
 
 
-def rpc(url: str, request_data: dict) -> dict:
-    """Perform a JSON-RPC call to the specified URL."""
-    payload = {
-        "jsonrpc": "2.0",
-        "method": "call",
-        "params": request_data,
-    }
+def api_call(url: str, request_data: dict) -> dict:
+    """Perform a REST API call to the specified URL."""
     try:
-        res = requests.post(url, json=payload, timeout=30)
+        res = requests.post(url, json=request_data, timeout=30)
         res.raise_for_status()
-        return res.json().get("result", {})
+        return res.json()
     except requests.exceptions.RequestException as e:
         return {"error": f"Request failed: {str(e)}"}
     except Exception as e:
@@ -201,11 +196,11 @@ class OduistLicense(models.Model):
             )
 
             instance_uid = self.sudo().get_param("instance_uid")
-            if payload.get("instance_uid") != instance_uid:
+            if payload.get("instance_hash") != instance_uid:
                 _logger.warning(
                     "Token instance UID mismatch. Expected: %s, Got: %s",
                     instance_uid,
-                    payload.get("instance_uid"),
+                    payload.get("instance_hash"),
                 )
                 return None
 
@@ -353,7 +348,7 @@ class OduistLicense(models.Model):
         country_code = main_company.country_id.code if main_company and main_company.country_id else None
 
         request_data = {
-            "instance_uid": instance_uid,
+            "instance_hash": instance_uid,
             "odoo_version": release.version_info[0],
         }
 
@@ -372,7 +367,7 @@ class OduistLicense(models.Model):
                 request_data["subscribe_email"] = subscribe_email
 
         license_check_url = urljoin(base_url, "/license/v1/check")
-        response = rpc(license_check_url, request_data)
+        response = api_call(license_check_url, request_data)
         if response.get("error"):
             error_msg = response.get("error")
             _logger.debug('License check request failed: %s', error_msg)
@@ -452,7 +447,7 @@ class OduistLicense(models.Model):
         country_code = main_company.country_id.code if main_company and main_company.country_id else None
 
         request_data = {
-            "instance_uid": instance_uid,
+            "instance_hash": instance_uid,
             "modules": module_list,
         }
 
@@ -473,7 +468,7 @@ class OduistLicense(models.Model):
                 request_data["vat_postcode"] = main_company.zip
 
         license_buy_url = urljoin(base_url, "/license/v1/buy")
-        response = rpc(license_buy_url, request_data)
+        response = api_call(license_buy_url, request_data)
         if response.get("error"):
             raise ValidationError(response.get("error"))
 
