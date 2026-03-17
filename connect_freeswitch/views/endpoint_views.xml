@@ -6,7 +6,6 @@
         <field name="inherit_id" ref="connect.view_connect_endpoint_tree"/>
         <field name="arch" type="xml">
             <field name="connect_user_id" position="after">
-                <field name="domain"/>
                 <field name="sip_enabled"/>
                 <field name="webrtc_enabled"/>
             </field>
@@ -19,7 +18,6 @@
         <field name="inherit_id" ref="connect.view_connect_endpoint_form"/>
         <field name="arch" type="xml">
             <field name="active" position="after">
-                <field name="domain"/>
                 <field name="sip_enabled"/>
                 <field name="webrtc_enabled"/>
                 <field name="auth_user" invisible="not sip_enabled and not webrtc_enabled"/>
