@@ -129,10 +129,10 @@ class Channel(models.Model):
             # Link parent
             parent_sid = params.get('parent_sid')
             if parent_sid:
+                data['parent_sid'] = parent_sid
                 parent_channel = self.search([('sid', '=', parent_sid)])
                 if parent_channel:
                     data['parent_channel'] = parent_channel.id
-                    data['parent_sid'] = parent_sid
 
             # Find caller PBX user
             caller_pbx_user = None

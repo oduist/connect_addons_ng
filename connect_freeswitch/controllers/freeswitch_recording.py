@@ -68,6 +68,9 @@ class FreeSwitchRecordingController(http.Controller):
                 vals['call'] = channel.call.id if channel.call else False
                 vals['channel'] = channel.id
                 vals['partner'] = channel.partner.id if channel.partner else False
+                vals['duration'] = channel.duration
+                vals['caller_number'] = channel.caller_number
+                vals['called_number'] = channel.called_number
 
             recording = env.sudo().create(vals)
 
