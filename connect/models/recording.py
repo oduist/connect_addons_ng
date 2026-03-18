@@ -27,8 +27,8 @@ class Recording(models.Model):
     caller_number = fields.Char()
     called_number = fields.Char()
     media_url = fields.Char()
-    recording_data = fields.Binary(attachment=True)
-    recording_filename = fields.Char()
+    recording_filename = fields.Char(readonly=True)
+    recording_attachment = fields.Binary(attachment=True, readonly=True)
     price = fields.Char()
     price_unit = fields.Char()
     source = fields.Char()
@@ -141,10 +141,10 @@ class Recording(models.Model):
     def _get_recording_widget(self):
         proxy_recordings = self.env['connect.settings'].sudo().get_param('proxy_recordings')
         for rec in self:
-            if rec.recording_data:
+            if rec.recording_attachment:
                 media_url = (
                     '/web/content?model=connect.recording'
-                    '&id={}&field=recording_data'
+                    '&id={}&field=recording_attachment'
                     '&filename_field=recording_filename'
                     '&filename={}&download=True'.format(
                         rec.id, rec.recording_filename or 'recording.wav'))

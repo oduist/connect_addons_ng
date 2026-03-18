@@ -61,7 +61,7 @@ class FreeSwitchRecordingController(http.Controller):
                 'call_sid': uuid,
                 'status': 'completed',
                 'source': 'freeswitch',
-                'recording_data': base64.b64encode(file_data),
+                'recording_attachment': base64.b64encode(file_data),
                 'recording_filename': filename,
             }
             if channel:
