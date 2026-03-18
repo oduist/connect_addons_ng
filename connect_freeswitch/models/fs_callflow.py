@@ -104,10 +104,10 @@ class CallFlow(models.Model):
 
         # Call recording
         if self.record_calls:
-            api_url = self.env['connect.settings'].sudo().get_param('api_url') or ''
-            if api_url:
+            base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''
+            if base_url:
                 recording_url = '{}freeswitch/webhook/recording'.format(
-                    api_url if api_url.endswith('/') else api_url + '/')
+                    base_url if base_url.endswith('/') else base_url + '/')
                 ET.SubElement(condition, 'action', application='set',
                     data='RECORD_STEREO=true')
                 ET.SubElement(condition, 'action', application='set',

@@ -13,7 +13,7 @@ class User(models.Model):
         """Generate FreeSWITCH dialplan to bridge to this user's endpoints."""
         self.ensure_one()
         number = exten.number if exten else self.exten_number or self.username
-        api_url = self.env['connect.settings'].sudo().get_param('api_url') or ''
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''
 
         ext = ET.SubElement(context_el, 'extension', name='user_{}'.format(number))
         condition = ET.SubElement(ext, 'condition',
@@ -27,9 +27,9 @@ class User(models.Model):
                 data='odoo_exten_id={}'.format(exten.id))
 
         # Call recording
-        if self.record_calls and api_url:
+        if self.record_calls and base_url:
             recording_url = '{}freeswitch/webhook/recording'.format(
-                api_url if api_url.endswith('/') else api_url + '/')
+                base_url if base_url.endswith('/') else base_url + '/')
             ET.SubElement(condition, 'action', application='set',
                 data='RECORD_STEREO=true')
             ET.SubElement(condition, 'action', application='set',
