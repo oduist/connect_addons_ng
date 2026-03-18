@@ -112,7 +112,7 @@ class CallFlow(models.Model):
                     data='RECORD_STEREO=true')
                 ET.SubElement(condition, 'action', application='set',
                     data='media_bug_answer_req=true')
-                ET.SubElement(condition, 'action', application='export',
+                ET.SubElement(condition, 'action', application='set',
                     data='execute_on_answer=record_session {}/{}.wav'.format(
                         recording_url, '${uuid}'))
 

@@ -44,6 +44,14 @@ class FreeSwitchRecordingController(http.Controller):
                 request.env.ref('connect.user_connect_webhook').id
             )
 
+            # Skip if recording for this UUID already exists (both legs
+            # may attempt to upload the same recording)
+            existing = env.sudo().search([('call_sid', '=', uuid)], limit=1)
+            if existing:
+                logger.info('Recording for UUID %s already exists (id=%s), skipping',
+                    uuid, existing.id)
+                return Response('OK', status=200)
+
             # Try to find the channel, but don't fail if not found yet —
             # the CDR handler will link the recording later.
             channel = request.env['connect.channel'].sudo().search(
@@ -61,7 +69,7 @@ class FreeSwitchRecordingController(http.Controller):
 
             recording = env.sudo().create(vals)
 
-            # Store the recording file as an attachment
+            # Store the recording file as a public attachment
             attachment = request.env['ir.attachment'].sudo().create({
                 'name': filename,
                 'type': 'binary',
@@ -69,6 +77,7 @@ class FreeSwitchRecordingController(http.Controller):
                 'res_model': 'connect.recording',
                 'res_id': recording.id,
                 'mimetype': 'audio/wav',
+                'public': True,
             })
 
             # Set media_url to the attachment download URL
