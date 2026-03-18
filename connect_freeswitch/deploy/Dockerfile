@@ -115,7 +115,7 @@ FROM --platform=linux/amd64 debian:bookworm-slim
 # Runtime dependencies only
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl3 libcurl4 libpcre3 libsqlite3-0 \
-    libedit2 zlib1g libuuid1 libspeexdsp1 \
+    libedit2 zlib1g libuuid1 libspeex1 libspeexdsp1 \
     libopus0 libsndfile1 libtiff6 libjpeg62-turbo \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -125,7 +125,7 @@ COPY --from=builder /usr/local/freeswitch /usr/local/freeswitch
 
 # Shared libraries built from source (sofia-sip, spandsp, libks)
 COPY --from=builder /usr/lib/libsofia-sip-ua* /usr/lib/
-COPY --from=builder /usr/lib/libspandsp* /usr/lib/
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libspandsp* /usr/lib/
 COPY --from=builder /usr/lib/libks* /usr/lib/
 
 # Piper TTS binary + voice models
