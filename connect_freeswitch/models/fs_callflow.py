@@ -116,6 +116,10 @@ class CallFlow(models.Model):
                     data='execute_on_answer=record_session {}/{}.wav'.format(
                         recording_url, '${uuid}'))
 
+        # Export parent UUID to B-leg for CDR linking
+        ET.SubElement(condition, 'action', application='export',
+            data='nolocal:odoo_parent_uuid=${uuid}')
+
         ET.SubElement(condition, 'action', application='set', data='call_timeout=30')
         ET.SubElement(condition, 'action', application='set', data='hangup_after_bridge=true')
 
@@ -142,6 +146,8 @@ class CallFlow(models.Model):
 
         ET.SubElement(parent_el, 'action', application='set',
             data='odoo_called_user_id={}'.format(user.id))
+        ET.SubElement(parent_el, 'action', application='export',
+            data='nolocal:odoo_parent_uuid=${uuid}')
         ET.SubElement(parent_el, 'action', application='set', data='call_timeout=30')
         ET.SubElement(parent_el, 'action', application='set', data='hangup_after_bridge=true')
         ET.SubElement(parent_el, 'action', application='set', data='continue_on_fail=true')

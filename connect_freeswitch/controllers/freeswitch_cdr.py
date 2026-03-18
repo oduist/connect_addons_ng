@@ -114,8 +114,10 @@ class FreeSwitchCDRController(http.Controller):
                 else:
                     caller_pbx_user_id = int(odoo_user)
 
-            other_leg_uuid = self._xml_text(
-                variables, 'Other-Leg-Unique-ID')
+            other_leg_uuid = (
+                self._xml_text(variables, 'odoo_parent_uuid')
+                or self._xml_text(variables, 'Other-Leg-Unique-ID')
+            )
 
         return {
             'uuid': uuid,
