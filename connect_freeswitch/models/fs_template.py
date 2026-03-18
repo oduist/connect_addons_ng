@@ -40,11 +40,11 @@ class FreeSwitchTemplate(models.Model):
     def write(self, vals):
         result = super().write(vals)
         if 'content' in vals:
-            self._get_template_content.clear_cache(self)
+            self.env.registry.clear_cache()
         return result
 
     def unlink(self):
-        self._get_template_content.clear_cache(self)
+        self.env.registry.clear_cache()
         return super().unlink()
 
     def reset_to_default(self):
