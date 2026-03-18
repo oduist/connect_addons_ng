@@ -143,6 +143,9 @@ COPY freeswitch/conf /usr/local/freeswitch/conf
 ENV ODOO_URL=http://localhost:8069 \
     SOUND_RATES=8000:16000 \
     SOUND_TYPES=music:en-us-callie \
+    EPMD=false \
+    DUMPCAP=false \
+    FS_DOMAIN=localhost \
     FS_LOG_LEVEL=info \
     FS_SOFIA_LOG_LEVEL=0
 

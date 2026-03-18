@@ -125,9 +125,11 @@ class FreeSwitchXMLController(http.Controller):
 
         # Build dial-string so that bridge(user/1000) works
         # This tells FS to ring both SIP and Verto endpoints for this user
+        # For sofia_contact, use auth_user (the SIP registration username)
+        # For verto_contact, use xml_user_id (the extension number used for Verto login)
         dial_parts = []
         if endpoint.sip_enabled:
-            dial_parts.append(f"${{sofia_contact(*/{xml_user_id}@{actual_domain})}}")
+            dial_parts.append(f"${{sofia_contact(*/{endpoint.auth_user}@{actual_domain})}}")
         if endpoint.webrtc_enabled:
             dial_parts.append(f"${{verto_contact({xml_user_id}@{actual_domain})}}")
 
@@ -367,6 +369,7 @@ class FreeSwitchXMLController(http.Controller):
         ET.SubElement(settings, 'param', name='sip-port', value='5080')
         ET.SubElement(settings, 'param', name='rtp-timer-name', value='soft')
         ET.SubElement(settings, 'param', name='codec-prefs', value='OPUS,PCMU,PCMA')
+        ET.SubElement(settings, 'param', name='auth-calls', value='true')
 
         fs_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain')
         if fs_domain:
