@@ -66,6 +66,7 @@ FreeSWITCH requires the following ports:
 | 16000-17000 | UDP | RTP media — voice audio packets |
 | 65060 | UDP | SIP signaling (if using SIP phones) |
 | 7443 | TCP | SIP WebSocket Secure (if using SIP over WSS) |
+| 8080 | TCP | mod_xml_rpc (Odoo → FreeSWITCH commands, internal only) |
 
 ```bash
 sudo ufw allow 48082/tcp
@@ -85,6 +86,20 @@ Navigate to **Connect > Configuration > Settings** and open the **FreeSWITCH** t
 | Field | Description |
 |-------|-------------|
 | **WebSocket URL** | Verto WSS URL for the browser phone (e.g., `wss://fs.example.com:48082`). |
+| **Domain** | SIP domain for FreeSWITCH registrations and routing. |
+
+#### XML-RPC
+
+XML-RPC settings enable Odoo to push commands to FreeSWITCH (e.g., reload gateway configuration after changes). This requires `mod_xml_rpc` to be loaded on the FreeSWITCH side.
+
+| Field | Description |
+|-------|-------------|
+| **XML-RPC Host** | FreeSWITCH server hostname or IP (e.g., `fs.example.com`). |
+| **XML-RPC Port** | mod_xml_rpc port (default: 8080). |
+| **XML-RPC User** | mod_xml_rpc username. |
+| **XML-RPC Password** | mod_xml_rpc password. |
+
+When configured, Odoo automatically sends `sofia profile external restart reloadxml` to FreeSWITCH whenever SIP gateways are created, modified, or deleted. This ensures FreeSWITCH picks up gateway changes immediately without manual intervention.
 
 ### Endpoints
 

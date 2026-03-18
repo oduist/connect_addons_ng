@@ -30,6 +30,27 @@ class FreeSwitchGateway(models.Model):
             ('name_uniq', 'UNIQUE(name)', 'Gateway name must be unique!'),
         ]
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        self._reload_sofia_profile()
+        return records
+
+    def write(self, vals):
+        result = super().write(vals)
+        self._reload_sofia_profile()
+        return result
+
+    def unlink(self):
+        result = super().unlink()
+        self._reload_sofia_profile()
+        return result
+
+    def _reload_sofia_profile(self):
+        """Ask FreeSWITCH to restart the external sofia profile and reload XML."""
+        self.env['connect.settings'].freeswitch_api(
+            'sofia', 'profile external restart reloadxml')
+
     def generate_sofia_gateway_xml(self, parent_el):
         """Generate FreeSWITCH gateway XML element."""
         from xml.etree import ElementTree as ET

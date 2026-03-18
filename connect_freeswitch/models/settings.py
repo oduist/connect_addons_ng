@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
+import logging
+import xmlrpc.client
+
 from odoo import api, fields, models
 from odoo.addons.connect.models.license import ODUIST_MODULES
 
 ODUIST_MODULES.append('connect_freeswitch')
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(models.Model):
@@ -50,6 +55,47 @@ class Settings(models.Model):
         help="Sofia SIP module log verbosity (0-9). "
              "Pass as FS_SOFIA_LOG_LEVEL env var to the container.",
     )
+    freeswitch_xmlrpc_host = fields.Char(
+        string="XML-RPC Host",
+        help="FreeSWITCH XML-RPC host (e.g. fs.example.com)",
+    )
+    freeswitch_xmlrpc_port = fields.Integer(
+        string="XML-RPC Port",
+        default=8080,
+        help="FreeSWITCH mod_xml_rpc port (default: 8080)",
+    )
+    freeswitch_xmlrpc_user = fields.Char(
+        string="XML-RPC User",
+        help="FreeSWITCH mod_xml_rpc username",
+    )
+    freeswitch_xmlrpc_password = fields.Char(
+        string="XML-RPC Password",
+        help="FreeSWITCH mod_xml_rpc password",
+    )
+
+    @api.model
+    def freeswitch_api(self, command, args=''):
+        """Execute a FreeSWITCH API command via mod_xml_rpc.
+
+        Returns the command response string, or False on failure.
+        Errors are logged but never raised to avoid blocking callers.
+        """
+        host = self.get_param('freeswitch_xmlrpc_host')
+        port = self.get_param('freeswitch_xmlrpc_port') or 8080
+        user = self.get_param('freeswitch_xmlrpc_user')
+        password = self.sudo().get_param('freeswitch_xmlrpc_password')
+        if not host:
+            logger.warning("FreeSWITCH XML-RPC host not configured")
+            return False
+        url = "http://{}:{}@{}:{}/RPC2".format(user, password, host, port)
+        try:
+            server = xmlrpc.client.ServerProxy(url)
+            result = server.freeswitch.api(command, args)
+            logger.info("FreeSWITCH API %s %s: %s", command, args, result)
+            return result
+        except Exception as e:
+            logger.error("FreeSWITCH XML-RPC error: %s", e)
+            return False
 
     @api.model
     def get_webrtc_config(self):
