@@ -5,6 +5,8 @@
     <param name="max-urls" value="10000"/>
     <param name="location" value="/tmp/http_cache"/>
     <param name="default-max-age" value="86400"/>
+    <param name="ssl-cacert" value="/etc/ssl/certs/ca-certificates.crt"/>
+    <param name="ssl-verifypeer" value="true"/>
   </settings>
   <profiles>
     <profile name="default">
