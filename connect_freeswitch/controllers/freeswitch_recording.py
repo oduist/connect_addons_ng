@@ -1,14 +1,10 @@
 import base64
 import logging
-import time
 
 from odoo import http
 from odoo.http import request, Response
 
 logger = logging.getLogger(__name__)
-
-MAX_RETRIES = 5
-RETRY_DELAY = 0.5  # seconds
 
 
 class FreeSwitchRecordingController(http.Controller):
@@ -16,7 +12,8 @@ class FreeSwitchRecordingController(http.Controller):
 
     FreeSWITCH posts recording files via record_session with an HTTP URL.
     The upload (PUT) may arrive before the CDR webhook creates the channel
-    record, so we retry the channel lookup a few times.
+    record, so we save the recording with just the UUID (call_sid) and
+    link it to the channel later when processing the CDR.
     """
 
     @http.route(
@@ -47,31 +44,22 @@ class FreeSwitchRecordingController(http.Controller):
                 request.env.ref('connect.user_connect_webhook').id
             )
 
-            # Find the channel by UUID (sid), retry if not yet created by CDR
-            channel = None
-            for attempt in range(MAX_RETRIES):
-                channel = request.env['connect.channel'].sudo().search(
-                    [('sid', '=', uuid)], limit=1)
-                if channel:
-                    break
-                if attempt < MAX_RETRIES - 1:
-                    request.env.cr.rollback()
-                    time.sleep(RETRY_DELAY)
+            # Try to find the channel, but don't fail if not found yet —
+            # the CDR handler will link the recording later.
+            channel = request.env['connect.channel'].sudo().search(
+                [('sid', '=', uuid)], limit=1)
 
-            if not channel:
-                logger.warning('Recording webhook: channel not found for UUID %s after %d retries',
-                    uuid, MAX_RETRIES)
-                return Response('Channel not found', status=404)
-
-            # Create recording with the file as an attachment
-            recording = env.sudo().create({
-                'call': channel.call.id if channel.call else False,
-                'channel': channel.id,
+            vals = {
                 'call_sid': uuid,
-                'partner': channel.partner.id if channel.partner else False,
                 'status': 'completed',
                 'source': 'freeswitch',
-            })
+            }
+            if channel:
+                vals['call'] = channel.call.id if channel.call else False
+                vals['channel'] = channel.id
+                vals['partner'] = channel.partner.id if channel.partner else False
+
+            recording = env.sudo().create(vals)
 
             # Store the recording file as an attachment
             attachment = request.env['ir.attachment'].sudo().create({
@@ -88,8 +76,8 @@ class FreeSwitchRecordingController(http.Controller):
                 'media_url': '/web/content/{}?download=true'.format(attachment.id),
             })
 
-            logger.info('Recording created: id=%s, channel=%s, size=%d bytes',
-                recording.id, uuid, len(file_data))
+            logger.info('Recording created: id=%s, uuid=%s, channel=%s, size=%d bytes',
+                recording.id, uuid, channel.id if channel else 'pending', len(file_data))
 
         except Exception as e:
             logger.exception('Failed to process recording for %s: %s', uuid, e)

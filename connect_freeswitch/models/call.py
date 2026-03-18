@@ -78,4 +78,21 @@ class Call(models.Model):
 
         channel = self.env['connect.channel'].process_channel_event(
             generic_params)
-        return self.process_call_event(channel)
+        call = self.process_call_event(channel)
+
+        # Link any recording that arrived before the CDR created the channel
+        if channel:
+            orphan_recordings = self.env['connect.recording'].search([
+                ('call_sid', '=', cdr_data['uuid']),
+                ('channel', '=', False),
+            ])
+            if orphan_recordings:
+                orphan_recordings.write({
+                    'channel': channel.id,
+                    'call': channel.call.id if channel.call else False,
+                    'partner': channel.partner.id if channel.partner else False,
+                })
+                logger.info('Linked %d orphan recording(s) to channel %s',
+                    len(orphan_recordings), cdr_data['uuid'])
+
+        return call
