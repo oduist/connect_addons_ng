@@ -25,21 +25,20 @@
                     <group>
                         <group string="General">
                             <field name="name"/>
-                            <field name="prompt_message"/>
                             <field name="exten" readonly="1"/>
                             <field name="exten_number" readonly="1"/>
                             <field name="language"/>
                             <field name="voice"/>
                             <field name="record_calls"/>
+                            <field name="gather_input"/>
                         </group>
                         <group string="Voicemail">
                             <field name="voicemail_enabled"/>
                             <field name="voicemail_prompt" invisible="not voicemail_enabled"/>
                         </group>
                     </group>
-                    <group string="Gather Input" invisible="not gather_input">
+                    <group string="Gather Settings" invisible="not gather_input">
                         <group>
-                            <field name="gather_input"/>
                             <field name="gather_input_type"/>
                             <field name="gather_timeout"/>
                             <field name="gather_digits"/>
@@ -47,11 +46,10 @@
                         </group>
                     </group>
                     <group invisible="not gather_input">
-                        <field name="gather_input" invisible="gather_input"/>
-                        <group string="Prompt Message" invisible="not gather_input">
+                        <group string="Prompt Message">
                             <field name="prompt_message" nolabel="1" colspan="2"/>
                         </group>
-                        <group string="Invalid Input Message" invisible="not gather_input">
+                        <group string="Invalid Input Message">
                             <field name="invalid_input_message" nolabel="1" colspan="2"/>
                         </group>
                     </group>
