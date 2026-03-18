@@ -15,6 +15,15 @@
                             <field name="freeswitch_domain"
                                    placeholder="fs.example.com"/>
                         </group>
+                        <group string="XML-RPC">
+                            <field name="freeswitch_xmlrpc_host"
+                                   placeholder="fs.example.com"/>
+                            <field name="freeswitch_xmlrpc_port"/>
+                            <field name="freeswitch_xmlrpc_user"
+                                   placeholder="freeswitch"/>
+                            <field name="freeswitch_xmlrpc_password"
+                                   password="True"/>
+                        </group>
                     </group>
                     <group>
                         <group string="Log Levels">
