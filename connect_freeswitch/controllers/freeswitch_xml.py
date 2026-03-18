@@ -334,6 +334,8 @@ class FreeSwitchXMLController(http.Controller):
 
         if key_value == 'sofia.conf':
             return self._get_sofia_config(params)
+        elif key_value == 'xml_rpc.conf':
+            return self._get_xml_rpc_config(params)
 
         return self._not_found()
 
@@ -380,6 +382,30 @@ class FreeSwitchXMLController(http.Controller):
         gateways_el = ET.SubElement(profile, 'gateways')
         for gw in gateways:
             gw.generate_sofia_gateway_xml(gateways_el)
+
+        return self._xml_response(root)
+
+    def _get_xml_rpc_config(self, params):
+        """Serve xml_rpc.conf with credentials from Odoo settings."""
+        settings = request.env['connect.settings'].sudo()
+        user = settings.get_param('freeswitch_xmlrpc_user')
+        password = settings.get_param('freeswitch_xmlrpc_password')
+
+        if not user or not password:
+            return self._not_found()
+
+        port = str(settings.get_param('freeswitch_xmlrpc_port') or 8080)
+
+        root = ET.Element('document', type='freeswitch/xml')
+        section = ET.SubElement(root, 'section', name='configuration')
+        config = ET.SubElement(section, 'configuration',
+            name='xml_rpc.conf', description='XML RPC')
+
+        settings_el = ET.SubElement(config, 'settings')
+        ET.SubElement(settings_el, 'param', name='http-port', value=port)
+        ET.SubElement(settings_el, 'param', name='auth-user', value=user)
+        ET.SubElement(settings_el, 'param', name='auth-pass', value=password)
+        ET.SubElement(settings_el, 'param', name='auth-realm', value='freeswitch')
 
         return self._xml_response(root)
 
