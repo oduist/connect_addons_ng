@@ -399,7 +399,7 @@ class OduistLicense(models.Model):
                         vals = {}
                         if module_info.get("latest_version"):
                             vals["latest_version"] = module_info.get("latest_version")
-                        if module_info.get("price"):
+                        if module_info.get("price") is not None:
                             vals["oduist_module_price"] = module_info.get("price")
                         if vals:
                             module.write(vals)
