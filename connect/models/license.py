@@ -347,9 +347,13 @@ class OduistLicense(models.Model):
         main_company = self.env["res.company"].search([], order="id", limit=1)
         country_code = main_company.country_id.code if main_company and main_company.country_id else None
 
+        license_record = License.search([], limit=1)
+        installed_modules = license_record.oduist_modules.mapped("name") if license_record else []
+
         request_data = {
             "instance_hash": instance_uid,
             "odoo_version": release.version_info[0],
+            "installed_modules": installed_modules,
         }
 
         if country_code:
