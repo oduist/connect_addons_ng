@@ -113,18 +113,25 @@ class FreeSwitchCDRController(http.Controller):
             if effective_caller and not caller.isdigit():
                 caller = effective_caller
 
-            odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
-            if odoo_user:
-                # The user who owns this channel leg
-                if direction == 'inbound':
-                    called_pbx_user_id = int(odoo_user)
-                else:
-                    caller_pbx_user_id = int(odoo_user)
-
             other_leg_uuid = (
                 self._xml_text(variables, 'odoo_parent_uuid')
                 or self._xml_text(variables, 'Other-Leg-Unique-ID')
             )
+
+            odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
+            odoo_called_user = self._xml_text(
+                variables, 'odoo_called_user_id')
+            if other_leg_uuid:
+                # B-leg: odoo_connect_user_id is the called user
+                if odoo_user:
+                    called_pbx_user_id = int(odoo_user)
+            else:
+                # A-leg: odoo_connect_user_id is the caller,
+                # odoo_called_user_id is the called user
+                if odoo_user:
+                    caller_pbx_user_id = int(odoo_user)
+                if odoo_called_user:
+                    called_pbx_user_id = int(odoo_called_user)
 
         return {
             'uuid': uuid,
