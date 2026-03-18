@@ -1,6 +1,5 @@
 import logging
 import re
-from xml.etree import ElementTree as ET
 from odoo import fields, models
 
 logger = logging.getLogger(__name__)
@@ -29,8 +28,8 @@ class FreeSwitchOutgoingRoute(models.Model):
             number = prefix + number
         return 'sofia/gateway/{}/{}'.format(gateway_name, number)
 
-    def generate_dialplan(self, context_el, params):
-        """Generate outgoing route dialplan for matching routes."""
+    def generate_dialplan(self, params):
+        """Generate outgoing route dialplan for matching routes. Returns XML string or empty string."""
         destination = params.get('Caller-Destination-Number', '')
         routes = self.sudo().search([('active', '=', True)])
 
@@ -38,19 +37,14 @@ class FreeSwitchOutgoingRoute(models.Model):
             if not re.match(route.pattern, destination):
                 continue
 
-            ext = ET.SubElement(context_el, 'extension', name='outgoing_{}'.format(route.id))
-            condition = ET.SubElement(ext, 'condition',
-                field='destination_number', expression=route.pattern)
-            ET.SubElement(condition, 'action', application='set',
-                data='odoo_call_direction=outgoing')
-            # Force PSTN-compatible codecs for the outbound leg
-            ET.SubElement(condition, 'action', application='export',
-                data='nolocal:absolute_codec_string=PCMU,PCMA')
-
             bridge_data = self._build_bridge_data(
                 route.gateway.name, destination,
                 strip=route.strip, prefix=route.prefix or '')
-            ET.SubElement(condition, 'action', application='bridge', data=bridge_data)
-            return True
 
-        return False
+            return self.env['connect.freeswitch.template'].render('dialplan_outgoing_route', {
+                'route_id': route.id,
+                'pattern': route.pattern,
+                'bridge_data': bridge_data,
+            })
+
+        return ''

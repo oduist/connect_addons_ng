@@ -1,0 +1,532 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <!-- ==================== DIRECTORY TEMPLATES ==================== -->
+
+    <record id="fs_template_directory_user" model="connect.freeswitch.template">
+        <field name="key">directory_user</field>
+        <field name="name">Directory - Single User</field>
+        <field name="section">directory</field>
+        <field name="description">Single user directory entry for authentication and endpoint lookup.
+
+Variables:
+  xml_user_id    - User ID as requested by FreeSWITCH
+  password       - Endpoint auth password
+  dial_string    - Combined SIP/Verto dial string
+  cid_name       - Caller ID name
+  cid_num        - Caller ID number
+  connect_user_id - connect.user record ID
+  endpoint_id    - connect.endpoint record ID
+  odoo_user_id   - res.users record ID (may be empty)</field>
+        <field name="content"><![CDATA[<user id="{{ xml_user_id }}">
+  <params>
+    <param name="password" value="{{ password }}"/>
+    <param name="vm-password" value="{{ password }}"/>
+    <param name="dial-string" value="{{ dial_string }}"/>
+    <param name="verto-context" value="default"/>
+    <param name="verto-dialplan" value="XML"/>
+    <param name="jsonrpc-allowed-methods" value="verto"/>
+    <param name="jsonrpc-allowed-event-channels" value="demo,presence,conference"/>
+  </params>
+  <variables>
+    <variable name="user_context" value="default"/>
+    <variable name="effective_caller_id_name" value="{{ cid_name }}"/>
+    <variable name="effective_caller_id_number" value="{{ cid_num }}"/>
+    <variable name="outbound_caller_id_name" value="{{ cid_name }}"/>
+    <variable name="outbound_caller_id_number" value="{{ cid_num }}"/>
+    <variable name="odoo_connect_user_id" value="{{ connect_user_id }}"/>
+    <variable name="odoo_endpoint_id" value="{{ endpoint_id }}"/>
+    {% if odoo_user_id %}
+    <variable name="odoo_user_id" value="{{ odoo_user_id }}"/>
+    {% endif %}
+  </variables>
+</user>]]></field>
+        <field name="default_content"><![CDATA[<user id="{{ xml_user_id }}">
+  <params>
+    <param name="password" value="{{ password }}"/>
+    <param name="vm-password" value="{{ password }}"/>
+    <param name="dial-string" value="{{ dial_string }}"/>
+    <param name="verto-context" value="default"/>
+    <param name="verto-dialplan" value="XML"/>
+    <param name="jsonrpc-allowed-methods" value="verto"/>
+    <param name="jsonrpc-allowed-event-channels" value="demo,presence,conference"/>
+  </params>
+  <variables>
+    <variable name="user_context" value="default"/>
+    <variable name="effective_caller_id_name" value="{{ cid_name }}"/>
+    <variable name="effective_caller_id_number" value="{{ cid_num }}"/>
+    <variable name="outbound_caller_id_name" value="{{ cid_name }}"/>
+    <variable name="outbound_caller_id_number" value="{{ cid_num }}"/>
+    <variable name="odoo_connect_user_id" value="{{ connect_user_id }}"/>
+    <variable name="odoo_endpoint_id" value="{{ endpoint_id }}"/>
+    {% if odoo_user_id %}
+    <variable name="odoo_user_id" value="{{ odoo_user_id }}"/>
+    {% endif %}
+  </variables>
+</user>]]></field>
+    </record>
+
+    <record id="fs_template_directory_full" model="connect.freeswitch.template">
+        <field name="key">directory_full</field>
+        <field name="name">Directory - Full</field>
+        <field name="section">directory</field>
+        <field name="description">Full directory with all active endpoints. Used for bulk registration requests.
+
+Variables:
+  endpoints - List of dicts, each with:
+    auth_user        - SIP registration username
+    password         - Auth password
+    cid_name         - Caller ID name
+    cid_num          - Caller ID number
+    connect_user_id  - connect.user record ID
+    endpoint_id      - connect.endpoint record ID
+    odoo_user_id     - res.users record ID (may be empty)</field>
+        <field name="content"><![CDATA[{% for ep in endpoints %}
+<user id="{{ ep.auth_user }}">
+  <params>
+    <param name="password" value="{{ ep.password }}"/>
+    <param name="vm-password" value="{{ ep.password }}"/>
+    <param name="verto-context" value="default"/>
+    <param name="verto-dialplan" value="XML"/>
+    <param name="jsonrpc-allowed-methods" value="verto"/>
+    <param name="jsonrpc-allowed-event-channels" value="demo,presence,conference"/>
+  </params>
+  <variables>
+    <variable name="user_context" value="default"/>
+    <variable name="effective_caller_id_name" value="{{ ep.cid_name }}"/>
+    <variable name="effective_caller_id_number" value="{{ ep.cid_num }}"/>
+    <variable name="outbound_caller_id_name" value="{{ ep.cid_name }}"/>
+    <variable name="outbound_caller_id_number" value="{{ ep.cid_num }}"/>
+    <variable name="odoo_connect_user_id" value="{{ ep.connect_user_id }}"/>
+    <variable name="odoo_endpoint_id" value="{{ ep.endpoint_id }}"/>
+    {% if ep.odoo_user_id %}
+    <variable name="odoo_user_id" value="{{ ep.odoo_user_id }}"/>
+    {% endif %}
+  </variables>
+</user>
+{% endfor %}]]></field>
+        <field name="default_content"><![CDATA[{% for ep in endpoints %}
+<user id="{{ ep.auth_user }}">
+  <params>
+    <param name="password" value="{{ ep.password }}"/>
+    <param name="vm-password" value="{{ ep.password }}"/>
+    <param name="verto-context" value="default"/>
+    <param name="verto-dialplan" value="XML"/>
+    <param name="jsonrpc-allowed-methods" value="verto"/>
+    <param name="jsonrpc-allowed-event-channels" value="demo,presence,conference"/>
+  </params>
+  <variables>
+    <variable name="user_context" value="default"/>
+    <variable name="effective_caller_id_name" value="{{ ep.cid_name }}"/>
+    <variable name="effective_caller_id_number" value="{{ ep.cid_num }}"/>
+    <variable name="outbound_caller_id_name" value="{{ ep.cid_name }}"/>
+    <variable name="outbound_caller_id_number" value="{{ ep.cid_num }}"/>
+    <variable name="odoo_connect_user_id" value="{{ ep.connect_user_id }}"/>
+    <variable name="odoo_endpoint_id" value="{{ ep.endpoint_id }}"/>
+    {% if ep.odoo_user_id %}
+    <variable name="odoo_user_id" value="{{ ep.odoo_user_id }}"/>
+    {% endif %}
+  </variables>
+</user>
+{% endfor %}]]></field>
+    </record>
+
+    <!-- ==================== DIALPLAN TEMPLATES ==================== -->
+
+    <record id="fs_template_dialplan_user_bridge" model="connect.freeswitch.template">
+        <field name="key">dialplan_user_bridge</field>
+        <field name="name">Dialplan - User Bridge</field>
+        <field name="section">dialplan</field>
+        <field name="description">Bridge a call to a user's SIP/WebRTC endpoints.
+
+Variables:
+  number          - Extension number (escaped for regex)
+  user_id         - connect.user record ID
+  exten_id        - connect.exten record ID (may be empty)
+  record_calls    - Boolean, whether to record the call
+  recording_url   - URL for recording webhook (if record_calls)
+  fs_domain       - FreeSWITCH SIP domain</field>
+        <field name="content"><![CDATA[<extension name="user_{{ number }}">
+  <condition field="destination_number" expression="^{{ number }}$">
+    <action application="set" data="odoo_called_user_id={{ user_id }}"/>
+    {% if exten_id %}
+    <action application="set" data="odoo_exten_id={{ exten_id }}"/>
+    {% endif %}
+    {% if record_calls and recording_url %}
+    <action application="set" data="RECORD_STEREO=true"/>
+    <action application="set" data="media_bug_answer_req=true"/>
+    <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
+    {% endif %}
+    <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="set" data="call_timeout=30"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="bridge" data="user/{{ number }}@{{ fs_domain }}"/>
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="user_{{ number }}">
+  <condition field="destination_number" expression="^{{ number }}$">
+    <action application="set" data="odoo_called_user_id={{ user_id }}"/>
+    {% if exten_id %}
+    <action application="set" data="odoo_exten_id={{ exten_id }}"/>
+    {% endif %}
+    {% if record_calls and recording_url %}
+    <action application="set" data="RECORD_STEREO=true"/>
+    <action application="set" data="media_bug_answer_req=true"/>
+    <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
+    {% endif %}
+    <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="set" data="call_timeout=30"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="bridge" data="user/{{ number }}@{{ fs_domain }}"/>
+  </condition>
+</extension>]]></field>
+    </record>
+
+    <record id="fs_template_dialplan_ivr" model="connect.freeswitch.template">
+        <field name="key">dialplan_ivr</field>
+        <field name="name">Dialplan - IVR</field>
+        <field name="section">dialplan</field>
+        <field name="description">Interactive Voice Response with play_and_get_digits and inline choice conditions.
+
+Variables:
+  callflow_id     - connect.callflow record ID
+  number          - Extension number (escaped for regex)
+  pgd_data        - play_and_get_digits parameter string
+  var_name        - Channel variable name for collected digits
+  choices         - List of dicts, each with:
+    digits_escaped  - Choice digits (escaped for regex)
+    dst_type        - Destination type: 'user' or 'other'
+    user_id         - connect.user ID (if dst_type == 'user')
+    user_number     - User extension number (if dst_type == 'user')
+    transfer_target - Transfer destination (if dst_type == 'other')
+  fs_domain       - FreeSWITCH SIP domain</field>
+        <field name="content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
+  <condition field="destination_number" expression="^{{ number }}$" break="on-false">
+    <action application="answer"/>
+    <action application="sleep" data="500"/>
+    <action application="play_and_get_digits" data="{{ pgd_data }}"/>
+  </condition>
+  {% for choice in choices %}
+  <condition field="${{{ var_name }}}" expression="^{{ choice.digits_escaped }}$" break="on-true">
+    {% if choice.dst_type == 'user' %}
+    <action application="set" data="odoo_called_user_id={{ choice.user_id }}"/>
+    <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="set" data="call_timeout=30"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="bridge" data="user/{{ choice.user_number }}@{{ fs_domain }}"/>
+    {% else %}
+    <action application="transfer" data="{{ choice.transfer_target }} XML default"/>
+    {% endif %}
+  </condition>
+  {% endfor %}
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
+  <condition field="destination_number" expression="^{{ number }}$" break="on-false">
+    <action application="answer"/>
+    <action application="sleep" data="500"/>
+    <action application="play_and_get_digits" data="{{ pgd_data }}"/>
+  </condition>
+  {% for choice in choices %}
+  <condition field="${{{ var_name }}}" expression="^{{ choice.digits_escaped }}$" break="on-true">
+    {% if choice.dst_type == 'user' %}
+    <action application="set" data="odoo_called_user_id={{ choice.user_id }}"/>
+    <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="set" data="call_timeout=30"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="bridge" data="user/{{ choice.user_number }}@{{ fs_domain }}"/>
+    {% else %}
+    <action application="transfer" data="{{ choice.transfer_target }} XML default"/>
+    {% endif %}
+  </condition>
+  {% endfor %}
+</extension>]]></field>
+    </record>
+
+    <record id="fs_template_dialplan_ring_group" model="connect.freeswitch.template">
+        <field name="key">dialplan_ring_group</field>
+        <field name="name">Dialplan - Ring Group</field>
+        <field name="section">dialplan</field>
+        <field name="description">Ring group that bridges to multiple users simultaneously.
+
+Variables:
+  callflow_id     - connect.callflow record ID
+  number          - Extension number (escaped for regex)
+  exten_id        - connect.exten record ID (may be empty)
+  record_calls    - Boolean, whether to record the call
+  recording_url   - URL for recording webhook (if record_calls)
+  bridge_string   - Comma-separated bridge endpoints
+</field>
+        <field name="content"><![CDATA[<extension name="callflow_ring_{{ callflow_id }}">
+  <condition field="destination_number" expression="^{{ number }}$">
+    {% if exten_id %}
+    <action application="set" data="odoo_exten_id={{ exten_id }}"/>
+    {% endif %}
+    {% if record_calls and recording_url %}
+    <action application="set" data="RECORD_STEREO=true"/>
+    <action application="set" data="media_bug_answer_req=true"/>
+    <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
+    {% endif %}
+    <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="set" data="call_timeout=30"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    {% if bridge_string %}
+    <action application="bridge" data="{{ bridge_string }}"/>
+    {% endif %}
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="callflow_ring_{{ callflow_id }}">
+  <condition field="destination_number" expression="^{{ number }}$">
+    {% if exten_id %}
+    <action application="set" data="odoo_exten_id={{ exten_id }}"/>
+    {% endif %}
+    {% if record_calls and recording_url %}
+    <action application="set" data="RECORD_STEREO=true"/>
+    <action application="set" data="media_bug_answer_req=true"/>
+    <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
+    {% endif %}
+    <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="set" data="call_timeout=30"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    {% if bridge_string %}
+    <action application="bridge" data="{{ bridge_string }}"/>
+    {% endif %}
+  </condition>
+</extension>]]></field>
+    </record>
+
+    <record id="fs_template_dialplan_inbound_did" model="connect.freeswitch.template">
+        <field name="key">dialplan_inbound_did</field>
+        <field name="name">Dialplan - Inbound DID</field>
+        <field name="section">dialplan</field>
+        <field name="description">Inbound DID routing from PSTN trunks.
+
+Variables:
+  phone_number    - DID phone number
+  number_id       - connect.number record ID
+  destination     - Destination type: 'user' or 'callflow'
+  transfer_target - Extension/number to transfer to (or empty if no destination)</field>
+        <field name="content"><![CDATA[<extension name="did_{{ phone_number }}">
+  <condition field="destination_number" expression="^{{ phone_number }}$">
+    <action application="set" data="odoo_call_direction=inbound"/>
+    <action application="set" data="odoo_number_id={{ number_id }}"/>
+    {% if transfer_target %}
+    <action application="transfer" data="{{ transfer_target }} XML default"/>
+    {% else %}
+    <action application="respond" data="404"/>
+    {% endif %}
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="did_{{ phone_number }}">
+  <condition field="destination_number" expression="^{{ phone_number }}$">
+    <action application="set" data="odoo_call_direction=inbound"/>
+    <action application="set" data="odoo_number_id={{ number_id }}"/>
+    {% if transfer_target %}
+    <action application="transfer" data="{{ transfer_target }} XML default"/>
+    {% else %}
+    <action application="respond" data="404"/>
+    {% endif %}
+  </condition>
+</extension>]]></field>
+    </record>
+
+    <record id="fs_template_dialplan_outgoing_route" model="connect.freeswitch.template">
+        <field name="key">dialplan_outgoing_route</field>
+        <field name="name">Dialplan - Outgoing Route</field>
+        <field name="section">dialplan</field>
+        <field name="description">Outbound call routing via SIP gateway.
+
+Variables:
+  route_id        - connect.freeswitch.outgoing_route record ID
+  pattern         - Regex pattern for destination matching
+  bridge_data     - Bridge string (sofia/gateway/name/number)</field>
+        <field name="content"><![CDATA[<extension name="outgoing_{{ route_id }}">
+  <condition field="destination_number" expression="{{ pattern }}">
+    <action application="set" data="odoo_call_direction=outgoing"/>
+    <action application="export" data="nolocal:absolute_codec_string=PCMU,PCMA"/>
+    <action application="bridge" data="{{ bridge_data }}"/>
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="outgoing_{{ route_id }}">
+  <condition field="destination_number" expression="{{ pattern }}">
+    <action application="set" data="odoo_call_direction=outgoing"/>
+    <action application="export" data="nolocal:absolute_codec_string=PCMU,PCMA"/>
+    <action application="bridge" data="{{ bridge_data }}"/>
+  </condition>
+</extension>]]></field>
+    </record>
+
+    <record id="fs_template_dialplan_system" model="connect.freeswitch.template">
+        <field name="key">dialplan_system</field>
+        <field name="name">Dialplan - System Extensions</field>
+        <field name="section">dialplan</field>
+        <field name="description">System utility extensions (echo test, etc.). No variables required.</field>
+        <field name="content"><![CDATA[<extension name="echo">
+  <condition field="destination_number" expression="^9196$">
+    <action application="answer"/>
+    <action application="echo"/>
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="echo">
+  <condition field="destination_number" expression="^9196$">
+    <action application="answer"/>
+    <action application="echo"/>
+  </condition>
+</extension>]]></field>
+    </record>
+
+    <!-- ==================== CONFIGURATION TEMPLATES ==================== -->
+
+    <record id="fs_template_config_sofia" model="connect.freeswitch.template">
+        <field name="key">config_sofia</field>
+        <field name="name">Configuration - Sofia SIP</field>
+        <field name="section">configuration</field>
+        <field name="description">Sofia SIP module configuration with external profile and gateways.
+
+Variables:
+  sofia_log_level - Sofia log level (0-9)
+  fs_domain       - FreeSWITCH SIP domain (may be empty)
+  gateways_xml    - Pre-rendered XML string of all gateway elements</field>
+        <field name="content"><![CDATA[<configuration name="sofia.conf" description="Sofia SIP">
+  <global_settings>
+    <param name="log-level" value="{{ sofia_log_level }}"/>
+  </global_settings>
+  <profiles>
+    <profile name="external">
+      <settings>
+        <param name="context" value="public"/>
+        <param name="sip-port" value="5080"/>
+        <param name="rtp-timer-name" value="soft"/>
+        <param name="codec-prefs" value="OPUS,PCMU,PCMA"/>
+        <param name="auth-calls" value="true"/>
+        {% if fs_domain %}
+        <param name="force-register-domain" value="{{ fs_domain }}"/>
+        <param name="force-realm" value="{{ fs_domain }}"/>
+        <param name="force-register-db-domain" value="{{ fs_domain }}"/>
+        {% endif %}
+      </settings>
+      <gateways>
+        {{ gateways_xml }}
+      </gateways>
+    </profile>
+  </profiles>
+</configuration>]]></field>
+        <field name="default_content"><![CDATA[<configuration name="sofia.conf" description="Sofia SIP">
+  <global_settings>
+    <param name="log-level" value="{{ sofia_log_level }}"/>
+  </global_settings>
+  <profiles>
+    <profile name="external">
+      <settings>
+        <param name="context" value="public"/>
+        <param name="sip-port" value="5080"/>
+        <param name="rtp-timer-name" value="soft"/>
+        <param name="codec-prefs" value="OPUS,PCMU,PCMA"/>
+        <param name="auth-calls" value="true"/>
+        {% if fs_domain %}
+        <param name="force-register-domain" value="{{ fs_domain }}"/>
+        <param name="force-realm" value="{{ fs_domain }}"/>
+        <param name="force-register-db-domain" value="{{ fs_domain }}"/>
+        {% endif %}
+      </settings>
+      <gateways>
+        {{ gateways_xml }}
+      </gateways>
+    </profile>
+  </profiles>
+</configuration>]]></field>
+    </record>
+
+    <record id="fs_template_config_sofia_gateway" model="connect.freeswitch.template">
+        <field name="key">config_sofia_gateway</field>
+        <field name="name">Configuration - SIP Gateway</field>
+        <field name="section">configuration</field>
+        <field name="description">Single SIP gateway element within the sofia profile.
+
+Variables:
+  name            - Gateway name
+  proxy           - SIP proxy address
+  username        - SIP username (may be empty)
+  password        - SIP password (may be empty)
+  register        - 'true' or 'false'
+  realm           - SIP realm (may be empty)
+  from_domain     - From domain (may be empty)
+  caller_id_in_from - Boolean
+  expire_seconds  - Registration expiry
+  retry_seconds   - Retry interval</field>
+        <field name="content"><![CDATA[<gateway name="{{ name }}">
+  <param name="proxy" value="{{ proxy }}"/>
+  {% if username %}
+  <param name="username" value="{{ username }}"/>
+  {% endif %}
+  {% if password %}
+  <param name="password" value="{{ password }}"/>
+  {% endif %}
+  <param name="register" value="{{ register }}"/>
+  {% if realm %}
+  <param name="realm" value="{{ realm }}"/>
+  {% endif %}
+  {% if from_domain %}
+  <param name="from-domain" value="{{ from_domain }}"/>
+  {% endif %}
+  {% if caller_id_in_from %}
+  <param name="caller-id-in-from" value="true"/>
+  {% endif %}
+  <param name="expire-seconds" value="{{ expire_seconds }}"/>
+  <param name="retry-seconds" value="{{ retry_seconds }}"/>
+</gateway>]]></field>
+        <field name="default_content"><![CDATA[<gateway name="{{ name }}">
+  <param name="proxy" value="{{ proxy }}"/>
+  {% if username %}
+  <param name="username" value="{{ username }}"/>
+  {% endif %}
+  {% if password %}
+  <param name="password" value="{{ password }}"/>
+  {% endif %}
+  <param name="register" value="{{ register }}"/>
+  {% if realm %}
+  <param name="realm" value="{{ realm }}"/>
+  {% endif %}
+  {% if from_domain %}
+  <param name="from-domain" value="{{ from_domain }}"/>
+  {% endif %}
+  {% if caller_id_in_from %}
+  <param name="caller-id-in-from" value="true"/>
+  {% endif %}
+  <param name="expire-seconds" value="{{ expire_seconds }}"/>
+  <param name="retry-seconds" value="{{ retry_seconds }}"/>
+</gateway>]]></field>
+    </record>
+
+    <record id="fs_template_config_xml_rpc" model="connect.freeswitch.template">
+        <field name="key">config_xml_rpc</field>
+        <field name="name">Configuration - XML RPC</field>
+        <field name="section">configuration</field>
+        <field name="description">XML-RPC server configuration for API access.
+
+Variables:
+  port     - HTTP port
+  user     - Auth username
+  password - Auth password</field>
+        <field name="content"><![CDATA[<configuration name="xml_rpc.conf" description="XML RPC">
+  <settings>
+    <param name="http-port" value="{{ port }}"/>
+    <param name="auth-user" value="{{ user }}"/>
+    <param name="auth-pass" value="{{ password }}"/>
+    <param name="auth-realm" value="freeswitch"/>
+  </settings>
+</configuration>]]></field>
+        <field name="default_content"><![CDATA[<configuration name="xml_rpc.conf" description="XML RPC">
+  <settings>
+    <param name="http-port" value="{{ port }}"/>
+    <param name="auth-user" value="{{ user }}"/>
+    <param name="auth-pass" value="{{ password }}"/>
+    <param name="auth-realm" value="freeswitch"/>
+  </settings>
+</configuration>]]></field>
+    </record>
+
+</odoo>

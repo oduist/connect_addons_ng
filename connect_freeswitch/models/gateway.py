@@ -51,23 +51,18 @@ class FreeSwitchGateway(models.Model):
         self.env['connect.settings'].freeswitch_api(
             'sofia', 'profile external restart reloadxml')
 
-    def generate_sofia_gateway_xml(self, parent_el):
-        """Generate FreeSWITCH gateway XML element."""
-        from xml.etree import ElementTree as ET
+    def generate_sofia_gateway_xml(self):
+        """Generate FreeSWITCH gateway XML string."""
         self.ensure_one()
-        gw = ET.SubElement(parent_el, 'gateway', name=self.name)
-        ET.SubElement(gw, 'param', name='proxy', value=self.proxy)
-        if self.username:
-            ET.SubElement(gw, 'param', name='username', value=self.username)
-        if self.password:
-            ET.SubElement(gw, 'param', name='password', value=self.password)
-        ET.SubElement(gw, 'param', name='register', value='true' if self.register else 'false')
-        if self.realm:
-            ET.SubElement(gw, 'param', name='realm', value=self.realm)
-        if self.from_domain:
-            ET.SubElement(gw, 'param', name='from-domain', value=self.from_domain)
-        if self.caller_id_in_from:
-            ET.SubElement(gw, 'param', name='caller-id-in-from', value='true')
-        ET.SubElement(gw, 'param', name='expire-seconds', value=str(self.expire_seconds))
-        ET.SubElement(gw, 'param', name='retry-seconds', value=str(self.retry_seconds))
-        return gw
+        return self.env['connect.freeswitch.template'].render('config_sofia_gateway', {
+            'name': self.name,
+            'proxy': self.proxy,
+            'username': self.username or '',
+            'password': self.password or '',
+            'register': 'true' if self.register else 'false',
+            'realm': self.realm or '',
+            'from_domain': self.from_domain or '',
+            'caller_id_in_from': self.caller_id_in_from,
+            'expire_seconds': str(self.expire_seconds),
+            'retry_seconds': str(self.retry_seconds),
+        })
