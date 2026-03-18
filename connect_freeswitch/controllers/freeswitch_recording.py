@@ -1,16 +1,22 @@
 import base64
 import logging
+import time
 
 from odoo import http
 from odoo.http import request, Response
 
 logger = logging.getLogger(__name__)
 
+MAX_RETRIES = 5
+RETRY_DELAY = 0.5  # seconds
+
 
 class FreeSwitchRecordingController(http.Controller):
     """Controller for receiving recording files from FreeSWITCH.
 
     FreeSWITCH posts recording files via record_session with an HTTP URL.
+    The upload (PUT) may arrive before the CDR webhook creates the channel
+    record, so we retry the channel lookup a few times.
     """
 
     @http.route(
@@ -41,12 +47,20 @@ class FreeSwitchRecordingController(http.Controller):
                 request.env.ref('connect.user_connect_webhook').id
             )
 
-            # Find the channel by UUID (sid)
-            channel = request.env['connect.channel'].sudo().search(
-                [('sid', '=', uuid)], limit=1)
+            # Find the channel by UUID (sid), retry if not yet created by CDR
+            channel = None
+            for attempt in range(MAX_RETRIES):
+                channel = request.env['connect.channel'].sudo().search(
+                    [('sid', '=', uuid)], limit=1)
+                if channel:
+                    break
+                if attempt < MAX_RETRIES - 1:
+                    request.env.cr.rollback()
+                    time.sleep(RETRY_DELAY)
 
             if not channel:
-                logger.warning('Recording webhook: channel not found for UUID %s', uuid)
+                logger.warning('Recording webhook: channel not found for UUID %s after %d retries',
+                    uuid, MAX_RETRIES)
                 return Response('Channel not found', status=404)
 
             # Create recording with the file as an attachment
