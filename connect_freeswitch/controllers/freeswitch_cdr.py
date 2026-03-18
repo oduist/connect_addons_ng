@@ -99,6 +99,13 @@ class FreeSwitchCDRController(http.Controller):
         other_leg_uuid = None
 
         if variables is not None:
+            # Use effective_caller_id_number (set by Odoo directory) if
+            # caller_id_number is a SIP username rather than a number
+            effective_caller = self._xml_text(
+                variables, 'effective_caller_id_number')
+            if effective_caller and not caller.isdigit():
+                caller = effective_caller
+
             odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
             if odoo_user:
                 # The user who owns this channel leg
