@@ -51,17 +51,21 @@ class CallFlow(models.Model):
         max_digits = self.gather_digits or 1
         tries = 3
         timeout = (self.gather_timeout or 5) * 1000  # Convert to milliseconds
-        prompt = self.prompt_message.replace("'", "\\'") if self.prompt_message else ''
-        invalid_msg = self.invalid_input_message.replace("'", "\\'") if self.invalid_input_message else 'silence_stream://250'
+        prompt = self.prompt_message or ''
+        invalid_msg = self.invalid_input_message or ''
+        lang = self._get_piper_language()
+
+        prompt_file = 'speak:piper|{}|{}'.format(lang, prompt) if prompt else 'silence_stream://250'
+        invalid_file = 'speak:piper|{}|{}'.format(lang, invalid_msg) if invalid_msg else 'silence_stream://250'
 
         # Collect valid digit patterns from choices
         valid_digits = '|'.join(
             re.escape(c.choice_digits) for c in self.choices if c.choice_digits)
         digit_regexp = '^({})$'.format(valid_digits) if valid_digits else r'\d+'
 
-        pgd_data = "{min} {max} {tries} {timeout} # say:'{prompt}' say:'{invalid}' {var} {regexp}".format(
+        pgd_data = "{min} {max} {tries} {timeout} # {prompt} {invalid} {var} {regexp}".format(
             min=min_digits, max=max_digits, tries=tries, timeout=timeout,
-            prompt=prompt, invalid=invalid_msg, var=var_name, regexp=digit_regexp)
+            prompt=prompt_file, invalid=invalid_file, var=var_name, regexp=digit_regexp)
 
         ET.SubElement(main_condition, 'action', application='play_and_get_digits',
             data=pgd_data)
@@ -134,6 +138,11 @@ class CallFlow(models.Model):
         if bridge_parts:
             ET.SubElement(condition, 'action', application='bridge',
                 data=','.join(bridge_parts))
+
+    def _get_piper_language(self):
+        """Map callflow language (e.g. 'en-US') to piper short code (e.g. 'en')."""
+        lang = self.language or 'en-US'
+        return lang.split('-')[0]
 
     def _add_user_bridge_actions(self, parent_el, user):
         """Add bridge actions for a user directly into a parent XML element."""
