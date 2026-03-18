@@ -1,42 +1,41 @@
 # FreeSWITCH Docker Image
 
-Docker image of FreeSWITCH with configuration for integration with Odoo connect_freeswitch module.
+FreeSWITCH built from source (`v1.10.12`) with only the modules needed for Odoo integration.
 
-Includes [mod_piper_tts](https://github.com/aks-devs/mod_piper_tts) for local neural text-to-speech via [Piper](https://github.com/rhasspy/piper), compiled in a multi-stage Docker build with English and Russian voice models.
+Includes [mod_piper_tts](https://github.com/aks-devs/mod_piper_tts) for local neural text-to-speech via [Piper](https://github.com/rhasspy/piper) with English and Russian voice models.
+
+## What's Inside
+
+Built from source with a minimal module set:
+
+| Category | Modules |
+|----------|---------|
+| Loggers | mod_logfile |
+| XML Interfaces | mod_xml_curl, mod_xml_cdr |
+| Event Handlers | mod_event_socket |
+| Endpoints | mod_sofia, mod_loopback, mod_rtc, mod_verto |
+| Applications | mod_commands, mod_dptools, mod_dialplan_xml |
+| Codecs | mod_opus, mod_spandsp |
+| File Formats | mod_sndfile, mod_native_file, mod_tone_stream |
+| TTS | mod_piper_tts |
+
+To add a module: edit `modules.conf` in the Dockerfile, add config in `freeswitch/conf/autoload_configs/`, rebuild.
 
 ## Building the Image
 
 ```bash
-# In the deploy/ folder
-docker build -t oduist/freeswitch:latest .
+cd connect_freeswitch/deploy
+docker build --platform linux/amd64 -t oduist/freeswitch:1.0.3 -t oduist/freeswitch:latest .
 ```
 
 ## Running the Container
-
-### With ODOO_URL Specified
 
 ```bash
 docker run -d \
   --name freeswitch \
   --net host \
   -e ODOO_URL=http://localhost:8069 \
-  -v freeswitch-sounds:/usr/share/freeswitch/sounds \
-  -v $(pwd)/freeswitch/conf:/etc/freeswitch \
-  -v $(pwd)/freeswitch/logs:/var/log/freeswitch \
   oduist/freeswitch:latest
-```
-
-### Examples with Different ODOO_URLs
-
-```bash
-# Locally
-docker run -d --name freeswitch --net host -e ODOO_URL=http://localhost:8069 oduist/freeswitch:latest
-
-# Remote server
-docker run -d --name freeswitch --net host -e ODOO_URL=http://192.168.1.100:8069 oduist/freeswitch:latest
-
-# With port
-docker run -d --name freeswitch --net host -e ODOO_URL=https://odoo.example.com:8069 oduist/freeswitch:latest
 ```
 
 ## Checking Status
@@ -46,29 +45,22 @@ docker logs freeswitch
 docker exec freeswitch fs_cli -x "status"
 ```
 
-## Stopping the Container
-
-```bash
-docker stop freeswitch
-docker rm freeswitch
-```
-
 ## Publishing the Image
 
 ```bash
-# Already done via 'docker login'
+docker push oduist/freeswitch:1.0.3
 docker push oduist/freeswitch:latest
 ```
 
 ## Environment Variables
 
-| Variable | Default Value | Description |
-|---|---|---|
+| Variable | Default | Description |
+|----------|---------|-------------|
 | `ODOO_URL` | `http://localhost:8069` | URL of Odoo server for webhooks |
 | `SOUND_RATES` | `8000:16000` | Supported sound frequencies |
 | `SOUND_TYPES` | `music:en-us-callie` | Sound types and languages |
-| `EPMD` | `false` | Erlang Port Mapper Daemon |
-| `DUMPCAP` | `false` | Packet capture tool |
+| `FS_LOG_LEVEL` | `info` | FreeSWITCH core log level |
+| `FS_SOFIA_LOG_LEVEL` | `0` | Sofia SIP log level |
 
 ## Usage with docker-compose
 
@@ -82,10 +74,6 @@ services:
     restart: unless-stopped
     environment:
       - ODOO_URL=http://odoo:8069
-    volumes:
-      - freeswitch-sounds:/usr/share/freeswitch/sounds
-      - ./freeswitch/conf:/etc/freeswitch
-      - ./freeswitch/logs:/var/log/freeswitch
 ```
 
 ## Documentation

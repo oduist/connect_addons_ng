@@ -3,7 +3,7 @@
         <param name="cache-path" value="/tmp/piper-tts-cache" />
         <param name="cache-enable" value="true" />
 
-        <param name="piper-bin" value="/opt/piper/lib/piper" />
+        <param name="piper-bin" value="/opt/piper/piper" />
         <param name="piper-opts" value="" />
 
         <param name="voice-name-as-language" value="true" />

@@ -187,7 +187,7 @@ TTS settings are in `autoload_configs/piper_tts.conf.xml`:
 |-----------|---------|-------------|
 | `cache-path` | `/tmp/piper-tts-cache` | Directory for cached synthesized audio |
 | `cache-enable` | `true` | Cache synthesized audio (MD5-based dedup) |
-| `piper-bin` | `/opt/piper/lib/piper` | Path to the Piper binary |
+| `piper-bin` | `/opt/piper/piper` | Path to the Piper binary |
 | `piper-opts` | (empty) | Extra CLI options for Piper |
 | `voice-name-as-language` | `true` | Use voice name field as language code |
 
