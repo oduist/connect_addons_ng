@@ -14,7 +14,7 @@
             </div>
             <notebook position="inside">
                 <page name="endpoints" string="Endpoints">
-                    <field name="endpoint_ids" context="{'default_connect_user_id': active_id}">
+                    <field name="endpoint_ids">
                         <list editable="bottom">
                             <field name="name"/>
                             <field name="sip_enabled"/>
