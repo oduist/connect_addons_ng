@@ -55,8 +55,8 @@ class CallFlow(models.Model):
         invalid_msg = self.invalid_input_message or ''
         lang = self._get_piper_language()
 
-        prompt_file = 'speak:piper|{}|{}'.format(lang, prompt) if prompt else 'silence_stream://250'
-        invalid_file = 'speak:piper|{}|{}'.format(lang, invalid_msg) if invalid_msg else 'silence_stream://250'
+        prompt_file = "'speak:piper|{}|{}'".format(lang, prompt) if prompt else 'silence_stream://250'
+        invalid_file = "'speak:piper|{}|{}'".format(lang, invalid_msg) if invalid_msg else 'silence_stream://250'
 
         # Collect valid digit patterns from choices
         valid_digits = '|'.join(
