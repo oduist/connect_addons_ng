@@ -1,4 +1,5 @@
 import logging
+import re
 from xml.etree import ElementTree as ET
 
 from odoo import http
@@ -59,6 +60,12 @@ class FreeSwitchCDRController(http.Controller):
         - Hangup cause
         - Odoo channel variables (connect user IDs)
         """
+        # FreeSWITCH CDR XML may contain element names with colons
+        # (e.g. SIP headers like sip:to-host) which are invalid XML
+        # namespace prefixes. Replace colons in tag names to avoid parse errors.
+        xml_str = re.sub(
+            r'<(/?)([a-zA-Z_][\w.-]*):([a-zA-Z_][\w.-]*)',
+            r'<\1\2_\3', xml_str)
         root = ET.fromstring(xml_str)
 
         # Channel UUID
@@ -114,8 +121,10 @@ class FreeSwitchCDRController(http.Controller):
                 else:
                     caller_pbx_user_id = int(odoo_user)
 
-            other_leg_uuid = self._xml_text(
-                variables, 'Other-Leg-Unique-ID')
+            other_leg_uuid = (
+                self._xml_text(variables, 'odoo_parent_uuid')
+                or self._xml_text(variables, 'Other-Leg-Unique-ID')
+            )
 
         return {
             'uuid': uuid,

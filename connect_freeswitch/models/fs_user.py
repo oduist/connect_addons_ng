@@ -38,6 +38,10 @@ class User(models.Model):
                 data='execute_on_answer=record_session {}/{}.wav'.format(
                     recording_url, '${uuid}'))
 
+        # Export parent UUID to B-leg for CDR linking
+        ET.SubElement(condition, 'action', application='export',
+            data='nolocal:odoo_parent_uuid=${uuid}')
+
         # Bridge settings
         ET.SubElement(condition, 'action', application='set',
             data='call_timeout=30')
