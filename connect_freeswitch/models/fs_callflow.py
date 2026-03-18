@@ -44,33 +44,56 @@ class CallFlow(models.Model):
         ET.SubElement(main_condition, 'action', application='sleep', data='500')
 
         lang = self._get_piper_language()
-
-        # Play TTS prompt via speak app (piper is a speech interface,
-        # not a file interface, so it can't be used in play_and_get_digits)
         prompt = self.prompt_message or ''
-        if prompt:
-            ET.SubElement(main_condition, 'action', application='speak',
-                data='piper|{}|{}'.format(lang, prompt))
+        invalid_msg = self.invalid_input_message or ''
 
-        # Collect digits after TTS prompt
+        # Pre-generate TTS audio files via piper CLI so we can use them
+        # with play_and_get_digits (which supports DTMF during playback).
+        # Piper's speech interface can't be used directly in play_and_get_digits.
+        model = self._get_piper_model(lang)
+        cache_dir = '/tmp/piper-tts-cache'
+        prompt_file = 'silence_stream://250'
+        invalid_file = 'silence_stream://250'
+
+        if prompt and model:
+            prompt_file = '{}/cf_{}_prompt.wav'.format(cache_dir, self.id)
+            ET.SubElement(main_condition, 'action', application='set',
+                data='piper_prompt_file={}'.format(prompt_file))
+            ET.SubElement(main_condition, 'action', application='system',
+                data="test -f {out} || echo '{text}' | /opt/piper/piper"
+                     " --model {model} --output_file {out}".format(
+                    text=prompt.replace("'", "'\\''"),
+                    model=model, out=prompt_file))
+            # Wait for file to be ready
+            ET.SubElement(main_condition, 'action', application='sleep',
+                data='500')
+
+        if invalid_msg and model:
+            invalid_file = '{}/cf_{}_invalid.wav'.format(cache_dir, self.id)
+            ET.SubElement(main_condition, 'action', application='system',
+                data="test -f {out} || echo '{text}' | /opt/piper/piper"
+                     " --model {model} --output_file {out}".format(
+                    text=invalid_msg.replace("'", "'\\''"),
+                    model=model, out=invalid_file))
+
+        # Collect digits with play_and_get_digits (DTMF works during playback)
         var_name = 'cf_digit_{}'.format(self.id)
         min_digits = 1
         max_digits = self.gather_digits or 1
         tries = 3
         timeout = (self.gather_timeout or 5) * 1000  # ms
 
-        # Collect valid digit patterns from choices
         valid_digits = '|'.join(
             re.escape(c.choice_digits) for c in self.choices if c.choice_digits)
         digit_regexp = '^({})$'.format(valid_digits) if valid_digits else r'\d+'
 
-        # Use silence as prompt (TTS already played above) and for invalid input
         pgd_data = (
             "{min} {max} {tries} {timeout} # "
-            "silence_stream://250 silence_stream://250 "
+            "{prompt} {invalid} "
             "{var} {regexp}"
         ).format(
             min=min_digits, max=max_digits, tries=tries, timeout=timeout,
+            prompt=prompt_file, invalid=invalid_file,
             var=var_name, regexp=digit_regexp)
 
         ET.SubElement(main_condition, 'action', application='play_and_get_digits',
@@ -153,6 +176,14 @@ class CallFlow(models.Model):
         """Map callflow language (e.g. 'en-US') to piper short code (e.g. 'en')."""
         lang = self.language or 'en-US'
         return lang.split('-')[0]
+
+    def _get_piper_model(self, lang):
+        """Return piper model path for the given language short code."""
+        PIPER_MODELS = {
+            'en': '/opt/piper/models/en_US-lessac-medium.onnx',
+            'ru': '/opt/piper/models/ru_RU-irina-medium.onnx',
+        }
+        return PIPER_MODELS.get(lang, '')
 
     def _add_user_bridge_actions(self, parent_el, user):
         """Add bridge actions for a user directly into a parent XML element."""
