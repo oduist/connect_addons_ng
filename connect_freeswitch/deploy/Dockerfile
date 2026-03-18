@@ -1,7 +1,7 @@
 ###############################################################################
 # Stage 1: Build FreeSWITCH + mod_piper_tts from source
 ###############################################################################
-FROM --platform=linux/amd64 debian:bookworm AS builder
+FROM debian:bookworm AS builder
 
 ARG FS_VERSION=v1.10.12
 ARG PIPER_VERSION=1.2.0
@@ -72,7 +72,6 @@ applications/mod_dptools
 applications/mod_http_cache
 dialplans/mod_dialplan_xml
 codecs/mod_opus
-codecs/mod_spandsp
 formats/mod_sndfile
 formats/mod_native_file
 formats/mod_tone_stream
@@ -87,6 +86,22 @@ RUN ./configure \
     --without-java
 RUN make -j$(nproc)
 RUN make install
+
+# ── Collect all shared library dependencies automatically ────────────────────
+# Scan all FS binaries/modules with ldd, extract resolved lib paths (the path
+# after "=>"), and copy them into a staging dir for the runtime image.
+RUN mkdir -p /staging/usr/lib \
+    && find /usr/local/freeswitch/bin /usr/local/freeswitch/lib -type f \( -executable -o -name '*.so*' \) \
+       -exec ldd {} + 2>/dev/null \
+       | awk '/=>/ && /\// { for(i=1;i<=NF;i++) if($i ~ /^\//) print $i }' \
+       | sort -u \
+       | while read lib; do \
+           case "$(basename "$lib")" in \
+               libc.so*|libm.so*|libpthread*|libdl*|librt.so*|ld-linux*) continue ;; \
+           esac; \
+           cp -vL "$(readlink -f "$lib")" "/staging/usr/lib/$(basename "$lib")" || true; \
+       done \
+    && ldconfig -N /staging/usr/lib
 
 # ── Download piper binary ───────────────────────────────────────────────────
 RUN curl -fSL \
@@ -110,35 +125,40 @@ RUN mkdir -p /opt/piper/models \
 ###############################################################################
 # Stage 2: Minimal runtime image
 ###############################################################################
-FROM --platform=linux/amd64 debian:bookworm-slim
+FROM debian:bookworm-slim
 
-# Runtime dependencies only
+# Minimal runtime packages (libc, libgcc, etc. already in base image)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libssl3 libcurl4 libpcre3 libsqlite3-0 \
-    libedit2 zlib1g libuuid1 libspeex1 libspeexdsp1 \
-    libopus0 libsndfile1 libtiff6 libjpeg62-turbo \
-    ca-certificates \
+    ca-certificates wget \
     && rm -rf /var/lib/apt/lists/*
 
 # FreeSWITCH installation
 COPY --from=builder /usr/local/freeswitch /usr/local/freeswitch
 
-# Shared libraries built from source (sofia-sip, spandsp, libks)
-COPY --from=builder /usr/lib/libsofia-sip-ua* /usr/lib/
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libspandsp* /usr/lib/
-COPY --from=builder /usr/lib/libks* /usr/lib/
+# All shared library dependencies (auto-collected via ldd in builder stage)
+COPY --from=builder /staging/usr/lib/ /usr/lib/
 
 # Piper TTS binary + voice models
 COPY --from=builder /opt/piper /opt/piper
 
 RUN ldconfig
 
+# Required runtime directories
+RUN mkdir -p /usr/local/freeswitch/var/run/freeswitch \
+             /usr/local/freeswitch/var/log/freeswitch \
+             /usr/share/freeswitch/sounds
+
 # Convenience symlinks
 RUN ln -sf /usr/local/freeswitch/bin/freeswitch /usr/bin/freeswitch \
     && ln -sf /usr/local/freeswitch/bin/fs_cli /usr/bin/fs_cli
 
-# Copy FreeSWITCH configuration
-COPY freeswitch/conf /usr/local/freeswitch/conf
+# Replace vanilla config with our custom config
+RUN rm -rf /usr/local/freeswitch/etc/freeswitch/*
+COPY freeswitch/conf/ /usr/local/freeswitch/etc/freeswitch/
+
+# Copy entrypoint
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 ENV ODOO_URL=http://localhost:8069 \
     SOUND_RATES=8000:16000 \
@@ -149,7 +169,9 @@ ENV ODOO_URL=http://localhost:8069 \
     FS_LOG_LEVEL=info \
     FS_SOFIA_LOG_LEVEL=0
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD fs_cli -x "status" > /dev/null 2>&1 || exit 1
+VOLUME ["/usr/share/freeswitch/sounds"]
 
-CMD ["freeswitch", "-c"]
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+    CMD fs_cli -x "status" | grep -q ^UP || exit 1
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

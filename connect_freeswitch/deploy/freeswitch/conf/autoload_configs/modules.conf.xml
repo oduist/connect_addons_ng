@@ -25,7 +25,6 @@
 
     <!-- Codecs -->
     <load module="mod_opus"/>
-    <load module="mod_spandsp"/>
 
     <!-- File Formats -->
     <load module="mod_sndfile"/>
