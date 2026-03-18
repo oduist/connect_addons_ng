@@ -448,6 +448,7 @@ class OduistLicense(models.Model):
 
         request_data = {
             "instance_hash": instance_uid,
+            "odoo_version": release.version_info[0],
             "modules": module_list,
         }
 
