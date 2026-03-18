@@ -14,7 +14,7 @@ Built from source with a minimal module set:
 | XML Interfaces | mod_xml_curl, mod_xml_cdr |
 | Event Handlers | mod_event_socket |
 | Endpoints | mod_sofia, mod_loopback, mod_rtc, mod_verto |
-| Applications | mod_commands, mod_dptools, mod_dialplan_xml |
+| Applications | mod_commands, mod_dptools, mod_http_cache, mod_dialplan_xml |
 | Codecs | mod_opus, mod_spandsp |
 | File Formats | mod_sndfile, mod_native_file, mod_tone_stream |
 | TTS | mod_piper_tts |

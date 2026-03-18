@@ -213,6 +213,7 @@ All configuration files are in `deploy/freeswitch/conf/`. Key files:
 | `autoload_configs/xml_cdr.conf.xml` | CDR webhook to Odoo. |
 | `autoload_configs/switch.conf.xml` | Core settings (max sessions, RTP port range). |
 | `autoload_configs/modules.conf.xml` | Loaded FreeSWITCH modules. |
+| `autoload_configs/http_cache.conf.xml` | HTTP file interface for recording uploads. |
 | `autoload_configs/piper_tts.conf.xml` | Piper TTS settings and voice models. |
 | `sip_profiles/internal.xml` | Internal SIP profile (ports, codecs, WebSocket). |
 | `dialplan/default.xml` | Fallback dialplan (echo test, hold music test). |

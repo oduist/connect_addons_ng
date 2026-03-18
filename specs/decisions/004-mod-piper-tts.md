@@ -54,6 +54,7 @@ endpoints/mod_rtc
 endpoints/mod_verto
 applications/mod_commands
 applications/mod_dptools
+applications/mod_http_cache
 dialplans/mod_dialplan_xml
 codecs/mod_opus
 codecs/mod_spandsp
