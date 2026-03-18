@@ -61,6 +61,8 @@ class FreeSwitchRecordingController(http.Controller):
                 'call_sid': uuid,
                 'status': 'completed',
                 'source': 'freeswitch',
+                'recording_data': base64.b64encode(file_data),
+                'recording_filename': filename,
             }
             if channel:
                 vals['call'] = channel.call.id if channel.call else False
@@ -68,22 +70,6 @@ class FreeSwitchRecordingController(http.Controller):
                 vals['partner'] = channel.partner.id if channel.partner else False
 
             recording = env.sudo().create(vals)
-
-            # Store the recording file as a public attachment
-            attachment = request.env['ir.attachment'].sudo().create({
-                'name': filename,
-                'type': 'binary',
-                'datas': base64.b64encode(file_data),
-                'res_model': 'connect.recording',
-                'res_id': recording.id,
-                'mimetype': 'audio/wav',
-                'public': True,
-            })
-
-            # Set media_url to the attachment download URL
-            recording.sudo().write({
-                'media_url': '/web/content/{}?download=true'.format(attachment.id),
-            })
 
             logger.info('Recording created: id=%s, uuid=%s, channel=%s, size=%d bytes',
                 recording.id, uuid, channel.id if channel else 'pending', len(file_data))
