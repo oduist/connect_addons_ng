@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_user_form_freeswitch" model="ir.ui.view">
+        <field name="name">connect.user.form.freeswitch</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_form"/>
+        <field name="arch" type="xml">
+            <div class="oe_button_box" position="inside">
+                <button name="%(connect.action_connect_endpoint)d" type="action"
+                        class="oe_stat_button" icon="fa-headphones"
+                        context="{'default_connect_user_id': active_id, 'search_default_connect_user_id': active_id}">
+                    <field name="endpoint_count" widget="statinfo" string="Endpoints"/>
+                </button>
+            </div>
+            <notebook position="inside">
+                <page name="endpoints" string="Endpoints">
+                    <field name="endpoint_ids" context="{'default_connect_user_id': active_id}">
+                        <list editable="bottom">
+                            <field name="name"/>
+                            <field name="sip_enabled"/>
+                            <field name="webrtc_enabled"/>
+                            <field name="auth_user" invisible="not sip_enabled and not webrtc_enabled"/>
+                            <field name="auth_password" password="True" invisible="not sip_enabled and not webrtc_enabled"/>
+                            <field name="active" column_invisible="1"/>
+                        </list>
+                    </field>
+                </page>
+            </notebook>
+        </field>
+    </record>
+</odoo>

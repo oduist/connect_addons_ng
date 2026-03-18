@@ -28,6 +28,17 @@
         </field>
     </record>
 
+    <record id="view_connect_endpoint_search" model="ir.ui.view">
+        <field name="name">connect.endpoint.search</field>
+        <field name="model">connect.endpoint</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="connect_user_id"/>
+            </search>
+        </field>
+    </record>
+
     <record id="action_connect_endpoint" model="ir.actions.act_window">
         <field name="name">Endpoints</field>
         <field name="res_model">connect.endpoint</field>
