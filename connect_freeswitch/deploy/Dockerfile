@@ -9,18 +9,19 @@ ARG MOD_PIPER_TTS_VERSION=v1.0.2
 
 # Build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential autoconf automake libtool pkg-config cmake \
+    build-essential autoconf automake libtool libtool-bin pkg-config cmake \
     git ca-certificates curl wget python3 yasm \
     # FreeSWITCH core
     libssl-dev libcurl4-openssl-dev libpcre3-dev libsqlite3-dev \
-    libedit-dev zlib1g-dev uuid-dev libspeexdsp-dev \
+    libedit-dev zlib1g-dev uuid-dev libspeex-dev libspeexdsp-dev \
     # Module deps
     libopus-dev libsndfile1-dev libtiff-dev libjpeg-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Build libks2 (needed for mod_verto, mod_rtc) ────────────────────────────
-RUN git clone --depth 1 https://github.com/signalwire/libks.git /usr/src/libks \
+RUN git clone --depth 2 --branch v2.0.10 https://github.com/signalwire/libks.git /usr/src/libks \
     && cd /usr/src/libks \
+    && GIT_COMMITTER_NAME=build GIT_COMMITTER_EMAIL=build@build git tag -a v2.0.10 -m "v2.0.10" --force \
     && cmake -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release . \
     && make -j$(nproc) && make install
 
@@ -50,13 +51,17 @@ RUN git clone --depth 1 --branch ${MOD_PIPER_TTS_VERSION} \
     && cp -r /tmp/mod_piper_tts/sources \
        /usr/src/freeswitch/src/mod/asr_tts/mod_piper_tts
 
-# ── Configure modules to build (only what we use) ───────────────────────────
+# ── Bootstrap FreeSWITCH (cached independently of module list) ─────────────
 WORKDIR /usr/src/freeswitch
 
+RUN ./bootstrap.sh -j
+
+# ── Module list (changing this invalidates configure + make, but not bootstrap)
 RUN cat > modules.conf <<'MODULES'
 loggers/mod_logfile
 xml_int/mod_xml_curl
 xml_int/mod_xml_cdr
+xml_int/mod_xml_rpc
 event_handlers/mod_event_socket
 endpoints/mod_sofia
 endpoints/mod_loopback
@@ -74,8 +79,6 @@ formats/mod_tone_stream
 asr_tts/mod_piper_tts
 MODULES
 
-# ── Build FreeSWITCH ────────────────────────────────────────────────────────
-RUN ./bootstrap.sh -j
 RUN ./configure \
     --prefix=/usr/local/freeswitch \
     --enable-core-pgsql-support=no \
@@ -87,7 +90,7 @@ RUN make install
 
 # ── Download piper binary ───────────────────────────────────────────────────
 RUN curl -fSL \
-    https://github.com/rhasspy/piper/releases/download/v${PIPER_VERSION}/piper_linux_x86_64.tar.gz \
+    https://github.com/rhasspy/piper/releases/download/v${PIPER_VERSION}/piper_amd64.tar.gz \
     -o /tmp/piper.tar.gz \
     && mkdir -p /opt/piper \
     && tar -xzf /tmp/piper.tar.gz -C /opt/piper --strip-components=1 \
