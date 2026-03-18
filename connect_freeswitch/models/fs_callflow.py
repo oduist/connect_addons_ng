@@ -43,29 +43,35 @@ class CallFlow(models.Model):
         ET.SubElement(main_condition, 'action', application='answer')
         ET.SubElement(main_condition, 'action', application='sleep', data='500')
 
-        # Build play_and_get_digits parameters
-        # Syntax: <min> <max> <tries> <timeout> <terminators> <file> <invalid_file>
-        #         <var_name> <regexp> <digit_timeout> [<transfer_on_failure>]
+        lang = self._get_piper_language()
+
+        # Play TTS prompt via speak app (piper is a speech interface,
+        # not a file interface, so it can't be used in play_and_get_digits)
+        prompt = self.prompt_message or ''
+        if prompt:
+            ET.SubElement(main_condition, 'action', application='speak',
+                data='piper|{}|{}'.format(lang, prompt))
+
+        # Collect digits after TTS prompt
         var_name = 'cf_digit_{}'.format(self.id)
         min_digits = 1
         max_digits = self.gather_digits or 1
         tries = 3
-        timeout = (self.gather_timeout or 5) * 1000  # Convert to milliseconds
-        prompt = self.prompt_message or ''
-        invalid_msg = self.invalid_input_message or ''
-        lang = self._get_piper_language()
-
-        prompt_file = "'speak:piper|{}|{}'".format(lang, prompt) if prompt else 'silence_stream://250'
-        invalid_file = "'speak:piper|{}|{}'".format(lang, invalid_msg) if invalid_msg else 'silence_stream://250'
+        timeout = (self.gather_timeout or 5) * 1000  # ms
 
         # Collect valid digit patterns from choices
         valid_digits = '|'.join(
             re.escape(c.choice_digits) for c in self.choices if c.choice_digits)
         digit_regexp = '^({})$'.format(valid_digits) if valid_digits else r'\d+'
 
-        pgd_data = "{min} {max} {tries} {timeout} # {prompt} {invalid} {var} {regexp}".format(
+        # Use silence as prompt (TTS already played above) and for invalid input
+        pgd_data = (
+            "{min} {max} {tries} {timeout} # "
+            "silence_stream://250 silence_stream://250 "
+            "{var} {regexp}"
+        ).format(
             min=min_digits, max=max_digits, tries=tries, timeout=timeout,
-            prompt=prompt_file, invalid=invalid_file, var=var_name, regexp=digit_regexp)
+            var=var_name, regexp=digit_regexp)
 
         ET.SubElement(main_condition, 'action', application='play_and_get_digits',
             data=pgd_data)
