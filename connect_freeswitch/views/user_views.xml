@@ -8,7 +8,7 @@
             <div class="oe_button_box" position="inside">
                 <button name="%(connect.action_connect_endpoint)d" type="action"
                         class="oe_stat_button" icon="fa-headphones"
-                        context="{'default_connect_user_id': active_id, 'search_default_connect_user_id': active_id}">
+                        context="{'default_connect_user_id': id, 'search_default_connect_user_id': id}">
                     <field name="endpoint_count" widget="statinfo" string="Endpoints"/>
                 </button>
             </div>
