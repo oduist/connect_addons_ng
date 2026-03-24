@@ -18,12 +18,23 @@ def api_call(url: str, request_data: dict) -> dict:
     """Perform a REST API call to the specified URL."""
     try:
         res = requests.post(url, json=request_data, timeout=30)
-        res.raise_for_status()
-        return res.json()
+        data = res.json()
+        if not res.ok:
+            error_msg = data.get("error", {})
+            if isinstance(error_msg, dict):
+                error_msg = error_msg.get("message", str(error_msg))
+            return {"error": error_msg or f"License server error (HTTP {res.status_code})"}
+        return data
+    except requests.exceptions.ConnectionError:
+        return {"error": "Cannot connect to license server. Please check your internet connection."}
+    except requests.exceptions.Timeout:
+        return {"error": "License server is not responding. Please try again later."}
     except requests.exceptions.RequestException as e:
-        return {"error": f"Request failed: {str(e)}"}
+        _logger.warning("License API request failed: %s", e)
+        return {"error": "License server request failed. Please try again later."}
     except Exception as e:
-        return {"error": f"Unexpected error: {str(e)}"}
+        _logger.warning("Unexpected license API error: %s", e)
+        return {"error": "Unexpected error contacting license server."}
 
 
 class OduistLicense(models.Model):
@@ -347,9 +358,17 @@ class OduistLicense(models.Model):
         main_company = self.env["res.company"].search([], order="id", limit=1)
         country_code = main_company.country_id.code if main_company and main_company.country_id else None
 
+        installed_modules = (
+            self.env["ir.module.module"]
+            .sudo()
+            .search([("name", "in", ODUIST_MODULES), ("state", "=", "installed")])
+            .mapped("name")
+        )
+
         request_data = {
             "instance_hash": instance_uid,
             "odoo_version": release.version_info[0],
+            "installed_modules": installed_modules,
         }
 
         if country_code:
@@ -399,7 +418,7 @@ class OduistLicense(models.Model):
                         vals = {}
                         if module_info.get("latest_version"):
                             vals["latest_version"] = module_info.get("latest_version")
-                        if module_info.get("price"):
+                        if module_info.get("price") is not None:
                             vals["oduist_module_price"] = module_info.get("price")
                         if vals:
                             module.write(vals)
@@ -448,6 +467,7 @@ class OduistLicense(models.Model):
 
         request_data = {
             "instance_hash": instance_uid,
+            "odoo_version": release.version_info[0],
             "modules": module_list,
         }
 
