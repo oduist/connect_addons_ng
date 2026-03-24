@@ -26,6 +26,7 @@
                     <button name="create_extension" type="object" string="Extension" class="btn btn-primary"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box"/>
                     <group>
                         <group string="User Info">
                             <field name="username"/>

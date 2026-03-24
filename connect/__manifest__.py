@@ -5,7 +5,7 @@
     'summary': 'Communication platform for Odoo',
     'depends': ['base', 'mail', 'contacts', 'sms'],
     'external_dependencies': {
-        'python': ['phonenumbers', 'jinja2', 'openai', 'jwt'],
+        'python': ['phonenumbers', 'jinja2', 'openai', 'PyJWT'],
     },
     'data': [
         # Security

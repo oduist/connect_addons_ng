@@ -47,23 +47,7 @@ for easy access from other models.
 | `api_url` | Char | Computed |
 | `api_fallback_url` | Char | |
 | `web_base_url` | Char | Computed |
-| `module_version` | Char | Computed |
-| `odoo_version` | Char | Computed |
-| `installation_date` | Datetime | Computed |
-| `call_duration_limit` | Integer | Computed |
-| `customer_code` | Char | |
-| `registration_number` | Char | Computed |
-| `registration_key` | Char | Computed |
-| `is_registered` | Boolean | |
-| `i_agree_to_register` | Boolean | |
-| `i_agree_to_contact` | Boolean | |
-| `i_agree_to_receive` | Boolean | |
-| `admin_name` | Char | |
-| `admin_phone` | Char | |
-| `admin_email` | Char | |
-| `company_name` | Char | |
-| `company_country` | Many2one | `res.country` |
-| `latest_versions` | Html | Readonly |
+| `call_duration_limit` | Integer | Computed from `ir.config_parameter` |
 | `openai_api_key` | Char | Groups: `base.group_erp_manager` |
 | `display_openai_api_key` | Char | Masked display field |
 
@@ -77,16 +61,9 @@ for easy access from other models.
 | `connect_notify(bus)` | Send bus notification |
 | `connect_reload_view(bus)` | Send bus reload event |
 | `set_defaults()` | Set installation defaults |
-| `set_instance_uid()` | Generate UUID for instance |
-| `register_instance()` | Register with Oduist API |
-| `update_instance_registration()` | Update registration data |
-| `prepare_registration_data()` | Build registration payload |
-| `update_usage()` | Track usage statistics |
-| `make_usage_request()` | HTTP call to usage API |
-| `check_api_url()` | Validate API URL reachability |
+| `check_api_url()` | Validate API URL format |
 | `reformat_numbers_button()` | Re-normalize partner phone numbers |
 | `action_open_system_parameters()` | UI action |
-| `check_latest_versions()` | Version check against API |
 | `get_openai_client()` | Create and return OpenAI client instance |
 
 **Notes:**

@@ -46,6 +46,6 @@
 
 After installation, navigate to **Connect > Configuration > Settings** to configure your telephony provider. See the provider-specific setup guides:
 
-- [Core Configuration](core-setup.md) — General settings, transcription, registration
+- [Core Configuration](core-setup.md) — General settings, transcription
 - [Twilio Setup](twilio-setup.md) — Twilio account, SIP domains, WhatsApp
 - [FreeSWITCH Setup](freeswitch-setup.md) — FreeSWITCH server, gateways, endpoints

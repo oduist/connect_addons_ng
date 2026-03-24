@@ -82,3 +82,8 @@ When making code changes, **always** keep these in sync:
 3. **Specifications** (`specs/`) — Update if the change affects models, fields, methods, security, controllers, or architecture
 
 If a code change adds, removes, or modifies a feature, the corresponding documentation and spec files must be updated in the same commit.
+
+# Testing
+Folder ./../connect_addons_tests contains worktrees of Odoo modules.
+Each worktree name corresponds to Odoo version.
+When you add new features or change the code update the corresponding tests in corresponding module and odoo version.

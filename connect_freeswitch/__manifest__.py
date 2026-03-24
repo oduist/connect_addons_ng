@@ -9,6 +9,7 @@
         'data/fs_templates.xml',
         'views/endpoint_views.xml',
         'views/fs_template_views.xml',
+        'views/user_views.xml',
         'views/gateway_views.xml',
         'views/outgoing_route_views.xml',
         'views/settings.xml',

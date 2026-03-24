@@ -43,13 +43,19 @@ class CallFlow(models.Model):
         prompt_file = 'speak:piper|{}|{}'.format(lang, prompt) if prompt else 'silence_stream://250'
         invalid_file = 'speak:piper|{}|{}'.format(lang, invalid_msg) if invalid_msg else 'silence_stream://250'
 
+
         valid_digits = '|'.join(
             re.escape(c.choice_digits) for c in self.choices if c.choice_digits)
         digit_regexp = '^({})$'.format(valid_digits) if valid_digits else r'\d+'
 
-        pgd_data = "{min} {max} {tries} {timeout} # {prompt} {invalid} {var} {regexp}".format(
+        pgd_data = (
+            "{min} {max} {tries} {timeout} # "
+            "{prompt} {invalid} "
+            "{var} {regexp}"
+        ).format(
             min=min_digits, max=max_digits, tries=tries, timeout=timeout,
-            prompt=prompt_file, invalid=invalid_file, var=var_name, regexp=digit_regexp)
+            prompt=prompt_file, invalid=invalid_file,
+            var=var_name, regexp=digit_regexp)
 
         fs_domain = self.env['connect.settings'].sudo().get_param('freeswitch_domain') or '${domain}'
 

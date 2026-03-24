@@ -16,6 +16,8 @@ class User(models.Model):
     _order = 'username'
 
     callflow = fields.One2many('connect.user_callflow', 'user')
+    endpoint_ids = fields.One2many('connect.endpoint', 'connect_user_id', string='Endpoints')
+    endpoint_count = fields.Integer(compute='_compute_endpoint_count')
     exten = fields.Many2one('connect.exten', ondelete='set null', readonly=True)
     exten_number = fields.Char(related='exten.number', store=True)
     name = fields.Char(compute='_get_name')
@@ -40,6 +42,10 @@ class User(models.Model):
             ('user_uniq', 'UNIQUE("user")', 'This Odoo user account is already defined!'),
             ('username_uniq', 'UNIQUE(username)', 'This PBX username is already defined!'),
         ]
+
+    def _compute_endpoint_count(self):
+        for rec in self:
+            rec.endpoint_count = len(rec.endpoint_ids)
 
     def _get_name(self):
         for rec in self:
