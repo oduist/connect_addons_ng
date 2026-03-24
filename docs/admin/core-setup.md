@@ -29,20 +29,6 @@ Connect uses OpenAI for automatic call transcription and summarization.
     4. The summary is saved on both the recording and the call record
     5. If enabled, the summary is posted to the partner's chatter
 
-## Registration Tab
-
-Register your Connect instance with Oduist for license management, updates, and support.
-
-| Setting | Description |
-|---------|-------------|
-| **Admin Contact** | Name, phone, email of the instance administrator. |
-| **Company Name** | Your company name and country. |
-| **License Token** | Paste a JWT license token from [oduist.com](https://oduist.com). |
-| **Subscription Preferences** | Subscribe to security alerts, onboarding support, and product news. |
-
-## System Tab (Read-only)
-
-Displays module version, Odoo version, installation date, and call duration limit.
 
 ## PBX Users
 
