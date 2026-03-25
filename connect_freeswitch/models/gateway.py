@@ -1,5 +1,7 @@
 import logging
+import re
 from odoo import fields, models, api, release
+from odoo.exceptions import ValidationError
 if release.version_info[0] >= 19:
     from odoo.models import Constraint
 
@@ -29,6 +31,15 @@ class FreeSwitchGateway(models.Model):
         _sql_constraints = [
             ('name_uniq', 'UNIQUE(name)', 'Gateway name must be unique!'),
         ]
+
+    @api.constrains('name')
+    def _check_name(self):
+        for record in self:
+            if record.name and not re.match(r'^[a-zA-Z0-9_.-]+$', record.name):
+                raise ValidationError(
+                    "Gateway name '{}' contains invalid characters. "
+                    "Only letters, digits, hyphens, underscores and dots "
+                    "are allowed.".format(record.name))
 
     @api.model_create_multi
     def create(self, vals_list):

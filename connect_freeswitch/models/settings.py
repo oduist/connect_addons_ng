@@ -149,7 +149,7 @@ class Settings(models.Model):
         # 3. Registered endpoints
         fs_registrations = '0'
         reg_response = self.freeswitch_api(
-            'sofia', 'xmlstatus profile internal reg')
+            'sofia', 'xmlstatus profile external reg')
         if reg_response and not reg_response.startswith('-ERR'):
             try:
                 root = ET.fromstring(reg_response)
