@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="1">
+<odoo>
 
     <!-- ==================== DIRECTORY TEMPLATES ==================== -->
 
@@ -402,6 +402,7 @@ Variables:
         <param name="rtp-timer-name" value="soft"/>
         <param name="codec-prefs" value="OPUS,PCMU,PCMA"/>
         <param name="auth-calls" value="true"/>
+        <param name="apply-inbound-acl" value="gateways"/>
         {% if fs_domain %}
         <param name="force-register-domain" value="{{ fs_domain }}"/>
         <param name="force-realm" value="{{ fs_domain }}"/>
@@ -426,6 +427,7 @@ Variables:
         <param name="rtp-timer-name" value="soft"/>
         <param name="codec-prefs" value="OPUS,PCMU,PCMA"/>
         <param name="auth-calls" value="true"/>
+        <param name="apply-inbound-acl" value="gateways"/>
         {% if fs_domain %}
         <param name="force-register-domain" value="{{ fs_domain }}"/>
         <param name="force-realm" value="{{ fs_domain }}"/>
@@ -499,6 +501,36 @@ Variables:
   <param name="expire-seconds" value="{{ expire_seconds }}"/>
   <param name="retry-seconds" value="{{ retry_seconds }}"/>
 </gateway>]]></field>
+    </record>
+
+    <record id="fs_template_config_acl" model="connect.freeswitch.template">
+        <field name="key">config_acl</field>
+        <field name="name">Configuration - ACL</field>
+        <field name="section">configuration</field>
+        <field name="description">Access Control List for gateway IP whitelisting. IPs in this list bypass SIP authentication for inbound calls.
+
+Variables:
+  acl_entries - List of dicts, each with:
+    ip       - IP address or CIDR range
+    gateway  - Gateway name</field>
+        <field name="content"><![CDATA[<configuration name="acl.conf" description="Network Lists">
+  <network-lists>
+    <list name="gateways" default="deny">
+      {% for entry in acl_entries %}
+      <node type="allow" cidr="{{ entry.ip }}"/>
+      {% endfor %}
+    </list>
+  </network-lists>
+</configuration>]]></field>
+        <field name="default_content"><![CDATA[<configuration name="acl.conf" description="Network Lists">
+  <network-lists>
+    <list name="gateways" default="deny">
+      {% for entry in acl_entries %}
+      <node type="allow" cidr="{{ entry.ip }}"/>
+      {% endfor %}
+    </list>
+  </network-lists>
+</configuration>]]></field>
     </record>
 
     <record id="fs_template_config_xml_rpc" model="connect.freeswitch.template">

@@ -135,6 +135,7 @@ A gateway connects FreeSWITCH to an external SIP provider for making/receiving c
 | **Caller ID in From** | Include caller ID number in the SIP From header. |
 | **Expire Seconds** | Registration expiry (default: 3600). |
 | **Retry Seconds** | Registration retry interval (default: 30). |
+| **Inbound IPs** | IP addresses or CIDR ranges (one per line) allowed to send inbound calls without SIP authentication. Use this when your provider sends INVITEs without credentials and expects IP-based trust. |
 
 ### Outgoing Routes
 
@@ -254,6 +255,7 @@ Odoo generates FreeSWITCH XML dynamically using Jinja2 templates. Each template 
 | `dialplan_system` | Dialplan | System extensions (echo test) |
 | `config_sofia` | Configuration | Sofia SIP profile with gateways |
 | `config_sofia_gateway` | Configuration | Single SIP gateway element |
+| `config_acl` | Configuration | ACL for gateway IP whitelisting |
 | `config_xml_rpc` | Configuration | XML-RPC server settings |
 
 ### Customizing Templates

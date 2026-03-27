@@ -1,3 +1,4 @@
+import ipaddress
 import logging
 import re
 from odoo import fields, models, api, release
@@ -23,6 +24,11 @@ class FreeSwitchGateway(models.Model):
     caller_id_in_from = fields.Boolean(help='Use caller ID in From header')
     expire_seconds = fields.Integer(default=3600)
     retry_seconds = fields.Integer(default=30)
+    inbound_ips = fields.Text(
+        string='Inbound IPs',
+        help='IP addresses or CIDR ranges (one per line) allowed to send '
+             'inbound calls without SIP authentication. '
+             'Example: 185.3.68.0/24')
     active = fields.Boolean(default=True)
 
     if release.version_info[0] >= 19:
@@ -41,26 +47,62 @@ class FreeSwitchGateway(models.Model):
                     "Only letters, digits, hyphens, underscores and dots "
                     "are allowed.".format(record.name))
 
+    @api.constrains('inbound_ips')
+    def _check_inbound_ips(self):
+        for record in self:
+            for line in (record.inbound_ips or '').splitlines():
+                ip = line.strip()
+                if not ip:
+                    continue
+                try:
+                    ipaddress.ip_network(ip, strict=False)
+                except ValueError:
+                    raise ValidationError(
+                        "Invalid IP address or CIDR range: '{}'".format(ip))
+
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
         self._reload_sofia_profile()
+        if any(v.get('inbound_ips') for v in vals_list):
+            self._reload_acl()
         return records
 
     def write(self, vals):
         result = super().write(vals)
         self._reload_sofia_profile()
+        if 'inbound_ips' in vals:
+            self._reload_acl()
         return result
 
     def unlink(self):
+        has_ips = any(r.inbound_ips for r in self)
         result = super().unlink()
         self._reload_sofia_profile()
+        if has_ips:
+            self._reload_acl()
         return result
 
     def _reload_sofia_profile(self):
         """Ask FreeSWITCH to restart the external sofia profile and reload XML."""
         self.env['connect.settings'].freeswitch_api(
             'sofia', 'profile external restart reloadxml')
+
+    def _reload_acl(self):
+        """Ask FreeSWITCH to reload ACL configuration."""
+        self.env['connect.settings'].freeswitch_api('reloadacl')
+
+    @api.model
+    def _get_all_acl_ips(self):
+        """Return list of ACL entries from all active gateways with inbound IPs."""
+        gateways = self.search([('active', '=', True), ('inbound_ips', '!=', False)])
+        result = []
+        for gw in gateways:
+            for line in (gw.inbound_ips or '').splitlines():
+                ip = line.strip()
+                if ip:
+                    result.append({'ip': ip, 'gateway': gw.name})
+        return result
 
     def generate_sofia_gateway_xml(self):
         """Generate FreeSWITCH gateway XML string."""

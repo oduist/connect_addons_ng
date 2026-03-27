@@ -40,6 +40,10 @@
                             <field name="active"/>
                         </group>
                     </group>
+                    <group string="Inbound IP Whitelist" colspan="2">
+                        <field name="inbound_ips" nolabel="1"
+                               placeholder="One IP or CIDR per line, e.g.&#10;185.3.68.0/24&#10;212.51.140.20"/>
+                    </group>
                 </sheet>
             </form>
         </field>

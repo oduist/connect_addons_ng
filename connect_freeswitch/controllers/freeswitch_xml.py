@@ -305,6 +305,8 @@ class FreeSwitchXMLController(http.Controller):
 
         if key_value == 'sofia.conf':
             return self._get_sofia_config(params)
+        elif key_value == 'acl.conf':
+            return self._get_acl_config(params)
         elif key_value == 'xml_rpc.conf':
             return self._get_xml_rpc_config(params)
 
@@ -329,6 +331,22 @@ class FreeSwitchXMLController(http.Controller):
             'sofia_log_level': sofia_log_level,
             'fs_domain': fs_domain or '',
             'gateways_xml': gateways_xml,
+        })
+
+        xml_str = ('<document type="freeswitch/xml">'
+                   '<section name="configuration">'
+                   '{body}'
+                   '</section></document>').format(body=config_xml)
+        return self._xml_response_str(xml_str)
+
+    def _get_acl_config(self, params):
+        """Serve acl.conf with gateway IP whitelist from Odoo."""
+        Gateway = request.env['connect.freeswitch.gateway'].sudo()
+        acl_entries = Gateway._get_all_acl_ips()
+
+        Template = request.env['connect.freeswitch.template'].sudo()
+        config_xml = Template.render('config_acl', {
+            'acl_entries': acl_entries,
         })
 
         xml_str = ('<document type="freeswitch/xml">'
