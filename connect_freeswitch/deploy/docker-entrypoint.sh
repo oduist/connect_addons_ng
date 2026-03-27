@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 BASEURL=http://files.freeswitch.org
 SOUNDS_DIR=/usr/share/freeswitch/sounds
