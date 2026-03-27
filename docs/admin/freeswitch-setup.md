@@ -234,6 +234,42 @@ All configuration files are in `deploy/freeswitch/conf/`. Key files:
 | `dialplan/default.xml` | Fallback dialplan (echo test, hold music test). |
 | `directory/default.xml` | User directory (delegates to Odoo via XML cURL). |
 
+## XML Templates
+
+Navigate to **Connect > PBX > XML Templates** to view and customize the FreeSWITCH XML configuration templates.
+
+Odoo generates FreeSWITCH XML dynamically using Jinja2 templates. Each template produces a specific piece of configuration — user directory entries, dialplan extensions, gateway definitions, etc. The system ships with sensible defaults, but administrators can customize any template to modify the generated XML.
+
+### Template List
+
+| Template | Section | Description |
+|----------|---------|-------------|
+| `directory_user` | Directory | Single user authentication entry |
+| `directory_full` | Directory | Full directory with all endpoints |
+| `dialplan_user_bridge` | Dialplan | Bridge call to user endpoints |
+| `dialplan_ivr` | Dialplan | IVR with digit collection and choices |
+| `dialplan_ring_group` | Dialplan | Ring group bridging to multiple users |
+| `dialplan_inbound_did` | Dialplan | Inbound DID routing |
+| `dialplan_outgoing_route` | Dialplan | Outbound call routing via gateway |
+| `dialplan_system` | Dialplan | System extensions (echo test) |
+| `config_sofia` | Configuration | Sofia SIP profile with gateways |
+| `config_sofia_gateway` | Configuration | Single SIP gateway element |
+| `config_xml_rpc` | Configuration | XML-RPC server settings |
+
+### Customizing Templates
+
+Each template form shows:
+
+- **Available Variables** — Documents the Jinja2 variables available for rendering
+- **Template** tab — The editable Jinja2 template (XML with `{{ variable }}` placeholders)
+- **Default Template** tab — The factory default for reference
+
+Templates use standard [Jinja2 syntax](https://jinja.palletsprojects.com/): `{{ variable }}` for values, `{% if %}` for conditionals, `{% for %}` for loops.
+
+### Reset to Default
+
+If a customized template causes issues, click **Reset to Default** in the form header to restore the factory default. Templates with customizations are marked with the **Customized** flag in the list view.
+
 ## XML cURL Integration
 
 FreeSWITCH fetches dynamic configuration from Odoo via HTTP:

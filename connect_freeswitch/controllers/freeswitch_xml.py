@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 import re
-from xml.etree import ElementTree as ET
 from xml.dom import minidom
 
 from odoo import http
@@ -111,57 +110,38 @@ class FreeSwitchXMLController(http.Controller):
         fs_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain')
         actual_domain = fs_domain or domain or params.get('sip_auth_realm', '')
 
-        root = ET.Element('document', type='freeswitch/xml')
-        section = ET.SubElement(root, 'section', name='directory')
-        domain_el = ET.SubElement(section, 'domain', name=actual_domain)
-
-        # User ID is dynamic
-        user_el = ET.SubElement(domain_el, 'user', id=xml_user_id)
-
-        # Params
-        user_params = ET.SubElement(user_el, 'params')
-        ET.SubElement(user_params, 'param', name='password', value=endpoint.auth_password or '')
-        ET.SubElement(user_params, 'param', name='vm-password', value=endpoint.auth_password or '')
-
         # Build dial-string so that bridge(user/1000) works
-        # This tells FS to ring both SIP and Verto endpoints for this user
-        # For sofia_contact, use auth_user (the SIP registration username)
-        # For verto_contact, use xml_user_id (the extension number used for Verto login)
         dial_parts = []
         if endpoint.sip_enabled:
-            dial_parts.append(f"${{sofia_contact(*/{endpoint.auth_user}@{actual_domain})}}")
+            dial_parts.append("${{sofia_contact(*/{auth_user}@{domain})}}".format(
+                auth_user=endpoint.auth_user, domain=actual_domain))
         if endpoint.webrtc_enabled:
-            dial_parts.append(f"${{verto_contact({xml_user_id}@{actual_domain})}}")
-
+            dial_parts.append("${{verto_contact({user_id}@{domain})}}".format(
+                user_id=xml_user_id, domain=actual_domain))
         dial_string = ",".join(dial_parts)
-        ET.SubElement(user_params, 'param', name='dial-string', value=dial_string)
 
-        # Verto-specific
-        ET.SubElement(user_params, 'param', name='verto-context', value='default')
-        ET.SubElement(user_params, 'param', name='verto-dialplan', value='XML')
-        ET.SubElement(user_params, 'param', name='jsonrpc-allowed-methods', value='verto')
-        ET.SubElement(user_params, 'param', name='jsonrpc-allowed-event-channels', value='demo,presence,conference')
-
-        # Variables
-        variables = ET.SubElement(user_el, 'variables')
-        ET.SubElement(variables, 'variable', name='user_context', value='default')
-
-        # Caller ID from the associated connect user
         cid_name = connect_user.name or endpoint.auth_user
         cid_num = connect_user.exten_number or endpoint.auth_user
 
-        ET.SubElement(variables, 'variable', name='effective_caller_id_name', value=cid_name)
-        ET.SubElement(variables, 'variable', name='effective_caller_id_number', value=cid_num)
-        ET.SubElement(variables, 'variable', name='outbound_caller_id_name', value=cid_name)
-        ET.SubElement(variables, 'variable', name='outbound_caller_id_number', value=cid_num)
+        Template = request.env['connect.freeswitch.template'].sudo()
+        user_xml = Template.render('directory_user', {
+            'xml_user_id': xml_user_id,
+            'password': endpoint.auth_password or '',
+            'dial_string': dial_string,
+            'cid_name': cid_name,
+            'cid_num': cid_num,
+            'connect_user_id': str(connect_user.id),
+            'endpoint_id': str(endpoint.id),
+            'odoo_user_id': str(connect_user.user.id) if connect_user.user else '',
+        })
 
-        # Odoo Tracking
-        ET.SubElement(variables, 'variable', name='odoo_connect_user_id', value=str(connect_user.id))
-        ET.SubElement(variables, 'variable', name='odoo_endpoint_id', value=str(endpoint.id))
-        if connect_user.user:
-            ET.SubElement(variables, 'variable', name='odoo_user_id', value=str(connect_user.user.id))
-
-        return self._xml_response(root)
+        xml_str = ('<document type="freeswitch/xml">'
+                   '<section name="directory">'
+                   '<domain name="{domain}">'
+                   '{body}'
+                   '</domain></section></document>').format(
+                       domain=actual_domain, body=user_xml)
+        return self._xml_response_str(xml_str)
 
     def _get_full_directory(self, domain):
         """Generate full directory XML with all users."""
@@ -179,38 +159,29 @@ class FreeSwitchXMLController(http.Controller):
 
         actual_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain') or domain
 
-        root = ET.Element('document', type='freeswitch/xml')
-        section = ET.SubElement(root, 'section', name='directory')
-        domain_el = ET.SubElement(section, 'domain', name=actual_domain)
-
-        # Users directly inside domain (flat structure for xml_curl compatibility)
+        ep_data = []
         for endpoint in endpoints:
             connect_user = endpoint.connect_user_id
+            ep_data.append({
+                'auth_user': endpoint.auth_user,
+                'password': endpoint.auth_password,
+                'cid_name': connect_user.name or endpoint.auth_user,
+                'cid_num': connect_user.exten_number or endpoint.auth_user,
+                'connect_user_id': str(connect_user.id),
+                'endpoint_id': str(endpoint.id),
+                'odoo_user_id': str(connect_user.user.id) if connect_user.user else '',
+            })
 
-            user_el = ET.SubElement(domain_el, 'user', id=endpoint.auth_user)
+        Template = request.env['connect.freeswitch.template'].sudo()
+        body = Template.render('directory_full', {'endpoints': ep_data})
 
-            # Params with Verto support
-            user_params = ET.SubElement(user_el, 'params')
-            ET.SubElement(user_params, 'param', name='password', value=endpoint.auth_password)
-            ET.SubElement(user_params, 'param', name='vm-password', value=endpoint.auth_password)
-            ET.SubElement(user_params, 'param', name='verto-context', value='default')
-            ET.SubElement(user_params, 'param', name='verto-dialplan', value='XML')
-            ET.SubElement(user_params, 'param', name='jsonrpc-allowed-methods', value='verto')
-            ET.SubElement(user_params, 'param', name='jsonrpc-allowed-event-channels', value='demo,presence,conference')
-
-            # Variables
-            variables = ET.SubElement(user_el, 'variables')
-            ET.SubElement(variables, 'variable', name='user_context', value='default')
-            ET.SubElement(variables, 'variable', name='effective_caller_id_name', value=connect_user.name or endpoint.auth_user)
-            ET.SubElement(variables, 'variable', name='effective_caller_id_number', value=connect_user.exten_number or endpoint.auth_user)
-            ET.SubElement(variables, 'variable', name='outbound_caller_id_name', value=connect_user.name or endpoint.auth_user)
-            ET.SubElement(variables, 'variable', name='outbound_caller_id_number', value=connect_user.exten_number or endpoint.auth_user)
-            ET.SubElement(variables, 'variable', name='odoo_connect_user_id', value=str(connect_user.id))
-            ET.SubElement(variables, 'variable', name='odoo_endpoint_id', value=str(endpoint.id))
-            if connect_user.user:
-                ET.SubElement(variables, 'variable', name='odoo_user_id', value=str(connect_user.user.id))
-
-        return self._xml_response(root)
+        xml_str = ('<document type="freeswitch/xml">'
+                   '<section name="directory">'
+                   '<domain name="{domain}">'
+                   '{body}'
+                   '</domain></section></document>').format(
+                       domain=actual_domain, body=body)
+        return self._xml_response_str(xml_str)
 
     def _handle_dialplan(self, params):
         """Handle dialplan section requests.
@@ -224,20 +195,20 @@ class FreeSwitchXMLController(http.Controller):
 
         debug(request.env['connect.settings'].sudo(), "Dialplan request: context=%s, destination=%s" % (context, destination))
 
-        root = ET.Element('document', type='freeswitch/xml')
-        section = ET.SubElement(root, 'section', name='dialplan')
-        context_el = ET.SubElement(section, 'context', name=context)
-
         if context == 'public':
-            # Inbound DID routing
-            self._route_inbound(context_el, destination, params)
+            body = self._route_inbound(destination, params)
         else:
-            # Internal routing: extensions, outgoing, system
-            self._route_internal(context_el, destination, params)
+            body = self._route_internal(destination, params)
 
-        return self._xml_response(root)
+        xml_str = ('<document type="freeswitch/xml">'
+                   '<section name="dialplan">'
+                   '<context name="{context}">'
+                   '{body}'
+                   '</context></section></document>').format(
+                       context=context, body=body)
+        return self._xml_response_str(xml_str)
 
-    def _route_inbound(self, context_el, destination, params):
+    def _route_inbound(self, destination, params):
         """Route inbound calls from PSTN trunks via connect.number."""
         Number = request.env['connect.number'].sudo()
 
@@ -253,27 +224,30 @@ class FreeSwitchXMLController(http.Controller):
             ], limit=1)
 
         if number:
-            number.generate_dialplan(context_el, params)
-        else:
-            _logger.warning("No DID configured for inbound number: %s", destination)
-            ext = ET.SubElement(context_el, 'extension', name='unmatched_inbound')
-            condition = ET.SubElement(ext, 'condition',
-                field='destination_number', expression='.*')
-            ET.SubElement(condition, 'action', application='respond', data='404')
+            return number.generate_dialplan(params)
 
-    def _route_internal(self, context_el, destination, params):
+        _logger.warning("No DID configured for inbound number: %s", destination)
+        return ('<extension name="unmatched_inbound">'
+                '<condition field="destination_number" expression=".*">'
+                '<action application="respond" data="404"/>'
+                '</condition></extension>')
+
+    def _route_internal(self, destination, params):
         """Route internal calls: extensions, outgoing routes, system extensions."""
         Exten = request.env['connect.exten'].sudo()
         ConnectUser = request.env['connect.user'].sudo()
 
+        parts = []
+
         # System extensions
-        self._add_system_extensions(context_el)
+        Template = request.env['connect.freeswitch.template'].sudo()
+        parts.append(Template.render('dialplan_system', {}))
 
         # Try exact extension match
         exten = Exten.search([('number', '=', destination)], limit=1)
         if exten:
-            exten.generate_dialplan(context_el, params)
-            return
+            parts.append(exten.generate_dialplan(params))
+            return ''.join(parts)
 
         # Try user by username (handles transfers that use username instead of extension)
         connect_user = ConnectUser.search([
@@ -281,41 +255,38 @@ class FreeSwitchXMLController(http.Controller):
             ('active', '=', True)
         ], limit=1)
         if connect_user:
-            connect_user.generate_dialplan(context_el, params)
-            return
+            parts.append(connect_user.generate_dialplan(params))
+            return ''.join(parts)
 
         # Try regex pattern match against all extensions
         all_extens = Exten.search([])
         for ext in all_extens:
             try:
                 if re.match('^{}$'.format(ext.number), destination):
-                    ext.generate_dialplan(context_el, params)
-                    return
+                    parts.append(ext.generate_dialplan(params))
+                    return ''.join(parts)
             except re.error:
                 continue
 
         # Try outgoing routes
         OutgoingRoute = request.env['connect.freeswitch.outgoing_route'].sudo()
-        if OutgoingRoute.generate_dialplan(context_el, params):
-            return
+        route_xml = OutgoingRoute.generate_dialplan(params)
+        if route_xml:
+            parts.append(route_xml)
+            return ''.join(parts)
 
         # Fallback: try bridge user directly (for simple digit-only extensions)
         if re.match(r'^\d+$', destination):
-            ext = ET.SubElement(context_el, 'extension', name='local_extension')
-            condition = ET.SubElement(ext, 'condition',
-                field='destination_number', expression=r'^(\d+)$')
-            ET.SubElement(condition, 'action', application='set', data='call_timeout=30')
-            ET.SubElement(condition, 'action', application='set', data='hangup_after_bridge=true')
-            ET.SubElement(condition, 'action', application='set', data='continue_on_fail=true')
-            ET.SubElement(condition, 'action', application='bridge', data='user/$1@$${domain}')
+            parts.append(
+                '<extension name="local_extension">'
+                '<condition field="destination_number" expression="^(\\d+)$">'
+                '<action application="set" data="call_timeout=30"/>'
+                '<action application="set" data="hangup_after_bridge=true"/>'
+                '<action application="set" data="continue_on_fail=true"/>'
+                '<action application="bridge" data="user/$1@$${domain}"/>'
+                '</condition></extension>')
 
-    def _add_system_extensions(self, context_el):
-        """Add system utility extensions (echo test, etc.)."""
-        echo_ext = ET.SubElement(context_el, 'extension', name='echo')
-        echo_cond = ET.SubElement(echo_ext, 'condition',
-            field='destination_number', expression='^9196$')
-        ET.SubElement(echo_cond, 'action', application='answer')
-        ET.SubElement(echo_cond, 'action', application='echo')
+        return ''.join(parts)
 
     def _handle_configuration(self, params):
         """Handle configuration section requests.
@@ -340,50 +311,31 @@ class FreeSwitchXMLController(http.Controller):
         return self._not_found()
 
     def _get_sofia_config(self, params):
-        """Serve sofia.conf with gateways from Odoo.
-
-        Returns a sofia configuration containing an external profile
-        with all active gateways defined in Odoo. If no gateways exist,
-        falls through to local config.
-        """
+        """Serve sofia.conf with gateways from Odoo."""
         Gateway = request.env['connect.freeswitch.gateway'].sudo()
         gateways = Gateway.search([('active', '=', True)])
 
         if not gateways:
             return self._not_found()
 
-        root = ET.Element('document', type='freeswitch/xml')
-        section = ET.SubElement(root, 'section', name='configuration')
-        config = ET.SubElement(section, 'configuration',
-            name='sofia.conf', description='Sofia SIP')
+        # Render each gateway individually
+        gateways_xml = '\n'.join(gw.generate_sofia_gateway_xml() for gw in gateways)
 
-        # Global settings
-        global_settings = ET.SubElement(config, 'global_settings')
         sofia_log_level = request.env['connect.settings'].sudo().get_param('freeswitch_sofia_log_level') or '0'
-        ET.SubElement(global_settings, 'param', name='log-level', value=sofia_log_level)
-
-        profiles = ET.SubElement(config, 'profiles')
-
-        # External profile for gateways
-        profile = ET.SubElement(profiles, 'profile', name='external')
-        settings = ET.SubElement(profile, 'settings')
-        ET.SubElement(settings, 'param', name='context', value='public')
-        ET.SubElement(settings, 'param', name='sip-port', value='5080')
-        ET.SubElement(settings, 'param', name='rtp-timer-name', value='soft')
-        ET.SubElement(settings, 'param', name='codec-prefs', value='OPUS,PCMU,PCMA')
-        ET.SubElement(settings, 'param', name='auth-calls', value='true')
-
         fs_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain')
-        if fs_domain:
-            ET.SubElement(settings, 'param', name='force-register-domain', value=fs_domain)
-            ET.SubElement(settings, 'param', name='force-realm', value=fs_domain)
-            ET.SubElement(settings, 'param', name='force-register-db-domain', value=fs_domain)
 
-        gateways_el = ET.SubElement(profile, 'gateways')
-        for gw in gateways:
-            gw.generate_sofia_gateway_xml(gateways_el)
+        Template = request.env['connect.freeswitch.template'].sudo()
+        config_xml = Template.render('config_sofia', {
+            'sofia_log_level': sofia_log_level,
+            'fs_domain': fs_domain or '',
+            'gateways_xml': gateways_xml,
+        })
 
-        return self._xml_response(root)
+        xml_str = ('<document type="freeswitch/xml">'
+                   '<section name="configuration">'
+                   '{body}'
+                   '</section></document>').format(body=config_xml)
+        return self._xml_response_str(xml_str)
 
     def _get_xml_rpc_config(self, params):
         """Serve xml_rpc.conf with credentials from Odoo settings."""
@@ -396,23 +348,21 @@ class FreeSwitchXMLController(http.Controller):
 
         port = str(settings.get_param('freeswitch_xmlrpc_port') or 8080)
 
-        root = ET.Element('document', type='freeswitch/xml')
-        section = ET.SubElement(root, 'section', name='configuration')
-        config = ET.SubElement(section, 'configuration',
-            name='xml_rpc.conf', description='XML RPC')
+        Template = request.env['connect.freeswitch.template'].sudo()
+        config_xml = Template.render('config_xml_rpc', {
+            'port': port,
+            'user': user,
+            'password': password,
+        })
 
-        settings_el = ET.SubElement(config, 'settings')
-        ET.SubElement(settings_el, 'param', name='http-port', value=port)
-        ET.SubElement(settings_el, 'param', name='auth-user', value=user)
-        ET.SubElement(settings_el, 'param', name='auth-pass', value=password)
-        ET.SubElement(settings_el, 'param', name='auth-realm', value='freeswitch')
+        xml_str = ('<document type="freeswitch/xml">'
+                   '<section name="configuration">'
+                   '{body}'
+                   '</section></document>').format(body=config_xml)
+        return self._xml_response_str(xml_str)
 
-        return self._xml_response(root)
-
-    def _xml_response(self, root):
-        """Generate HTTP response with XML content."""
-        xml_str = ET.tostring(root, encoding='unicode', method='xml')
-
+    def _xml_response_str(self, xml_str):
+        """Generate HTTP response from an XML string."""
         # Pretty-print XML for logging
         pretty = pretty_xml(xml_str)
         debug(request.env['connect.settings'].sudo(), "XML response:\n%s" % pretty)
@@ -425,7 +375,8 @@ class FreeSwitchXMLController(http.Controller):
 
     def _not_found(self):
         """Return not found response."""
-        root = ET.Element('document', type='freeswitch/xml')
-        section = ET.SubElement(root, 'section', name='result')
-        ET.SubElement(section, 'result', status='not found')
-        return self._xml_response(root)
+        xml_str = ('<document type="freeswitch/xml">'
+                   '<section name="result">'
+                   '<result status="not found"/>'
+                   '</section></document>')
+        return self._xml_response_str(xml_str)

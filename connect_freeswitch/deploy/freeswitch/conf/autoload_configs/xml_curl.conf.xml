@@ -5,8 +5,12 @@
       <param name="timeout" value="10"/>
     </binding>
     <binding name="odoo-dialplan">
-      <param name="gateway-url" value="$${odoo_url}/freeswitch/xml" formula="exten=$${destination_number}"/>
+      <param name="gateway-url" value="$${odoo_url}/freeswitch/xml"/>
       <param name="bindings" value="dialplan"/>
+    </binding>
+    <binding name="odoo-configuration">
+      <param name="gateway-url" value="$${odoo_url}/freeswitch/xml"/>
+      <param name="bindings" value="configuration"/>
     </binding>
   </bindings>
 </configuration>
