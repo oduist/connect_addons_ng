@@ -68,6 +68,13 @@ class Call(models.Model):
             'parent_sid': cdr_data.get('other_leg_uuid'),
         }
 
+        # Override called with DID number for inbound calls
+        odoo_number_id = cdr_data.get('odoo_number_id')
+        if odoo_number_id:
+            number = self.env['connect.number'].browse(odoo_number_id).exists()
+            if number:
+                generic_params['called'] = number.phone_number
+
         # Pass direct user IDs from FreeSWITCH channel variables
         if cdr_data.get('caller_pbx_user_id'):
             generic_params['caller_pbx_user_id'] = int(

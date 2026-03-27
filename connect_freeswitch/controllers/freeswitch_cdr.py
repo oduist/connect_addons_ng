@@ -104,6 +104,7 @@ class FreeSwitchCDRController(http.Controller):
         caller_pbx_user_id = None
         called_pbx_user_id = None
         other_leg_uuid = None
+        odoo_number_id = None
 
         if variables is not None:
             # Use effective_caller_id_number (set by Odoo directory) if
@@ -133,6 +134,8 @@ class FreeSwitchCDRController(http.Controller):
                 if odoo_called_user:
                     called_pbx_user_id = int(odoo_called_user)
 
+            odoo_number_id = self._xml_text(variables, 'odoo_number_id')
+
         return {
             'uuid': uuid,
             'caller': caller,
@@ -143,6 +146,7 @@ class FreeSwitchCDRController(http.Controller):
             'caller_pbx_user_id': caller_pbx_user_id,
             'called_pbx_user_id': called_pbx_user_id,
             'other_leg_uuid': other_leg_uuid,
+            'odoo_number_id': int(odoo_number_id) if odoo_number_id else None,
         }
 
     @staticmethod
