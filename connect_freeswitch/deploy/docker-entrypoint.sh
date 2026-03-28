@@ -68,7 +68,7 @@ try:
 except Exception as e:
     print(str(e), file=sys.stderr)
     sys.exit(1)
-" 2>/dev/null)
+")
 
         KEY=$(python3 -c "
 import json, base64, sys
@@ -96,7 +96,7 @@ try:
 except Exception as e:
     print(str(e), file=sys.stderr)
     sys.exit(1)
-" 2>/dev/null)
+")
 
         if [ -n "$CERT" ] && [ -n "$KEY" ]; then
             # Combine key + cert into PEM files (FS expects key first)

@@ -130,7 +130,7 @@ FROM debian:bookworm-slim
 # Minimal runtime packages (libc, libgcc, etc. already in base image)
 # python3 is needed for ACME cert extraction at startup
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates wget python3-minimal openssl \
+    ca-certificates wget python3 openssl \
     && rm -rf /var/lib/apt/lists/*
 
 # FreeSWITCH installation
