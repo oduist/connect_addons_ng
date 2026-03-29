@@ -40,8 +40,14 @@ class CallFlow(models.Model):
         invalid_msg = self.invalid_input_message or ''
         lang = self._get_piper_language()
 
-        prompt_file = 'speak:piper|{}|{}'.format(lang, prompt) if prompt else 'silence_stream://250'
-        invalid_file = 'speak:piper|{}|{}'.format(lang, invalid_msg) if invalid_msg else 'silence_stream://250'
+        # Replace spaces with \s in TTS text — play_and_get_digits splits
+        # arguments by spaces, so literal spaces in the prompt break parsing.
+        # FreeSWITCH speak protocol interprets \s as a space character.
+        prompt_escaped = prompt.replace(' ', '\\s')
+        invalid_escaped = invalid_msg.replace(' ', '\\s')
+
+        prompt_file = 'speak:piper|{}|{}'.format(lang, prompt_escaped) if prompt else 'silence_stream://250'
+        invalid_file = 'speak:piper|{}|{}'.format(lang, invalid_escaped) if invalid_msg else 'silence_stream://250'
 
 
         valid_digits = '|'.join(
