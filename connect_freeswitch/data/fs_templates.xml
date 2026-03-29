@@ -206,7 +206,7 @@ Variables:
     user_number     - User extension number (if dst_type == 'user')
     transfer_target - Transfer destination (if dst_type == 'other')
   fs_domain       - FreeSWITCH SIP domain</field>
-</invoke>        <field name="content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
+        <field name="content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
     <action application="answer"/>
     <action application="sleep" data="500"/>
