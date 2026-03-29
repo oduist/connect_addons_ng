@@ -11,8 +11,8 @@ class CallFlow(models.Model):
     def generate_dialplan(self, params, exten=None):
         """Generate FreeSWITCH dialplan XML for this callflow.
 
-        For IVR (gather_input): generates play_and_get_digits with inline
-        condition branches for each choice.
+        For IVR (gather_input): generates speak (TTS) + read (digit collection)
+        with inline condition branches for each choice.
         For ring groups (ring_users without gather): generates bridge to all users.
         """
         self.ensure_one()
@@ -30,38 +30,13 @@ class CallFlow(models.Model):
                         id=self.id, number=re.escape(number))
 
     def _generate_ivr_dialplan(self, number):
-        """Generate IVR dialplan with play_and_get_digits + inline choice conditions."""
+        """Generate IVR dialplan with speak + read and inline choice conditions."""
         var_name = 'cf_digit_{}'.format(self.id)
         min_digits = 1
         max_digits = self.gather_digits or 1
-        tries = 3
         timeout = (self.gather_timeout or 5) * 1000
         prompt = self.prompt_message or ''
-        invalid_msg = self.invalid_input_message or ''
         lang = self._get_piper_language()
-
-        # Replace spaces with \s in TTS text — play_and_get_digits splits
-        # arguments by spaces, so literal spaces in the prompt break parsing.
-        # FreeSWITCH speak protocol interprets \s as a space character.
-        prompt_escaped = prompt.replace(' ', '\\s')
-        invalid_escaped = invalid_msg.replace(' ', '\\s')
-
-        prompt_file = 'speak:piper|{}|{}'.format(lang, prompt_escaped) if prompt else 'silence_stream://250'
-        invalid_file = 'speak:piper|{}|{}'.format(lang, invalid_escaped) if invalid_msg else 'silence_stream://250'
-
-
-        valid_digits = '|'.join(
-            re.escape(c.choice_digits) for c in self.choices if c.choice_digits)
-        digit_regexp = '^({})$'.format(valid_digits) if valid_digits else r'\d+'
-
-        pgd_data = (
-            "{min} {max} {tries} {timeout} # "
-            "{prompt} {invalid} "
-            "{var} {regexp}"
-        ).format(
-            min=min_digits, max=max_digits, tries=tries, timeout=timeout,
-            prompt=prompt_file, invalid=invalid_file,
-            var=var_name, regexp=digit_regexp)
 
         fs_domain = self.env['connect.settings'].sudo().get_param('freeswitch_domain') or '${domain}'
 
@@ -91,7 +66,11 @@ class CallFlow(models.Model):
         return self.env['connect.freeswitch.template'].render('dialplan_ivr', {
             'callflow_id': self.id,
             'number': re.escape(number),
-            'pgd_data': pgd_data,
+            'lang': lang,
+            'prompt': prompt,
+            'min_digits': min_digits,
+            'max_digits': max_digits,
+            'timeout': timeout,
             'var_name': var_name,
             'choices': choices,
             'fs_domain': fs_domain,
