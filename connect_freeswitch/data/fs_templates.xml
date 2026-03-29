@@ -188,12 +188,16 @@ Variables:
         <field name="key">dialplan_ivr</field>
         <field name="name">Dialplan - IVR</field>
         <field name="section">dialplan</field>
-        <field name="description">Interactive Voice Response with play_and_get_digits and inline choice conditions.
+        <field name="description">Interactive Voice Response using speak (Piper TTS) + read for digit collection, with inline choice conditions.
 
 Variables:
   callflow_id     - connect.callflow record ID
   number          - Extension number (escaped for regex)
-  pgd_data        - play_and_get_digits parameter string
+  lang            - Piper TTS language code (e.g. 'en')
+  prompt          - TTS prompt text (plain text with spaces)
+  min_digits      - Minimum digits to collect
+  max_digits      - Maximum digits to collect
+  timeout         - Digit collection timeout in milliseconds
   var_name        - Channel variable name for collected digits
   choices         - List of dicts, each with:
     digits_escaped  - Choice digits (escaped for regex)
@@ -206,10 +210,11 @@ Variables:
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
     <action application="answer"/>
     <action application="sleep" data="500"/>
-    <action application="play_and_get_digits" data="{{ pgd_data }}"/>
+    <action application="speak" data="piper|{{ lang }}|{{ prompt }}"/>
+    <action application="read" data="{{ min_digits }} {{ max_digits }} silence_stream://250 {{ var_name }} {{ timeout }} #"/>
   </condition>
   {% for choice in choices %}
-  <condition field="${{{ var_name }}}" expression="^{{ choice.digits_escaped }}$" break="on-true">
+  <condition field="${ {{- var_name -}} }" expression="^{{ choice.digits_escaped }}$" break="on-true">
     {% if choice.dst_type == 'user' %}
     <action application="set" data="odoo_called_user_id={{ choice.user_id }}"/>
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
@@ -227,10 +232,11 @@ Variables:
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
     <action application="answer"/>
     <action application="sleep" data="500"/>
-    <action application="play_and_get_digits" data="{{ pgd_data }}"/>
+    <action application="speak" data="piper|{{ lang }}|{{ prompt }}"/>
+    <action application="read" data="{{ min_digits }} {{ max_digits }} silence_stream://250 {{ var_name }} {{ timeout }} #"/>
   </condition>
   {% for choice in choices %}
-  <condition field="${{{ var_name }}}" expression="^{{ choice.digits_escaped }}$" break="on-true">
+  <condition field="${ {{- var_name -}} }" expression="^{{ choice.digits_escaped }}$" break="on-true">
     {% if choice.dst_type == 'user' %}
     <action application="set" data="odoo_called_user_id={{ choice.user_id }}"/>
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
