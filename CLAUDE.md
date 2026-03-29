@@ -65,6 +65,23 @@ Code includes `release.version_info[0]` checks to support Odoo 17.0, 18.0, and 1
 2. Build image using the short version (strip Odoo prefix): `docker build --platform linux/amd64 --provenance=false --sbom=false -t oduist/freeswitch:1.0.3 -t oduist/freeswitch:latest connect_freeswitch/deploy/`
 3. Push both tags: `docker push oduist/freeswitch:1.0.3 && docker push oduist/freeswitch:latest`
 
+## Testing FreeSWITCH SIP Calls
+
+Use oduflow's `run_service_command` to execute `fs_cli` commands directly inside the FreeSWITCH container — no external SIP client needed.
+
+```bash
+# Originate a test call (echo app mirrors audio back)
+fs_cli -x "originate sofia/internal/1000@localhost &echo"
+
+# Check SIP registration status
+fs_cli -x "sofia status profile internal"
+
+# Show active calls
+fs_cli -x "show calls"
+```
+
+Use `get_service_logs` to check FreeSWITCH logs after originating calls.
+
 ## Decision Log (ADR)
 
 Architecture Decision Records are stored in `specs/decisions/`. Each file documents one decision: the problem, options considered, and chosen approach with rationale.
