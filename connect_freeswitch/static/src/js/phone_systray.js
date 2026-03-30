@@ -197,15 +197,18 @@ export class PhoneSystray extends Component {
             onStateChange: (state) => {
                 this.state.vertoState = state;
             },
-            onCallStateChange: (state) => {
+            onCallStateChange: (state, data) => {
                 this.state.callState = state;
                 if (state === "incoming") {
                     this.state.showDialpad = true;
-                    this.state.callerName = this.vertoClient?.currentCall?.callerName || "";
-                    this.state.callerNumber = this.vertoClient?.currentCall?.callerNumber || "";
+                    this.state.callerName = data.callerName || "";
+                    this.state.callerNumber = data.callerNumber || "";
                 } else if (state === "idle") {
                     this.state.callerName = "";
                     this.state.callerNumber = "";
+                } else if (data.callerName || data.callerNumber) {
+                    if (data.callerName) this.state.callerName = data.callerName;
+                    if (data.callerNumber) this.state.callerNumber = data.callerNumber;
                 }
             },
             onError: (error) => {

@@ -80,9 +80,9 @@ export class VertoClient {
         this.onStateChange(state);
     }
 
-    _setCallState(state) {
+    _setCallState(state, data) {
         this.callState = state;
-        this.onCallStateChange(state);
+        this.onCallStateChange(state, data || {});
     }
 
     _appendDomain(value) {
@@ -376,11 +376,17 @@ export class VertoClient {
     }
     
     _handleDisplay(params) {
-        if (params.display_name && this.currentCall) {
-            this.currentCall.remoteName = params.display_name;
-        }
-        if (params.display_number && this.currentCall) {
-            this.currentCall.remoteNumber = params.display_number;
+        const dp = params.dialogParams || {};
+        const name = params.display_name || dp.display_name || '';
+        const number = params.display_number || dp.display_number || '';
+
+        if (this.currentCall) {
+            if (name) this.currentCall.callerName = name;
+            if (number) this.currentCall.callerNumber = number;
+            this._setCallState(this.callState, {
+                callerName: this.currentCall.callerName,
+                callerNumber: this.currentCall.callerNumber
+            });
         }
     }
     
@@ -497,17 +503,21 @@ export class VertoClient {
 
     async _handleInvite(params) {
         console.log('[Verto] Incoming call:', params);
+        console.warn('[Verto] RAW PARAMS:', JSON.stringify(params, null, 2));
         const dp = params.dialogParams || {};
+
+        const callerName = params.caller_id_name || dp.caller_id_name || '';
+        const callerNumber = params.caller_id_number || dp.caller_id_number || '';
 
         this.currentCall = {
             callId: params.callID || dp.callID,
-            callerName: dp.caller_id_name || '',
-            callerNumber: dp.caller_id_number || '',
+            callerName,
+            callerNumber,
             sdp: params.sdp,
             incoming: true
         };
 
-        this._setCallState('incoming');
+        this._setCallState('incoming', { callerName, callerNumber });
     }
 
     async _getMediaStream() {
