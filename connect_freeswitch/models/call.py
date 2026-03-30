@@ -1,5 +1,7 @@
 import logging
+import re
 from odoo import models, api
+from odoo.exceptions import UserError
 from odoo.addons.connect.models.settings import debug
 
 logger = logging.getLogger(__name__)
@@ -24,6 +26,139 @@ HANGUP_CAUSE_MAP = {
 
 class Call(models.Model):
     _inherit = 'connect.call'
+
+    @api.model
+    def originate_call(self, number, res_model=None, res_id=None):
+        """Originate a call via FreeSWITCH.
+
+        Rings the current user's endpoints (a-leg), then bridges to the
+        target number via the matching outgoing route (b-leg).
+        For internal extensions, bridges directly without a gateway.
+        """
+        self.env['oduist.license'].check_license('connect', silent=False)
+        settings = self.env['connect.settings']
+
+        number = re.sub(r'[\s()\-]', '', number or '')
+        if not number:
+            raise UserError("No phone number provided.")
+
+        domain = settings.get_param('freeswitch_domain')
+        if not domain:
+            raise UserError("FreeSWITCH domain is not configured.")
+
+        # Resolve partner
+        partner_id = False
+        caller_name = ''
+        if res_model and res_id:
+            obj = self.env[res_model].browse(res_id)
+            if obj.exists():
+                if res_model == 'res.partner':
+                    partner_id = res_id
+                    caller_name = obj.display_name
+                elif hasattr(obj, 'partner_id') and obj.partner_id:
+                    partner_id = obj.partner_id.id
+                    caller_name = obj.partner_id.display_name
+                elif hasattr(obj, 'partner') and obj.partner:
+                    partner_id = obj.partner.id
+                    caller_name = obj.partner.display_name
+
+        # Get current user's connect_user and endpoints
+        user = self.env.user
+        connect_user = self.env['connect.user'].search([
+            ('user', '=', user.id),
+            ('active', '=', True),
+        ], limit=1)
+        if not connect_user:
+            raise UserError("You don't have a Connect user configured.")
+
+        endpoints = self.env['connect.endpoint'].search([
+            ('connect_user_id', '=', connect_user.id),
+            ('active', '=', True),
+        ])
+        # Filter to ringable endpoints (SIP with ring, or WebRTC with ring)
+        ring_endpoints = endpoints.filtered(
+            lambda ep: (ep.sip_enabled and ep.sip_ring)
+            or (ep.webrtc_enabled and ep.webrtc_ring)
+        )
+        if not ring_endpoints:
+            raise UserError("You don't have any ringable endpoints configured.")
+
+        # Build a-leg (user's endpoints)
+        a_leg_parts = []
+        for ep in ring_endpoints:
+            a_leg_parts.append(
+                '[leg_timeout=30]sofia/internal/{}@{}'.format(
+                    ep.auth_user, domain))
+        a_leg = ','.join(a_leg_parts)
+
+        # Caller ID
+        caller_number = connect_user.exten_number or ring_endpoints[0].auth_user
+
+        # Check if target is an internal extension
+        exten = self.env['connect.exten'].search(
+            [('number', '=', number)], limit=1)
+        if exten:
+            # Internal call — bridge to extension's endpoints
+            target_user = self.env['connect.user'].search([
+                ('exten', '=', exten.id),
+                ('active', '=', True),
+            ], limit=1)
+            if target_user:
+                target_endpoints = self.env['connect.endpoint'].search([
+                    ('connect_user_id', '=', target_user.id),
+                    ('active', '=', True),
+                ]).filtered(
+                    lambda ep: (ep.sip_enabled and ep.sip_ring)
+                    or (ep.webrtc_enabled and ep.webrtc_ring)
+                )
+                if target_endpoints:
+                    b_parts = []
+                    for ep in target_endpoints:
+                        b_parts.append(
+                            'sofia/internal/{}@{}'.format(ep.auth_user, domain))
+                    b_leg = ','.join(b_parts)
+                else:
+                    b_leg = 'sofia/internal/{}@{}'.format(number, domain)
+            else:
+                b_leg = 'sofia/internal/{}@{}'.format(number, domain)
+        else:
+            # External call — find outgoing route
+            routes = self.env['connect.freeswitch.outgoing_route'].sudo().search(
+                [('active', '=', True)])
+            b_leg = None
+            for route in routes:
+                if re.match(route.pattern, number):
+                    b_leg = self.env[
+                        'connect.freeswitch.outgoing_route'
+                    ]._build_bridge_data(
+                        route.gateway.name, number,
+                        strip=route.strip, prefix=route.prefix or '')
+                    break
+            if not b_leg:
+                raise UserError(
+                    "No outgoing route found for number: {}".format(number))
+
+        # Build originate command
+        variables = [
+            "origination_caller_id_name='{}'".format(
+                (caller_name or caller_number).replace("'", "")),
+            "origination_caller_id_number={}".format(caller_number),
+            "odoo_caller_pbx_user_id={}".format(connect_user.id),
+        ]
+        if partner_id:
+            variables.append("odoo_partner_id={}".format(partner_id))
+
+        cmd = '{{{}}}{} &bridge({})'.format(
+            ','.join(variables), a_leg, b_leg)
+
+        debug(self, 'FreeSWITCH originate: %s' % cmd)
+        result = settings.freeswitch_api('originate', cmd)
+        if not result or result.startswith('-ERR'):
+            logger.error("FreeSWITCH originate failed: %s", result)
+            raise UserError(
+                "Failed to originate call: {}".format(result or 'no response'))
+
+        return True
 
     @api.model
     def on_freeswitch_cdr(self, cdr_data):
