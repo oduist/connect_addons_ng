@@ -9,13 +9,14 @@
                 <button class="oe_stat_button" icon="fa-phone"
                         invisible="connect_calls_count == 0"
                         type="action" name="%(action_connect_call)d"
-                        context="{'search_default_partner': id}">
+                        domain="['|', ('partner', '=', id), ('partner.parent_id', '=', id)]"
+                        context="{'search_default_filter_today': 0}">
                     <field name="connect_calls_count" string="Calls" widget="statinfo"/>
                 </button>
                 <button class="oe_stat_button" icon="fa-envelope"
                         invisible="connect_messages_count == 0"
                         type="action" name="%(action_connect_message)d"
-                        context="{'search_default_partner': id}">
+                        domain="['|', ('partner', '=', id), ('partner.parent_id', '=', id)]">
                     <field name="connect_messages_count" string="Messages" widget="statinfo"/>
                 </button>
             </xpath>
