@@ -7,7 +7,9 @@
         <field name="arch" type="xml">
             <field name="connect_user_id" position="after">
                 <field name="sip_enabled"/>
+                <field name="sip_ring" invisible="not sip_enabled"/>
                 <field name="webrtc_enabled"/>
+                <field name="webrtc_ring" invisible="not webrtc_enabled"/>
             </field>
         </field>
     </record>
@@ -19,7 +21,9 @@
         <field name="arch" type="xml">
             <field name="active" position="after">
                 <field name="sip_enabled"/>
+                <field name="sip_ring" invisible="not sip_enabled"/>
                 <field name="webrtc_enabled"/>
+                <field name="webrtc_ring" invisible="not webrtc_enabled"/>
                 <field name="auth_user" invisible="not sip_enabled and not webrtc_enabled"/>
                 <field name="auth_password" password="True" invisible="not sip_enabled and not webrtc_enabled"/>
             </field>
