@@ -14,12 +14,25 @@
         </field>
     </record>
 
+    <record id="view_connect_endpoint_search_freeswitch" model="ir.ui.view">
+        <field name="name">connect.endpoint.search.freeswitch</field>
+        <field name="model">connect.endpoint</field>
+        <field name="inherit_id" ref="connect.view_connect_endpoint_search"/>
+        <field name="arch" type="xml">
+            <filter name="archived" position="before">
+                <filter string="SIP Enabled" name="sip_enabled" domain="[('sip_enabled', '=', True)]"/>
+                <filter string="WebRTC Enabled" name="webrtc_enabled" domain="[('webrtc_enabled', '=', True)]"/>
+                <separator/>
+            </filter>
+        </field>
+    </record>
+
     <record id="view_connect_endpoint_form_freeswitch" model="ir.ui.view">
         <field name="name">connect.endpoint.form.freeswitch</field>
         <field name="model">connect.endpoint</field>
         <field name="inherit_id" ref="connect.view_connect_endpoint_form"/>
         <field name="arch" type="xml">
-            <field name="active" position="after">
+            <field name="connect_user_id" position="after">
                 <group string="SIP">
                     <field name="sip_enabled" widget="boolean_toggle"/>
                     <field name="sip_ring" widget="boolean_toggle" invisible="not sip_enabled"/>

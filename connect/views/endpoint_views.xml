@@ -7,7 +7,6 @@
             <list>
                 <field name="name"/>
                 <field name="connect_user_id"/>
-                <field name="active" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -21,7 +20,6 @@
                     <group>
                         <field name="name"/>
                         <field name="connect_user_id"/>
-                        <field name="active"/>
                     </group>
                 </sheet>
             </form>
@@ -35,6 +33,8 @@
             <search>
                 <field name="name"/>
                 <field name="connect_user_id"/>
+                <separator/>
+                <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
             </search>
         </field>
     </record>
