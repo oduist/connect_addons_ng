@@ -36,8 +36,8 @@
                            t-att-readonly="isCallActive"/>
                 </div>
                 <div class="o_phone_incoming_info" t-if="isIncoming">
-                    <div class="o_incoming_caller_name" t-esc="state.incomingCallerName || 'Unknown'"/>
-                    <div class="o_incoming_caller_number" t-esc="state.incomingCallerNumber"/>
+                    <div class="o_incoming_caller_name" t-esc="incomingCallerName || 'Unknown'"/>
+                    <div class="o_incoming_caller_number" t-esc="incomingCallerNumber"/>
                 </div>
                 <div class="o_phone_call_status" t-if="props.callState !== 'idle'">
                     <t t-esc="getCallStateText()"/>

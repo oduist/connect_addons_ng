@@ -20,8 +20,6 @@ class PhoneDialpad extends Component {
             number: "",
             muted: false,
             callDuration: 0,
-            incomingCallerName: "",
-            incomingCallerNumber: "",
         });
 
         this.durationInterval = null;
@@ -37,6 +35,14 @@ class PhoneDialpad extends Component {
 
     get isIncoming() {
         return this.props.callState === "incoming";
+    }
+
+    get incomingCallerName() {
+        return this.props.vertoClient?.currentCall?.callerName || "";
+    }
+
+    get incomingCallerNumber() {
+        return this.props.vertoClient?.currentCall?.callerNumber || "";
     }
 
     onKeyPress(digit) {
