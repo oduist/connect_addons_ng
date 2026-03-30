@@ -25,6 +25,10 @@ class PhoneDialpad extends Component {
         });
 
         this.durationInterval = null;
+
+        onWillUnmount(() => {
+            this._stopDurationTimer();
+        });
     }
 
     get isConnected() {

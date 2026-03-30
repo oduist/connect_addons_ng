@@ -415,6 +415,9 @@ export class VertoClient {
     }
     
     async _setupMediaForRecovery(remoteSdp) {
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(track => track.stop());
+        }
         if (this.peerConnection) {
             this.peerConnection.close();
         }
