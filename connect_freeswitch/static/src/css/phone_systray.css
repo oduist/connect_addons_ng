@@ -75,11 +75,12 @@
 .o_incoming_caller_name {
     font-size: 18px;
     font-weight: 600;
+    color: #212529;
 }
 
 .o_incoming_caller_number {
     font-size: 14px;
-    color: #6c757d;
+    color: #495057;
 }
 
 .o_phone_dialpad_keys {
@@ -143,12 +144,6 @@
     padding: 12px;
 }
 
-@keyframes pulse-incoming {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
 .o_phone_dialpad:has(.o_phone_answer_btn) .o_phone_incoming_info {
-    animation: pulse-incoming 1.5s ease-in-out infinite;
     background: #d4edda;
 }
