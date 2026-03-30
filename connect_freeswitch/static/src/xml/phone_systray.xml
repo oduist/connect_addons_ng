@@ -28,14 +28,13 @@
             </div>
             
             <div class="o_phone_dialpad_display">
-                <div class="o_phone_number" t-if="!isIncoming">
-                    <input type="text" 
-                           class="form-control form-control-lg text-center" 
-                           t-model="state.number" 
-                           placeholder="Enter number"
-                           t-att-readonly="isCallActive"/>
+                <div class="o_phone_number" t-if="!isIncoming and !isCallActive">
+                    <input type="text"
+                           class="form-control form-control-lg text-center"
+                           t-model="state.number"
+                           placeholder="Enter number"/>
                 </div>
-                <div class="o_phone_incoming_info" t-if="isIncoming">
+                <div class="o_phone_incoming_info" t-if="isIncoming or isCallActive">
                     <div class="o_incoming_caller_name" t-esc="incomingCallerName || 'Unknown'"/>
                     <div class="o_incoming_caller_number" t-esc="incomingCallerNumber"/>
                 </div>
