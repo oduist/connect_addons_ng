@@ -13,6 +13,8 @@ class PhoneDialpad extends Component {
         vertoClient: { type: Object, optional: true },
         state: String,
         callState: String,
+        callerName: { type: String, optional: true },
+        callerNumber: { type: String, optional: true },
     };
 
     setup() {
@@ -35,14 +37,6 @@ class PhoneDialpad extends Component {
 
     get isIncoming() {
         return this.props.callState === "incoming";
-    }
-
-    get incomingCallerName() {
-        return this.props.vertoClient?.currentCall?.callerName || "";
-    }
-
-    get incomingCallerNumber() {
-        return this.props.vertoClient?.currentCall?.callerNumber || "";
     }
 
     onKeyPress(digit) {
@@ -155,6 +149,8 @@ export class PhoneSystray extends Component {
             showDialpad: false,
             vertoState: "disconnected",
             callState: "idle",
+            callerName: "",
+            callerNumber: "",
             config: null,
         });
 
@@ -205,6 +201,11 @@ export class PhoneSystray extends Component {
                 this.state.callState = state;
                 if (state === "incoming") {
                     this.state.showDialpad = true;
+                    this.state.callerName = this.vertoClient?.currentCall?.callerName || "";
+                    this.state.callerNumber = this.vertoClient?.currentCall?.callerNumber || "";
+                } else if (state === "idle") {
+                    this.state.callerName = "";
+                    this.state.callerNumber = "";
                 }
             },
             onError: (error) => {
