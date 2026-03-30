@@ -112,10 +112,10 @@ class FreeSwitchXMLController(http.Controller):
 
         # Build dial-string so that bridge(user/1000) works
         dial_parts = []
-        if endpoint.sip_enabled:
+        if endpoint.sip_enabled and endpoint.sip_ring:
             dial_parts.append("${{sofia_contact(*/{auth_user}@{domain})}}".format(
                 auth_user=endpoint.auth_user, domain=actual_domain))
-        if endpoint.webrtc_enabled:
+        if endpoint.webrtc_enabled and endpoint.webrtc_ring:
             dial_parts.append("${{verto_contact({user_id}@{domain})}}".format(
                 user_id=xml_user_id, domain=actual_domain))
         dial_string = ",".join(dial_parts)
