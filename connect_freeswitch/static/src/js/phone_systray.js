@@ -13,6 +13,8 @@ class PhoneDialpad extends Component {
         vertoClient: { type: Object, optional: true },
         state: String,
         callState: String,
+        callerName: { type: String, optional: true },
+        callerNumber: { type: String, optional: true },
     };
 
     setup() {
@@ -23,6 +25,10 @@ class PhoneDialpad extends Component {
         });
 
         this.durationInterval = null;
+
+        onWillUnmount(() => {
+            this._stopDurationTimer();
+        });
     }
 
     get isConnected() {
@@ -35,14 +41,6 @@ class PhoneDialpad extends Component {
 
     get isIncoming() {
         return this.props.callState === "incoming";
-    }
-
-    get incomingCallerName() {
-        return this.props.vertoClient?.currentCall?.callerName || "";
-    }
-
-    get incomingCallerNumber() {
-        return this.props.vertoClient?.currentCall?.callerNumber || "";
     }
 
     onKeyPress(digit) {
@@ -155,6 +153,8 @@ export class PhoneSystray extends Component {
             showDialpad: false,
             vertoState: "disconnected",
             callState: "idle",
+            callerName: "",
+            callerNumber: "",
             config: null,
         });
 
@@ -201,10 +201,18 @@ export class PhoneSystray extends Component {
             onStateChange: (state) => {
                 this.state.vertoState = state;
             },
-            onCallStateChange: (state) => {
+            onCallStateChange: (state, data) => {
                 this.state.callState = state;
                 if (state === "incoming") {
                     this.state.showDialpad = true;
+                    this.state.callerName = data.callerName || "";
+                    this.state.callerNumber = data.callerNumber || "";
+                } else if (state === "idle") {
+                    this.state.callerName = "";
+                    this.state.callerNumber = "";
+                } else if (data.callerName || data.callerNumber) {
+                    if (data.callerName) this.state.callerName = data.callerName;
+                    if (data.callerNumber) this.state.callerNumber = data.callerNumber;
                 }
             },
             onError: (error) => {
