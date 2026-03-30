@@ -497,15 +497,16 @@ export class VertoClient {
 
     async _handleInvite(params) {
         console.log('[Verto] Incoming call:', params);
-        
+        const dp = params.dialogParams || {};
+
         this.currentCall = {
-            callId: params.callID,
-            callerName: params.caller_id_name,
-            callerNumber: params.caller_id_number,
+            callId: params.callID || dp.callID,
+            callerName: dp.caller_id_name || '',
+            callerNumber: dp.caller_id_number || '',
             sdp: params.sdp,
             incoming: true
         };
-        
+
         this._setCallState('incoming');
     }
 
