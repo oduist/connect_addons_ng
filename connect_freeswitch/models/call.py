@@ -87,7 +87,7 @@ class Call(models.Model):
         a_leg_parts = []
         for ep in ring_endpoints:
             a_leg_parts.append(
-                '[leg_timeout=30]sofia/external/{}@{}'.format(
+                '[leg_timeout=30]user/{}@{}'.format(
                     ep.auth_user, domain))
         a_leg = ','.join(a_leg_parts)
 
@@ -115,12 +115,12 @@ class Call(models.Model):
                     b_parts = []
                     for ep in target_endpoints:
                         b_parts.append(
-                            'sofia/external/{}@{}'.format(ep.auth_user, domain))
+                            'user/{}@{}'.format(ep.auth_user, domain))
                     b_leg = ','.join(b_parts)
                 else:
-                    b_leg = 'sofia/external/{}@{}'.format(number, domain)
+                    b_leg = 'user/{}@{}'.format(number, domain)
             else:
-                b_leg = 'sofia/external/{}@{}'.format(number, domain)
+                b_leg = 'user/{}@{}'.format(number, domain)
         else:
             # External call — find outgoing route
             routes = self.env['connect.freeswitch.outgoing_route'].sudo().search(
