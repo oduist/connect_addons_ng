@@ -18,7 +18,9 @@
                         <list editable="bottom">
                             <field name="name"/>
                             <field name="sip_enabled"/>
+                            <field name="sip_ring" invisible="not sip_enabled"/>
                             <field name="webrtc_enabled"/>
+                            <field name="webrtc_ring" invisible="not webrtc_enabled"/>
                             <field name="auth_user" invisible="not sip_enabled and not webrtc_enabled"/>
                             <field name="auth_password" password="True" invisible="not sip_enabled and not webrtc_enabled"/>
                             <field name="active" column_invisible="1"/>
