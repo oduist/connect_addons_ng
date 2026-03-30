@@ -148,6 +148,11 @@ class Call(models.Model):
         if partner_id:
             variables.append("odoo_partner_id={}".format(partner_id))
 
+        # For external calls via gateway, force standard codecs on b-leg
+        # since a-leg may be WebRTC (Opus) which gateways don't support
+        if not exten:
+            b_leg = '[absolute_codec_string=PCMU,PCMA]{}'.format(b_leg)
+
         cmd = '{{{}}}{} &bridge({})'.format(
             ','.join(variables), a_leg, b_leg)
 
