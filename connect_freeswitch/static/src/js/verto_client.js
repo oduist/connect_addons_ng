@@ -218,7 +218,10 @@ export class VertoClient {
             
             this._sendRpc('echo', {}).then(() => {
                 this.lastPong = Date.now();
-            }).catch(() => {});
+            }).catch(() => {
+                // Even an error response means the connection is alive
+                this.lastPong = Date.now();
+            });
         }, this.heartbeatInterval);
     }
     
@@ -392,15 +395,22 @@ export class VertoClient {
     
     async _handleAttach(params) {
         console.log('[Verto] Received attach (call recovery):', params);
-        
+
+        const callId = params.callID || (params.dialogParams || {}).callID;
+
+        // Only recover our active call, ignore stale sessions
+        if (!this.currentCall || this.currentCall.callId !== callId) {
+            console.log('[Verto] Ignoring attach for unknown call:', callId);
+            return;
+        }
+
         if (!params.sdp) return;
-        
+
         try {
             await this._setupMediaForRecovery(params.sdp);
             this._setCallState('active');
         } catch (error) {
             console.error('[Verto] Attach handling failed:', error);
-            this._cleanupCall();
         }
     }
     
@@ -503,7 +513,6 @@ export class VertoClient {
 
     async _handleInvite(params) {
         console.log('[Verto] Incoming call:', params);
-        console.warn('[Verto] RAW PARAMS:', JSON.stringify(params, null, 2));
         const dp = params.dialogParams || {};
 
         const callerName = params.caller_id_name || dp.caller_id_name || '';
