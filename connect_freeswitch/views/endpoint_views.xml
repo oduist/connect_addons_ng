@@ -32,20 +32,22 @@
         <field name="model">connect.endpoint</field>
         <field name="inherit_id" ref="connect.view_connect_endpoint_form"/>
         <field name="arch" type="xml">
-            <field name="connect_user_id" position="after">
-                <group string="SIP">
-                    <field name="sip_enabled" widget="boolean_toggle"/>
-                    <field name="sip_ring" widget="boolean_toggle" invisible="not sip_enabled"/>
-                </group>
-                <group string="WebRTC">
-                    <field name="webrtc_enabled" widget="boolean_toggle"/>
-                    <field name="webrtc_ring" widget="boolean_toggle" invisible="not webrtc_enabled"/>
+            <div class="oe_title" position="after">
+                <group>
+                    <group string="SIP">
+                        <field name="sip_enabled" widget="boolean_toggle"/>
+                        <field name="sip_ring" widget="boolean_toggle" invisible="not sip_enabled"/>
+                    </group>
+                    <group string="WebRTC">
+                        <field name="webrtc_enabled" widget="boolean_toggle"/>
+                        <field name="webrtc_ring" widget="boolean_toggle" invisible="not webrtc_enabled"/>
+                    </group>
                 </group>
                 <group string="Authentication" invisible="not sip_enabled and not webrtc_enabled">
                     <field name="auth_user"/>
                     <field name="auth_password" password="True"/>
                 </group>
-            </field>
+            </div>
         </field>
     </record>
 </odoo>
