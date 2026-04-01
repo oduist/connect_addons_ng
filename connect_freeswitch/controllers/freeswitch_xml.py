@@ -93,6 +93,12 @@ class FreeSwitchXMLController(http.Controller):
         ], limit=1)
 
         if endpoint:
+            # For bridge requests (not SIP auth), if the endpoint belongs to
+            # a user, return the combined dial-string (all endpoints + WebRTC)
+            action = params.get('action', '')
+            if action != 'sip_auth' and endpoint.connect_user_id:
+                return self._directory_for_user_bridge(
+                    endpoint.connect_user_id, user, actual_domain)
             return self._directory_for_endpoint(endpoint, user, actual_domain)
 
         # 2. Search by res.users login (Verto WebRTC registration)
