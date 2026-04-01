@@ -159,6 +159,10 @@ export class PhoneSystray extends Component {
         });
 
         this.vertoClient = null;
+        this._ringAudioCtx = null;
+        this._ringOscillator = null;
+        this._ringGain = null;
+        this._ringInterval = null;
 
         onWillStart(async () => {
             await this.loadConfig();
@@ -172,6 +176,7 @@ export class PhoneSystray extends Component {
 
         onWillUnmount(() => {
             this.disconnect();
+            this._stopRingtone();
         });
     }
 
@@ -207,12 +212,16 @@ export class PhoneSystray extends Component {
                     this.state.showDialpad = true;
                     this.state.callerName = data.callerName || "";
                     this.state.callerNumber = data.callerNumber || "";
-                } else if (state === "idle") {
-                    this.state.callerName = "";
-                    this.state.callerNumber = "";
-                } else if (data.callerName || data.callerNumber) {
-                    if (data.callerName) this.state.callerName = data.callerName;
-                    if (data.callerNumber) this.state.callerNumber = data.callerNumber;
+                    this._startRingtone();
+                } else {
+                    this._stopRingtone();
+                    if (state === "idle") {
+                        this.state.callerName = "";
+                        this.state.callerNumber = "";
+                    } else if (data.callerName || data.callerNumber) {
+                        if (data.callerName) this.state.callerName = data.callerName;
+                        if (data.callerNumber) this.state.callerNumber = data.callerNumber;
+                    }
                 }
             },
             onError: (error) => {
@@ -244,6 +253,51 @@ export class PhoneSystray extends Component {
 
     closeDialpad() {
         this.state.showDialpad = false;
+    }
+
+    _startRingtone() {
+        this._stopRingtone();
+        try {
+            this._ringAudioCtx = new AudioContext();
+            this._ringGain = this._ringAudioCtx.createGain();
+            this._ringGain.connect(this._ringAudioCtx.destination);
+            this._ringGain.gain.value = 0;
+
+            this._ringOscillator = this._ringAudioCtx.createOscillator();
+            this._ringOscillator.type = "sine";
+            this._ringOscillator.frequency.value = 440;
+            this._ringOscillator.connect(this._ringGain);
+            this._ringOscillator.start();
+
+            // Ring pattern: 1s on, 2s off
+            this._ringing = true;
+            const ringCycle = () => {
+                if (!this._ringing) return;
+                this._ringGain.gain.value = 0.3;
+                this._ringTimeout = setTimeout(() => {
+                    if (!this._ringing) return;
+                    this._ringGain.gain.value = 0;
+                    this._ringTimeout = setTimeout(ringCycle, 2000);
+                }, 1000);
+            };
+            ringCycle();
+        } catch (error) {
+            console.error("[Phone] Failed to start ringtone:", error);
+        }
+    }
+
+    _stopRingtone() {
+        this._ringing = false;
+        clearTimeout(this._ringTimeout);
+        if (this._ringOscillator) {
+            try { this._ringOscillator.stop(); } catch {}
+            this._ringOscillator = null;
+        }
+        if (this._ringAudioCtx) {
+            this._ringAudioCtx.close();
+            this._ringAudioCtx = null;
+        }
+        this._ringGain = null;
     }
 
     getIconClass() {
