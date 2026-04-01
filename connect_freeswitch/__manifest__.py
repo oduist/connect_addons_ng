@@ -20,6 +20,7 @@
             'connect_freeswitch/static/src/js/verto_client.js',
             'connect_freeswitch/static/src/js/phone_systray.js',
             'connect_freeswitch/static/src/xml/phone_systray.xml',
+            'connect_freeswitch/static/src/widgets/phone_field/*',
         ],
     },
     'post_init_hook': 'post_init_hook',
