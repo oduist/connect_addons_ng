@@ -74,6 +74,10 @@ class Call(models.Model):
         # Build a-leg (user's ringable endpoints + WebRTC)
         a_leg_parts = []
 
+        # Display target number/partner on user's phone (a-leg caller ID)
+        display_name = caller_name or number
+        display_number = number
+
         # SIP endpoints with originate_ring enabled
         endpoints = self.env['connect.endpoint'].search([
             ('connect_user_id', '=', connect_user.id),
@@ -82,7 +86,12 @@ class Call(models.Model):
             ('auth_user', '!=', False),
         ])
         for ep in endpoints:
-            leg_vars = ['leg_timeout=30']
+            leg_vars = [
+                'leg_timeout=30',
+                "origination_caller_id_name='{}'".format(
+                    display_name.replace("'", "")),
+                'origination_caller_id_number={}'.format(display_number),
+            ]
             if ep.auto_answer_header:
                 # Parse header: "Alert-Info:answer-after=0" → sip_h_Alert-Info=answer-after=0
                 header_name, _, header_value = ep.auto_answer_header.partition(':')
@@ -96,15 +105,20 @@ class Call(models.Model):
         if connect_user.webrtc_enabled and connect_user.originate_ring:
             verto_login = connect_user.user.login
             a_leg_parts.append(
-                '[leg_timeout=30,auto_answer=true]user/{}@{}'.format(
-                    verto_login, domain))
+                "[leg_timeout=30,origination_caller_id_name='{name}'"
+                ",origination_caller_id_number={num}"
+                ",verto_h_auto_answer=true]user/{login}@{domain}".format(
+                    name=display_name.replace("'", ""),
+                    num=display_number,
+                    login=verto_login,
+                    domain=domain))
 
         if not a_leg_parts:
             raise UserError("You don't have any ringable endpoints configured.")
 
         a_leg = ','.join(a_leg_parts)
 
-        # Caller ID
+        # Caller ID for b-leg (what the called party sees)
         first_ep = endpoints[:1]
         caller_number = connect_user.exten_number or (first_ep.auth_user if first_ep else '')
 

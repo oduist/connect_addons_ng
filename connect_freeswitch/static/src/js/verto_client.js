@@ -530,7 +530,9 @@ export class VertoClient {
         };
 
         // Auto-answer if the channel variable is set (click-to-call originate)
-        const autoAnswer = dp.auto_answer || params.auto_answer;
+        // mod_verto passes verto_h_* channel vars in params or pvt
+        const pvt = params.pvt || {};
+        const autoAnswer = dp.auto_answer || params.auto_answer || pvt.auto_answer;
         if (autoAnswer === 'true' || autoAnswer === true) {
             console.log('[Verto] Auto-answering call (click-to-call)');
             try {
