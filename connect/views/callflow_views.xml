@@ -66,8 +66,8 @@
                         <page name="ring_users" string="Ring Users">
                             <field name="ring_users">
                                 <list>
-                                    <field name="username"/>
                                     <field name="user"/>
+                                    <field name="exten"/>
                                 </list>
                             </field>
                         </page>

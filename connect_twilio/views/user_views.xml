@@ -7,6 +7,9 @@
         <field name="model">connect.user</field>
         <field name="inherit_id" ref="connect.view_connect_user_tree"/>
         <field name="arch" type="xml">
+            <xpath expr="//field[@name='user']" position="after">
+                <field name="username"/>
+            </xpath>
             <xpath expr="//field[@name='outgoing_callerid']" position="after">
                 <field name="sip_enabled" string="SIP"/>
                 <field name="client_enabled" string="Web"/>
@@ -22,7 +25,10 @@
         <field name="model">connect.user</field>
         <field name="inherit_id" ref="connect.view_connect_user_form"/>
         <field name="arch" type="xml">
-            <!-- Add domain and twilio_edge to User Info group -->
+            <!-- Add username and domain to User Info group -->
+            <xpath expr="//field[@name='user']" position="after">
+                <field name="username"/>
+            </xpath>
             <xpath expr="//field[@name='active']" position="after">
                 <field name="domain"/>
                 <field name="twilio_edge"

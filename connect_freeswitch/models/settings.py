@@ -199,27 +199,19 @@ class Settings(models.Model):
     def get_webrtc_config(self):
         """
         Get WebRTC configuration for the current user.
-        Returns endpoint credentials and FreeSWITCH socket URL if user has
-        a connect.user record with a WebRTC-enabled endpoint.
+        Returns credentials and FreeSWITCH socket URL if user has
+        a connect.user record with WebRTC enabled.
         """
         user = self.env.user
 
         connect_user = self.env['connect.user'].search([
             ('user', '=', user.id),
-            ('active', '=', True)
-        ], limit=1)
-
-        if not connect_user:
-            return {'enabled': False, 'reason': 'no_connect_user'}
-
-        endpoint = self.env['connect.endpoint'].search([
-            ('connect_user_id', '=', connect_user.id),
             ('webrtc_enabled', '=', True),
             ('active', '=', True)
         ], limit=1)
 
-        if not endpoint:
-            return {'enabled': False, 'reason': 'no_webrtc_endpoint'}
+        if not connect_user:
+            return {'enabled': False, 'reason': 'no_webrtc_user'}
 
         socket_url = self.get_param('freeswitch_socket_url')
         domain = self.get_param('freeswitch_domain')
@@ -231,8 +223,8 @@ class Settings(models.Model):
             'enabled': True,
             'socketUrl': socket_url,
             'domain': domain,
-            'login': endpoint.auth_user,
-            'password': endpoint.auth_password,
+            'login': user.login,
+            'password': connect_user.webrtc_password,
             'callerName': connect_user.name,
-            'callerNumber': connect_user.exten_number or endpoint.auth_user,
+            'callerNumber': connect_user.exten_number or user.login,
         }

@@ -71,56 +71,63 @@ class Call(models.Model):
         if not connect_user:
             raise UserError("You don't have a Connect user configured.")
 
+        # Build a-leg (user's ringable endpoints + WebRTC)
+        a_leg_parts = []
+
+        # Display target number/partner on user's phone (a-leg caller ID)
+        display_name = caller_name or number
+        display_number = number
+
+        # SIP endpoints with originate_ring enabled
         endpoints = self.env['connect.endpoint'].search([
             ('connect_user_id', '=', connect_user.id),
             ('active', '=', True),
+            ('originate_ring', '=', True),
+            ('auth_user', '!=', False),
         ])
-        # Filter to ringable endpoints (SIP with ring, or WebRTC with ring)
-        ring_endpoints = endpoints.filtered(
-            lambda ep: (ep.sip_enabled and ep.sip_ring)
-            or (ep.webrtc_enabled and ep.webrtc_ring)
-        )
-        if not ring_endpoints:
+        for ep in endpoints:
+            leg_vars = [
+                'leg_timeout=30',
+                "origination_caller_id_name='{}'".format(
+                    display_name.replace("'", "")),
+                'origination_caller_id_number={}'.format(display_number),
+            ]
+            if ep.auto_answer_header:
+                # Parse header: "Alert-Info:answer-after=0" → sip_h_Alert-Info=answer-after=0
+                header_name, _, header_value = ep.auto_answer_header.partition(':')
+                if header_name and header_value:
+                    leg_vars.append('sip_h_{}={}'.format(
+                        header_name.strip(), header_value.strip()))
+            a_leg_parts.append(
+                '[{}]user/{}@{}'.format(','.join(leg_vars), ep.auth_user, domain))
+
+        # WebRTC (Verto) leg from user
+        if connect_user.webrtc_enabled and connect_user.originate_ring:
+            verto_login = connect_user.user.login
+            a_leg_parts.append(
+                "[leg_timeout=30,origination_caller_id_name='{name}'"
+                ",origination_caller_id_number={num}"
+                ",verto_h_auto_answer=true]user/{login}@{domain}".format(
+                    name=display_name.replace("'", ""),
+                    num=display_number,
+                    login=verto_login,
+                    domain=domain))
+
+        if not a_leg_parts:
             raise UserError("You don't have any ringable endpoints configured.")
 
-        # Build a-leg (user's endpoints)
-        a_leg_parts = []
-        for ep in ring_endpoints:
-            a_leg_parts.append(
-                '[leg_timeout=30]user/{}@{}'.format(
-                    ep.auth_user, domain))
         a_leg = ','.join(a_leg_parts)
 
-        # Caller ID
-        caller_number = connect_user.exten_number or ring_endpoints[0].auth_user
+        # Caller ID for b-leg (what the called party sees)
+        first_ep = endpoints[:1]
+        caller_number = connect_user.exten_number or (first_ep.auth_user if first_ep else '')
 
         # Check if target is an internal extension
         exten = self.env['connect.exten'].search(
             [('number', '=', number)], limit=1)
         if exten:
-            # Internal call — bridge to extension's endpoints
-            target_user = self.env['connect.user'].search([
-                ('exten', '=', exten.id),
-                ('active', '=', True),
-            ], limit=1)
-            if target_user:
-                target_endpoints = self.env['connect.endpoint'].search([
-                    ('connect_user_id', '=', target_user.id),
-                    ('active', '=', True),
-                ]).filtered(
-                    lambda ep: (ep.sip_enabled and ep.sip_ring)
-                    or (ep.webrtc_enabled and ep.webrtc_ring)
-                )
-                if target_endpoints:
-                    b_parts = []
-                    for ep in target_endpoints:
-                        b_parts.append(
-                            'user/{}@{}'.format(ep.auth_user, domain))
-                    b_leg = ','.join(b_parts)
-                else:
-                    b_leg = 'user/{}@{}'.format(number, domain)
-            else:
-                b_leg = 'user/{}@{}'.format(number, domain)
+            # Internal call — bridge to extension's destination
+            b_leg = self._build_internal_b_leg(exten, domain)
         else:
             # External call — find outgoing route
             routes = self.env['connect.freeswitch.outgoing_route'].sudo().search(
@@ -164,6 +171,48 @@ class Call(models.Model):
                 "Failed to originate call: {}".format(result or 'no response'))
 
         return True
+
+    def _build_internal_b_leg(self, exten, domain):
+        """Build b-leg bridge string for an internal extension."""
+        # Check if extension points to a user
+        if exten.model == 'connect.user' and exten.res_id:
+            target_user = self.env['connect.user'].browse(exten.res_id)
+            if target_user.exists() and target_user.active:
+                return self._build_user_bridge(target_user, domain)
+
+        # Check if extension points to a standalone endpoint
+        if exten.model == 'connect.endpoint' and exten.res_id:
+            target_ep = self.env['connect.endpoint'].browse(exten.res_id)
+            if target_ep.exists() and target_ep.active and target_ep.auth_user:
+                return 'user/{}@{}'.format(target_ep.auth_user, domain)
+
+        # Fallback: bridge to the extension number directly
+        return 'user/{}@{}'.format(exten.number, domain)
+
+    def _build_user_bridge(self, target_user, domain):
+        """Build bridge string for all of a user's active contacts."""
+        b_parts = []
+
+        # SIP endpoints (all active, not just originate_ring)
+        target_endpoints = self.env['connect.endpoint'].search([
+            ('connect_user_id', '=', target_user.id),
+            ('active', '=', True),
+            ('auth_user', '!=', False),
+        ])
+        for ep in target_endpoints:
+            b_parts.append('user/{}@{}'.format(ep.auth_user, domain))
+
+        # WebRTC
+        if target_user.webrtc_enabled:
+            b_parts.append('user/{}@{}'.format(
+                target_user.user.login, domain))
+
+        if b_parts:
+            return ','.join(b_parts)
+
+        # Fallback
+        return 'user/{}@{}'.format(
+            target_user.exten_number or '', domain)
 
     @api.model
     def on_freeswitch_cdr(self, cdr_data):

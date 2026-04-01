@@ -298,16 +298,15 @@ Order: `id desc`
 
 ### 6. user.py - `connect.user`
 
-Rec name: `username`
-Order: `username`
+Rec name: `name`
+Order: `name`
 
 **Fields:**
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `name` | Char | Computed from user/username |
-| `username` | Char | Required, alphanumeric |
-| `user` | Many2one | `res.users` |
+| `name` | Char | Computed (stored) from `user.name` |
+| `user` | Many2one | `res.users`, Required |
 | `exten` | Many2one | `connect.exten`, readonly |
 | `exten_number` | Char | Related to exten |
 | `callflow` | One2many | `connect.user_callflow` |
@@ -322,17 +321,15 @@ Order: `username`
 
 **Constraints:**
 - `UNIQUE(user)` - one connect.user per res.users
-- `UNIQUE(username)` - unique username
 
 **Methods:**
 
 | Method | Description |
 |--------|-------------|
-| `_get_name()` | Compute name from linked res.users or username |
-| `_check_username()` | Constrains: alphanumeric only |
+| `_get_name()` | Compute name from linked res.users |
 | `manage_group()` | Add/remove security groups on linked res.users |
 | `get_user_by_exten_number()` | Lookup connect.user by extension number |
-| `get_user_by_uri()` | Lookup connect.user by SIP URI or client identity |
+| `get_user_by_uri()` | No-op in core (returns empty recordset). Integration modules override to lookup connect.user by SIP URI or client identity. |
 | `create_extension()` | Create associated `connect.exten` record |
 | `render_voicemail_prompt()` | Render Jinja2 voicemail template with call context |
 | `get_greeting_message()` | Return greeting (override point for integrations) |
@@ -367,13 +364,22 @@ Order: `username`
 
 ### 8. endpoint.py - `connect.endpoint`
 
-Keep as-is from current module.
-
 | Field | Type | Notes |
 |-------|------|-------|
 | `name` | Char | Required |
-| `connect_user_id` | Many2one | `connect.user` |
+| `connect_user_id` | Many2one | `connect.user`, optional |
+| `exten` | Many2one | `connect.exten` |
+| `exten_number` | Char | Related to `exten.number` |
 | `active` | Boolean | |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `create_extension()` | Create associated `connect.exten` record for this endpoint |
+
+**Notes:**
+- `connect_user_id` is optional to support standalone endpoints (e.g., conference room phones, lobby phones) that are not associated with a specific user.
 
 ---
 

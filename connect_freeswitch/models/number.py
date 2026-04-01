@@ -14,7 +14,7 @@ class Number(models.Model):
 
         transfer_target = ''
         if self.destination == 'user' and self.user:
-            transfer_target = self.user.exten_number or self.user.username
+            transfer_target = self.user.exten_number
         elif self.destination == 'callflow' and self.callflow:
             transfer_target = self.callflow.exten_number or str(self.callflow.id)
 

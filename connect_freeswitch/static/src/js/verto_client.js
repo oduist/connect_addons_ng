@@ -529,6 +529,19 @@ export class VertoClient {
             incoming: true
         };
 
+        // Auto-answer if the channel variable is set (click-to-call originate)
+        // mod_verto passes verto_h_* vars flat in params with prefix preserved
+        const autoAnswer = params.verto_h_auto_answer;
+        if (autoAnswer === 'true' || autoAnswer === true) {
+            console.log('[Verto] Auto-answering call (click-to-call)');
+            try {
+                await this.answer();
+                return;
+            } catch (error) {
+                console.error('[Verto] Auto-answer failed:', error);
+            }
+        }
+
         this._setCallState('incoming', { callerName, callerNumber });
     }
 

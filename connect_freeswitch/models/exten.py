@@ -1,12 +1,16 @@
 import logging
 import re
-from odoo import models
+from odoo import fields, models
 
 logger = logging.getLogger(__name__)
 
 
 class Exten(models.Model):
     _inherit = 'connect.exten'
+
+    dst = fields.Reference(
+        selection_add=[('connect.endpoint', 'Endpoint')],
+    )
 
     def generate_dialplan(self, params):
         """Generate FreeSWITCH dialplan XML for this extension."""

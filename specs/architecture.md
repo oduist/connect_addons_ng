@@ -162,9 +162,11 @@ connect.settings (singleton)
     |       |       |
     |       |       +-- connect.user_callflow_call
     |       |
-    |       +-- connect.endpoint
+    |       +-- connect.endpoint (optional link)
     |       |
     |       +-- connect.exten (extension routing)
+    |
+    +-- connect.endpoint (can also be standalone, without user)
     |
     +-- connect.callflow (IVR)
     |       |
