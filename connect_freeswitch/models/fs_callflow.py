@@ -46,7 +46,7 @@ class CallFlow(models.Model):
                 continue
             dst = choice.exten.dst
             if dst and dst._name == 'connect.user':
-                user_number = dst.exten_number or dst.username
+                user_number = dst.exten_number
                 choices.append({
                     'digits_escaped': re.escape(choice.choice_digits),
                     'dst_type': 'user',
@@ -88,12 +88,9 @@ class CallFlow(models.Model):
 
         bridge_parts = []
         for user in self.ring_users:
-            endpoint = self.env['connect.endpoint'].sudo().search([
-                ('connect_user_id', '=', user.id),
-                ('active', '=', True),
-                '|', ('sip_enabled', '=', True), ('webrtc_enabled', '=', True)
-            ], limit=1)
-            user_number = user.exten_number or user.username
+            user_number = user.exten_number
+            if not user_number:
+                continue
             bridge_parts.append('user/{}@{}'.format(user_number, fs_domain))
 
         return self.env['connect.freeswitch.template'].render('dialplan_ring_group', {

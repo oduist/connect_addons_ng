@@ -72,67 +72,155 @@ class FreeSwitchXMLController(http.Controller):
         return self._get_full_directory(domain)
 
     def _get_user_xml(self, user, domain, params):
-        """Generate XML for a specific user."""
+        """Generate XML for a specific user.
+
+        Lookup order:
+        1. SIP endpoint by auth_user (SIP registration)
+        2. WebRTC user by res.users login (Verto registration)
+        3. User by exten_number (bridge to user)
+        4. Standalone endpoint by exten_number (bridge to endpoint)
+        """
         Endpoint = request.env['connect.endpoint'].sudo()
         ConnectUser = request.env['connect.user'].sudo()
-
-        # 1. Search by auth_user (for registration/login)
-        endpoint = Endpoint.search([
-            ('auth_user', '=', user),
-            ('active', '=', True),
-            '|', ('sip_enabled', '=', True), ('webrtc_enabled', '=', True)
-        ], limit=1)
-
-        # 2. If not found, search by exten_number (for incoming call/bridge)
-        if not endpoint:
-            connect_user = ConnectUser.search([
-                ('exten_number', '=', user),
-                ('active', '=', True)
-            ], limit=1)
-            if connect_user:
-                # Get the first active endpoint for this user
-                endpoint = Endpoint.search([
-                    ('connect_user_id', '=', connect_user.id),
-                    ('active', '=', True),
-                    '|', ('sip_enabled', '=', True), ('webrtc_enabled', '=', True)
-                ], limit=1)
-
-        if not endpoint:
-            debug(request.env['connect.settings'].sudo(), "User not found in Odoo: %s" % user)
-            return self._not_found()
-
-        connect_user = endpoint.connect_user_id
-
-        # CRITICAL: FS expects the XML ID to match the requested 'user'
-        # If '1000' was requested, return '1000' even if the endpoint is 'admin'
-        xml_user_id = user
 
         fs_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain')
         actual_domain = fs_domain or domain or params.get('sip_auth_realm', '')
 
-        # Build dial-string so that bridge(user/1000) works
+        # 1. Search by auth_user (SIP endpoint registration)
+        endpoint = Endpoint.search([
+            ('auth_user', '=', user),
+            ('active', '=', True),
+        ], limit=1)
+
+        if endpoint:
+            return self._directory_for_endpoint(endpoint, user, actual_domain)
+
+        # 2. Search by res.users login (Verto WebRTC registration)
+        connect_user = ConnectUser.search([
+            ('user.login', '=', user),
+            ('webrtc_enabled', '=', True),
+            ('active', '=', True),
+        ], limit=1)
+        if connect_user:
+            return self._directory_for_webrtc_user(connect_user, user, actual_domain)
+
+        # 3. Search by exten_number (bridge to user)
+        connect_user = ConnectUser.search([
+            ('exten_number', '=', user),
+            ('active', '=', True),
+        ], limit=1)
+        if connect_user:
+            return self._directory_for_user_bridge(connect_user, user, actual_domain)
+
+        # 4. Search standalone endpoint by exten_number (bridge to endpoint)
+        endpoint = Endpoint.search([
+            ('exten_number', '=', user),
+            ('connect_user_id', '=', False),
+            ('active', '=', True),
+        ], limit=1)
+        if endpoint:
+            return self._directory_for_endpoint(endpoint, user, actual_domain)
+
+        debug(request.env['connect.settings'].sudo(), "User not found in Odoo: %s" % user)
+        return self._not_found()
+
+    def _directory_for_endpoint(self, endpoint, xml_user_id, domain):
+        """Directory entry for a SIP endpoint (registration or bridge)."""
+        connect_user = endpoint.connect_user_id
+
+        # Dial-string for this endpoint only (SIP contact)
+        dial_string = "${{sofia_contact(*/{auth_user}@{domain})}}".format(
+            auth_user=endpoint.auth_user, domain=domain)
+
+        cid_name = connect_user.name if connect_user else endpoint.auth_user
+        cid_num = (connect_user.exten_number if connect_user else endpoint.exten_number) or endpoint.auth_user
+
+        return self._render_directory_user(
+            xml_user_id=xml_user_id,
+            password=endpoint.auth_password or '',
+            dial_string=dial_string,
+            cid_name=cid_name,
+            cid_num=cid_num,
+            connect_user_id=str(connect_user.id) if connect_user else '',
+            endpoint_id=str(endpoint.id),
+            odoo_user_id=str(connect_user.user.id) if connect_user and connect_user.user else '',
+            domain=domain,
+        )
+
+    def _directory_for_webrtc_user(self, connect_user, xml_user_id, domain):
+        """Directory entry for a WebRTC/Verto user registration."""
+        dial_string = "${{verto_contact({user_id}@{domain})}}".format(
+            user_id=xml_user_id, domain=domain)
+
+        cid_name = connect_user.name
+        cid_num = connect_user.exten_number or xml_user_id
+
+        return self._render_directory_user(
+            xml_user_id=xml_user_id,
+            password=connect_user.webrtc_password or '',
+            dial_string=dial_string,
+            cid_name=cid_name,
+            cid_num=cid_num,
+            connect_user_id=str(connect_user.id),
+            endpoint_id='',
+            odoo_user_id=str(connect_user.user.id) if connect_user.user else '',
+            domain=domain,
+        )
+
+    def _directory_for_user_bridge(self, connect_user, xml_user_id, domain):
+        """Directory entry for bridging to a user (combined dial-string)."""
         dial_parts = []
-        if endpoint.sip_enabled and endpoint.sip_ring:
+
+        # All active SIP endpoints (incoming calls ring all, not just originate_ring)
+        endpoints = request.env['connect.endpoint'].sudo().search([
+            ('connect_user_id', '=', connect_user.id),
+            ('active', '=', True),
+            ('auth_user', '!=', False),
+        ])
+        for ep in endpoints:
             dial_parts.append("${{sofia_contact(*/{auth_user}@{domain})}}".format(
-                auth_user=endpoint.auth_user, domain=actual_domain))
-        if endpoint.webrtc_enabled and endpoint.webrtc_ring:
+                auth_user=ep.auth_user, domain=domain))
+
+        # WebRTC contact
+        if connect_user.webrtc_enabled:
+            verto_login = connect_user.user.login
             dial_parts.append("${{verto_contact({user_id}@{domain})}}".format(
-                user_id=xml_user_id, domain=actual_domain))
+                user_id=verto_login, domain=domain))
+
         dial_string = ",".join(dial_parts)
 
-        cid_name = connect_user.name or endpoint.auth_user
-        cid_num = connect_user.exten_number or endpoint.auth_user
+        cid_name = connect_user.name
+        cid_num = connect_user.exten_number or (endpoints[0].auth_user if endpoints else '')
 
+        # Password: use webrtc_password or first endpoint's password (needed for FS XML structure)
+        password = connect_user.webrtc_password or (endpoints[0].auth_password if endpoints else '') or ''
+
+        return self._render_directory_user(
+            xml_user_id=xml_user_id,
+            password=password,
+            dial_string=dial_string,
+            cid_name=cid_name,
+            cid_num=cid_num,
+            connect_user_id=str(connect_user.id),
+            endpoint_id=str(endpoints[0].id) if endpoints else '',
+            odoo_user_id=str(connect_user.user.id) if connect_user.user else '',
+            domain=domain,
+        )
+
+    def _render_directory_user(self, xml_user_id, password, dial_string,
+                                cid_name, cid_num, connect_user_id,
+                                endpoint_id, odoo_user_id, domain):
+        """Render directory user XML from template."""
         Template = request.env['connect.freeswitch.template'].sudo()
         user_xml = Template.render('directory_user', {
             'xml_user_id': xml_user_id,
-            'password': endpoint.auth_password or '',
+            'password': password,
             'dial_string': dial_string,
             'cid_name': cid_name,
             'cid_num': cid_num,
-            'connect_user_id': str(connect_user.id),
-            'endpoint_id': str(endpoint.id),
-            'odoo_user_id': str(connect_user.user.id) if connect_user.user else '',
+            'connect_user_id': connect_user_id,
+            'endpoint_id': endpoint_id,
+            'odoo_user_id': odoo_user_id,
         })
 
         xml_str = ('<document type="freeswitch/xml">'
@@ -140,37 +228,55 @@ class FreeSwitchXMLController(http.Controller):
                    '<domain name="{domain}">'
                    '{body}'
                    '</domain></section></document>').format(
-                       domain=actual_domain, body=user_xml)
+                       domain=domain, body=user_xml)
         return self._xml_response_str(xml_str)
 
     def _get_full_directory(self, domain):
         """Generate full directory XML with all users."""
         Endpoint = request.env['connect.endpoint'].sudo()
-
-        endpoints = Endpoint.search([
-            ('active', '=', True),
-            ('auth_user', '!=', False),
-            ('auth_password', '!=', False),
-            '|', ('sip_enabled', '=', True), ('webrtc_enabled', '=', True)
-        ])
-
-        if not endpoints:
-            return self._not_found()
+        ConnectUser = request.env['connect.user'].sudo()
 
         actual_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain') or domain
 
         ep_data = []
+
+        # All active SIP endpoints
+        endpoints = Endpoint.search([
+            ('active', '=', True),
+            ('auth_user', '!=', False),
+            ('auth_password', '!=', False),
+        ])
         for endpoint in endpoints:
             connect_user = endpoint.connect_user_id
             ep_data.append({
                 'auth_user': endpoint.auth_user,
                 'password': endpoint.auth_password,
-                'cid_name': connect_user.name or endpoint.auth_user,
-                'cid_num': connect_user.exten_number or endpoint.auth_user,
-                'connect_user_id': str(connect_user.id),
+                'cid_name': connect_user.name if connect_user else endpoint.auth_user,
+                'cid_num': (connect_user.exten_number if connect_user else endpoint.exten_number) or endpoint.auth_user,
+                'connect_user_id': str(connect_user.id) if connect_user else '',
                 'endpoint_id': str(endpoint.id),
-                'odoo_user_id': str(connect_user.user.id) if connect_user.user else '',
+                'odoo_user_id': str(connect_user.user.id) if connect_user and connect_user.user else '',
             })
+
+        # All active WebRTC users
+        webrtc_users = ConnectUser.search([
+            ('webrtc_enabled', '=', True),
+            ('webrtc_password', '!=', False),
+            ('active', '=', True),
+        ])
+        for wu in webrtc_users:
+            ep_data.append({
+                'auth_user': wu.user.login,
+                'password': wu.webrtc_password,
+                'cid_name': wu.name,
+                'cid_num': wu.exten_number or wu.user.login,
+                'connect_user_id': str(wu.id),
+                'endpoint_id': '',
+                'odoo_user_id': str(wu.user.id) if wu.user else '',
+            })
+
+        if not ep_data:
+            return self._not_found()
 
         Template = request.env['connect.freeswitch.template'].sudo()
         body = Template.render('directory_full', {'endpoints': ep_data})
@@ -235,7 +341,6 @@ class FreeSwitchXMLController(http.Controller):
     def _route_internal(self, destination, params):
         """Route internal calls: extensions, outgoing routes, system extensions."""
         Exten = request.env['connect.exten'].sudo()
-        ConnectUser = request.env['connect.user'].sudo()
 
         parts = []
 
@@ -247,15 +352,6 @@ class FreeSwitchXMLController(http.Controller):
         exten = Exten.search([('number', '=', destination)], limit=1)
         if exten:
             parts.append(exten.generate_dialplan(params))
-            return ''.join(parts)
-
-        # Try user by username (handles transfers that use username instead of extension)
-        connect_user = ConnectUser.search([
-            ('username', '=', destination),
-            ('active', '=', True)
-        ], limit=1)
-        if connect_user:
-            parts.append(connect_user.generate_dialplan(params))
             return ''.join(parts)
 
         # Try regex pattern match against all extensions

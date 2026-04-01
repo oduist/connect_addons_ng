@@ -13,16 +13,23 @@
                 </button>
             </div>
             <notebook position="inside">
+                <page name="webrtc" string="WebRTC">
+                    <group>
+                        <group>
+                            <field name="webrtc_enabled" widget="boolean_toggle"/>
+                            <field name="originate_ring" widget="boolean_toggle"
+                                   invisible="not webrtc_enabled"/>
+                        </group>
+                    </group>
+                </page>
                 <page name="endpoints" string="Endpoints">
                     <field name="endpoint_ids">
                         <list editable="bottom">
                             <field name="name"/>
-                            <field name="sip_enabled"/>
-                            <field name="sip_ring" invisible="not sip_enabled"/>
-                            <field name="webrtc_enabled"/>
-                            <field name="webrtc_ring" invisible="not webrtc_enabled"/>
-                            <field name="auth_user" invisible="not sip_enabled and not webrtc_enabled"/>
-                            <field name="auth_password" password="True" invisible="not sip_enabled and not webrtc_enabled"/>
+                            <field name="auth_user"/>
+                            <field name="auth_password" password="True"/>
+                            <field name="originate_ring"/>
+                            <field name="auto_answer_header" optional="hide"/>
                             <field name="active" column_invisible="1"/>
                         </list>
                     </field>
