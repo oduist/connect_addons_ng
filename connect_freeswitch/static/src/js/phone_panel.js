@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState, onMounted, onWillUnmount } from "@odoo/owl";
+import { Component, useState, useRef, onMounted, onWillUnmount } from "@odoo/owl";
 import { PhoneDialpad } from "./phone_systray";
 
 
@@ -15,6 +15,8 @@ export class PhonePanel extends Component {
     };
 
     setup() {
+        this.panelRef = useRef("panelRef");
+
         this.state = useState({
             showDialpad: false,
             vertoState: "disconnected",
@@ -22,6 +24,8 @@ export class PhonePanel extends Component {
             callerName: "",
             callerNumber: "",
         });
+
+        this._anchorRect = null;
 
         this._onStateChanged = ({ detail }) => {
             this.state.vertoState = detail.vertoState;
@@ -42,6 +46,10 @@ export class PhonePanel extends Component {
             } else {
                 this.state.showDialpad = !this.state.showDialpad;
             }
+            if (detail && detail.anchorRect) {
+                this._anchorRect = detail.anchorRect;
+            }
+            this._updateDropdownPosition();
         };
         this._onClose = () => {
             this.state.showDialpad = false;
@@ -66,6 +74,19 @@ export class PhonePanel extends Component {
             this.props.bus.removeEventListener("phoneToggle", this._onToggle);
             this.props.bus.removeEventListener("phoneClose", this._onClose);
             this.props.bus.removeEventListener("phoneNavigated", this._onNavigated);
+        });
+    }
+
+    _updateDropdownPosition() {
+        if (this.props.displayMode !== "dropdown" || !this.state.showDialpad) return;
+
+        requestAnimationFrame(() => {
+            const dialpad = this.panelRef.el?.querySelector(".o_phone_dialpad");
+            if (!dialpad || !this._anchorRect) return;
+
+            const rect = this._anchorRect;
+            dialpad.style.top = `${rect.bottom}px`;
+            dialpad.style.right = `${window.innerWidth - rect.right}px`;
         });
     }
 

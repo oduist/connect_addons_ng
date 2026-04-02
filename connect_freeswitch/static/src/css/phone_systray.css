@@ -2,7 +2,7 @@
     position: relative;
 }
 
-/* Dropdown mode: positioned top-right near systray, with overlay */
+/* Dropdown mode: anchored below the systray icon, with overlay */
 .o_phone_mode_dropdown .o_phone_dialpad_overlay {
     position: fixed;
     top: 0;
@@ -14,8 +14,6 @@
 
 .o_phone_mode_dropdown .o_phone_dialpad {
     position: fixed;
-    top: 50px;
-    right: 16px;
     z-index: 1051;
 }
 
