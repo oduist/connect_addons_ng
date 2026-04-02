@@ -227,4 +227,5 @@ class Settings(models.Model):
             'password': connect_user.webrtc_password,
             'callerName': connect_user.name,
             'callerNumber': connect_user.exten_number or user.login,
+            'displayMode': connect_user.phone_display_mode or 'dropdown',
         }

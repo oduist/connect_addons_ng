@@ -2,20 +2,24 @@
 <templates xml:space="preserve">
 
     <t t-name="connect_freeswitch.PhoneSystray">
-        <li class="o_nav_entry o_phone_systray" t-if="state.enabled">
+        <li class="o_nav_entry o_phone_systray">
             <a href="#" class="dropdown-toggle" t-on-click.prevent="toggleDialpad" t-att-class="getIconClass()">
                 <i class="fa fa-phone"/>
             </a>
+        </li>
+    </t>
+
+    <t t-name="connect_freeswitch.PhonePanel">
+        <div t-att-class="modeClass" t-if="state.showDialpad">
             <PhoneDialpad
-                t-if="state.showDialpad"
                 close.bind="closeDialpad"
-                vertoClient="vertoClient"
+                vertoClient="props.getVertoClient()"
                 state="state.vertoState"
                 callState="state.callState"
                 callerName="state.callerName"
                 callerNumber="state.callerNumber"
             />
-        </li>
+        </div>
     </t>
 
     <t t-name="connect_freeswitch.PhoneDialpad">
@@ -28,7 +32,7 @@
                 </span>
                 <button class="btn btn-sm btn-close" t-on-click="props.close"/>
             </div>
-            
+
             <div class="o_phone_dialpad_display">
                 <div class="o_phone_number" t-if="!isIncoming and !isCallActive">
                     <input type="text"
@@ -95,7 +99,7 @@
 
             <div class="o_phone_dialpad_actions">
                 <t t-if="props.callState === 'idle'">
-                    <button class="btn btn-success o_phone_call_btn" 
+                    <button class="btn btn-success o_phone_call_btn"
                             t-on-click="onCall"
                             t-att-disabled="!state.number or !isConnected">
                         <i class="fa fa-phone"/> Call
@@ -110,7 +114,7 @@
                     </button>
                 </t>
                 <t t-else="">
-                    <button class="btn o_phone_mute_btn" 
+                    <button class="btn o_phone_mute_btn"
                             t-att-class="state.muted ? 'btn-warning' : 'btn-outline-secondary'"
                             t-on-click="onToggleMute">
                         <i t-att-class="state.muted ? 'fa fa-microphone-slash' : 'fa fa-microphone'"/>

@@ -2,7 +2,8 @@
     position: relative;
 }
 
-.o_phone_dialpad_overlay {
+/* Dropdown mode: positioned top-right near systray, with overlay */
+.o_phone_mode_dropdown .o_phone_dialpad_overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -11,16 +12,36 @@
     z-index: 1050;
 }
 
+.o_phone_mode_dropdown .o_phone_dialpad {
+    position: fixed;
+    top: 50px;
+    right: 16px;
+    z-index: 1051;
+}
+
+/* Float mode: positioned bottom-left, no overlay */
+.o_phone_mode_float {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    z-index: 1100;
+}
+
+.o_phone_mode_float .o_phone_dialpad_overlay {
+    display: none;
+}
+
+.o_phone_mode_float .o_phone_dialpad {
+    position: static;
+}
+
+/* Shared dialpad styles */
 .o_phone_dialpad {
-    position: absolute;
-    top: 100%;
-    right: 0;
     width: 280px;
     background: white;
     border: 1px solid #dee2e6;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    z-index: 1051;
     padding: 15px;
 }
 
