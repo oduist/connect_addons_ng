@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odoo/owl";
+import { Component, useState, useRef, onWillStart, onMounted, onWillUnmount } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { VertoClient } from "./verto_client";
@@ -24,11 +24,22 @@ class PhoneDialpad extends Component {
             callDuration: 0,
         });
 
+        this.numberInput = useRef("numberInput");
         this.durationInterval = null;
+
+        onMounted(() => {
+            this.numberInput.el?.focus();
+        });
 
         onWillUnmount(() => {
             this._stopDurationTimer();
         });
+    }
+
+    onInputKeydown(ev) {
+        if (ev.key === "Enter") {
+            this.onCall();
+        }
     }
 
     get isConnected() {

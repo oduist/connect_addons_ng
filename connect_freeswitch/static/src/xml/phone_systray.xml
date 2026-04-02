@@ -33,7 +33,9 @@
                 <div class="o_phone_number" t-if="!isIncoming and !isCallActive">
                     <input type="text"
                            class="form-control form-control-lg text-center"
+                           t-ref="numberInput"
                            t-model="state.number"
+                           t-on-keydown="onInputKeydown"
                            placeholder="Enter number"/>
                 </div>
                 <div class="o_phone_incoming_info" t-if="isIncoming or isCallActive">
