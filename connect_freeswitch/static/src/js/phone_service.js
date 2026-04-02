@@ -11,6 +11,11 @@ export const phoneService = {
     dependencies: ["orm"],
 
     async start(env, { orm }) {
+        const pathname = document.location.pathname;
+        if (!pathname.includes("/odoo")) {
+            return { enabled: false };
+        }
+
         let config;
         try {
             config = await orm.call("connect.settings", "get_webrtc_config", []);

@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
 
     <t t-name="connect_freeswitch.PhoneSystray">
-        <li class="o_nav_entry o_phone_systray" t-ref="iconRef">
+        <li class="o_nav_entry o_phone_systray">
             <a href="#" class="dropdown-toggle" t-on-click.prevent="toggleDialpad" t-att-class="getIconClass()">
                 <i class="fa fa-phone"/>
             </a>
@@ -10,7 +10,7 @@
     </t>
 
     <t t-name="connect_freeswitch.PhonePanel">
-        <div t-att-class="modeClass" t-ref="panelRef" t-if="state.showDialpad">
+        <div t-att-class="modeClass" t-if="state.showDialpad">
             <PhoneDialpad
                 close.bind="closeDialpad"
                 vertoClient="props.getVertoClient()"
