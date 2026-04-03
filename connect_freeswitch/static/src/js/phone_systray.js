@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState, useRef, onMounted, onWillUnmount, useExternalListener } from "@odoo/owl";
+import { Component, useState, useRef, onMounted, onWillUnmount } from "@odoo/owl";
 
 
 export class PhoneDialpad extends Component {
@@ -156,8 +156,6 @@ export class PhoneSystray extends Component {
     };
 
     setup() {
-        this.iconRef = useRef("iconRef");
-
         this.state = useState({
             vertoState: "disconnected",
             callState: "idle",
@@ -183,8 +181,7 @@ export class PhoneSystray extends Component {
     }
 
     toggleDialpad() {
-        const rect = this.iconRef.el?.getBoundingClientRect();
-        this.props.bus.trigger("phoneToggle", { anchorRect: rect || null });
+        this.props.bus.trigger("phoneToggle");
     }
 
     getIconClass() {
