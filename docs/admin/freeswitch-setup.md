@@ -300,7 +300,39 @@ If you hear silence, check that UDP ports 16000-17000 are open in your firewall.
 
 Dial **9664** to hear hold music. This tests one-way audio from FreeSWITCH to the client.
 
+## NAT Handling
+
+The sofia profile includes automatic NAT detection and contact rewriting for SIP phones behind NAT. When a phone registers from a private network, FreeSWITCH detects the NAT and rewrites the registration contact to use the phone's public IP and port. This ensures inbound calls reach the phone correctly.
+
+The following profile-level parameters handle NAT transparently:
+
+| Parameter | Purpose |
+|-----------|---------|
+| `aggressive-nat-detection` | Detects NAT by comparing Via header IP with actual packet source IP |
+| `NDLB-received-in-nat-reg-contact` | Rewrites stored Contact with the received public IP:port |
+| `nat-options-ping` | Sends periodic SIP OPTIONS to keep NAT pinholes open |
+| `apply-nat-acl` | Applies NAT handling for RFC 1918 private IP ranges |
+
+No per-user configuration is needed — NAT handling applies automatically to all registrations on the external profile.
+
 ## Troubleshooting
+
+### Incoming calls not reaching SIP phone
+
+If a SIP phone can make outgoing calls but does not ring for incoming calls:
+
+1. Check the registration contact address:
+    ```bash
+    fs_cli -x "sofia status profile external reg"
+    ```
+    The contact should show the phone's **public** IP, not a private IP (10.x, 172.16-31.x, 192.168.x).
+
+2. If the contact shows a private IP, verify the NAT parameters are present in the sofia profile configuration (see [NAT Handling](#nat-handling) above).
+
+3. After upgrading the module, restart the sofia profile:
+    ```bash
+    fs_cli -x "sofia profile external restart reloadxml"
+    ```
 
 ### No audio on calls
 
