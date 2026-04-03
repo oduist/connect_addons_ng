@@ -19,6 +19,8 @@
                             <field name="webrtc_enabled" widget="boolean_toggle"/>
                             <field name="originate_ring" widget="boolean_toggle"
                                    invisible="not webrtc_enabled"/>
+                            <field name="phone_display_mode" widget="radio"
+                                   invisible="not webrtc_enabled"/>
                         </group>
                     </group>
                 </page>

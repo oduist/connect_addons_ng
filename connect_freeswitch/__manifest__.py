@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect FreeSWITCH',
-    'version': '19.0.1.3.0',
+    'version': '19.0.1.4.0',
     'category': 'Phone',
     'summary': 'FreeSWITCH integration for Oduist Connect',
     'depends': ['connect', 'web'],
@@ -19,6 +19,8 @@
             'connect_freeswitch/static/src/css/phone_systray.css',
             'connect_freeswitch/static/src/js/verto_client.js',
             'connect_freeswitch/static/src/js/phone_systray.js',
+            'connect_freeswitch/static/src/js/phone_panel.js',
+            'connect_freeswitch/static/src/js/phone_service.js',
             'connect_freeswitch/static/src/xml/phone_systray.xml',
             'connect_freeswitch/static/src/widgets/phone_field/*',
         ],

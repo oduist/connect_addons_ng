@@ -12,6 +12,11 @@ class User(models.Model):
     webrtc_enabled = fields.Boolean(string='WebRTC Enabled', default=False)
     originate_ring = fields.Boolean(string='Originate Ring', default=True,
         help='Include WebRTC client when originating click-to-call calls.')
+    phone_display_mode = fields.Selection(
+        [('dropdown', 'Dropdown'), ('float', 'Floating Panel')],
+        string='Phone Display',
+        default='dropdown',
+    )
     webrtc_password = fields.Char(string='WebRTC Password', readonly=True)
 
     @api.model_create_multi
