@@ -36,5 +36,4 @@ Each module ships with deep AI context (`CLAUDE.md` / `AGENTS.md`) that instruct
 - Customers get full source code for customization — AI agents work at full capacity
 - Test suite becomes a paid product providing verification infrastructure
 - Broken symlinks in unprotected mode are expected, not errors
-- Setup script (`scripts/setup_test_symlinks.sh`) automates symlink creation
 - `CLAUDE.md` must document both modes so AI agents behave correctly

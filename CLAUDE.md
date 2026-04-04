@@ -139,7 +139,6 @@ connect_addons_ng/              ← Main repo (public)
 ```bash
 # Setup symlinks (one-time, after cloning)
 git submodule update --init
-./scripts/setup_test_symlinks.sh
 
 # Run tests via oduflow
 oduflow run_odoo_tests connect
