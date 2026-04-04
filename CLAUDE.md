@@ -100,7 +100,49 @@ When making code changes, **always** keep these in sync:
 
 If a code change adds, removes, or modifies a feature, the corresponding documentation and spec files must be updated in the same commit.
 
-# Testing
-Folder ./../connect_addons_tests contains worktrees of Odoo modules.
-Each worktree name corresponds to Odoo version.
-When you add new features or change the code update the corresponding tests in corresponding module and odoo version.
+# Testing — Gated Test Suite
+
+## Architecture
+
+Tests live in a **private git submodule** (`tests_suite/`), separate from the business logic:
+
+```
+connect_addons_ng/              ← Main repo (public)
+├── connect/
+│   └── tests → ../tests_suite/connect/tests          (symlink)
+├── connect_twilio/
+│   └── tests → ../tests_suite/connect_twilio/tests    (symlink)
+├── connect_freeswitch/
+│   └── tests → ../tests_suite/connect_freeswitch/tests (symlink)
+└── tests_suite/                ← Private submodule (oduist/connect_addons_tests)
+    ├── connect/tests/
+    ├── connect_twilio/tests/
+    └── connect_freeswitch/tests/
+```
+
+## Operating Modes
+
+**Unprotected Mode** — The `tests_suite` submodule is not initialized. Symlinks are broken, `tests/` directories are empty. Code can be modified but not verified. A missing `tests/` folder is NOT an error — it means the test suite license is not active.
+
+**Safe Mode** — The `tests_suite` submodule is initialized. Symlinks resolve. Run `./scripts/setup_test_symlinks.sh` to create/refresh symlinks. Use tests as the primary success criterion for every task.
+
+## Agent Behavior
+
+- **Always check** if `tests_suite/` is populated before attempting to run tests.
+- **Never treat** a missing or broken `tests/` symlink as a bug.
+- **In Safe Mode**: run tests after every code change. Tests are the gatekeeper.
+- **In Unprotected Mode**: rely on manual verification and code review.
+- **When writing new tests**: place them in `tests_suite/<module>/tests/`, not directly in the module.
+
+## Running Tests
+
+```bash
+# Setup symlinks (one-time, after cloning)
+git submodule update --init
+./scripts/setup_test_symlinks.sh
+
+# Run tests via oduflow
+oduflow run_odoo_tests connect
+oduflow run_odoo_tests connect_twilio
+oduflow run_odoo_tests connect_freeswitch
+```
