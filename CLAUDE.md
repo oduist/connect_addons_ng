@@ -139,7 +139,7 @@ connect_addons_ng/              ← Main repo (public)
 When creating a new module (e.g., `connect_crm`):
 
 1. Create the test scaffold in the submodule: `tests_suite/connect_crm/tests/__init__.py`
-2. Create a symlink from the module: `ln -sf ../tests_suite/connect_crm/tests connect_crm/tests`
+2. Create a symlink from inside the module: `cd connect_crm && ln -s ../tests_suite/connect_crm/tests tests`
 3. Commit the symlink to the main repo and the scaffold to `tests_suite`
 
 ## Running Tests
