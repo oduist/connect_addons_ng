@@ -124,7 +124,7 @@ connect_addons_ng/              ← Main repo (public)
 
 **Unprotected Mode** — The `tests_suite` submodule is not initialized. Symlinks are broken, `tests/` directories are empty. Code can be modified but not verified. A missing `tests/` folder is NOT an error — it means the test suite license is not active.
 
-**Safe Mode** — The `tests_suite` submodule is initialized. Symlinks resolve. Run `./scripts/setup_test_symlinks.sh` to create/refresh symlinks. Use tests as the primary success criterion for every task.
+**Safe Mode** — The `tests_suite` submodule is initialized. Symlinks resolve. Use tests as the primary success criterion for every task.
 
 ## Agent Behavior
 
