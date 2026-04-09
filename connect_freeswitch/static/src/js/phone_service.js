@@ -93,6 +93,7 @@ export const phoneService = {
                 password: config.password,
                 callerName: config.callerName,
                 callerNumber: config.callerNumber,
+                iceServers: config.iceServers,
                 onStateChange: (state) => {
                     bus.trigger("phoneStateChanged", { vertoState: state });
                 },

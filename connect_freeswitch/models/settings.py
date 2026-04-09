@@ -24,6 +24,16 @@ class Settings(models.Model):
         help="SIP domain for FreeSWITCH registrations and routing. "
              "Used in sofia profile (force-register-domain) and directory XML.",
     )
+    freeswitch_ice_servers = fields.Text(
+        string="ICE Servers",
+        default="stun:stun.l.google.com:19302\n"
+                "stun:stun1.l.google.com:19302\n"
+                "stun:stun.cloudflare.com:3478\n"
+                "stun:stun.nextcloud.com:443",
+        help="STUN/TURN server URIs for WebRTC, one per line. "
+             "Example: stun:stun.example.com:3478 or "
+             "turn:turn.example.com:3478?transport=udp",
+    )
     freeswitch_log_level = fields.Selection(
         selection=[
             ('alert', 'ALERT'),
@@ -219,6 +229,13 @@ class Settings(models.Model):
         if not socket_url:
             return {'enabled': False, 'reason': 'no_socket_url'}
 
+        ice_servers_text = self.get_param('freeswitch_ice_servers') or ''
+        ice_servers = []
+        for line in ice_servers_text.splitlines():
+            url = line.strip()
+            if url:
+                ice_servers.append({'urls': url})
+
         return {
             'enabled': True,
             'socketUrl': socket_url,
@@ -228,4 +245,5 @@ class Settings(models.Model):
             'callerName': connect_user.name,
             'callerNumber': connect_user.exten_number or user.login,
             'displayMode': connect_user.phone_display_mode or 'dropdown',
+            'iceServers': ice_servers,
         }
