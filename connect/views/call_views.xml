@@ -34,14 +34,15 @@
                                 invisible="partner"/>
                         <button name="transfer_button" type="object"
                                 class="oe_stat_button" icon="fa-exchange"
-                                string="Transfer"/>
+                                string="Transfer"
+                                invisible="status == 'completed'"/>
                     </div>
                     <group>
                         <group string="Call Info">
                             <field name="direction"/>
                             <field name="call_type"/>
-                            <field name="caller"/>
-                            <field name="called"/>
+                            <field name="caller" widget="phone"/>
+                            <field name="called" widget="phone"/>
                             <field name="partner"/>
                             <field name="duration_human" string="Duration"/>
                         </group>

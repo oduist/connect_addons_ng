@@ -9,6 +9,7 @@ export class VertoClient {
     constructor(options) {
         this.socketUrl = options.socketUrl;
         this.login = options.login;
+        this.domain = (options.domain || '').trim();
         this.password = options.password;
         this.callerName = options.callerName || options.login;
         this.callerNumber = options.callerNumber || options.login;
@@ -43,11 +44,11 @@ export class VertoClient {
         this.lastPong = Date.now();
         
         // ICE settings
-        this.iceGatheringTimeout = 10000;
-        
-        this.iceServers = options.iceServers || [
-            { urls: 'stun:stun.l.google.com:19302' }
-        ];
+        this.iceGatheringTimeout = 2000;
+
+        this.iceServers = options.iceServers?.length
+            ? options.iceServers
+            : [{ urls: 'stun:stun.l.google.com:19302' }];
     }
     
     _loadOrCreateSessionId() {
@@ -79,9 +80,16 @@ export class VertoClient {
         this.onStateChange(state);
     }
 
-    _setCallState(state) {
+    _setCallState(state, data) {
         this.callState = state;
-        this.onCallStateChange(state);
+        this.onCallStateChange(state, data || {});
+    }
+
+    _appendDomain(value) {
+        if (!value || !this.domain || value.includes('@')) {
+            return value;
+        }
+        return `${value}@${this.domain}`;
     }
 
     async connect() {
@@ -210,7 +218,10 @@ export class VertoClient {
             
             this._sendRpc('echo', {}).then(() => {
                 this.lastPong = Date.now();
-            }).catch(() => {});
+            }).catch(() => {
+                // Even an error response means the connection is alive
+                this.lastPong = Date.now();
+            });
         }, this.heartbeatInterval);
     }
     
@@ -289,7 +300,7 @@ export class VertoClient {
     async _login() {
         try {
             const result = await this._sendRpc('login', {
-                login: this.login,
+                login: this._appendDomain(this.login),
                 passwd: this.password,
                 sessid: this.sessionId
             });
@@ -368,29 +379,45 @@ export class VertoClient {
     }
     
     _handleDisplay(params) {
-        if (params.display_name && this.currentCall) {
-            this.currentCall.remoteName = params.display_name;
-        }
-        if (params.display_number && this.currentCall) {
-            this.currentCall.remoteNumber = params.display_number;
+        const dp = params.dialogParams || {};
+        const name = params.display_name || dp.display_name || '';
+        const number = params.display_number || dp.display_number || '';
+
+        if (this.currentCall) {
+            if (name) this.currentCall.callerName = name;
+            if (number) this.currentCall.callerNumber = number;
+            this._setCallState(this.callState, {
+                callerName: this.currentCall.callerName,
+                callerNumber: this.currentCall.callerNumber
+            });
         }
     }
     
     async _handleAttach(params) {
         console.log('[Verto] Received attach (call recovery):', params);
-        
+
+        const callId = params.callID || (params.dialogParams || {}).callID;
+
+        // Only recover our active call, ignore stale sessions
+        if (!this.currentCall || this.currentCall.callId !== callId) {
+            console.log('[Verto] Ignoring attach for unknown call:', callId);
+            return;
+        }
+
         if (!params.sdp) return;
-        
+
         try {
             await this._setupMediaForRecovery(params.sdp);
             this._setCallState('active');
         } catch (error) {
             console.error('[Verto] Attach handling failed:', error);
-            this._cleanupCall();
         }
     }
     
     async _setupMediaForRecovery(remoteSdp) {
+        if (this.localStream) {
+            this.localStream.getTracks().forEach(track => track.stop());
+        }
         if (this.peerConnection) {
             this.peerConnection.close();
         }
@@ -489,16 +516,33 @@ export class VertoClient {
 
     async _handleInvite(params) {
         console.log('[Verto] Incoming call:', params);
-        
+        const dp = params.dialogParams || {};
+
+        const callerName = params.caller_id_name || dp.caller_id_name || '';
+        const callerNumber = params.caller_id_number || dp.caller_id_number || '';
+
         this.currentCall = {
-            callId: params.callID,
-            callerName: params.caller_id_name,
-            callerNumber: params.caller_id_number,
+            callId: params.callID || dp.callID,
+            callerName,
+            callerNumber,
             sdp: params.sdp,
             incoming: true
         };
-        
-        this._setCallState('incoming');
+
+        // Auto-answer if the channel variable is set (click-to-call originate)
+        // mod_verto passes verto_h_* vars flat in params with prefix preserved
+        const autoAnswer = params.verto_h_auto_answer;
+        if (autoAnswer === 'true' || autoAnswer === true) {
+            console.log('[Verto] Auto-answering call (click-to-call)');
+            try {
+                await this.answer();
+                return;
+            } catch (error) {
+                console.error('[Verto] Auto-answer failed:', error);
+            }
+        }
+
+        this._setCallState('incoming', { callerName, callerNumber });
     }
 
     async _getMediaStream() {
@@ -556,21 +600,34 @@ export class VertoClient {
                 resolve();
                 return;
             }
-            
-            const checkComplete = () => {
-                if (this.peerConnection?.iceGatheringState === 'complete') {
-                    this.peerConnection.onicegatheringstatechange = null;
-                    resolve();
-                }
-            };
-            
-            this.peerConnection.onicegatheringstatechange = checkComplete;
-            setTimeout(() => {
+
+            let resolved = false;
+            const done = () => {
+                if (resolved) return;
+                resolved = true;
                 if (this.peerConnection) {
                     this.peerConnection.onicegatheringstatechange = null;
+                    this.peerConnection.onicecandidate = null;
                 }
                 resolve();
-            }, this.iceGatheringTimeout);
+            };
+
+            // Resolve when gathering completes naturally
+            this.peerConnection.onicegatheringstatechange = () => {
+                if (this.peerConnection?.iceGatheringState === 'complete') {
+                    done();
+                }
+            };
+
+            // Resolve on first ICE candidate (host candidates arrive instantly)
+            this.peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    done();
+                }
+            };
+
+            // Fallback timeout
+            setTimeout(done, this.iceGatheringTimeout);
         });
     }
 
@@ -603,7 +660,7 @@ export class VertoClient {
             
             const callId = this._generateUUID();
             this.currentCall = { callId, destination };
-            
+
             await this._sendRpc('verto.invite', {
                 sessid: this.sessionId,
                 sdp: this.peerConnection.localDescription.sdp,

@@ -1,4 +1,5 @@
 import logging
+import re
 from xml.etree import ElementTree as ET
 
 from odoo import http
@@ -59,6 +60,12 @@ class FreeSwitchCDRController(http.Controller):
         - Hangup cause
         - Odoo channel variables (connect user IDs)
         """
+        # FreeSWITCH CDR XML may contain element names with colons
+        # (e.g. SIP headers like sip:to-host) which are invalid XML
+        # namespace prefixes. Replace colons in tag names to avoid parse errors.
+        xml_str = re.sub(
+            r'<(/?)([a-zA-Z_][\w.-]*):([a-zA-Z_][\w.-]*)',
+            r'<\1\2_\3', xml_str)
         root = ET.fromstring(xml_str)
 
         # Channel UUID
@@ -97,18 +104,37 @@ class FreeSwitchCDRController(http.Controller):
         caller_pbx_user_id = None
         called_pbx_user_id = None
         other_leg_uuid = None
+        odoo_number_id = None
 
         if variables is not None:
-            odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
-            if odoo_user:
-                # The user who owns this channel leg
-                if direction == 'inbound':
-                    called_pbx_user_id = int(odoo_user)
-                else:
-                    caller_pbx_user_id = int(odoo_user)
+            # Use effective_caller_id_number (set by Odoo directory) if
+            # caller_id_number is a SIP username rather than a number
+            effective_caller = self._xml_text(
+                variables, 'effective_caller_id_number')
+            if effective_caller and not caller.isdigit():
+                caller = effective_caller
 
-            other_leg_uuid = self._xml_text(
-                variables, 'Other-Leg-Unique-ID')
+            other_leg_uuid = (
+                self._xml_text(variables, 'odoo_parent_uuid')
+                or self._xml_text(variables, 'Other-Leg-Unique-ID')
+            )
+
+            odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
+            odoo_called_user = self._xml_text(
+                variables, 'odoo_called_user_id')
+            if other_leg_uuid:
+                # B-leg: odoo_connect_user_id is the called user
+                if odoo_user:
+                    called_pbx_user_id = int(odoo_user)
+            else:
+                # A-leg: odoo_connect_user_id is the caller,
+                # odoo_called_user_id is the called user
+                if odoo_user:
+                    caller_pbx_user_id = int(odoo_user)
+                if odoo_called_user:
+                    called_pbx_user_id = int(odoo_called_user)
+
+            odoo_number_id = self._xml_text(variables, 'odoo_number_id')
 
         return {
             'uuid': uuid,
@@ -120,6 +146,7 @@ class FreeSwitchCDRController(http.Controller):
             'caller_pbx_user_id': caller_pbx_user_id,
             'called_pbx_user_id': called_pbx_user_id,
             'other_leg_uuid': other_leg_uuid,
+            'odoo_number_id': int(odoo_number_id) if odoo_number_id else None,
         }
 
     @staticmethod

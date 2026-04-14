@@ -1,5 +1,4 @@
 import logging
-import re
 from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError
 if release.version_info[0] >= 19:
@@ -11,16 +10,17 @@ logger = logging.getLogger(__name__)
 
 class User(models.Model):
     _name = 'connect.user'
-    _rec_name = 'username'
+    _rec_name = 'name'
     _description = 'Connect User'
-    _order = 'username'
+    _order = 'name'
 
     callflow = fields.One2many('connect.user_callflow', 'user')
+    endpoint_ids = fields.One2many('connect.endpoint', 'connect_user_id', string='Endpoints')
+    endpoint_count = fields.Integer(compute='_compute_endpoint_count')
     exten = fields.Many2one('connect.exten', ondelete='set null', readonly=True)
     exten_number = fields.Char(related='exten.number', store=True)
-    name = fields.Char(compute='_get_name')
-    user = fields.Many2one('res.users', string='Odoo User', domain=[('share', '=', False)])
-    username = fields.Char(required=True)
+    name = fields.Char(compute='_get_name', store=True)
+    user = fields.Many2one('res.users', string='Odoo User', required=True, domain=[('share', '=', False)])
     record_calls = fields.Boolean(default=True)
     voicemail_enabled = fields.Boolean()
     voicemail_prompt = fields.Text(
@@ -34,22 +34,19 @@ class User(models.Model):
 
     if release.version_info[0] >= 19:
         _user_uniq = Constraint('UNIQUE("user")', 'This Odoo user account is already defined!')
-        _username_uniq = Constraint('UNIQUE(username)', 'This PBX username is already defined!')
     else:
         _sql_constraints = [
             ('user_uniq', 'UNIQUE("user")', 'This Odoo user account is already defined!'),
-            ('username_uniq', 'UNIQUE(username)', 'This PBX username is already defined!'),
         ]
 
+    def _compute_endpoint_count(self):
+        for rec in self:
+            rec.endpoint_count = len(rec.endpoint_ids)
+
+    @api.depends('user', 'user.name')
     def _get_name(self):
         for rec in self:
-            rec.name = rec.user.name if rec.user else rec.username
-
-    @api.constrains('username')
-    def _check_username(self):
-        for rec in self:
-            if not rec.username.isalnum():
-                raise ValidationError('Username must be alphanumeric!')
+            rec.name = rec.user.name if rec.user else ''
 
     def manage_group(self, action='add'):
         attribute_name = 'user_ids' if release.version_info[0] >= 19 else 'users'
@@ -92,8 +89,6 @@ class User(models.Model):
     def write(self, vals):
         if 'user' in vals.keys():
             self.manage_group('remove')
-        if 'username' in vals:
-            raise ValidationError('Username cannot be changed!')
         res = super().write(vals)
         self.manage_group()
         if res and not self.env.context.get('no_clear_cache'):
@@ -115,15 +110,7 @@ class User(models.Model):
 
     @api.model
     def get_user_by_uri(self, userinfo):
-        if not userinfo:
-            return self.env['connect.user']
-        re_call_uri = re.compile(r'^(?:sip|client):([^@]+)@')
-        found_username = re_call_uri.search(userinfo)
-        if found_username:
-            user = self.env['connect.user'].search([
-                ('username', '=', found_username.group(1))])
-            debug(self, 'Found user: {} by {}.'.format(user.username, userinfo))
-            return user
+        """Lookup connect.user by SIP/client URI. No-op in core; overridden by provider modules."""
         return self.env['connect.user']
 
     def create_extension(self):

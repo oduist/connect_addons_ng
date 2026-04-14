@@ -2,18 +2,24 @@
 <templates xml:space="preserve">
 
     <t t-name="connect_freeswitch.PhoneSystray">
-        <li class="o_nav_entry o_phone_systray" t-if="state.enabled">
+        <li class="o_nav_entry o_phone_systray">
             <a href="#" class="dropdown-toggle" t-on-click.prevent="toggleDialpad" t-att-class="getIconClass()">
                 <i class="fa fa-phone"/>
             </a>
-            <PhoneDialpad 
-                t-if="state.showDialpad" 
-                close.bind="closeDialpad" 
-                vertoClient="vertoClient"
+        </li>
+    </t>
+
+    <t t-name="connect_freeswitch.PhonePanel">
+        <div t-att-class="modeClass" t-if="state.showDialpad">
+            <PhoneDialpad
+                close.bind="closeDialpad"
+                vertoClient="props.getVertoClient()"
                 state="state.vertoState"
                 callState="state.callState"
+                callerName="state.callerName"
+                callerNumber="state.callerNumber"
             />
-        </li>
+        </div>
     </t>
 
     <t t-name="connect_freeswitch.PhoneDialpad">
@@ -26,18 +32,19 @@
                 </span>
                 <button class="btn btn-sm btn-close" t-on-click="props.close"/>
             </div>
-            
+
             <div class="o_phone_dialpad_display">
-                <div class="o_phone_number" t-if="!isIncoming">
-                    <input type="text" 
-                           class="form-control form-control-lg text-center" 
-                           t-model="state.number" 
-                           placeholder="Enter number"
-                           t-att-readonly="isCallActive"/>
+                <div class="o_phone_number" t-if="!isIncoming and !isCallActive">
+                    <input type="text"
+                           class="form-control form-control-lg text-center"
+                           t-ref="numberInput"
+                           t-model="state.number"
+                           t-on-keydown="onInputKeydown"
+                           placeholder="Enter number"/>
                 </div>
-                <div class="o_phone_incoming_info" t-if="isIncoming">
-                    <div class="o_incoming_caller_name" t-esc="state.incomingCallerName || 'Unknown'"/>
-                    <div class="o_incoming_caller_number" t-esc="state.incomingCallerNumber"/>
+                <div class="o_phone_incoming_info" t-if="isIncoming or isCallActive">
+                    <div class="o_incoming_caller_name" t-esc="props.callerName || 'Unknown'"/>
+                    <div class="o_incoming_caller_number" t-esc="props.callerNumber"/>
                 </div>
                 <div class="o_phone_call_status" t-if="props.callState !== 'idle'">
                     <t t-esc="getCallStateText()"/>
@@ -92,7 +99,7 @@
 
             <div class="o_phone_dialpad_actions">
                 <t t-if="props.callState === 'idle'">
-                    <button class="btn btn-success o_phone_call_btn" 
+                    <button class="btn btn-success o_phone_call_btn"
                             t-on-click="onCall"
                             t-att-disabled="!state.number or !isConnected">
                         <i class="fa fa-phone"/> Call
@@ -107,7 +114,7 @@
                     </button>
                 </t>
                 <t t-else="">
-                    <button class="btn o_phone_mute_btn" 
+                    <button class="btn o_phone_mute_btn"
                             t-att-class="state.muted ? 'btn-warning' : 'btn-outline-secondary'"
                             t-on-click="onToggleMute">
                         <i t-att-class="state.muted ? 'fa fa-microphone-slash' : 'fa fa-microphone'"/>

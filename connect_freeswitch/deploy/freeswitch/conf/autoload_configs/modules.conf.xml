@@ -1,12 +1,12 @@
 <configuration name="modules.conf" description="Modules">
   <modules>
-    <!-- Loggers -->
-    <load module="mod_console"/>
+    <!-- Loggers (stdout via mod_logfile → /dev/stdout) -->
     <load module="mod_logfile"/>
 
     <!-- XML Interfaces - для получения конфига из Odoo -->
     <load module="mod_xml_curl"/>
     <load module="mod_xml_cdr"/>
+    <load module="mod_xml_rpc"/>
 
     <!-- Event Handlers -->
     <load module="mod_event_socket"/>
@@ -20,15 +20,18 @@
     <!-- Applications -->
     <load module="mod_commands"/>
     <load module="mod_dptools"/>
+    <load module="mod_http_cache"/>
     <load module="mod_dialplan_xml"/>
 
     <!-- Codecs -->
     <load module="mod_opus"/>
-    <load module="mod_spandsp"/>
 
     <!-- File Formats -->
     <load module="mod_sndfile"/>
     <load module="mod_native_file"/>
     <load module="mod_tone_stream"/>
+
+    <!-- TTS -->
+    <load module="mod_piper_tts"/>
   </modules>
 </configuration>

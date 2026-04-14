@@ -47,23 +47,7 @@ for easy access from other models.
 | `api_url` | Char | Computed |
 | `api_fallback_url` | Char | |
 | `web_base_url` | Char | Computed |
-| `module_version` | Char | Computed |
-| `odoo_version` | Char | Computed |
-| `installation_date` | Datetime | Computed |
-| `call_duration_limit` | Integer | Computed |
-| `customer_code` | Char | |
-| `registration_number` | Char | Computed |
-| `registration_key` | Char | Computed |
-| `is_registered` | Boolean | |
-| `i_agree_to_register` | Boolean | |
-| `i_agree_to_contact` | Boolean | |
-| `i_agree_to_receive` | Boolean | |
-| `admin_name` | Char | |
-| `admin_phone` | Char | |
-| `admin_email` | Char | |
-| `company_name` | Char | |
-| `company_country` | Many2one | `res.country` |
-| `latest_versions` | Html | Readonly |
+| `call_duration_limit` | Integer | Computed from `ir.config_parameter` |
 | `openai_api_key` | Char | Groups: `base.group_erp_manager` |
 | `display_openai_api_key` | Char | Masked display field |
 
@@ -77,16 +61,9 @@ for easy access from other models.
 | `connect_notify(bus)` | Send bus notification |
 | `connect_reload_view(bus)` | Send bus reload event |
 | `set_defaults()` | Set installation defaults |
-| `set_instance_uid()` | Generate UUID for instance |
-| `register_instance()` | Register with Oduist API |
-| `update_instance_registration()` | Update registration data |
-| `prepare_registration_data()` | Build registration payload |
-| `update_usage()` | Track usage statistics |
-| `make_usage_request()` | HTTP call to usage API |
-| `check_api_url()` | Validate API URL reachability |
+| `check_api_url()` | Validate API URL format |
 | `reformat_numbers_button()` | Re-normalize partner phone numbers |
 | `action_open_system_parameters()` | UI action |
-| `check_latest_versions()` | Version check against API |
 | `get_openai_client()` | Create and return OpenAI client instance |
 
 **Notes:**
@@ -321,16 +298,15 @@ Order: `id desc`
 
 ### 6. user.py - `connect.user`
 
-Rec name: `username`
-Order: `username`
+Rec name: `name`
+Order: `name`
 
 **Fields:**
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `name` | Char | Computed from user/username |
-| `username` | Char | Required, alphanumeric |
-| `user` | Many2one | `res.users` |
+| `name` | Char | Computed (stored) from `user.name` |
+| `user` | Many2one | `res.users`, Required |
 | `exten` | Many2one | `connect.exten`, readonly |
 | `exten_number` | Char | Related to exten |
 | `callflow` | One2many | `connect.user_callflow` |
@@ -345,17 +321,15 @@ Order: `username`
 
 **Constraints:**
 - `UNIQUE(user)` - one connect.user per res.users
-- `UNIQUE(username)` - unique username
 
 **Methods:**
 
 | Method | Description |
 |--------|-------------|
-| `_get_name()` | Compute name from linked res.users or username |
-| `_check_username()` | Constrains: alphanumeric only |
+| `_get_name()` | Compute name from linked res.users |
 | `manage_group()` | Add/remove security groups on linked res.users |
 | `get_user_by_exten_number()` | Lookup connect.user by extension number |
-| `get_user_by_uri()` | Lookup connect.user by SIP URI or client identity |
+| `get_user_by_uri()` | No-op in core (returns empty recordset). Integration modules override to lookup connect.user by SIP URI or client identity. |
 | `create_extension()` | Create associated `connect.exten` record |
 | `render_voicemail_prompt()` | Render Jinja2 voicemail template with call context |
 | `get_greeting_message()` | Return greeting (override point for integrations) |
@@ -390,13 +364,22 @@ Order: `username`
 
 ### 8. endpoint.py - `connect.endpoint`
 
-Keep as-is from current module.
-
 | Field | Type | Notes |
 |-------|------|-------|
 | `name` | Char | Required |
-| `connect_user_id` | Many2one | `connect.user` |
+| `connect_user_id` | Many2one | `connect.user`, optional |
+| `exten` | Many2one | `connect.exten` |
+| `exten_number` | Char | Related to `exten.number` |
 | `active` | Boolean | |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `create_extension()` | Create associated `connect.exten` record for this endpoint |
+
+**Notes:**
+- `connect_user_id` is optional to support standalone endpoints (e.g., conference room phones, lobby phones) that are not associated with a specific user.
 
 ---
 
@@ -408,7 +391,6 @@ Keep as-is from current module.
 |-------|------|-------|
 | `phone_number` | Char | Required |
 | `friendly_name` | Char | |
-| `is_ignored` | Boolean | |
 | `is_default` | Boolean | |
 | `destination` | Selection | `user`, `callflow` |
 | `callflow` | Many2one | `connect.callflow` |

@@ -1,5 +1,8 @@
+import ipaddress
 import logging
+import re
 from odoo import fields, models, api, release
+from odoo.exceptions import ValidationError
 if release.version_info[0] >= 19:
     from odoo.models import Constraint
 
@@ -21,6 +24,11 @@ class FreeSwitchGateway(models.Model):
     caller_id_in_from = fields.Boolean(help='Use caller ID in From header')
     expire_seconds = fields.Integer(default=3600)
     retry_seconds = fields.Integer(default=30)
+    inbound_ips = fields.Text(
+        string='Inbound IPs',
+        help='IP addresses or CIDR ranges (one per line) allowed to send '
+             'inbound calls without SIP authentication. '
+             'Example: 185.3.68.0/24')
     active = fields.Boolean(default=True)
 
     if release.version_info[0] >= 19:
@@ -30,23 +38,84 @@ class FreeSwitchGateway(models.Model):
             ('name_uniq', 'UNIQUE(name)', 'Gateway name must be unique!'),
         ]
 
-    def generate_sofia_gateway_xml(self, parent_el):
-        """Generate FreeSWITCH gateway XML element."""
-        from xml.etree import ElementTree as ET
+    @api.constrains('name')
+    def _check_name(self):
+        for record in self:
+            if record.name and not re.match(r'^[a-zA-Z0-9_.-]+$', record.name):
+                raise ValidationError(
+                    "Gateway name '{}' contains invalid characters. "
+                    "Only letters, digits, hyphens, underscores and dots "
+                    "are allowed.".format(record.name))
+
+    @api.constrains('inbound_ips')
+    def _check_inbound_ips(self):
+        for record in self:
+            for line in (record.inbound_ips or '').splitlines():
+                ip = line.strip()
+                if not ip:
+                    continue
+                try:
+                    ipaddress.ip_network(ip, strict=False)
+                except ValueError:
+                    raise ValidationError(
+                        "Invalid IP address or CIDR range: '{}'".format(ip))
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        self._reload_sofia_profile()
+        if any(v.get('inbound_ips') for v in vals_list):
+            self._reload_acl()
+        return records
+
+    def write(self, vals):
+        result = super().write(vals)
+        self._reload_sofia_profile()
+        if 'inbound_ips' in vals:
+            self._reload_acl()
+        return result
+
+    def unlink(self):
+        has_ips = any(r.inbound_ips for r in self)
+        result = super().unlink()
+        self._reload_sofia_profile()
+        if has_ips:
+            self._reload_acl()
+        return result
+
+    def _reload_sofia_profile(self):
+        """Ask FreeSWITCH to restart the external sofia profile and reload XML."""
+        self.env['connect.settings'].freeswitch_api(
+            'sofia', 'profile external restart reloadxml')
+
+    def _reload_acl(self):
+        """Ask FreeSWITCH to reload ACL configuration."""
+        self.env['connect.settings'].freeswitch_api('reloadacl')
+
+    @api.model
+    def _get_all_acl_ips(self):
+        """Return list of ACL entries from all active gateways with inbound IPs."""
+        gateways = self.search([('active', '=', True), ('inbound_ips', '!=', False)])
+        result = []
+        for gw in gateways:
+            for line in (gw.inbound_ips or '').splitlines():
+                ip = line.strip()
+                if ip:
+                    result.append({'ip': ip, 'gateway': gw.name})
+        return result
+
+    def generate_sofia_gateway_xml(self):
+        """Generate FreeSWITCH gateway XML string."""
         self.ensure_one()
-        gw = ET.SubElement(parent_el, 'gateway', name=self.name)
-        ET.SubElement(gw, 'param', name='proxy', value=self.proxy)
-        if self.username:
-            ET.SubElement(gw, 'param', name='username', value=self.username)
-        if self.password:
-            ET.SubElement(gw, 'param', name='password', value=self.password)
-        ET.SubElement(gw, 'param', name='register', value='true' if self.register else 'false')
-        if self.realm:
-            ET.SubElement(gw, 'param', name='realm', value=self.realm)
-        if self.from_domain:
-            ET.SubElement(gw, 'param', name='from-domain', value=self.from_domain)
-        if self.caller_id_in_from:
-            ET.SubElement(gw, 'param', name='caller-id-in-from', value='true')
-        ET.SubElement(gw, 'param', name='expire-seconds', value=str(self.expire_seconds))
-        ET.SubElement(gw, 'param', name='retry-seconds', value=str(self.retry_seconds))
-        return gw
+        return self.env['connect.freeswitch.template'].render('config_sofia_gateway', {
+            'name': self.name,
+            'proxy': self.proxy,
+            'username': self.username or '',
+            'password': self.password or '',
+            'register': 'true' if self.register else 'false',
+            'realm': self.realm or '',
+            'from_domain': self.from_domain or '',
+            'caller_id_in_from': self.caller_id_in_from,
+            'expire_seconds': str(self.expire_seconds),
+            'retry_seconds': str(self.retry_seconds),
+        })

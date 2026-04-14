@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 class Number(models.Model):
     _inherit = 'connect.number'
 
+    is_ignored = fields.Boolean('Ignored')
     sid = fields.Char()
     voice_url = fields.Char(
         compute='_get_twilio_urls', compute_sudo=True

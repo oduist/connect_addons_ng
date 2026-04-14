@@ -9,9 +9,43 @@
             <page name="general" position="after">
                 <page name="freeswitch" string="FreeSWITCH">
                     <group>
-                        <group>
+                        <group string="Status">
+                            <field name="freeswitch_status"/>
+                            <field name="freeswitch_uptime"/>
+                            <field name="freeswitch_calls"/>
+                            <field name="freeswitch_registrations"/>
+                            <button name="check_freeswitch_status" type="object"
+                                    string="CHECK STATUS" class="btn btn-info"
+                                    colspan="2"/>
+                        </group>
+                        <group string="Gateway Status">
+                            <field name="freeswitch_gateway_statuses"
+                                   nolabel="1" colspan="2"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Connection">
                             <field name="freeswitch_socket_url"
                                    placeholder="wss://your-fs-domain:8082"/>
+                            <field name="freeswitch_domain"
+                                   placeholder="fs.example.com"/>
+                            <field name="freeswitch_ice_servers"
+                                   placeholder="stun:stun.l.google.com:19302"/>
+                        </group>
+                        <group string="XML-RPC">
+                            <field name="freeswitch_xmlrpc_host"
+                                   placeholder="fs.example.com"/>
+                            <field name="freeswitch_xmlrpc_port"/>
+                            <field name="freeswitch_xmlrpc_user"
+                                   placeholder="freeswitch"/>
+                            <field name="freeswitch_xmlrpc_password"
+                                   password="True"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Log Levels">
+                            <field name="freeswitch_log_level"/>
+                            <field name="freeswitch_sofia_log_level"/>
                         </group>
                     </group>
                 </page>

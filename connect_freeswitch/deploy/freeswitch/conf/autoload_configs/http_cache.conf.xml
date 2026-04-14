@@ -1,0 +1,17 @@
+<configuration name="http_cache.conf" description="HTTP Cache Configuration">
+  <settings>
+    <!-- Register http:// and https:// file interfaces for record_session -->
+    <param name="enable-file-formats" value="true"/>
+    <param name="max-urls" value="10000"/>
+    <param name="location" value="/tmp/http_cache"/>
+    <param name="default-max-age" value="86400"/>
+    <param name="ssl-cacert" value="/etc/ssl/certs/ca-certificates.crt"/>
+    <param name="ssl-verifypeer" value="true"/>
+  </settings>
+  <profiles>
+    <profile name="default">
+      <aws-s3/>
+      <domains/>
+    </profile>
+  </profiles>
+</configuration>

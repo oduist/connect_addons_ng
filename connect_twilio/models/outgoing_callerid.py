@@ -13,7 +13,15 @@ class OutgoingCallerID(models.Model):
     _inherit = 'connect.outgoing_callerid'
 
     sid = fields.Char(readonly=True)
+    status = fields.Char(readonly=True)
     validation_code = fields.Char(readonly=True)
+
+    @api.constrains('is_default')
+    def _check_default(self):
+        for rec in self:
+            if rec.is_default:
+                if rec.callerid_type == 'outgoing_callerid' and rec.status != 'validated':
+                    raise ValidationError('Validate the number first!')
 
     def sync_outgoing_callerid(self, callerid_type):
         client = self.env['connect.settings'].get_client()

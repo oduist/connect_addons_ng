@@ -8,6 +8,8 @@ from urllib.parse import urljoin
 
 from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError
+if release.version_info[0] >= 19:
+    from odoo.models import Constraint
 from twilio.jwt.access_token import AccessToken
 from twilio.jwt.access_token.grants import VoiceGrant
 from twilio.twiml.voice_response import Client, Dial, VoiceResponse
@@ -24,6 +26,36 @@ SIP_TWILIO_EDGES.insert(0, ['roaming', 'Global Low-latency Roaming'])
 
 class User(models.Model):
     _inherit = 'connect.user'
+
+    username = fields.Char(required=True)
+
+    if release.version_info[0] >= 19:
+        _username_uniq = Constraint('UNIQUE(username)', 'This PBX username is already defined!')
+    else:
+        _sql_constraints = [
+            ('username_uniq', 'UNIQUE(username)', 'This PBX username is already defined!'),
+        ]
+
+    @api.constrains('username')
+    def _check_username(self):
+        for rec in self:
+            if rec.username and not rec.username.isalnum():
+                raise ValidationError('Username must be alphanumeric!')
+
+    @api.model
+    def get_user_by_uri(self, userinfo):
+        """Lookup connect.user by SIP/client URI using username."""
+        if not userinfo:
+            return self.env['connect.user']
+        re_call_uri = re.compile(r'^(?:sip|client):([^@]+)@')
+        found_username = re_call_uri.search(userinfo)
+        if found_username:
+            user = self.env['connect.user'].search([
+                ('username', '=', found_username.group(1))])
+            if user:
+                debug(self, 'Found user: {} by {}.'.format(user.name, userinfo))
+            return user
+        return self.env['connect.user']
 
     sid = fields.Char('SID', readonly=True)
     password = fields.Char(

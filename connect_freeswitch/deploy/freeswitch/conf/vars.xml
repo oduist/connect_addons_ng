@@ -3,9 +3,12 @@
 
   <!-- Odoo integration: read from OS environment variables -->
   <X-PRE-PROCESS cmd="env-set" data="odoo_url=$ODOO_URL"/>
-
-  <X-PRE-PROCESS cmd="set" data="domain=$${local_ip_v4}"/>
+  <!--
+  <X-PRE-PROCESS cmd="env-set" data="domain=$FS_DOMAIN"/>
   <X-PRE-PROCESS cmd="set" data="domain_name=$${domain}"/>
+  -->
+  <X-PRE-PROCESS cmd="exec-set" data="domain=echo $FS_DOMAIN"/>
+  <X-PRE-PROCESS cmd="exec-set" data="domain_name=echo $FS_DOMAIN"/>
 
   <X-PRE-PROCESS cmd="set" data="global_codec_prefs=OPUS,G722,PCMU,PCMA,H264,VP8"/>
   <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=OPUS,G722,PCMU,PCMA,H264,VP8"/>
@@ -20,5 +23,7 @@
 
   <X-PRE-PROCESS cmd="set" data="hold_music=silence_stream://0"/>
   <X-PRE-PROCESS cmd="set" data="use_profile=internal"/>
-  <X-PRE-PROCESS cmd="set" data="console_loglevel=info"/>
+  <!-- Log levels: read from Docker env vars (defaults in Dockerfile) -->
+  <X-PRE-PROCESS cmd="env-set" data="core_loglevel=$FS_LOG_LEVEL"/>
+  <X-PRE-PROCESS cmd="env-set" data="sofia_loglevel=$FS_SOFIA_LOG_LEVEL"/>
 </include>

@@ -5,7 +5,6 @@
         <field name="model">connect.user</field>
         <field name="arch" type="xml">
             <list>
-                <field name="username"/>
                 <field name="user"/>
                 <field name="exten" optional="show"/>
                 <field name="outgoing_callerid" optional="show"/>
@@ -22,10 +21,13 @@
         <field name="model">connect.user</field>
         <field name="arch" type="xml">
             <form>
+                <header>
+                    <button name="create_extension" type="object" string="Extension" class="btn btn-primary"/>
+                </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box"/>
                     <group>
                         <group string="User Info">
-                            <field name="username"/>
                             <field name="user"/>
                             <field name="exten" readonly="1"/>
                             <field name="outgoing_callerid"/>

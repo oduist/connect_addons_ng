@@ -1,12 +1,11 @@
 <configuration name="logfile.conf" description="File Logging">
   <settings>
-    <param name="rotate-on-hup" value="true"/>
+    <param name="rotate-on-hup" value="false"/>
   </settings>
   <profiles>
     <profile name="default">
       <settings>
-        <param name="logfile" value="$${log_dir}/freeswitch.log"/>
-        <param name="rollover" value="10485760"/>
+        <param name="logfile" value="/dev/stdout"/>
         <param name="uuid" value="true"/>
       </settings>
       <mappings>

@@ -6,10 +6,22 @@
         <field name="inherit_id" ref="connect.view_connect_endpoint_tree"/>
         <field name="arch" type="xml">
             <field name="connect_user_id" position="after">
-                <field name="domain"/>
-                <field name="sip_enabled"/>
-                <field name="webrtc_enabled"/>
+                <field name="auth_user"/>
+                <field name="originate_ring" invisible="not connect_user_id"/>
+                <field name="auto_answer_header" optional="hide" invisible="not connect_user_id"/>
             </field>
+        </field>
+    </record>
+
+    <record id="view_connect_endpoint_search_freeswitch" model="ir.ui.view">
+        <field name="name">connect.endpoint.search.freeswitch</field>
+        <field name="model">connect.endpoint</field>
+        <field name="inherit_id" ref="connect.view_connect_endpoint_search"/>
+        <field name="arch" type="xml">
+            <filter name="archived" position="before">
+                <filter string="Originate Ring" name="originate_ring" domain="[('originate_ring', '=', True)]"/>
+                <separator/>
+            </filter>
         </field>
     </record>
 
@@ -18,13 +30,16 @@
         <field name="model">connect.endpoint</field>
         <field name="inherit_id" ref="connect.view_connect_endpoint_form"/>
         <field name="arch" type="xml">
-            <field name="active" position="after">
-                <field name="domain"/>
-                <field name="sip_enabled"/>
-                <field name="webrtc_enabled"/>
-                <field name="auth_user" invisible="not sip_enabled and not webrtc_enabled"/>
-                <field name="auth_password" password="True" invisible="not sip_enabled and not webrtc_enabled"/>
-            </field>
+            <div class="oe_title" position="after">
+                <group string="Authentication">
+                    <field name="auth_user"/>
+                    <field name="auth_password" password="True"/>
+                </group>
+                <group string="Click-to-Call" invisible="not connect_user_id">
+                    <field name="originate_ring" widget="boolean_toggle"/>
+                    <field name="auto_answer_header" invisible="not originate_ring"/>
+                </group>
+            </div>
         </field>
     </record>
 </odoo>

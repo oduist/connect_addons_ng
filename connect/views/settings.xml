@@ -34,6 +34,7 @@
                                     <field name="api_url" readonly="1"/>
                                     <field name="web_base_url" readonly="1"/>
                                     <field name="instance_uid" readonly="1"/>
+                                    <field name="call_duration_limit" readonly="1"/>
                                 </group>
                             </group>
                         </page>
@@ -50,43 +51,6 @@
                             </group>
                             <group string="Summary Prompt">
                                 <field name="summary_prompt" nolabel="1" colspan="2"/>
-                            </group>
-                        </page>
-                        <page name="registration" string="Registration">
-                            <group>
-                                <group string="Registration Info">
-                                    <field name="is_registered" readonly="1"/>
-                                    <field name="customer_code"/>
-                                    <field name="registration_number" readonly="1"/>
-                                    <field name="registration_key" readonly="1"/>
-                                </group>
-                                <group string="Admin Contact">
-                                    <field name="admin_name"/>
-                                    <field name="admin_phone"/>
-                                    <field name="admin_email"/>
-                                    <field name="company_name"/>
-                                    <field name="company_country"/>
-                                </group>
-                            </group>
-                            <group>
-                                <group>
-                                    <field name="i_agree_to_register"/>
-                                    <field name="i_agree_to_contact"/>
-                                    <field name="i_agree_to_receive"/>
-                                </group>
-                            </group>
-                        </page>
-                        <page name="system" string="System">
-                            <group>
-                                <group string="System Info">
-                                    <field name="module_version" readonly="1"/>
-                                    <field name="odoo_version" readonly="1"/>
-                                    <field name="installation_date" readonly="1"/>
-                                    <field name="call_duration_limit" readonly="1"/>
-                                </group>
-                                <group string="Version Check">
-                                    <field name="latest_versions" readonly="1" nolabel="1"/>
-                                </group>
                             </group>
                         </page>
                     </notebook>

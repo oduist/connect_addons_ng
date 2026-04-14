@@ -1,12 +1,8 @@
-import logging
 import re
 from odoo import fields, models, api, release
 if release.version_info[0] >= 19:
     from odoo.models import Constraint
 from odoo.exceptions import ValidationError
-from .settings import debug
-
-logger = logging.getLogger(__name__)
 
 
 class OutgoingCallerID(models.Model):
@@ -17,7 +13,6 @@ class OutgoingCallerID(models.Model):
     name = fields.Char(compute='_get_name')
     friendly_name = fields.Char(required=True)
     number = fields.Char(required=True)
-    status = fields.Char(readonly=True)
     callerid_type = fields.Selection(
         [('outgoing_callerid', 'CallerID'), ('number', 'DID Number')],
         required=True, default='outgoing_callerid')
@@ -54,9 +49,3 @@ class OutgoingCallerID(models.Model):
                     []).write({'is_default': False})
                 rec.with_context(context).is_default = default
 
-    @api.constrains('is_default')
-    def _check_default(self):
-        for rec in self:
-            if rec.is_default:
-                if rec.callerid_type == 'outgoing_callerid' and rec.status != 'validated':
-                    raise ValidationError('Validate the number first!')

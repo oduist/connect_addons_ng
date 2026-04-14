@@ -7,7 +7,6 @@
             <list>
                 <field name="number"/>
                 <field name="friendly_name"/>
-                <field name="status"/>
                 <field name="callerid_type"/>
                 <field name="is_default"/>
             </list>
@@ -25,11 +24,10 @@
                             <field name="number"/>
                             <field name="friendly_name"/>
                             <field name="callerid_type"/>
-                            <field name="status" readonly="1"/>
                             <field name="is_default"/>
                         </group>
                         <group string="Users">
-                            <field name="callerid_users" nolabel="1"/>
+                            <field name="callerid_users" widget="many2many_tags"/>
                         </group>
                     </group>
                 </sheet>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_user_form_freeswitch" model="ir.ui.view">
+        <field name="name">connect.user.form.freeswitch</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_form"/>
+        <field name="arch" type="xml">
+            <div class="oe_button_box" position="inside">
+                <button name="%(connect.action_connect_endpoint)d" type="action"
+                        class="oe_stat_button" icon="fa-headphones"
+                        context="{'default_connect_user_id': id, 'search_default_connect_user_id': id}">
+                    <field name="endpoint_count" widget="statinfo" string="Endpoints"/>
+                </button>
+            </div>
+            <notebook position="inside">
+                <page name="webrtc" string="WebRTC">
+                    <group>
+                        <group>
+                            <field name="webrtc_enabled" widget="boolean_toggle"/>
+                            <field name="originate_ring" widget="boolean_toggle"
+                                   invisible="not webrtc_enabled"/>
+                            <field name="phone_display_mode" widget="radio"
+                                   invisible="not webrtc_enabled"/>
+                        </group>
+                    </group>
+                </page>
+                <page name="endpoints" string="Endpoints">
+                    <field name="endpoint_ids">
+                        <list editable="bottom">
+                            <field name="name"/>
+                            <field name="auth_user"/>
+                            <field name="auth_password" password="True"/>
+                            <field name="originate_ring"/>
+                            <field name="auto_answer_header" optional="hide"/>
+                            <field name="active" column_invisible="1"/>
+                        </list>
+                    </field>
+                </page>
+            </notebook>
+        </field>
+    </record>
+</odoo>

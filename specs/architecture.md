@@ -116,7 +116,7 @@ Integration model (connect_twilio/models/foo.py):
 
 | Category | Examples |
 |----------|---------|
-| API client | get_client() for Twilio REST / FreeSWITCH ESL |
+| API client | get_client() for Twilio REST / freeswitch_api() for FreeSWITCH XML-RPC |
 | Webhook handlers | on_call_status(), receive(), on_recording_status() |
 | Protocol rendering | TwiML generation, FreeSWITCH XML dialplan |
 | Provider sync | sync() methods for numbers, callerIDs, domains |
@@ -162,9 +162,11 @@ connect.settings (singleton)
     |       |       |
     |       |       +-- connect.user_callflow_call
     |       |
-    |       +-- connect.endpoint
+    |       +-- connect.endpoint (optional link)
     |       |
     |       +-- connect.exten (extension routing)
+    |
+    +-- connect.endpoint (can also be standalone, without user)
     |
     +-- connect.callflow (IVR)
     |       |
@@ -238,7 +240,8 @@ Settings Form (notebook)
   |     - fetch_call_prices
   |
   +-- [FreeSWITCH] FreeSWITCH tab (added by connect_freeswitch)
-        - socket_url, password, etc.
+        - socket_url, domain
+        - xmlrpc_host, xmlrpc_port, xmlrpc_user, xmlrpc_password
 ```
 
 ---

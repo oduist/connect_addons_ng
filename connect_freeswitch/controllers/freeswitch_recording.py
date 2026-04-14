@@ -11,6 +11,9 @@ class FreeSwitchRecordingController(http.Controller):
     """Controller for receiving recording files from FreeSWITCH.
 
     FreeSWITCH posts recording files via record_session with an HTTP URL.
+    The upload (PUT) may arrive before the CDR webhook creates the channel
+    record, so we save the recording with just the UUID (call_sid) and
+    link it to the channel later when processing the CDR.
     """
 
     @http.route(
@@ -41,41 +44,38 @@ class FreeSwitchRecordingController(http.Controller):
                 request.env.ref('connect.user_connect_webhook').id
             )
 
-            # Find the channel by UUID (sid)
+            # Skip if recording for this UUID already exists (both legs
+            # may attempt to upload the same recording)
+            existing = env.sudo().search([('call_sid', '=', uuid)], limit=1)
+            if existing:
+                logger.info('Recording for UUID %s already exists (id=%s), skipping',
+                    uuid, existing.id)
+                return Response('OK', status=200)
+
+            # Try to find the channel, but don't fail if not found yet —
+            # the CDR handler will link the recording later.
             channel = request.env['connect.channel'].sudo().search(
                 [('sid', '=', uuid)], limit=1)
 
-            if not channel:
-                logger.warning('Recording webhook: channel not found for UUID %s', uuid)
-                return Response('Channel not found', status=404)
-
-            # Create recording with the file as an attachment
-            recording = env.sudo().create({
-                'call': channel.call.id if channel.call else False,
-                'channel': channel.id,
+            vals = {
                 'call_sid': uuid,
-                'partner': channel.partner.id if channel.partner else False,
                 'status': 'completed',
                 'source': 'freeswitch',
-            })
+                'recording_attachment': base64.b64encode(file_data),
+                'recording_filename': filename,
+            }
+            if channel:
+                vals['call'] = channel.call.id if channel.call else False
+                vals['channel'] = channel.id
+                vals['partner'] = channel.partner.id if channel.partner else False
+                vals['duration'] = channel.duration
+                vals['caller_number'] = channel.caller_number
+                vals['called_number'] = channel.called_number
 
-            # Store the recording file as an attachment
-            attachment = request.env['ir.attachment'].sudo().create({
-                'name': filename,
-                'type': 'binary',
-                'datas': base64.b64encode(file_data),
-                'res_model': 'connect.recording',
-                'res_id': recording.id,
-                'mimetype': 'audio/wav',
-            })
+            recording = env.sudo().create(vals)
 
-            # Set media_url to the attachment download URL
-            recording.sudo().write({
-                'media_url': '/web/content/{}?download=true'.format(attachment.id),
-            })
-
-            logger.info('Recording created: id=%s, channel=%s, size=%d bytes',
-                recording.id, uuid, len(file_data))
+            logger.info('Recording created: id=%s, uuid=%s, channel=%s, size=%d bytes',
+                recording.id, uuid, channel.id if channel else 'pending', len(file_data))
 
         except Exception as e:
             logger.exception('Failed to process recording for %s: %s', uuid, e)

@@ -1,18 +1,17 @@
 /** @odoo-module **/
 
-import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odoo/owl";
-import { registry } from "@web/core/registry";
-import { useService } from "@web/core/utils/hooks";
-import { VertoClient } from "./verto_client";
+import { Component, useState, useRef, onMounted, onWillUnmount } from "@odoo/owl";
 
 
-class PhoneDialpad extends Component {
+export class PhoneDialpad extends Component {
     static template = "connect_freeswitch.PhoneDialpad";
     static props = {
         close: Function,
         vertoClient: { type: Object, optional: true },
         state: String,
         callState: String,
+        callerName: { type: String, optional: true },
+        callerNumber: { type: String, optional: true },
     };
 
     setup() {
@@ -20,11 +19,24 @@ class PhoneDialpad extends Component {
             number: "",
             muted: false,
             callDuration: 0,
-            incomingCallerName: "",
-            incomingCallerNumber: "",
         });
 
+        this.numberInput = useRef("numberInput");
         this.durationInterval = null;
+
+        onMounted(() => {
+            this.numberInput.el?.focus();
+        });
+
+        onWillUnmount(() => {
+            this._stopDurationTimer();
+        });
+    }
+
+    onInputKeydown(ev) {
+        if (ev.key === "Enter") {
+            this.onCall();
+        }
     }
 
     get isConnected() {
@@ -138,102 +150,41 @@ class PhoneDialpad extends Component {
 
 export class PhoneSystray extends Component {
     static template = "connect_freeswitch.PhoneSystray";
-    static components = { PhoneDialpad };
-    static props = {};
+    static props = {
+        bus: Object,
+        displayMode: String,
+    };
 
     setup() {
-        this.orm = useService("orm");
-
         this.state = useState({
-            enabled: false,
-            showDialpad: false,
             vertoState: "disconnected",
             callState: "idle",
-            config: null,
         });
 
-        this.vertoClient = null;
-
-        onWillStart(async () => {
-            await this.loadConfig();
-        });
+        this._onStateChanged = ({ detail }) => {
+            this.state.vertoState = detail.vertoState;
+        };
+        this._onCallStateChanged = ({ detail }) => {
+            this.state.callState = detail.callState;
+        };
 
         onMounted(() => {
-            if (this.state.enabled) {
-                this.connect();
-            }
+            this.props.bus.addEventListener("phoneStateChanged", this._onStateChanged);
+            this.props.bus.addEventListener("phoneCallStateChanged", this._onCallStateChanged);
         });
 
         onWillUnmount(() => {
-            this.disconnect();
+            this.props.bus.removeEventListener("phoneStateChanged", this._onStateChanged);
+            this.props.bus.removeEventListener("phoneCallStateChanged", this._onCallStateChanged);
+            this.props.bus.trigger("phoneNavigated");
         });
-    }
-
-    async loadConfig() {
-        try {
-            const config = await this.orm.call("connect.settings", "get_webrtc_config", []);
-
-            if (config.enabled) {
-                this.state.enabled = true;
-                this.state.config = config;
-            }
-        } catch (error) {
-            console.error("[Phone] Failed to load config:", error);
-        }
-    }
-
-    async connect() {
-        if (!this.state.config || this.vertoClient) return;
-
-        this.vertoClient = new VertoClient({
-            socketUrl: this.state.config.socketUrl,
-            login: this.state.config.login,
-            password: this.state.config.password,
-            callerName: this.state.config.callerName,
-            callerNumber: this.state.config.callerNumber,
-            onStateChange: (state) => {
-                this.state.vertoState = state;
-            },
-            onCallStateChange: (state) => {
-                this.state.callState = state;
-                if (state === "incoming") {
-                    this.state.showDialpad = true;
-                }
-            },
-            onError: (error) => {
-                console.error("[Phone] Verto error:", error);
-            }
-        });
-
-        try {
-            await this.vertoClient.connect();
-        } catch (error) {
-            console.error("[Phone] Connection failed:", error);
-        }
-    }
-
-    disconnect() {
-        if (this.vertoClient) {
-            this.vertoClient.disconnect();
-            this.vertoClient = null;
-        }
     }
 
     toggleDialpad() {
-        this.state.showDialpad = !this.state.showDialpad;
-
-        if (this.state.showDialpad && !this.vertoClient && this.state.enabled) {
-            this.connect();
-        }
-    }
-
-    closeDialpad() {
-        this.state.showDialpad = false;
+        this.props.bus.trigger("phoneToggle");
     }
 
     getIconClass() {
-        if (!this.state.enabled) return "text-muted";
-
         switch (this.state.vertoState) {
             case "registered":
                 return this.state.callState !== "idle" ? "text-success" : "";
@@ -247,7 +198,3 @@ export class PhoneSystray extends Component {
         }
     }
 }
-
-registry.category("systray").add("connect_freeswitch.PhoneSystray", {
-    Component: PhoneSystray,
-}, { sequence: 50 });

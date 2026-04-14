@@ -1,0 +1,16 @@
+<configuration name="piper_tts.conf" description="Piper TTS Configuration">
+    <settings>
+        <param name="cache-path" value="/tmp/piper-tts-cache" />
+        <param name="cache-enable" value="true" />
+
+        <param name="piper-bin" value="/opt/piper/piper" />
+        <param name="piper-opts" value="" />
+
+        <param name="voice-name-as-language" value="true" />
+    </settings>
+
+    <models>
+        <model language="en" path="/opt/piper/models/en_US-lessac-medium.onnx" />
+        <model language="ru" path="/opt/piper/models/ru_RU-irina-medium.onnx" />
+    </models>
+</configuration>
