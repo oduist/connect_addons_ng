@@ -409,6 +409,10 @@ Variables:
         <param name="codec-prefs" value="OPUS,PCMU,PCMA"/>
         <param name="auth-calls" value="true"/>
         <param name="apply-inbound-acl" value="gateways"/>
+        <param name="NDLB-received-in-nat-reg-contact" value="true"/>
+        <param name="aggressive-nat-detection" value="true"/>
+        <param name="NDLB-force-rport" value="true"/>
+        <param name="force-rport" value="true"/>
         {% if fs_domain %}
         <param name="force-register-domain" value="{{ fs_domain }}"/>
         <param name="force-realm" value="{{ fs_domain }}"/>
@@ -434,6 +438,10 @@ Variables:
         <param name="codec-prefs" value="OPUS,PCMU,PCMA"/>
         <param name="auth-calls" value="true"/>
         <param name="apply-inbound-acl" value="gateways"/>
+        <param name="NDLB-received-in-nat-reg-contact" value="true"/>
+        <param name="aggressive-nat-detection" value="true"/>
+        <param name="NDLB-force-rport" value="true"/>
+        <param name="force-rport" value="true"/>
         {% if fs_domain %}
         <param name="force-register-domain" value="{{ fs_domain }}"/>
         <param name="force-realm" value="{{ fs_domain }}"/>
