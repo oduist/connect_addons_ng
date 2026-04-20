@@ -1,3 +1,13 @@
+filestore/
+.env
+odoo.conf
 *.pyc
+__pycache__/
+.vscode/
+.idea/
+*.egg-info/
+dist/
+build/
+.opencode/
 connect_freeswitch/deploy/freeswitch/logs
 connect_freeswitch/deploy/freeswitch/conf.orig
