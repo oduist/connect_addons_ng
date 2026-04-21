@@ -73,7 +73,7 @@ class FreeSwitchParkingSlot(models.Model):
                 "Make sure the call is still in progress.")
 
         settings = self.env['connect.settings']
-        args = "{uuid} 'valet_park {lot} {slot}' inline".format(
+        args = "{uuid} 'valet_park:{lot} {slot}' inline".format(
             uuid=uuid, lot=PARKING_LOT_NAME, slot=self.exten)
         result = settings.freeswitch_api('uuid_transfer', args)
         if not result or str(result).startswith('-ERR'):
