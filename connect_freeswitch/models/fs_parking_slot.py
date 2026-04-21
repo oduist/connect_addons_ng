@@ -228,7 +228,7 @@ class FreeSwitchParkingSlot(models.Model):
         ]
         if connect_user.webrtc_enabled:
             variables.append('verto_h_auto_answer=true')
-        cmd = "{{{}}}{} &valet_park({} {})".format(
+        cmd = "{{{}}}{} '&valet_park({} {})'".format(
             ','.join(variables), endpoint_parts,
             PARKING_LOT_NAME, self.exten)
         logger.info("Unpark slot %s: originate %s", self.exten, cmd)
