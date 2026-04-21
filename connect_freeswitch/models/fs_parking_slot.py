@@ -56,8 +56,12 @@ class FreeSwitchParkingSlot(models.Model):
     def action_park_call(self, call_id=None):
         """Park the given connect.call on this slot.
 
-        Finds the remote leg UUID from the call's channels and issues
-        `uuid_transfer <uuid> 'valet_park default <exten>' inline`.
+        Transfers the remote leg to the slot extension in dialplan
+        context ``default`` so the ``connect_valet_parking_<slot>``
+        extension runs — setting ``api_hangup_hook`` (for the
+        ``released`` webhook) and firing the ``entered`` webhook before
+        ``valet_park``. An ``inline`` transfer would bypass the
+        dialplan and the hooks would never fire.
         """
         self.ensure_one()
         if self.is_occupied:
@@ -74,8 +78,7 @@ class FreeSwitchParkingSlot(models.Model):
                 "Make sure the call is still in progress.")
 
         settings = self.env['connect.settings']
-        args = "{uuid} 'valet_park:{lot} {slot}' inline".format(
-            uuid=uuid, lot=PARKING_LOT_NAME, slot=self.exten)
+        args = "{uuid} {slot} XML default".format(uuid=uuid, slot=self.exten)
         result = settings.freeswitch_api('uuid_transfer', args)
         if not result or str(result).startswith('-ERR'):
             raise UserError(
@@ -116,8 +119,8 @@ class FreeSwitchParkingSlot(models.Model):
         settings = self.env['connect.settings']
         remote_uuid = self._resolve_remote_leg(uuid, settings) or uuid
 
-        args = "{uuid} 'valet_park:{lot} {slot}' inline".format(
-            uuid=remote_uuid, lot=PARKING_LOT_NAME, slot=self.exten)
+        args = "{uuid} {slot} XML default".format(
+            uuid=remote_uuid, slot=self.exten)
         result = settings.freeswitch_api('uuid_transfer', args)
         if not result or str(result).startswith('-ERR'):
             raise UserError(
