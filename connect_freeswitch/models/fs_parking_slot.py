@@ -1,4 +1,5 @@
 import logging
+import re
 
 from odoo import api, fields, models, release
 from odoo.exceptions import UserError
@@ -169,16 +170,22 @@ class FreeSwitchParkingSlot(models.Model):
         return True
 
     def action_sync_from_fs(self):
-        """Drop state for slots whose parked UUID no longer exists in FS."""
+        """Drop state for slots not actually parked in FreeSWITCH.
+
+        Queries `valet_info <lot>` for the authoritative list of
+        currently-parked UUIDs. `uuid_exists` is not enough: after
+        retrieval the channel is still alive (bridged to the new leg)
+        but no longer in the lot, so the slot must be cleared.
+        """
         settings = self.env['connect.settings']
+        live = self._fetch_parked_uuids(settings)
         targets = self or self.sudo().search(
             [('active', '=', True), ('parked_uuid', '!=', False)])
         cleared = 0
         for slot in targets:
             if not slot.parked_uuid:
                 continue
-            alive = settings.freeswitch_api('uuid_exists', slot.parked_uuid)
-            if not alive or str(alive).strip().lower() != 'true':
+            if slot.parked_uuid not in live:
                 slot.action_reset()
                 cleared += 1
         return {
@@ -301,6 +308,27 @@ class FreeSwitchParkingSlot(models.Model):
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _fetch_parked_uuids(self, settings):
+        """Return the set of UUIDs currently parked in our lot.
+
+        `valet_info <lot>` returns XML like::
+
+            <lots>
+              <lot name="default">
+                <extension uuid="...">705</extension>
+              </lot>
+            </lots>
+
+        Empty lot → no <extension> elements; FS unreachable → empty set
+        (caller must interpret this as "don't know, leave Odoo state as is"
+        — but action_sync_from_fs intentionally treats empty as "clear",
+        matching what operators expect when FS has been restarted).
+        """
+        raw = settings.freeswitch_api('valet_info', PARKING_LOT_NAME)
+        if not raw:
+            return set()
+        return set(re.findall(r'uuid="([^"]+)"', str(raw)))
 
     def _resolve_remote_leg(self, uuid, settings):
         """Ask FreeSWITCH for the UUID bridged to `uuid`.
