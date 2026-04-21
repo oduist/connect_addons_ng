@@ -62,21 +62,28 @@ class Call(models.Model):
         return slot.action_park_call(self.id)
 
     @api.model
-    def action_fs_park_by_uuid(self, uuid):
-        """Park a call identified by its FreeSWITCH channel UUID.
+    def action_fs_park_by_uuid(self, uuid, slot_id=None):
+        """Park a live call identified by a FreeSWITCH channel UUID.
 
-        Used from the Verto phone widget which knows the Verto callId.
+        Invoked from the Verto phone widget which only knows its local
+        Verto callId (the A-leg UUID). `connect.channel` records are
+        only created at CDR (hangup), so we cannot rely on the DB
+        during an active call — we ask FreeSWITCH directly for the
+        bridged B-leg and caller identity, and park that leg on the
+        requested slot (or the first free slot if none was specified).
         """
-        channel = self.env['connect.channel'].search(
-            [('sid', '=', uuid)], limit=1)
-        if not channel or not channel.call:
-            # Channel may not be in DB yet (CDR arrives at hangup). Create a
-            # transient-style lookup: ask FS which call this UUID bridged to,
-            # fall back to no-op.
-            raise UserError(
-                "Call for UUID %s not yet tracked in Odoo. "
-                "Try again in a moment." % uuid)
-        return channel.call.action_fs_park()
+        Slot = self.env['connect.freeswitch.parking.slot']
+        if slot_id:
+            slot = Slot.browse(int(slot_id))
+            if not slot.exists() or not slot.active:
+                raise UserError("Selected parking slot is not available.")
+        else:
+            slot = Slot.search(
+                [('active', '=', True), ('parked_uuid', '=', False)],
+                order='sequence, exten', limit=1)
+            if not slot:
+                raise UserError("No free parking slots available.")
+        return slot.action_park_channel_uuid(uuid)
 
     @api.model
     def originate_call(self, number, res_model=None, res_id=None):

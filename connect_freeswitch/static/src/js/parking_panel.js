@@ -81,7 +81,7 @@ export class ParkingPanel extends Component {
         }
         try {
             const action = await this.orm.call(
-                "connect.call", "action_fs_park_by_uuid", [uuid],
+                "connect.call", "action_fs_park_by_uuid", [uuid, slot.id],
             );
             if (action && action.params && action.params.message) {
                 this.notification.add(action.params.message, {

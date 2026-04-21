@@ -100,6 +100,55 @@ class FreeSwitchParkingSlot(models.Model):
             },
         }
 
+    def action_park_channel_uuid(self, uuid):
+        """Park the bridged remote leg of a live FS channel on this slot.
+
+        Resolves the remote leg via `uuid_getvar <uuid> bridge_uuid`
+        since `connect.channel` records do not exist until CDR arrives.
+        """
+        self.ensure_one()
+        if self.is_occupied:
+            raise UserError("Slot %s is already occupied." % self.exten)
+        if not uuid:
+            raise UserError("No channel UUID provided.")
+
+        settings = self.env['connect.settings']
+        remote_uuid = self._resolve_remote_leg(uuid, settings) or uuid
+
+        args = "{uuid} 'valet_park {lot} {slot}' inline".format(
+            uuid=remote_uuid, lot=PARKING_LOT_NAME, slot=self.exten)
+        result = settings.freeswitch_api('uuid_transfer', args)
+        if not result or str(result).startswith('-ERR'):
+            raise UserError(
+                "FreeSWITCH rejected the park: %s" % (result or 'no response'))
+
+        caller_number = self._get_channel_var(
+            remote_uuid, 'caller_id_number', settings)
+        caller_name = self._get_channel_var(
+            remote_uuid, 'caller_id_name', settings)
+        channel = self.env['connect.channel'].sudo().search(
+            [('sid', '=', remote_uuid)], limit=1)
+
+        self.sudo().write({
+            'parked_call': channel.call.id if channel and channel.call else False,
+            'parked_uuid': remote_uuid,
+            'parked_at': fields.Datetime.now(),
+            'parked_by_user': self.env.user.id,
+            'parked_caller_number': caller_number or '',
+            'parked_caller_name': caller_name or '',
+        })
+        self._notify_bus()
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Call Parked',
+                'message': 'Call parked on slot %s' % self.exten,
+                'type': 'success',
+                'sticky': False,
+            },
+        }
+
     def action_unpark(self):
         """Retrieve the parked call by originating to the requesting user
         and bridging into the slot's valet extension."""
@@ -207,6 +256,32 @@ class FreeSwitchParkingSlot(models.Model):
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _resolve_remote_leg(self, uuid, settings):
+        """Ask FreeSWITCH for the UUID bridged to `uuid`.
+
+        Returns the bridge_uuid if the channel is bridged to another leg
+        (the common case: park the far side, not the widget's own leg).
+        Returns False if the channel has no bridge or FS is unreachable.
+        """
+        bridge = settings.freeswitch_api(
+            'uuid_getvar', '%s bridge_uuid' % uuid)
+        if not bridge:
+            return False
+        bridge = str(bridge).strip()
+        if not bridge or bridge.startswith('-') or bridge == '_undef_':
+            return False
+        return bridge
+
+    def _get_channel_var(self, uuid, var, settings):
+        """Read a channel variable via FS API; empty string on failure."""
+        val = settings.freeswitch_api('uuid_getvar', '%s %s' % (uuid, var))
+        if not val:
+            return ''
+        val = str(val).strip()
+        if val.startswith('-') or val == '_undef_':
+            return ''
+        return val
 
     def _find_remote_leg_uuid(self, call):
         """Return UUID of the channel NOT belonging to the current user.
