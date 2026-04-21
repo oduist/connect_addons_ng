@@ -87,6 +87,7 @@ Navigate to **Connect > Configuration > Settings** and open the **FreeSWITCH** t
 |-------|-------------|
 | **WebSocket URL** | Verto WSS URL for the browser phone (e.g., `wss://fs.example.com:48082`). |
 | **Domain** | SIP domain for FreeSWITCH registrations and routing. |
+| **ICE Servers** | STUN/TURN server URIs for WebRTC (one per line). Pre-populated with public STUN servers. Customize if you use private TURN servers or need to change STUN endpoints. |
 
 #### XML-RPC
 
@@ -333,6 +334,8 @@ If a SIP phone can make outgoing calls but does not ring for incoming calls:
     ```bash
     fs_cli -x "sofia profile external restart reloadxml"
     ```
+
+## Troubleshooting
 
 ### No audio on calls
 

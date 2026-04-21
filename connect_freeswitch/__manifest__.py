@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect FreeSWITCH',
-    'version': '19.0.1.4.1',
+    'version': '19.0.1.5.1',
     'category': 'Phone',
     'summary': 'FreeSWITCH integration for Oduist Connect',
     'depends': ['connect', 'web'],
@@ -28,5 +28,5 @@
     'post_init_hook': 'post_init_hook',
     'installable': True,
     'application': False,
-    'license': 'LGPL-3',
+    'license': 'Other proprietary',
 }

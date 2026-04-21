@@ -47,5 +47,5 @@
     'post_init_hook': 'post_init_hook',
     'installable': True,
     'application': True,
-    'license': 'LGPL-3',
+    'license': 'Other proprietary',
 }
