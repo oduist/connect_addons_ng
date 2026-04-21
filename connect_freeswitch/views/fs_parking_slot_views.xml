@@ -30,6 +30,14 @@
                             string="Unpark"
                             class="btn-primary"
                             invisible="not is_occupied"/>
+                    <button name="action_reset"
+                            type="object"
+                            string="Reset Slot"
+                            confirm="Clear slot state without touching FreeSWITCH?"
+                            invisible="not is_occupied"/>
+                    <button name="action_sync_from_fs"
+                            type="object"
+                            string="Sync from FreeSWITCH"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
@@ -55,6 +63,24 @@
                 </sheet>
             </form>
         </field>
+    </record>
+
+    <record id="action_fs_parking_slot_sync" model="ir.actions.server">
+        <field name="name">Sync from FreeSWITCH</field>
+        <field name="model_id" ref="model_connect_freeswitch_parking_slot"/>
+        <field name="binding_model_id" ref="model_connect_freeswitch_parking_slot"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_sync_from_fs()</field>
+    </record>
+
+    <record id="action_fs_parking_slot_reset" model="ir.actions.server">
+        <field name="name">Reset Slot State</field>
+        <field name="model_id" ref="model_connect_freeswitch_parking_slot"/>
+        <field name="binding_model_id" ref="model_connect_freeswitch_parking_slot"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_reset()</field>
     </record>
 
     <record id="action_fs_parking_slot" model="ir.actions.act_window">

@@ -149,6 +149,50 @@ class FreeSwitchParkingSlot(models.Model):
             },
         }
 
+    def action_reset(self):
+        """Forcefully clear slot state.
+
+        Used when Odoo and FreeSWITCH fall out of sync (e.g. a park
+        transfer failed after we optimistically wrote the slot). Does
+        not touch FS — the channel, if any, is untouched.
+        """
+        for rec in self:
+            rec.sudo().write({
+                'parked_uuid': False,
+                'parked_call': False,
+                'parked_at': False,
+                'parked_by_user': False,
+                'parked_caller_number': False,
+                'parked_caller_name': False,
+            })
+            rec._notify_bus()
+        return True
+
+    def action_sync_from_fs(self):
+        """Drop state for slots whose parked UUID no longer exists in FS."""
+        settings = self.env['connect.settings']
+        targets = self or self.sudo().search(
+            [('active', '=', True), ('parked_uuid', '!=', False)])
+        cleared = 0
+        for slot in targets:
+            if not slot.parked_uuid:
+                continue
+            alive = settings.freeswitch_api('uuid_exists', slot.parked_uuid)
+            if not alive or str(alive).strip().lower() != 'true':
+                slot.action_reset()
+                cleared += 1
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Parking Sync',
+                'message': ('%d stale slot(s) cleared.' % cleared
+                            if cleared else 'All slots in sync.'),
+                'type': 'info',
+                'sticky': False,
+            },
+        }
+
     def action_unpark(self):
         """Retrieve the parked call by originating to the requesting user
         and bridging into the slot's valet extension."""
@@ -174,8 +218,6 @@ class FreeSwitchParkingSlot(models.Model):
         if not endpoint_parts:
             raise UserError("You don't have any ringable endpoints.")
 
-        # Originate: user's devices → dialplan extension <exten> which runs
-        # valet_park default <exten> and retrieves the parked call.
         cid_name = (self.parked_caller_name or self.parked_caller_number or
                     'Slot %s' % self.exten).replace("'", "")
         cid_num = self.parked_caller_number or self.exten
@@ -186,8 +228,9 @@ class FreeSwitchParkingSlot(models.Model):
         ]
         if connect_user.webrtc_enabled:
             variables.append('verto_h_auto_answer=true')
-        cmd = '{{{}}}{} {} XML default'.format(
-            ','.join(variables), endpoint_parts, self.exten)
+        cmd = "{{{}}}{} &valet_park({} {})".format(
+            ','.join(variables), endpoint_parts,
+            PARKING_LOT_NAME, self.exten)
 
         result = settings.freeswitch_api('originate', cmd)
         if not result or str(result).startswith('-ERR'):
