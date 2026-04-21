@@ -29,6 +29,8 @@
                                    placeholder="wss://your-fs-domain:8082"/>
                             <field name="freeswitch_domain"
                                    placeholder="fs.example.com"/>
+                            <field name="freeswitch_ice_servers"
+                                   placeholder="stun:stun.l.google.com:19302"/>
                         </group>
                         <group string="XML-RPC">
                             <field name="freeswitch_xmlrpc_host"

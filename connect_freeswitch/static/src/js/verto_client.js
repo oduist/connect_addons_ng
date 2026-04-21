@@ -44,11 +44,11 @@ export class VertoClient {
         this.lastPong = Date.now();
         
         // ICE settings
-        this.iceGatheringTimeout = 10000;
-        
-        this.iceServers = options.iceServers || [
-            { urls: 'stun:stun.l.google.com:19302' }
-        ];
+        this.iceGatheringTimeout = 2000;
+
+        this.iceServers = options.iceServers?.length
+            ? options.iceServers
+            : [{ urls: 'stun:stun.l.google.com:19302' }];
     }
     
     _loadOrCreateSessionId() {
@@ -600,21 +600,34 @@ export class VertoClient {
                 resolve();
                 return;
             }
-            
-            const checkComplete = () => {
-                if (this.peerConnection?.iceGatheringState === 'complete') {
-                    this.peerConnection.onicegatheringstatechange = null;
-                    resolve();
-                }
-            };
-            
-            this.peerConnection.onicegatheringstatechange = checkComplete;
-            setTimeout(() => {
+
+            let resolved = false;
+            const done = () => {
+                if (resolved) return;
+                resolved = true;
                 if (this.peerConnection) {
                     this.peerConnection.onicegatheringstatechange = null;
+                    this.peerConnection.onicecandidate = null;
                 }
                 resolve();
-            }, this.iceGatheringTimeout);
+            };
+
+            // Resolve when gathering completes naturally
+            this.peerConnection.onicegatheringstatechange = () => {
+                if (this.peerConnection?.iceGatheringState === 'complete') {
+                    done();
+                }
+            };
+
+            // Resolve on first ICE candidate (host candidates arrive instantly)
+            this.peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    done();
+                }
+            };
+
+            // Fallback timeout
+            setTimeout(done, this.iceGatheringTimeout);
         });
     }
 
