@@ -380,6 +380,8 @@ Variables:
     <action application="answer"/>
     <action application="set" data="valet_hold_music=silence_stream://-1"/>
     <action application="set" data="presence_id={{ slot }}@${domain_name}"/>
+    <action application="set" data="execute_on_valet_hold=presence in ${presence_id} active Parked"/>
+    <action application="set" data="execute_on_hangup=presence out ${presence_id} away Idle"/>
     <action application="set" data="api_hangup_hook=bgapi curl {{ webhook_url }}/freeswitch/webhook/parking?event=released&amp;slot={{ slot }}"/>
     <action application="curl" data="{{ webhook_url }}/freeswitch/webhook/parking?event=entered&amp;slot={{ slot }}&amp;uuid=${uuid}&amp;caller_number=${caller_id_number}&amp;caller_name=${caller_id_name} background"/>
     <action application="valet_park" data="{{ lot_name }} {{ slot }}"/>
@@ -390,6 +392,8 @@ Variables:
     <action application="answer"/>
     <action application="set" data="valet_hold_music=silence_stream://-1"/>
     <action application="set" data="presence_id={{ slot }}@${domain_name}"/>
+    <action application="set" data="execute_on_valet_hold=presence in ${presence_id} active Parked"/>
+    <action application="set" data="execute_on_hangup=presence out ${presence_id} away Idle"/>
     <action application="set" data="api_hangup_hook=bgapi curl {{ webhook_url }}/freeswitch/webhook/parking?event=released&amp;slot={{ slot }}"/>
     <action application="curl" data="{{ webhook_url }}/freeswitch/webhook/parking?event=entered&amp;slot={{ slot }}&amp;uuid=${uuid}&amp;caller_number=${caller_id_number}&amp;caller_name=${caller_id_name} background"/>
     <action application="valet_park" data="{{ lot_name }} {{ slot }}"/>
