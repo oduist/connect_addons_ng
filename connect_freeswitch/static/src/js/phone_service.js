@@ -8,9 +8,9 @@ import { VertoClient } from "./verto_client";
 
 
 export const phoneService = {
-    dependencies: ["orm"],
+    dependencies: ["orm", "bus_service"],
 
-    async start(env, { orm }) {
+    async start(env, { orm, bus_service }) {
         const pathname = document.location.pathname;
         if (!pathname.includes("/odoo")) {
             return { enabled: false };
@@ -146,6 +146,12 @@ export const phoneService = {
         registry.category("main_components").add("connect_freeswitch.PhonePanel", {
             Component: PhonePanel,
             props: { bus, displayMode, getVertoClient: () => vertoClient, connect },
+        });
+
+        // Subscribe to Odoo bus channel for server-pushed events (e.g. parking).
+        bus_service.addChannel("connect_actions");
+        bus_service.subscribe("parking_state_changed", (payload) => {
+            bus.trigger("parkingStateChanged", payload);
         });
 
         // Connect immediately

@@ -440,4 +440,12 @@ connect_twilio/                       # Twilio integration
 
 connect_freeswitch/                   # FreeSWITCH integration (existing)
   (follows same _inherit pattern)
+  models/
+    fs_parking_slot.py                # connect.freeswitch.parking.slot
+    call.py                           # _inherit; adds fs_parked_slot + Park actions
+  controllers/
+    freeswitch_parking.py             # GET /freeswitch/webhook/parking?event=…
+  static/src/
+    js/parking_panel.js               # OWL component for the Verto Parking tab
+    xml/parking_panel.xml             # template
 ```

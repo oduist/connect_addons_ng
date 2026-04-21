@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="connect_freeswitch.ParkingPanel">
+        <div class="o_parking_panel">
+            <div class="o_parking_hint" t-if="hasActiveCall">
+                Click an empty slot to park the current call.
+            </div>
+            <div class="o_parking_hint o_parking_hint_muted" t-if="!hasActiveCall">
+                No active call. Click an occupied slot to retrieve it.
+            </div>
+            <div class="o_parking_grid">
+                <t t-foreach="state.slots" t-as="slot" t-key="slot.id">
+                    <div t-att-class="slotClass(slot)" t-on-click="() => this.onSlotClick(slot)">
+                        <div class="o_parking_slot_exten">
+                            <t t-esc="slot.exten"/>
+                        </div>
+                        <div class="o_parking_slot_label" t-esc="slotLabel(slot)"/>
+                        <div class="o_parking_slot_name" t-esc="slot.name"/>
+                    </div>
+                </t>
+            </div>
+            <div class="o_parking_empty" t-if="!state.slots.length and !state.loading">
+                No parking slots configured.
+            </div>
+        </div>
+    </t>
+
+</templates>

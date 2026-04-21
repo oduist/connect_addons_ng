@@ -68,8 +68,10 @@ endpoints/mod_loopback
 endpoints/mod_rtc
 endpoints/mod_verto
 applications/mod_commands
+applications/mod_curl
 applications/mod_dptools
 applications/mod_http_cache
+applications/mod_valet_parking
 dialplans/mod_dialplan_xml
 codecs/mod_opus
 formats/mod_sndfile
