@@ -37,9 +37,8 @@
                             <field name="is_customized"/>
                         </group>
                     </group>
-                    <group string="Available Variables">
-                        <field name="description" nolabel="1"/>
-                    </group>
+                    <separator string="Available Variables"/>
+                    <field name="description" nolabel="1"/>
                     <notebook>
                         <page string="Template" name="template">
                             <field name="content" widget="code" options="{'mode': 'xml'}"/>
