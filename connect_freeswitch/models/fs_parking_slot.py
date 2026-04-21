@@ -231,8 +231,10 @@ class FreeSwitchParkingSlot(models.Model):
         cmd = "{{{}}}{} &valet_park({} {})".format(
             ','.join(variables), endpoint_parts,
             PARKING_LOT_NAME, self.exten)
+        logger.info("Unpark slot %s: originate %s", self.exten, cmd)
 
         result = settings.freeswitch_api('originate', cmd)
+        logger.info("Unpark slot %s: FS result: %r", self.exten, result)
         if not result or str(result).startswith('-ERR'):
             raise UserError(
                 "FreeSWITCH rejected the unpark: %s" % (result or 'no response'))
