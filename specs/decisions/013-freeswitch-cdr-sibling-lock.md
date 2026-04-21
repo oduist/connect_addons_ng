@@ -9,7 +9,7 @@ two legs into a single `connect.call` by searching for "orphan" channels whose
 `parent_sid` matches the leg currently being processed.
 
 When the call ends cleanly, FreeSWITCH delays the A-leg CDR by ~100 ms because
-`hangup_after_bridge` and `record_session` run first, so the B-leg CDR always
+`hangup_after_bridge` and `record_session` run first, so the B-leg CDR usually
 commits before the A-leg CDR arrives. When the B-leg hangs up before answer
 (fast-failed call), both CDRs land within ~20 ms. Odoo runs them on two
 threaded workers in separate transactions: each sees its own channel but not
@@ -30,9 +30,8 @@ returns empty → two `connect.call` rows remain in the DB.
 
 ## Decision
 
-Option 1. `pg_advisory_xact_lock` releases automatically on commit/rollback,
-so a crashed worker cannot leave the key locked. Two subtle problems had to
-be solved before it actually worked.
+Option 1. Three subtle problems had to be solved before it actually worked
+reliably under concurrent load.
 
 ### Problem 1 — symmetric lock key
 
@@ -42,10 +41,6 @@ on B-leg only, via `export nolocal:`) with fallback to FreeSWITCH's built-in
 `Other-Leg-Unique-ID`. After hangup, the A-leg's CDR snapshot no longer
 contains `Other-Leg-Unique-ID`, so A-leg ends up with empty `other_leg_uuid`
 while B-leg has the A-leg's uuid → different chain keys → lock does nothing.
-
-Tried `min(uuid, other_leg_uuid)`. Same problem: when A-leg's
-`other_leg_uuid` is empty, `min` reduces to `uuid` while B-leg's `min` takes
-the A-leg uuid. Asymmetric.
 
 **Fix:** add a dedicated dialplan variable `odoo_chain_id` exported **without**
 `nolocal:`, so it is set locally on the A-leg and propagated to the B-leg
@@ -61,39 +56,39 @@ to distinguish A-leg vs B-leg when mapping `odoo_connect_user_id`.
 
 ### Problem 2 — REPEATABLE READ snapshot
 
-After the symmetric lock was in place the logs confirmed serialization
-(second leg's `pg_advisory_xact_lock` waited ~50 ms for the first leg to
-commit, and PostgreSQL txids were sequential). But the reverse-orphan
-search on the second leg *still* returned empty, even via raw SQL on the
-same cursor. The sibling row was committed in the DB (verified with an
-out-of-band `psql` query) but invisible to the waiting leg.
+With the symmetric key in place, `pg_advisory_xact_lock` serialized requests
+(second leg's SELECT waited ~50 ms for the first leg to commit). But the
+reverse-orphan search on the second leg *still* returned empty: the sibling
+row was committed in the DB (verified with an out-of-band `psql` query) but
+invisible to the waiting leg.
 
 Root cause: Odoo sets `ISOLATION_LEVEL_REPEATABLE_READ` on every
 connection (`odoo/sql_db.py`). Under REPEATABLE READ, the transaction's
 snapshot is taken at the first non-transaction-control statement. In our
-case that statement was `SELECT pg_advisory_xact_lock(...)` itself —
-snapshot frozen *before* the lock wait began. Acquiring the lock only
-changes execution order, not snapshot visibility, so the waiting leg kept
-seeing the pre-commit view of the world.
+case that statement was `SELECT pg_advisory_*_lock(...)` itself — snapshot
+frozen *before* the lock wait began. Acquiring the lock only changes
+execution order, not snapshot visibility.
 
-**Fix:** acquire the lock twice with a commit in between:
+**Fix:** session-scoped `pg_advisory_lock` + commit after acquiring. The
+session-scoped variant persists across transaction boundaries, so we can
+commit the "acquire" transaction (discarding the stale snapshot) while
+keeping the lock held. The next statement starts a fresh transaction with
+a new snapshot that sees the sibling's committed writes.
 
-```python
-self.env.cr.execute(
-    "SELECT pg_advisory_xact_lock(hashtext(%s))", [chain_key])
-self.env.cr.commit()
-self.env.cr.execute(
-    "SELECT pg_advisory_xact_lock(hashtext(%s))", [chain_key])
-```
+### Problem 3 — commit before unlock
 
-The first acquire serializes against any concurrent worker. When we get it,
-the sibling has already committed. `commit()` releases our stale snapshot
-(and the `xact_lock`). The second acquire starts a fresh transaction with
-a new snapshot that includes the sibling's writes, and re-takes the lock.
+With session-scoped lock + post-acquire commit, concurrent stress tests
+still produced duplicates. Logs showed the lock was acquired and waited
+correctly, but the second leg still didn't see the first leg's channel.
 
-For a 2-leg bridge the short window between the first commit and the
-second acquire is safe: no third sibling can arrive for the same
-`chain_id`, and any unrelated webhook hashes to a different key.
+Root cause: our `finally` block released the lock *before* the http
+handler's outer commit had flushed our own writes. The sibling immediately
+acquired the lock, committed its own (empty) acquire-tx, and took a fresh
+snapshot — which still predated our pending commit.
+
+**Fix:** commit our work inside `on_freeswitch_cdr` before releasing the
+lock. The lock is held across the commit, so no sibling can snapshot
+before our writes are durable.
 
 ## Implementation
 
@@ -104,16 +99,39 @@ second acquire is safe: no third sibling can arrive for the same
    ```
 2. `connect_freeswitch/controllers/freeswitch_cdr.py::_parse_cdr_xml` —
    extract the `odoo_chain_id` channel variable into `cdr_data['chain_id']`.
-3. `connect_freeswitch/models/call.py::on_freeswitch_cdr` — at the top,
-   before any mutation:
+3. `connect_freeswitch/models/call.py::on_freeswitch_cdr` — split into an
+   outer method that owns the lock and an inner `_process_cdr_locked`
+   that does the actual CDR processing:
    ```python
    chain_key = cdr_data.get('chain_id') or cdr_data['uuid']
+   self.env.cr.commit()  # drop stale snapshot from controller entry
    self.env.cr.execute(
-       "SELECT pg_advisory_xact_lock(hashtext(%s))", [chain_key])
-   self.env.cr.commit()
-   self.env.cr.execute(
-       "SELECT pg_advisory_xact_lock(hashtext(%s))", [chain_key])
+       "SELECT pg_advisory_lock(hashtext(%s))", [chain_key])
+   self.env.cr.commit()  # end the acquire-tx so the next read is fresh
+   self.env.invalidate_all()  # flush ORM caches tied to the old snapshot
+   try:
+       result = self._process_cdr_locked(cdr_data)
+       self.env.cr.commit()  # commit BEFORE unlocking
+       return result
+   finally:
+       self.env.cr.execute(
+           "SELECT pg_advisory_unlock(hashtext(%s))", [chain_key])
    ```
+
+## Verification
+
+A stress test (`/tmp/stress_cdr.py`) fires N bridges in parallel, each as
+two sibling CDRs with randomized arrival order and jitter. After the run:
+
+- `SELECT COUNT(*) FROM connect_call` should equal N.
+- `SELECT COUNT(*) FROM connect_channel` should equal 2·N.
+- `SELECT COUNT(*) FROM connect_channel WHERE parent_sid IS NOT NULL AND
+  parent_channel IS NULL` should be 0.
+
+At 20 concurrent bridges the fix produced 20/40/0 — correct. At 30+ the DB
+connection pool (default 64) is exhausted before the lock logic runs; that
+is an orthogonal limit, not a concurrency bug, and realistic CDR traffic
+never approaches it (CDRs fire at call end, not at call start).
 
 ## Consequences
 
@@ -123,9 +141,11 @@ second acquire is safe: no third sibling can arrive for the same
   that happen to collide will briefly serialize.
 - Single-leg CDRs (no bridge, no `odoo_chain_id` set) fall back to locking
   on their own uuid — trivially unique, no-op serialization.
-- The intermediate `commit()` flushes any ORM work done earlier in the
-  request. The CDR webhook does no pre-lock writes, so this is safe here;
-  the pattern should not be copied blindly into controllers that have
+- The session-scoped lock is explicitly released in `finally`. Even on
+  exception the lock is freed before the pooled connection is returned.
+- The pre-lock `commit()` flushes any ORM work done earlier in the request.
+  The CDR webhook does no pre-lock writes, so this is safe here; the
+  pattern should not be copied blindly into controllers that have
   uncommitted state at that point.
 - Requires the FS dialplan to be regenerated on deployed installations
   after the template change.
