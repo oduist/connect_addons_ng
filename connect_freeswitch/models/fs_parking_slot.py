@@ -115,7 +115,7 @@ class FreeSwitchParkingSlot(models.Model):
         settings = self.env['connect.settings']
         remote_uuid = self._resolve_remote_leg(uuid, settings) or uuid
 
-        args = "{uuid} 'valet_park {lot} {slot}' inline".format(
+        args = "{uuid} 'valet_park:{lot} {slot}' inline".format(
             uuid=remote_uuid, lot=PARKING_LOT_NAME, slot=self.exten)
         result = settings.freeswitch_api('uuid_transfer', args)
         if not result or str(result).startswith('-ERR'):
