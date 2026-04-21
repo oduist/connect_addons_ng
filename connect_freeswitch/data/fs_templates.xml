@@ -445,10 +445,12 @@ Variables:
         <param name="codec-prefs" value="OPUS,PCMU,PCMA"/>
         <param name="auth-calls" value="true"/>
         <param name="apply-inbound-acl" value="gateways"/>
-        <param name="NDLB-received-in-nat-reg-contact" value="true"/>
         <param name="aggressive-nat-detection" value="true"/>
+        <param name="NDLB-received-in-nat-reg-contact" value="true"/>
         <param name="NDLB-force-rport" value="true"/>
         <param name="force-rport" value="true"/>
+        <param name="nat-options-ping" value="true"/>
+        <param name="apply-nat-acl" value="rfc1918.auto"/>
         <param name="manage-presence" value="true"/>
         <param name="send-presence-on-register" value="first-register"/>
         {% if fs_domain %}
@@ -477,10 +479,12 @@ Variables:
         <param name="codec-prefs" value="OPUS,PCMU,PCMA"/>
         <param name="auth-calls" value="true"/>
         <param name="apply-inbound-acl" value="gateways"/>
-        <param name="NDLB-received-in-nat-reg-contact" value="true"/>
         <param name="aggressive-nat-detection" value="true"/>
+        <param name="NDLB-received-in-nat-reg-contact" value="true"/>
         <param name="NDLB-force-rport" value="true"/>
         <param name="force-rport" value="true"/>
+        <param name="nat-options-ping" value="true"/>
+        <param name="apply-nat-acl" value="rfc1918.auto"/>
         <param name="manage-presence" value="true"/>
         <param name="send-presence-on-register" value="first-register"/>
         {% if fs_domain %}
