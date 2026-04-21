@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="parking_slot_701" model="connect.freeswitch.parking.slot">
+        <field name="name">Slot 701</field>
+        <field name="exten">701</field>
+        <field name="sequence">10</field>
+    </record>
+
+    <record id="parking_slot_702" model="connect.freeswitch.parking.slot">
+        <field name="name">Slot 702</field>
+        <field name="exten">702</field>
+        <field name="sequence">20</field>
+    </record>
+
+    <record id="parking_slot_703" model="connect.freeswitch.parking.slot">
+        <field name="name">Slot 703</field>
+        <field name="exten">703</field>
+        <field name="sequence">30</field>
+    </record>
+
+    <record id="parking_slot_704" model="connect.freeswitch.parking.slot">
+        <field name="name">Slot 704</field>
+        <field name="exten">704</field>
+        <field name="sequence">40</field>
+    </record>
+
+    <record id="parking_slot_705" model="connect.freeswitch.parking.slot">
+        <field name="name">Slot 705</field>
+        <field name="exten">705</field>
+        <field name="sequence">50</field>
+    </record>
+
+    <record id="parking_slot_706" model="connect.freeswitch.parking.slot">
+        <field name="name">Slot 706</field>
+        <field name="exten">706</field>
+        <field name="sequence">60</field>
+    </record>
+
+</odoo>

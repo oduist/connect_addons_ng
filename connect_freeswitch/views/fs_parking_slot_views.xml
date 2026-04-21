@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_fs_parking_slot_tree" model="ir.ui.view">
+        <field name="name">connect.freeswitch.parking.slot.tree</field>
+        <field name="model">connect.freeswitch.parking.slot</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="exten"/>
+                <field name="name"/>
+                <field name="is_occupied"/>
+                <field name="parked_caller_number"/>
+                <field name="parked_caller_name"/>
+                <field name="parked_by_user"/>
+                <field name="parked_at"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_fs_parking_slot_form" model="ir.ui.view">
+        <field name="name">connect.freeswitch.parking.slot.form</field>
+        <field name="model">connect.freeswitch.parking.slot</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_unpark"
+                            type="object"
+                            string="Unpark"
+                            class="btn-primary"
+                            invisible="not is_occupied"/>
+                    <button name="action_reset"
+                            type="object"
+                            string="Reset Slot"
+                            confirm="Clear slot state without touching FreeSWITCH?"
+                            invisible="not is_occupied"/>
+                    <button name="action_sync_from_fs"
+                            type="object"
+                            string="Sync from FreeSWITCH"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Slot 701"/></h1>
+                    </div>
+                    <group>
+                        <group string="Configuration">
+                            <field name="exten"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Currently Parked"
+                               invisible="not is_occupied">
+                            <field name="is_occupied"/>
+                            <field name="parked_call"/>
+                            <field name="parked_caller_number"/>
+                            <field name="parked_caller_name"/>
+                            <field name="parked_by_user"/>
+                            <field name="parked_at"/>
+                            <field name="parked_uuid"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_fs_parking_slot_sync" model="ir.actions.server">
+        <field name="name">Sync from FreeSWITCH</field>
+        <field name="model_id" ref="model_connect_freeswitch_parking_slot"/>
+        <field name="binding_model_id" ref="model_connect_freeswitch_parking_slot"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_sync_from_fs()</field>
+    </record>
+
+    <record id="action_fs_parking_slot_reset" model="ir.actions.server">
+        <field name="name">Reset Slot State</field>
+        <field name="model_id" ref="model_connect_freeswitch_parking_slot"/>
+        <field name="binding_model_id" ref="model_connect_freeswitch_parking_slot"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_reset()</field>
+    </record>
+
+    <record id="action_fs_parking_slot" model="ir.actions.act_window">
+        <field name="name">Parking Slots</field>
+        <field name="res_model">connect.freeswitch.parking.slot</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add a parking slot</p>
+            <p>Parking slots let users put active calls on hold and retrieve them
+               from any phone by dialing the slot extension. BLF-capable SIP phones
+               show occupied/free state on DSS keys subscribed to the slot.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_fs_parking_slot"
+              name="Parking Slots"
+              parent="connect.menu_connect_pbx"
+              action="action_fs_parking_slot"
+              sequence="80"
+              groups="connect.group_admin"/>
+
+</odoo>
