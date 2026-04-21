@@ -168,3 +168,143 @@
 .o_phone_dialpad:has(.o_phone_answer_btn) .o_phone_incoming_info {
     background: #d4edda;
 }
+
+/* Panel container with tabs (Dialer / Parking) */
+.o_phone_mode_dropdown .o_phone_panel_container {
+    position: fixed;
+    top: 50px;
+    right: 16px;
+    z-index: 1051;
+    width: 320px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.o_phone_mode_float .o_phone_panel_container {
+    width: 320px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.o_phone_panel_tabs {
+    display: flex;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.o_phone_panel_tab {
+    flex: 1;
+    background: #f8f9fa;
+    border: none;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #495057;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.o_phone_panel_tab:hover {
+    background: #e9ecef;
+}
+
+.o_phone_panel_tab.active {
+    background: white;
+    color: #212529;
+    border-bottom: 2px solid #0d6efd;
+}
+
+.o_phone_panel_body .o_phone_dialpad {
+    position: static;
+    border: none;
+    box-shadow: none;
+    padding: 15px;
+    width: 100%;
+}
+
+/* Parking panel */
+.o_parking_panel {
+    padding: 15px;
+}
+
+.o_parking_hint {
+    font-size: 12px;
+    color: #495057;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.o_parking_hint_muted {
+    color: #6c757d;
+}
+
+.o_parking_grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.o_parking_slot {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    background: #f8f9fa;
+    transition: background 0.15s, border-color 0.15s;
+    text-align: center;
+}
+
+.o_parking_slot:hover {
+    background: #e9ecef;
+}
+
+.o_parking_slot_exten {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.o_parking_slot_label {
+    font-size: 12px;
+    margin: 4px 0;
+    min-height: 1em;
+}
+
+.o_parking_slot_name {
+    font-size: 10px;
+    color: #6c757d;
+}
+
+.o_parking_slot_occupied {
+    background: #fff3cd;
+    border-color: #ffc107;
+}
+
+.o_parking_slot_occupied:hover {
+    background: #ffe69c;
+}
+
+.o_parking_slot_parkable {
+    background: #d1e7dd;
+    border-color: #198754;
+}
+
+.o_parking_slot_parkable:hover {
+    background: #a3cfbb;
+}
+
+.o_parking_slot_idle {
+    cursor: default;
+    opacity: 0.7;
+}
+
+.o_parking_empty {
+    text-align: center;
+    color: #6c757d;
+    font-size: 13px;
+    padding: 20px;
+}

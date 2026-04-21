@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_connect_call_form_inherit_parking" model="ir.ui.view">
+        <field name="name">connect.call.form.parking</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.view_connect_call_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_fs_park"
+                        type="object"
+                        string="Park"
+                        class="btn-secondary"
+                        invisible="status in ('completed','busy','failed','no-answer','canceled') or fs_parked_slot"/>
+                <field name="fs_parked_slot"
+                       readonly="1"
+                       widget="many2one_tag"
+                       invisible="not fs_parked_slot"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

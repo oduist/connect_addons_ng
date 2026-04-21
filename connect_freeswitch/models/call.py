@@ -1,8 +1,9 @@
 import logging
 import re
-from odoo import models, api
+from odoo import fields, models, api
 from odoo.exceptions import UserError
 from odoo.addons.connect.models.settings import debug
+from odoo.addons.connect.models.call import CALL_END_STATUSES
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,56 @@ HANGUP_CAUSE_MAP = {
 
 class Call(models.Model):
     _inherit = 'connect.call'
+
+    fs_parked_slot = fields.Many2one(
+        'connect.freeswitch.parking.slot',
+        compute='_compute_fs_parked_slot', store=False,
+        string='Parked On')
+
+    def _compute_fs_parked_slot(self):
+        Slot = self.env['connect.freeswitch.parking.slot']
+        for rec in self:
+            rec.fs_parked_slot = Slot.search(
+                [('parked_call', '=', rec.id)], limit=1)
+
+    def action_fs_park(self):
+        """Park this call on the first available slot.
+
+        Raises UserError if no free slot is configured.
+        """
+        self.ensure_one()
+        if self.status in CALL_END_STATUSES:
+            raise UserError("This call is already ended.")
+        if self.fs_parked_slot:
+            raise UserError(
+                "This call is already parked on slot %s."
+                % self.fs_parked_slot.exten)
+        Slot = self.env['connect.freeswitch.parking.slot']
+        slot = Slot.search(
+            [('active', '=', True), ('parked_uuid', '=', False)],
+            order='sequence, exten', limit=1)
+        if not slot:
+            raise UserError(
+                "No free parking slots available. Configure additional "
+                "slots under Connect → Configuration → Parking Slots.")
+        return slot.action_park_call(self.id)
+
+    @api.model
+    def action_fs_park_by_uuid(self, uuid):
+        """Park a call identified by its FreeSWITCH channel UUID.
+
+        Used from the Verto phone widget which knows the Verto callId.
+        """
+        channel = self.env['connect.channel'].search(
+            [('sid', '=', uuid)], limit=1)
+        if not channel or not channel.call:
+            # Channel may not be in DB yet (CDR arrives at hangup). Create a
+            # transient-style lookup: ask FS which call this UUID bridged to,
+            # fall back to no-op.
+            raise UserError(
+                "Call for UUID %s not yet tracked in Odoo. "
+                "Try again in a moment." % uuid)
+        return channel.call.action_fs_park()
 
     @api.model
     def originate_call(self, number, res_model=None, res_id=None):
