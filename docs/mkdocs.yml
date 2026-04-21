@@ -31,10 +31,12 @@ nav:
       - Core Configuration: admin/core-setup.md
       - Twilio Integration: admin/twilio-setup.md
       - FreeSWITCH Integration: admin/freeswitch-setup.md
+      - Call Parking: admin/parking.md
       - Security: admin/security.md
   - User Guide:
       - Getting Started: user/getting-started.md
       - Making and Receiving Calls: user/calls.md
+      - Call Parking: user/parking.md
       - Messages (SMS & WhatsApp): user/messages.md
       - Recordings & Transcriptions: user/recordings.md
       - Call Flows (IVR): user/callflows.md

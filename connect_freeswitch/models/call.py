@@ -1,8 +1,9 @@
 import logging
 import re
-from odoo import models, api
+from odoo import fields, models, api
 from odoo.exceptions import UserError
 from odoo.addons.connect.models.settings import debug
+from odoo.addons.connect.models.call import CALL_END_STATUSES
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,63 @@ HANGUP_CAUSE_MAP = {
 
 class Call(models.Model):
     _inherit = 'connect.call'
+
+    fs_parked_slot = fields.Many2one(
+        'connect.freeswitch.parking.slot',
+        compute='_compute_fs_parked_slot', store=False,
+        string='Parked On')
+
+    def _compute_fs_parked_slot(self):
+        Slot = self.env['connect.freeswitch.parking.slot']
+        for rec in self:
+            rec.fs_parked_slot = Slot.search(
+                [('parked_call', '=', rec.id)], limit=1)
+
+    def action_fs_park(self):
+        """Park this call on the first available slot.
+
+        Raises UserError if no free slot is configured.
+        """
+        self.ensure_one()
+        if self.status in CALL_END_STATUSES:
+            raise UserError("This call is already ended.")
+        if self.fs_parked_slot:
+            raise UserError(
+                "This call is already parked on slot %s."
+                % self.fs_parked_slot.exten)
+        Slot = self.env['connect.freeswitch.parking.slot']
+        slot = Slot.search(
+            [('active', '=', True), ('parked_uuid', '=', False)],
+            order='sequence, exten', limit=1)
+        if not slot:
+            raise UserError(
+                "No free parking slots available. Configure additional "
+                "slots under Connect → Configuration → Parking Slots.")
+        return slot.action_park_call(self.id)
+
+    @api.model
+    def action_fs_park_by_uuid(self, uuid, slot_id=None):
+        """Park a live call identified by a FreeSWITCH channel UUID.
+
+        Invoked from the Verto phone widget which only knows its local
+        Verto callId (the A-leg UUID). `connect.channel` records are
+        only created at CDR (hangup), so we cannot rely on the DB
+        during an active call — we ask FreeSWITCH directly for the
+        bridged B-leg and caller identity, and park that leg on the
+        requested slot (or the first free slot if none was specified).
+        """
+        Slot = self.env['connect.freeswitch.parking.slot']
+        if slot_id:
+            slot = Slot.browse(int(slot_id))
+            if not slot.exists() or not slot.active:
+                raise UserError("Selected parking slot is not available.")
+        else:
+            slot = Slot.search(
+                [('active', '=', True), ('parked_uuid', '=', False)],
+                order='sequence, exten', limit=1)
+            if not slot:
+                raise UserError("No free parking slots available.")
+        return slot.action_park_channel_uuid(uuid)
 
     @api.model
     def originate_call(self, number, res_model=None, res_id=None):

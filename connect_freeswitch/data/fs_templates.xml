@@ -371,6 +371,42 @@ Variables:
 </extension>]]></field>
     </record>
 
+    <record id="fs_template_dialplan_valet_parking" model="connect.freeswitch.template">
+        <field name="key">dialplan_valet_parking</field>
+        <field name="name">Dialplan - Valet Parking</field>
+        <field name="section">dialplan</field>
+        <field name="description">Valet parking extension. Dialing a slot extension either parks the current call (if slot is free) or retrieves the parked call (if occupied). The webhook notifies Odoo when a channel enters/leaves the lot.
+
+Variables:
+  slot        - Slot extension number (e.g. "701")
+  lot_name    - Valet parking lot name (usually "default")
+  webhook_url - Odoo base URL (https://...) for parking event callbacks</field>
+        <field name="content"><![CDATA[<extension name="connect_valet_parking_{{ slot }}">
+  <condition field="destination_number" expression="^{{ slot }}$">
+    <action application="answer"/>
+    <action application="set" data="valet_hold_music=silence_stream://-1"/>
+    <action application="set" data="presence_id={{ slot }}@${domain_name}"/>
+    <action application="set" data="execute_on_hangup=event Event-Name=PRESENCE_IN,proto=sip,login=${presence_id},from=${presence_id},event_type=presence,alt_event_type=dialog,status=Idle,rpid=away,answer-state=terminated"/>
+    <action application="set" data="api_hangup_hook=bgapi curl {{ webhook_url }}/freeswitch/webhook/parking?event=released&amp;slot={{ slot }}"/>
+    <action application="curl" data="{{ webhook_url }}/freeswitch/webhook/parking?event=entered&amp;slot={{ slot }}&amp;uuid=${uuid}&amp;caller_number=${caller_id_number}&amp;caller_name=${caller_id_name} background"/>
+    <action application="event" data="Event-Name=PRESENCE_IN,proto=sip,login=${presence_id},from=${presence_id},event_type=presence,alt_event_type=dialog,status=Parked,rpid=active,answer-state=confirmed"/>
+    <action application="valet_park" data="{{ lot_name }} {{ slot }}"/>
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="connect_valet_parking_{{ slot }}">
+  <condition field="destination_number" expression="^{{ slot }}$">
+    <action application="answer"/>
+    <action application="set" data="valet_hold_music=silence_stream://-1"/>
+    <action application="set" data="presence_id={{ slot }}@${domain_name}"/>
+    <action application="set" data="execute_on_hangup=event Event-Name=PRESENCE_IN,proto=sip,login=${presence_id},from=${presence_id},event_type=presence,alt_event_type=dialog,status=Idle,rpid=away,answer-state=terminated"/>
+    <action application="set" data="api_hangup_hook=bgapi curl {{ webhook_url }}/freeswitch/webhook/parking?event=released&amp;slot={{ slot }}"/>
+    <action application="curl" data="{{ webhook_url }}/freeswitch/webhook/parking?event=entered&amp;slot={{ slot }}&amp;uuid=${uuid}&amp;caller_number=${caller_id_number}&amp;caller_name=${caller_id_name} background"/>
+    <action application="event" data="Event-Name=PRESENCE_IN,proto=sip,login=${presence_id},from=${presence_id},event_type=presence,alt_event_type=dialog,status=Parked,rpid=active,answer-state=confirmed"/>
+    <action application="valet_park" data="{{ lot_name }} {{ slot }}"/>
+  </condition>
+</extension>]]></field>
+    </record>
+
     <record id="fs_template_dialplan_system" model="connect.freeswitch.template">
         <field name="key">dialplan_system</field>
         <field name="name">Dialplan - System Extensions</field>
@@ -415,10 +451,19 @@ Variables:
         <param name="codec-prefs" value="OPUS,PCMU,PCMA"/>
         <param name="auth-calls" value="true"/>
         <param name="apply-inbound-acl" value="gateways"/>
+        <param name="aggressive-nat-detection" value="true"/>
+        <param name="NDLB-received-in-nat-reg-contact" value="true"/>
+        <param name="NDLB-force-rport" value="true"/>
+        <param name="force-rport" value="true"/>
+        <param name="nat-options-ping" value="true"/>
+        <param name="apply-nat-acl" value="rfc1918.auto"/>
+        <param name="manage-presence" value="true"/>
+        <param name="send-presence-on-register" value="first-register"/>
         {% if fs_domain %}
         <param name="force-register-domain" value="{{ fs_domain }}"/>
         <param name="force-realm" value="{{ fs_domain }}"/>
         <param name="force-register-db-domain" value="{{ fs_domain }}"/>
+        <param name="presence-hosts" value="{{ fs_domain }},${local_ip_v4}"/>
         {% endif %}
       </settings>
       <gateways>
@@ -440,10 +485,19 @@ Variables:
         <param name="codec-prefs" value="OPUS,PCMU,PCMA"/>
         <param name="auth-calls" value="true"/>
         <param name="apply-inbound-acl" value="gateways"/>
+        <param name="aggressive-nat-detection" value="true"/>
+        <param name="NDLB-received-in-nat-reg-contact" value="true"/>
+        <param name="NDLB-force-rport" value="true"/>
+        <param name="force-rport" value="true"/>
+        <param name="nat-options-ping" value="true"/>
+        <param name="apply-nat-acl" value="rfc1918.auto"/>
+        <param name="manage-presence" value="true"/>
+        <param name="send-presence-on-register" value="first-register"/>
         {% if fs_domain %}
         <param name="force-register-domain" value="{{ fs_domain }}"/>
         <param name="force-realm" value="{{ fs_domain }}"/>
         <param name="force-register-db-domain" value="{{ fs_domain }}"/>
+        <param name="presence-hosts" value="{{ fs_domain }},${local_ip_v4}"/>
         {% endif %}
       </settings>
       <gateways>
