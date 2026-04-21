@@ -158,6 +158,7 @@ Variables:
     <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
     {% endif %}
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="export" data="odoo_chain_id=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
@@ -176,6 +177,7 @@ Variables:
     <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
     {% endif %}
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="export" data="odoo_chain_id=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
@@ -218,6 +220,7 @@ Variables:
     {% if choice.dst_type == 'user' %}
     <action application="set" data="odoo_called_user_id={{ choice.user_id }}"/>
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="export" data="odoo_chain_id=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
@@ -240,6 +243,7 @@ Variables:
     {% if choice.dst_type == 'user' %}
     <action application="set" data="odoo_called_user_id={{ choice.user_id }}"/>
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="export" data="odoo_chain_id=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
@@ -277,6 +281,7 @@ Variables:
     <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
     {% endif %}
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="export" data="odoo_chain_id=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     {% if bridge_string %}
@@ -295,6 +300,7 @@ Variables:
     <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
     {% endif %}
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="export" data="odoo_chain_id=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     {% if bridge_string %}

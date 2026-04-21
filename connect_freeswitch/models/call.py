@@ -236,6 +236,22 @@ class Call(models.Model):
         self = self.sudo()
         debug(self, 'FreeSWITCH CDR: %s' % cdr_data)
 
+        # Serialize sibling legs of the same bridge so the reverse-orphan
+        # merge below cannot race. odoo_chain_id is set in the dialplan via
+        # `export` (no `nolocal:`) so both legs carry the same value — the
+        # A-leg's uuid at bridge time.
+        #
+        # Odoo runs under REPEATABLE READ, so a single acquire would leave
+        # the snapshot frozen from before the sibling committed. Acquire →
+        # commit (refresh snapshot) → re-acquire makes the second snapshot
+        # see the sibling's writes.
+        chain_key = cdr_data.get('chain_id') or cdr_data['uuid']
+        self.env.cr.execute(
+            "SELECT pg_advisory_xact_lock(hashtext(%s))", [chain_key])
+        self.env.cr.commit()
+        self.env.cr.execute(
+            "SELECT pg_advisory_xact_lock(hashtext(%s))", [chain_key])
+
         status = HANGUP_CAUSE_MAP.get(
             cdr_data.get('hangup_cause', ''), 'failed')
 
