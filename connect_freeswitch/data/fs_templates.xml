@@ -444,9 +444,6 @@ Variables:
     <action application="set" data="fifo_caller_exit_key=#"/>
     <action application="set" data="continue_on_fail=true"/>
     <action application="set" data="hangup_after_bridge=true"/>
-    {% for member in members %}
-    <action application="bgapi" data="originate {originate_timeout={{ max_wait }}}{{ member.dial_string }} &amp;fifo({{ fifo_name }} out nowait)"/>
-    {% endfor %}
     <action application="fifo" data="{{ fifo_name }} in undef {{ moh }} {{ max_wait }}"/>
     {% if timeout_action == 'voicemail' and voicemail_user %}
     <action application="sleep" data="500"/>
@@ -478,9 +475,6 @@ Variables:
     <action application="set" data="fifo_caller_exit_key=#"/>
     <action application="set" data="continue_on_fail=true"/>
     <action application="set" data="hangup_after_bridge=true"/>
-    {% for member in members %}
-    <action application="bgapi" data="originate {originate_timeout={{ max_wait }}}{{ member.dial_string }} &amp;fifo({{ fifo_name }} out nowait)"/>
-    {% endfor %}
     <action application="fifo" data="{{ fifo_name }} in undef {{ moh }} {{ max_wait }}"/>
     {% if timeout_action == 'voicemail' and voicemail_user %}
     <action application="sleep" data="500"/>
@@ -701,6 +695,48 @@ Variables:
     <param name="auth-pass" value="{{ password }}"/>
     <param name="auth-realm" value="freeswitch"/>
   </settings>
+</configuration>]]></field>
+    </record>
+
+    <record id="fs_template_config_fifo" model="connect.freeswitch.template">
+        <field name="key">config_fifo</field>
+        <field name="name">Configuration - FIFO (mod_fifo)</field>
+        <field name="section">configuration</field>
+        <field name="description">fifo.conf.xml with static outbound consumers for every FS Queue.
+
+The dialplan pushes the caller into the FIFO via `fifo &lt;name&gt; in`. With
+`outbound-strategy=ringall` mod_fifo originates calls to every member in
+parallel; the first agent who answers takes the caller from the queue.
+
+Variables:
+  fifos - list of dicts with keys: name, member_dial_strings (list[str]), max_wait</field>
+        <field name="content"><![CDATA[<configuration name="fifo.conf" description="Call Center">
+  <settings>
+    <param name="outbound-strategy" value="ringall"/>
+  </settings>
+  <fifos>
+    {% for f in fifos %}
+    <fifo name="{{ f.name }}" importance="0">
+      {% for dial_string in f.member_dial_strings %}
+      <member timeout="{{ f.max_wait }}" simo="1" lag="1">{originate_timeout={{ f.max_wait }}}{{ dial_string }}</member>
+      {% endfor %}
+    </fifo>
+    {% endfor %}
+  </fifos>
+</configuration>]]></field>
+        <field name="default_content"><![CDATA[<configuration name="fifo.conf" description="Call Center">
+  <settings>
+    <param name="outbound-strategy" value="ringall"/>
+  </settings>
+  <fifos>
+    {% for f in fifos %}
+    <fifo name="{{ f.name }}" importance="0">
+      {% for dial_string in f.member_dial_strings %}
+      <member timeout="{{ f.max_wait }}" simo="1" lag="1">{originate_timeout={{ f.max_wait }}}{{ dial_string }}</member>
+      {% endfor %}
+    </fifo>
+    {% endfor %}
+  </fifos>
 </configuration>]]></field>
     </record>
 
