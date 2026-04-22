@@ -83,6 +83,10 @@ export const phoneService = {
             ringGain = null;
         }
 
+        let resolvedPartnerName = "";
+        let partnerLookupNumber = "";
+        let currentCallState = "idle";
+
         function connect() {
             if (vertoClient) return;
 
@@ -98,17 +102,45 @@ export const phoneService = {
                     bus.trigger("phoneStateChanged", { vertoState: state });
                 },
                 onCallStateChange: (state, data) => {
+                    currentCallState = state;
                     if (state === "incoming") {
                         bus.trigger("phoneToggle", { show: true });
                         startRingtone();
                     } else {
                         stopRingtone();
                     }
+                    if (state === "idle") {
+                        resolvedPartnerName = "";
+                        partnerLookupNumber = "";
+                    }
+
+                    const number = data.callerNumber || "";
+                    const incomingName = data.callerName && data.callerName !== number
+                        ? data.callerName : "";
+                    const name = incomingName || resolvedPartnerName || "";
                     bus.trigger("phoneCallStateChanged", {
                         callState: state,
-                        callerName: data.callerName || "",
-                        callerNumber: data.callerNumber || "",
+                        callerName: name,
+                        callerNumber: number,
                     });
+
+                    if (number && state !== "idle" && !incomingName
+                            && !resolvedPartnerName && partnerLookupNumber !== number) {
+                        partnerLookupNumber = number;
+                        orm.call("res.partner", "api_get_partner", [number])
+                            .then((res) => {
+                                if (currentCallState === "idle") return;
+                                if (res && res.name && res.name !== "Unknown") {
+                                    resolvedPartnerName = res.name;
+                                    bus.trigger("phoneCallStateChanged", {
+                                        callState: currentCallState,
+                                        callerName: resolvedPartnerName,
+                                        callerNumber: number,
+                                    });
+                                }
+                            })
+                            .catch((err) => console.warn("[Phone] Partner lookup failed:", err));
+                    }
                 },
                 onError: (error) => {
                     console.error("[Phone] Verto error:", error);
