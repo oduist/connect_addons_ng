@@ -453,11 +453,10 @@ Variables:
     {% endif %}
     <action application="set" data="fifo_caller_exit_key=#"/>
     <action application="set" data="continue_on_fail=true"/>
-    <action application="set" data="hangup_after_bridge=true"/>
     {% for m in members %}
     <action application="set" data="fifo_originate_job_{{ loop.index }}=${bgapi(originate {originate_timeout={{ max_wait }}}{{ m.dial_string }} &amp;fifo({{ fifo_name }} out nowait))}"/>
     {% endfor %}
-    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }} {{ max_wait }}"/>
+    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }}"/>
     {% if timeout_action == 'voicemail' and voicemail_user %}
     <action application="sleep" data="500"/>
     <action application="voicemail" data="default ${domain_name} {{ voicemail_user }}"/>
@@ -487,11 +486,10 @@ Variables:
     {% endif %}
     <action application="set" data="fifo_caller_exit_key=#"/>
     <action application="set" data="continue_on_fail=true"/>
-    <action application="set" data="hangup_after_bridge=true"/>
     {% for m in members %}
     <action application="set" data="fifo_originate_job_{{ loop.index }}=${bgapi(originate {originate_timeout={{ max_wait }}}{{ m.dial_string }} &amp;fifo({{ fifo_name }} out nowait))}"/>
     {% endfor %}
-    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }} {{ max_wait }}"/>
+    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }}"/>
     {% if timeout_action == 'voicemail' and voicemail_user %}
     <action application="sleep" data="500"/>
     <action application="voicemail" data="default ${domain_name} {{ voicemail_user }}"/>
