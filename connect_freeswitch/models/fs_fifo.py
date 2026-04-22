@@ -19,8 +19,10 @@ class FsFifo(models.Model):
     )
     moh_sound = fields.Char(
         string='Music on Hold',
-        default='local_stream://moh',
-        help='FreeSWITCH sound source played while the caller is waiting.',
+        default='$${hold_music}',
+        help='FreeSWITCH sound source played while the caller is waiting. '
+             'Defaults to the global `hold_music` variable defined in vars.xml '
+             '(silence_stream://0 out of the box).',
     )
     announce_position = fields.Boolean(
         default=False,
@@ -115,7 +117,7 @@ class FsFifo(models.Model):
             'number': re.escape(number),
             'exten_id': exten.id if exten else None,
             'max_wait': self.max_wait_time or 60,
-            'moh': self.moh_sound or 'local_stream://moh',
+            'moh': self.moh_sound or '$${hold_music}',
             'announce_position': bool(self.announce_position),
             'record_calls': bool(self.record_calls),
             'recording_url': recording_url,
