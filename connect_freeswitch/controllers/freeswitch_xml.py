@@ -354,6 +354,20 @@ class FreeSwitchXMLController(http.Controller):
         Template = request.env['connect.freeswitch.template'].sudo()
         parts.append(Template.render('dialplan_system', {}))
 
+        # Valet parking slots (park/unpark by dialing slot extension)
+        ParkingSlot = request.env['connect.freeswitch.parking.slot'].sudo()
+        parking_slot = ParkingSlot.search(
+            [('exten', '=', destination), ('active', '=', True)], limit=1)
+        if parking_slot:
+            webhook_url = request.env['ir.config_parameter'].sudo().get_param(
+                'web.base.url') or ''
+            parts.append(Template.render('dialplan_valet_parking', {
+                'slot': parking_slot.exten,
+                'lot_name': 'default',
+                'webhook_url': webhook_url,
+            }))
+            return ''.join(parts)
+
         # Try exact extension match
         exten = Exten.search([('number', '=', destination)], limit=1)
         if exten:

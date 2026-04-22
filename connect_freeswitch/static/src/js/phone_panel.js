@@ -2,11 +2,12 @@
 
 import { Component, useState, onMounted, onWillUnmount } from "@odoo/owl";
 import { PhoneDialpad } from "./phone_systray";
+import { ParkingPanel } from "./parking_panel";
 
 
 export class PhonePanel extends Component {
     static template = "connect_freeswitch.PhonePanel";
-    static components = { PhoneDialpad };
+    static components = { PhoneDialpad, ParkingPanel };
     static props = {
         bus: Object,
         displayMode: String,
@@ -17,6 +18,7 @@ export class PhonePanel extends Component {
     setup() {
         this.state = useState({
             showDialpad: false,
+            activeTab: "dialer",
             vertoState: "disconnected",
             callState: "idle",
             callerName: "",
@@ -75,5 +77,9 @@ export class PhonePanel extends Component {
 
     closeDialpad() {
         this.state.showDialpad = false;
+    }
+
+    setTab(tab) {
+        this.state.activeTab = tab;
     }
 }

@@ -19,10 +19,12 @@
 
     <!-- Applications -->
     <load module="mod_commands"/>
+    <load module="mod_curl"/>
     <load module="mod_dptools"/>
     <load module="mod_http_cache"/>
     <load module="mod_dialplan_xml"/>
     <load module="mod_fifo"/>
+    <load module="mod_valet_parking"/>
 
     <!-- Codecs -->
     <load module="mod_opus"/>

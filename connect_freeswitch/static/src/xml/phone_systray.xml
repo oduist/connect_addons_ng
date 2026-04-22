@@ -11,19 +11,40 @@
 
     <t t-name="connect_freeswitch.PhonePanel">
         <div t-att-class="modeClass" t-if="state.showDialpad">
-            <PhoneDialpad
-                close.bind="closeDialpad"
-                vertoClient="props.getVertoClient()"
-                state="state.vertoState"
-                callState="state.callState"
-                callerName="state.callerName"
-                callerNumber="state.callerNumber"
-            />
+            <div class="o_phone_dialpad_overlay" t-on-click="closeDialpad"/>
+            <div class="o_phone_panel_container">
+                <div class="o_phone_panel_tabs">
+                    <button t-att-class="'o_phone_panel_tab ' + (state.activeTab === 'dialer' ? 'active' : '')"
+                            t-on-click="() => this.setTab('dialer')">
+                        <i class="fa fa-phone"/> Dialer
+                    </button>
+                    <button t-att-class="'o_phone_panel_tab ' + (state.activeTab === 'parking' ? 'active' : '')"
+                            t-on-click="() => this.setTab('parking')">
+                        <i class="fa fa-parking"/> Parking
+                    </button>
+                </div>
+                <div class="o_phone_panel_body" t-if="state.activeTab === 'dialer'">
+                    <PhoneDialpad
+                        close.bind="closeDialpad"
+                        vertoClient="props.getVertoClient()"
+                        state="state.vertoState"
+                        callState="state.callState"
+                        callerName="state.callerName"
+                        callerNumber="state.callerNumber"
+                    />
+                </div>
+                <div class="o_phone_panel_body" t-if="state.activeTab === 'parking'">
+                    <ParkingPanel
+                        bus="props.bus"
+                        vertoClient="props.getVertoClient()"
+                        callState="state.callState"
+                    />
+                </div>
+            </div>
         </div>
     </t>
 
     <t t-name="connect_freeswitch.PhoneDialpad">
-        <div class="o_phone_dialpad_overlay" t-on-click="props.close"/>
         <div class="o_phone_dialpad">
             <div class="o_phone_dialpad_header">
                 <span class="o_phone_dialpad_title">Phone</span>

@@ -125,4 +125,35 @@
         <field name="perm_unlink" eval="False"/>
     </record>
 
+    <!-- connect.freeswitch.parking.slot access rules -->
+    <record id="access_freeswitch_parking_slot_admin" model="ir.model.access">
+        <field name="name">connect.freeswitch.parking.slot admin</field>
+        <field name="model_id" ref="model_connect_freeswitch_parking_slot"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_freeswitch_parking_slot_user" model="ir.model.access">
+        <field name="name">connect.freeswitch.parking.slot user</field>
+        <field name="model_id" ref="model_connect_freeswitch_parking_slot"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_freeswitch_parking_slot_webhook" model="ir.model.access">
+        <field name="name">connect.freeswitch.parking.slot webhook</field>
+        <field name="model_id" ref="model_connect_freeswitch_parking_slot"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
 </odoo>

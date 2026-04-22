@@ -1,4 +1,5 @@
 from . import call
+from . import fs_parking_slot
 from . import fs_template
 from . import endpoint
 from . import exten
