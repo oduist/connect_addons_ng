@@ -41,10 +41,40 @@ class FreeSwitchOutgoingRoute(models.Model):
                 route.gateway.name, destination,
                 strip=route.strip, prefix=route.prefix or '')
 
+            cid_num, cid_name = self._resolve_caller_id(params)
+
             return self.env['connect.freeswitch.template'].render('dialplan_outgoing_route', {
                 'route_id': route.id,
                 'pattern': route.pattern,
                 'bridge_data': bridge_data,
+                'effective_cid_num': cid_num,
+                'effective_cid_name': cid_name,
             })
 
         return ''
+
+    def _resolve_caller_id(self, params):
+        """Pick the outbound CallerID for a PSTN leg.
+
+        Priority:
+          1. `connect.user.outgoing_callerid` of the calling user
+             (resolved via the `odoo_connect_user_id` channel variable
+             exported by the directory).
+          2. The record flagged `is_default` on `connect.outgoing_callerid`.
+        """
+        connect_user_id = params.get('variable_odoo_connect_user_id')
+        if connect_user_id:
+            try:
+                user = self.env['connect.user'].sudo().browse(int(connect_user_id)).exists()
+            except (TypeError, ValueError):
+                user = None
+            if user and user.outgoing_callerid:
+                cid = user.outgoing_callerid
+                return cid.number, cid.friendly_name or cid.number
+
+        default_cid = self.env['connect.outgoing_callerid'].sudo().search(
+            [('is_default', '=', True)], limit=1)
+        if default_cid:
+            return default_cid.number, default_cid.friendly_name or default_cid.number
+
+        return '', ''
