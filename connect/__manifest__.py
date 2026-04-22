@@ -42,6 +42,7 @@
     ],
     'assets': {
         'web.assets_backend': [
+            '/connect/static/src/components/license_banner/*',
         ],
     },
     'post_init_hook': 'post_init_hook',
