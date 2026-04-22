@@ -88,7 +88,9 @@ Architecture Decision Records are stored in `specs/decisions/`. Each file docume
 
 **Format:** `NNN-short-title.md` (e.g. `001-freeswitch-log-levels.md`)
 
-**Workflow:** Every development session must start in plan mode. The plan produces an ADR entry before implementation begins. This ensures design decisions are captured with their context while it's fresh.
+**Workflow:** Every development session must start in plan mode. For non-trivial changes that involve an architectural or implementation decision, the plan produces an ADR entry before implementation begins. This ensures design decisions are captured with their context while it's fresh.
+
+**When an ADR is NOT needed:** small bug fixes, typos, minor UX tweaks, or changes that follow an existing pattern without introducing a new decision. ADRs are for *decisions* — if there is no real alternative worth recording, skip the ADR.
 
 ## Documentation & Specs Maintenance
 
