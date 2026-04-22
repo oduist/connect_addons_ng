@@ -60,6 +60,22 @@ class FreeSwitchGateway(models.Model):
                     raise ValidationError(
                         "Invalid IP address or CIDR range: '{}'".format(ip))
 
+    def copy_data(self, default=None):
+        default = dict(default or {})
+        data_list = super().copy_data(default)
+        for record, data in zip(self, data_list):
+            if 'name' in default:
+                continue
+            base = f'{record.name}_copy'
+            candidate = base
+            n = 2
+            while self.with_context(active_test=False).search_count(
+                    [('name', '=', candidate)]):
+                candidate = f'{base}_{n}'
+                n += 1
+            data['name'] = candidate
+        return data_list
+
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
