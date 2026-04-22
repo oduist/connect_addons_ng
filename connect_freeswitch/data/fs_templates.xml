@@ -455,7 +455,7 @@ Variables:
     <action application="set" data="continue_on_fail=true"/>
     <action application="set" data="hangup_after_bridge=true"/>
     {% for m in members %}
-    <action application="bgapi" data="originate {originate_timeout={{ max_wait }}}{{ m.dial_string }} &amp;fifo({{ fifo_name }} out nowait)"/>
+    <action application="api" data="bgapi originate {originate_timeout={{ max_wait }}}{{ m.dial_string }} &amp;fifo({{ fifo_name }} out nowait)"/>
     {% endfor %}
     <action application="fifo" data="{{ fifo_name }} in undef {{ moh }} {{ max_wait }}"/>
     {% if timeout_action == 'voicemail' and voicemail_user %}
@@ -489,7 +489,7 @@ Variables:
     <action application="set" data="continue_on_fail=true"/>
     <action application="set" data="hangup_after_bridge=true"/>
     {% for m in members %}
-    <action application="bgapi" data="originate {originate_timeout={{ max_wait }}}{{ m.dial_string }} &amp;fifo({{ fifo_name }} out nowait)"/>
+    <action application="api" data="bgapi originate {originate_timeout={{ max_wait }}}{{ m.dial_string }} &amp;fifo({{ fifo_name }} out nowait)"/>
     {% endfor %}
     <action application="fifo" data="{{ fifo_name }} in undef {{ moh }} {{ max_wait }}"/>
     {% if timeout_action == 'voicemail' and voicemail_user %}
