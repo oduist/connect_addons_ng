@@ -9,7 +9,7 @@ _logger = logging.getLogger(__name__)
 class WebRTCController(http.Controller):
     """Controller for WebRTC/Verto client configuration."""
 
-    @http.route('/connect/webrtc/config', type='jsonrpc', auth='user', methods=['POST'])
+    @http.route('/connect/webrtc/config', type='json', auth='user', methods=['POST'])
     def get_webrtc_config(self):
         """
         Get WebRTC configuration for the current user.
