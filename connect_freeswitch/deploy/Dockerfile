@@ -70,6 +70,7 @@ endpoints/mod_verto
 applications/mod_commands
 applications/mod_dptools
 applications/mod_http_cache
+applications/mod_fifo
 dialplans/mod_dialplan_xml
 codecs/mod_opus
 formats/mod_sndfile

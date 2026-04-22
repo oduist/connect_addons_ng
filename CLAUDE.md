@@ -153,3 +153,26 @@ oduflow run_odoo_tests connect
 oduflow run_odoo_tests connect_twilio
 oduflow run_odoo_tests connect_freeswitch
 ```
+
+## Self-driven verification of changes
+
+When a change can realistically be checked in the UI, verify it yourself — do not delegate the check to the user.
+
+### Resetting the admin password in an oduflow environment
+
+Call `mcp__oduflow_velesagro__reset_admin_password` with `env_name = <current branch name>`. After reset: login `admin`, password `test`.
+
+### UI tests via agent-browser
+
+Use the `agent-browser` skill (available locally) for scenarios like "open a form / click / type / check result". Typical cycle:
+
+1. `agent-browser open <environment URL>` — URL from the `create_environment` response or `list_environments`.
+2. Log in (`admin` / `test` after password reset).
+3. `agent-browser snapshot -i` → act via `@eN` refs. After any action that changes the page (navigation, submit, opening a dialog), take a **new snapshot** — refs become stale.
+4. For elements that do not appear in the a11y snapshot (Odoo autocomplete, jQuery UI popups), use `agent-browser eval --stdin` with a short JS query.
+5. `agent-browser screenshot /tmp/<name>.png` + read the file via `Read` to visually confirm the result.
+6. At the end — `agent-browser close`.
+
+### When a UI test does not apply
+
+Server-side / background changes with no visual effect — verify through `run_odoo_shell`, `run_odoo_tests`, `http_request_to_odoo`. Module install/upgrade logs are read directly from the response of the corresponding MCP tool; `get_environment_logs` is for runtime errors during request handling only.

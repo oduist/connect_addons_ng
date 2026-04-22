@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_connect_callflow_form_fs_fifo" model="ir.ui.view">
+        <field name="name">connect.callflow.form.fs_fifo</field>
+        <field name="model">connect.callflow</field>
+        <field name="inherit_id" ref="connect.view_connect_callflow_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@string='General']/field[@name='gather_input']" position="after">
+                <field name="fs_fifo_id"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
