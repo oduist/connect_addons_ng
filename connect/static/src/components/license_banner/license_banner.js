@@ -6,6 +6,7 @@ import { useService } from "@web/core/utils/hooks";
 
 export class LicenseBanner extends Component {
     static template = "oduist.LicenseBanner";
+    static props = {};
 
     setup() {
         this.orm = useService("orm");
