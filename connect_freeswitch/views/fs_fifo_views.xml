@@ -5,7 +5,7 @@
         <field name="name">connect.fs_fifo.tree</field>
         <field name="model">connect.fs_fifo</field>
         <field name="arch" type="xml">
-            <list>
+            <list decoration-danger="not exten_number">
                 <field name="name"/>
                 <field name="exten_number" string="Extension"/>
                 <field name="max_wait_time"/>
@@ -24,6 +24,11 @@
                         <button name="create_extension" type="object"
                                 class="oe_stat_button" icon="fa-phone"
                                 string="Extension"/>
+                    </div>
+                    <field name="is_exten_set" invisible="1"/>
+                    <div class="alert alert-danger" role="alert" invisible="is_exten_set">
+                        <strong>Extension is not assigned.</strong>
+                        Click the <em>Extension</em> button above to create one — otherwise inbound calls to this queue will fail with SUBSCRIBER_ABSENT.
                     </div>
                     <group>
                         <group string="General">

@@ -13,6 +13,7 @@ class FsFifo(models.Model):
     name = fields.Char(required=True)
     exten = fields.Many2one('connect.exten', ondelete='set null', readonly=True)
     exten_number = fields.Char(related='exten.number', store=True)
+    is_exten_set = fields.Boolean(compute='_compute_is_exten_set')
     max_wait_time = fields.Integer(
         default=60,
         help='Maximum time (in seconds) a caller waits in the queue before fallback.',
@@ -53,6 +54,11 @@ class FsFifo(models.Model):
              '(required when timeout_action = transfer).',
     )
     record_calls = fields.Boolean(default=False)
+
+    @api.depends('exten')
+    def _compute_is_exten_set(self):
+        for rec in self:
+            rec.is_exten_set = bool(rec.exten)
 
     def create_extension(self):
         self.ensure_one()
