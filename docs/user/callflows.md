@@ -56,3 +56,31 @@ Call flows can chain together. An IVR choice can route to another call flow, cre
 Call flows can have voicemail enabled. If no one answers (ring group) or the caller doesn't make a valid choice (IVR), they can leave a voicemail message.
 
 The voicemail greeting can be customized per call flow.
+
+## FS Queues (FreeSWITCH-only)
+
+When the `connect_freeswitch` module is installed, call flows can route calls into an **FS Queue** — a hold area where the caller hears Music-on-Hold while agents are being rung. The first agent to answer takes the call.
+
+A queue can be used three ways:
+
+- **Directly as an extension destination** — dial the queue's extension and you enter the queue.
+- **As an IVR choice** — any IVR menu option can point to a queue.
+- **As the "no choice" default of an IVR** — if the caller doesn't press anything, the call is transferred into the queue.
+- **As a fallback for a ring group** — if nobody in the ring group answers, the call is moved into the queue before voicemail.
+
+### What the caller experiences
+
+1. A brief "please hold" (the queue answers and starts Music-on-Hold).
+2. Music-on-Hold plays while agent phones ring in the background.
+3. As soon as any agent answers, the call is connected to them.
+4. If no agent answers within the configured timeout, the caller is hung up, sent to voicemail, or transferred to a fallback extension, depending on how the queue is set up.
+
+### Admin configuration summary
+
+FS Queues are configured under **PBX → FS Queues**. Each queue defines:
+
+- member users and/or endpoint agents,
+- max wait time,
+- Music-on-Hold source,
+- whether to announce the caller's position,
+- what to do on timeout (hangup, voicemail, transfer).

@@ -71,6 +71,7 @@ applications/mod_commands
 applications/mod_curl
 applications/mod_dptools
 applications/mod_http_cache
+applications/mod_fifo
 applications/mod_valet_parking
 dialplans/mod_dialplan_xml
 codecs/mod_opus

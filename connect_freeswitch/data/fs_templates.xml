@@ -205,7 +205,8 @@ Variables:
     user_id         - connect.user ID (if dst_type == 'user')
     user_number     - User extension number (if dst_type == 'user')
     transfer_target - Transfer destination (if dst_type == 'other')
-  fs_domain       - FreeSWITCH SIP domain</field>
+  fs_domain       - FreeSWITCH SIP domain
+  fifo_number     - FS Queue extension number for IVR default branch (optional)</field>
         <field name="content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
     <action application="answer"/>
@@ -227,6 +228,11 @@ Variables:
     {% endif %}
   </condition>
   {% endfor %}
+  {% if fifo_number %}
+  <condition field="${ {{- var_name -}} }" expression=".*" break="on-true">
+    <action application="transfer" data="{{ fifo_number }} XML default"/>
+  </condition>
+  {% endif %}
 </extension>]]></field>
         <field name="default_content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
@@ -249,6 +255,11 @@ Variables:
     {% endif %}
   </condition>
   {% endfor %}
+  {% if fifo_number %}
+  <condition field="${ {{- var_name -}} }" expression=".*" break="on-true">
+    <action application="transfer" data="{{ fifo_number }} XML default"/>
+  </condition>
+  {% endif %}
 </extension>]]></field>
     </record>
 
@@ -257,14 +268,19 @@ Variables:
         <field name="name">Dialplan - Ring Group</field>
         <field name="section">dialplan</field>
         <field name="description">Ring group that bridges to multiple users simultaneously.
+After a failed bridge (nobody answered), optionally transfers the caller to
+an FS Queue; otherwise falls back to the first user's voicemail if enabled.
 
 Variables:
-  callflow_id     - connect.callflow record ID
-  number          - Extension number (escaped for regex)
-  exten_id        - connect.exten record ID (may be empty)
-  record_calls    - Boolean, whether to record the call
-  recording_url   - URL for recording webhook (if record_calls)
-  bridge_string   - Comma-separated bridge endpoints
+  callflow_id            - connect.callflow record ID
+  number                 - Extension number (escaped for regex)
+  exten_id               - connect.exten record ID (may be empty)
+  record_calls           - Boolean, whether to record the call
+  recording_url          - URL for recording webhook (if record_calls)
+  bridge_string          - Comma-separated bridge endpoints
+  fifo_number            - FS Queue extension number for failover (optional)
+  voicemail_enabled      - Boolean, whether to fall back to voicemail
+  voicemail_user_number  - First ring_user extension number for voicemail (optional)
 </field>
         <field name="content"><![CDATA[<extension name="callflow_ring_{{ callflow_id }}">
   <condition field="destination_number" expression="^{{ number }}$">
@@ -279,8 +295,16 @@ Variables:
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="continue_on_fail=true"/>
     {% if bridge_string %}
     <action application="bridge" data="{{ bridge_string }}"/>
+    {% endif %}
+    {% if fifo_number %}
+    <action application="transfer" data="{{ fifo_number }} XML default"/>
+    {% elif voicemail_enabled and voicemail_user_number %}
+    <action application="answer"/>
+    <action application="sleep" data="500"/>
+    <action application="voicemail" data="default ${domain_name} {{ voicemail_user_number }}"/>
     {% endif %}
   </condition>
 </extension>]]></field>
@@ -297,8 +321,16 @@ Variables:
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="continue_on_fail=true"/>
     {% if bridge_string %}
     <action application="bridge" data="{{ bridge_string }}"/>
+    {% endif %}
+    {% if fifo_number %}
+    <action application="transfer" data="{{ fifo_number }} XML default"/>
+    {% elif voicemail_enabled and voicemail_user_number %}
+    <action application="answer"/>
+    <action application="sleep" data="500"/>
+    <action application="voicemail" data="default ${domain_name} {{ voicemail_user_number }}"/>
     {% endif %}
   </condition>
 </extension>]]></field>
@@ -361,6 +393,97 @@ Variables:
     <action application="set" data="odoo_call_direction=outgoing"/>
     <action application="export" data="nolocal:absolute_codec_string=PCMU,PCMA"/>
     <action application="bridge" data="{{ bridge_data }}"/>
+  </condition>
+</extension>]]></field>
+    </record>
+
+    <record id="fs_template_dialplan_fs_fifo" model="connect.freeswitch.template">
+        <field name="key">dialplan_fs_fifo</field>
+        <field name="name">Dialplan - FS Queue (mod_fifo)</field>
+        <field name="section">dialplan</field>
+        <field name="description">FS Queue dialplan based on mod_fifo.
+
+The caller enters the queue via `fifo &lt;queue_name&gt; in`. For every member
+(user/endpoint) a background `originate &lt;dial_string&gt; &amp;fifo(&lt;queue_name&gt; out nowait)`
+is launched; the first agent to answer takes the call from the queue and
+mod_fifo bridges automatically. Remaining consumers drop once the queue is empty.
+
+If nobody answers within max_wait, the caller proceeds to timeout_action.
+
+Variables:
+  fifo_id            - connect.fs_fifo record ID
+  fifo_name          - FIFO queue name (e.g. fs_fifo_42)
+  number             - Extension number (escaped for regex)
+  exten_id           - connect.exten record ID (may be empty)
+  max_wait           - Seconds to wait in the queue
+  moh                - Music-on-Hold source
+  announce_position  - Boolean, announce caller position
+  record_calls       - Boolean, record the call leg
+  recording_url      - URL for recording webhook (if record_calls)
+  members            - List of dicts with 'dial_string' for each agent
+  timeout_action     - 'hangup', 'voicemail' or 'transfer'
+  voicemail_user     - User extension for voicemail (if timeout_action=voicemail)
+  fallback_number    - Extension to transfer (if timeout_action=transfer)</field>
+        <field name="content"><![CDATA[<extension name="fs_fifo_{{ fifo_id }}">
+  <condition field="destination_number" expression="^{{ number }}$">
+    <action application="answer"/>
+    {% if exten_id %}
+    <action application="set" data="odoo_exten_id={{ exten_id }}"/>
+    {% endif %}
+    <action application="set" data="odoo_fs_fifo_id={{ fifo_id }}"/>
+    <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    {% if record_calls and recording_url %}
+    <action application="set" data="RECORD_STEREO=true"/>
+    <action application="set" data="media_bug_answer_req=true"/>
+    <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
+    {% endif %}
+    <action application="set" data="fifo_music={{ moh }}"/>
+    {% if announce_position %}
+    <action application="set" data="fifo_orbit_announce_position=true"/>
+    {% endif %}
+    <action application="set" data="fifo_caller_exit_key=#"/>
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }} {{ max_wait }}"/>
+    {% if timeout_action == 'voicemail' and voicemail_user %}
+    <action application="sleep" data="500"/>
+    <action application="voicemail" data="default ${domain_name} {{ voicemail_user }}"/>
+    {% elif timeout_action == 'transfer' and fallback_number %}
+    <action application="transfer" data="{{ fallback_number }} XML default"/>
+    {% else %}
+    <action application="hangup" data="NORMAL_CLEARING"/>
+    {% endif %}
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="fs_fifo_{{ fifo_id }}">
+  <condition field="destination_number" expression="^{{ number }}$">
+    <action application="answer"/>
+    {% if exten_id %}
+    <action application="set" data="odoo_exten_id={{ exten_id }}"/>
+    {% endif %}
+    <action application="set" data="odoo_fs_fifo_id={{ fifo_id }}"/>
+    <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    {% if record_calls and recording_url %}
+    <action application="set" data="RECORD_STEREO=true"/>
+    <action application="set" data="media_bug_answer_req=true"/>
+    <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
+    {% endif %}
+    <action application="set" data="fifo_music={{ moh }}"/>
+    {% if announce_position %}
+    <action application="set" data="fifo_orbit_announce_position=true"/>
+    {% endif %}
+    <action application="set" data="fifo_caller_exit_key=#"/>
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }} {{ max_wait }}"/>
+    {% if timeout_action == 'voicemail' and voicemail_user %}
+    <action application="sleep" data="500"/>
+    <action application="voicemail" data="default ${domain_name} {{ voicemail_user }}"/>
+    {% elif timeout_action == 'transfer' and fallback_number %}
+    <action application="transfer" data="{{ fallback_number }} XML default"/>
+    {% else %}
+    <action application="hangup" data="NORMAL_CLEARING"/>
+    {% endif %}
   </condition>
 </extension>]]></field>
     </record>
@@ -618,6 +741,48 @@ Variables:
     <param name="auth-pass" value="{{ password }}"/>
     <param name="auth-realm" value="freeswitch"/>
   </settings>
+</configuration>]]></field>
+    </record>
+
+    <record id="fs_template_config_fifo" model="connect.freeswitch.template">
+        <field name="key">config_fifo</field>
+        <field name="name">Configuration - FIFO (mod_fifo)</field>
+        <field name="section">configuration</field>
+        <field name="description">fifo.conf.xml with static outbound consumers for every FS Queue.
+
+The dialplan pushes the caller into the FIFO via `fifo &lt;name&gt; in`. With
+`outbound-strategy=ringall` mod_fifo originates calls to every member in
+parallel; the first agent who answers takes the caller from the queue.
+
+Variables:
+  fifos - list of dicts with keys: name, member_dial_strings (list[str]), max_wait</field>
+        <field name="content"><![CDATA[<configuration name="fifo.conf" description="Call Center">
+  <settings>
+    <param name="outbound-strategy" value="ringall"/>
+  </settings>
+  <fifos>
+    {% for f in fifos %}
+    <fifo name="{{ f.name }}" importance="0">
+      {% for dial_string in f.member_dial_strings %}
+      <member timeout="{{ f.max_wait }}" simo="1" lag="1">{originate_timeout={{ f.max_wait }}}{{ dial_string }}</member>
+      {% endfor %}
+    </fifo>
+    {% endfor %}
+  </fifos>
+</configuration>]]></field>
+        <field name="default_content"><![CDATA[<configuration name="fifo.conf" description="Call Center">
+  <settings>
+    <param name="outbound-strategy" value="ringall"/>
+  </settings>
+  <fifos>
+    {% for f in fifos %}
+    <fifo name="{{ f.name }}" importance="0">
+      {% for dial_string in f.member_dial_strings %}
+      <member timeout="{{ f.max_wait }}" simo="1" lag="1">{originate_timeout={{ f.max_wait }}}{{ dial_string }}</member>
+      {% endfor %}
+    </fifo>
+    {% endfor %}
+  </fifos>
 </configuration>]]></field>
     </record>
 

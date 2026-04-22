@@ -1,12 +1,18 @@
 import logging
 import re
-from odoo import models
+from odoo import fields, models
 
 logger = logging.getLogger(__name__)
 
 
 class CallFlow(models.Model):
     _inherit = 'connect.callflow'
+
+    fs_fifo_id = fields.Many2one(
+        'connect.fs_fifo', string='FS Queue', ondelete='set null',
+        help='Fallback queue. Used after ring_users do not answer; '
+             'also used as default destination when IVR gets no choice.',
+    )
 
     def generate_dialplan(self, params, exten=None):
         """Generate FreeSWITCH dialplan XML for this callflow.
@@ -22,6 +28,8 @@ class CallFlow(models.Model):
             return self._generate_ivr_dialplan(number)
         elif self.ring_users:
             return self._generate_ring_group_dialplan(number, exten)
+        elif self.fs_fifo_id:
+            return self._generate_fifo_fallback_dialplan(number)
         else:
             return ('<extension name="callflow_{id}">'
                     '<condition field="destination_number" expression="^{number}$">'
@@ -63,6 +71,10 @@ class CallFlow(models.Model):
                     'transfer_target': choice.exten.number,
                 })
 
+        fifo_number = ''
+        if self.fs_fifo_id and self.fs_fifo_id.exten_number:
+            fifo_number = self.fs_fifo_id.exten_number
+
         return self.env['connect.freeswitch.template'].render('dialplan_ivr', {
             'callflow_id': self.id,
             'number': re.escape(number),
@@ -74,6 +86,7 @@ class CallFlow(models.Model):
             'var_name': var_name,
             'choices': choices,
             'fs_domain': fs_domain,
+            'fifo_number': fifo_number,
         })
 
     def _generate_ring_group_dialplan(self, number, exten=None):
@@ -93,6 +106,16 @@ class CallFlow(models.Model):
                 continue
             bridge_parts.append('user/{}@{}'.format(user_number, fs_domain))
 
+        fifo_number = ''
+        if self.fs_fifo_id and self.fs_fifo_id.exten_number:
+            fifo_number = self.fs_fifo_id.exten_number
+
+        voicemail_user_number = ''
+        if self.voicemail_enabled:
+            first_user = self.ring_users[:1]
+            if first_user and first_user.exten_number:
+                voicemail_user_number = first_user.exten_number
+
         return self.env['connect.freeswitch.template'].render('dialplan_ring_group', {
             'callflow_id': self.id,
             'number': re.escape(number),
@@ -100,7 +123,20 @@ class CallFlow(models.Model):
             'record_calls': self.record_calls,
             'recording_url': recording_url,
             'bridge_string': ','.join(bridge_parts),
+            'fifo_number': fifo_number,
+            'voicemail_enabled': bool(self.voicemail_enabled),
+            'voicemail_user_number': voicemail_user_number,
         })
+
+    def _generate_fifo_fallback_dialplan(self, number):
+        """Callflow with only fs_fifo_id: act as a thin transfer-to-queue wrapper."""
+        fifo_number = self.fs_fifo_id.exten_number or str(self.fs_fifo_id.id)
+        return (
+            '<extension name="callflow_fifo_{id}">'
+            '<condition field="destination_number" expression="^{number}$">'
+            '<action application="transfer" data="{fifo} XML default"/>'
+            '</condition></extension>'
+        ).format(id=self.id, number=re.escape(number), fifo=fifo_number)
 
     def _get_piper_language(self):
         """Map callflow language (e.g. 'en-US') to piper short code (e.g. 'en')."""

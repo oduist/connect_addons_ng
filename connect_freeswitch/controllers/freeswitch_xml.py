@@ -425,6 +425,8 @@ class FreeSwitchXMLController(http.Controller):
             return self._get_acl_config(params)
         elif key_value == 'xml_rpc.conf':
             return self._get_xml_rpc_config(params)
+        elif key_value == 'fifo.conf':
+            return self._get_fifo_config(params)
 
         return self._not_found()
 
@@ -488,6 +490,48 @@ class FreeSwitchXMLController(http.Controller):
             'user': user,
             'password': password,
         })
+
+        xml_str = ('<document type="freeswitch/xml">'
+                   '<section name="configuration">'
+                   '{body}'
+                   '</section></document>').format(body=config_xml)
+        return self._xml_response_str(xml_str)
+
+    def _get_fifo_config(self, params):
+        """Serve fifo.conf.xml with static outbound consumers for every FS Queue.
+
+        Dialplan does `fifo <name> in` to enqueue the caller. Thanks to
+        `outbound-strategy=ringall` and the static `<member>` list, mod_fifo
+        originates all member dial-strings in parallel; the first to answer
+        takes the caller from the queue.
+        """
+        FsFifo = request.env['connect.fs_fifo'].sudo()
+        fifos = FsFifo.search([])
+
+        fs_domain = request.env['connect.settings'].sudo().get_param(
+            'freeswitch_domain') or '${domain}'
+
+        fifo_data = []
+        for fifo in fifos:
+            members = []
+            for user in fifo.member_user_ids:
+                ds = fifo._member_dial_string(fs_domain, user=user)
+                if ds:
+                    members.append(ds)
+            for endpoint in fifo.member_endpoint_ids:
+                ds = fifo._member_dial_string(fs_domain, endpoint=endpoint)
+                if ds:
+                    members.append(ds)
+            if not members:
+                continue
+            fifo_data.append({
+                'name': 'fs_fifo_{}'.format(fifo.id),
+                'member_dial_strings': members,
+                'max_wait': fifo.max_wait_time or 60,
+            })
+
+        Template = request.env['connect.freeswitch.template'].sudo()
+        config_xml = Template.render('config_fifo', {'fifos': fifo_data})
 
         xml_str = ('<document type="freeswitch/xml">'
                    '<section name="configuration">'
