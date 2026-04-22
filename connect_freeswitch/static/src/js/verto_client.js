@@ -465,13 +465,17 @@ export class VertoClient {
     
     _handleDialogState(state) {
         console.log('[Verto] Dialog state:', state);
+        const data = this.currentCall ? {
+            callerName: this.currentCall.callerName || '',
+            callerNumber: this.currentCall.callerNumber || '',
+        } : {};
         switch (state) {
             case 'trying':
             case 'early':
-                this._setCallState('ringing');
+                this._setCallState('ringing', data);
                 break;
             case 'active':
-                this._setCallState('active');
+                this._setCallState('active', data);
                 break;
             case 'hangup':
             case 'destroy':
@@ -639,27 +643,34 @@ export class VertoClient {
         if (this.callState !== 'idle') {
             throw new Error('Call already in progress');
         }
-        
-        this._setCallState('calling');
-        
+
+        this.currentCall = {
+            callId: null,
+            destination,
+            callerName: '',
+            callerNumber: destination,
+            incoming: false,
+        };
+        this._setCallState('calling', { callerName: '', callerNumber: destination });
+
         try {
             this.localStream = await this._getMediaStream();
             this.peerConnection = this._createPeerConnection();
-            
+
             this.localStream.getTracks().forEach(track => {
                 this.peerConnection.addTrack(track, this.localStream);
             });
-            
+
             const offer = await this.peerConnection.createOffer({
                 offerToReceiveAudio: true,
                 offerToReceiveVideo: false
             });
             await this.peerConnection.setLocalDescription(offer);
-            
+
             await this._waitForIceGathering();
-            
+
             const callId = this._generateUUID();
-            this.currentCall = { callId, destination };
+            this.currentCall.callId = callId;
 
             await this._sendRpc('verto.invite', {
                 sessid: this.sessionId,
@@ -675,8 +686,11 @@ export class VertoClient {
                     useStereo: false
                 }
             });
-            
-            this._setCallState('ringing');
+
+            this._setCallState('ringing', {
+                callerName: this.currentCall.callerName,
+                callerNumber: this.currentCall.callerNumber,
+            });
             
         } catch (error) {
             console.error('[Verto] Call failed:', error);
