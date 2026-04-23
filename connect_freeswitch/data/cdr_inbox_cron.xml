@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="cron_cdr_inbox_process" model="ir.cron">
+            <field name="name">Connect FreeSWITCH: Process CDR Inbox</field>
+            <field name="model_id" ref="model_connect_freeswitch_cdr_inbox"/>
+            <field name="state">code</field>
+            <field name="code">model.process_pending()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">minutes</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="cron_cdr_inbox_reap" model="ir.cron">
+            <field name="name">Connect FreeSWITCH: Reap Stuck CDR Inbox</field>
+            <field name="model_id" ref="model_connect_freeswitch_cdr_inbox"/>
+            <field name="state">code</field>
+            <field name="code">model.reap_stuck()</field>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="cron_cdr_inbox_vacuum" model="ir.cron">
+            <field name="name">Connect FreeSWITCH: Vacuum CDR Inbox</field>
+            <field name="model_id" ref="model_connect_freeswitch_cdr_inbox"/>
+            <field name="state">code</field>
+            <field name="code">model.vacuum(days=7)</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+
+    </data>
+</odoo>

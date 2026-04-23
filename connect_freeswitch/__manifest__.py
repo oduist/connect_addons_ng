@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect FreeSWITCH',
-    'version': '19.0.1.7.10',
+    'version': '19.0.1.8.1',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'FreeSWITCH integration for Oduist Connect',
@@ -9,6 +9,7 @@
         'security/access_rules.xml',
         'data/fs_templates.xml',
         'data/parking_slots.xml',
+        'data/cdr_inbox_cron.xml',
         'views/endpoint_views.xml',
         'views/fs_template_views.xml',
         'views/user_views.xml',
@@ -16,6 +17,7 @@
         'views/outgoing_route_views.xml',
         'views/fs_parking_slot_views.xml',
         'views/call_views.xml',
+        'views/cdr_inbox_views.xml',
         'views/settings.xml',
     ],
     'assets': {

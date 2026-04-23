@@ -276,6 +276,13 @@ class Call(models.Model):
     def on_freeswitch_cdr(self, cdr_data):
         """Process a FreeSWITCH CDR event.
 
+        Called from the ``connect.freeswitch.cdr.inbox`` cron after the
+        HTTP webhook has persisted the raw payload. Per-chain FIFO
+        ordering is guaranteed by the inbox (sibling legs of the same
+        call share a ``chain_id`` and are locked and processed together
+        in the same cron transaction), so this method manages neither
+        locks nor commits.
+
         Args:
             cdr_data: dict parsed from mod_xml_cdr XML with keys:
                 uuid (str): FreeSWITCH channel UUID
@@ -293,36 +300,11 @@ class Call(models.Model):
         """
         self = self.sudo()
         debug(self, 'FreeSWITCH CDR: %s' % cdr_data)
-
-        # Serialize sibling legs of the same bridge. odoo_chain_id is
-        # exported in the dialplan (no `nolocal:`) so both legs share the
-        # same value — the A-leg's uuid at bridge time.
-        #
-        # Session-scoped pg_advisory_lock (not xact-scoped): Odoo runs under
-        # REPEATABLE READ, and the snapshot is taken when the acquiring
-        # SELECT starts, *before* it blocks. Session-scoped lets us commit
-        # after acquiring (refreshing the snapshot) while the lock persists.
-        #
-        # Critical: we must commit *our own* work before releasing the lock,
-        # otherwise the sibling acquires the lock and snapshots before the
-        # http handler's outer commit has flushed our writes.
-        chain_key = cdr_data.get('chain_id') or cdr_data['uuid']
-        self.env.cr.commit()  # drop stale snapshot from controller entry
-        self.env.cr.execute(
-            "SELECT pg_advisory_lock(hashtext(%s))", [chain_key])
-        self.env.cr.commit()  # end the acquire-tx so the next read is fresh
-        self.env.invalidate_all()  # flush ORM caches tied to the old snapshot
-        try:
-            result = self._process_cdr_locked(cdr_data)
-            self.env.cr.commit()  # commit BEFORE unlocking so sibling sees our writes
-            return result
-        finally:
-            self.env.cr.execute(
-                "SELECT pg_advisory_unlock(hashtext(%s))", [chain_key])
+        return self._process_cdr(cdr_data)
 
     @api.model
-    def _process_cdr_locked(self, cdr_data):
-        """Inner CDR processing, called while holding the chain lock."""
+    def _process_cdr(self, cdr_data):
+        """Inner CDR processing. Serialization is the inbox cron's job."""
         status = HANGUP_CAUSE_MAP.get(
             cdr_data.get('hangup_cause', ''), 'failed')
 

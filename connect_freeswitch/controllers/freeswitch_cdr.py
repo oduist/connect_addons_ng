@@ -1,17 +1,29 @@
 import logging
-import re
-from xml.etree import ElementTree as ET
 
 from odoo import http
 from odoo.http import request, Response
 
 logger = logging.getLogger(__name__)
 
+# Session-scoped advisory-lock key for the inline CDR fast-path.
+# Arbitrary 64-bit constant — only needs to be stable and not collide with
+# other advisory-lock users in the same database.
+_INLINE_LOCK_KEY = 0x46535743445201
+
 
 class FreeSwitchCDRController(http.Controller):
     """Controller for FreeSWITCH CDR (Call Detail Record) webhooks.
 
     Receives CDR data from mod_xml_cdr after each call ends.
+
+    Implementation note: the handler only *persists* the raw payload to
+    ``connect.freeswitch.cdr.inbox`` and returns 200 immediately. A cron
+    worker (see ``connect_freeswitch/data/cdr_inbox_cron.xml``) then parses
+    and processes the payload asynchronously. This decouples the webhook
+    response time from processing, eliminates A-leg/B-leg race conditions
+    by serializing per-chain inside the cron, and avoids the ad-hoc
+    ``pg_advisory_lock`` + manual ``cr.commit()`` dance the old inline
+    handler required.
     """
 
     @http.route(
@@ -19,143 +31,39 @@ class FreeSwitchCDRController(http.Controller):
         type='http', auth='public', methods=['POST'], csrf=False,
     )
     def cdr_webhook(self, **kwargs):
-        """Receive CDR from FreeSWITCH mod_xml_cdr.
+        """Persist a CDR payload to the inbox and return 200.
 
-        mod_xml_cdr sends URL-encoded POST with 'cdr' parameter
-        containing XML CDR data.
+        mod_xml_cdr sends URL-encoded POST with the 'cdr' parameter
+        containing the XML CDR data, unless `encode=false` is configured,
+        in which case the XML is the raw request body.
         """
-        cdr_xml = kwargs.get('cdr', '')
-        if not cdr_xml:
-            # Try raw body (if encode=false in mod_xml_cdr config)
-            cdr_xml = request.httprequest.get_data(as_text=True)
-
+        cdr_xml = kwargs.get('cdr') or request.httprequest.get_data(as_text=True)
         if not cdr_xml:
             logger.warning('Empty CDR received from FreeSWITCH')
             return Response('No CDR data', status=400)
 
+        Inbox = request.env['connect.freeswitch.cdr.inbox'].sudo()
         try:
-            cdr_data = self._parse_cdr_xml(cdr_xml)
+            Inbox.receive(cdr_xml)
         except Exception as e:
-            logger.exception('Failed to parse FreeSWITCH CDR XML: %s', e)
-            return Response('Parse error', status=400)
+            logger.exception('Failed to enqueue FreeSWITCH CDR: %s', e)
+            return Response('Enqueue error', status=500)
 
-        try:
-            request.env['connect.call'].with_user(
-                request.env.ref('connect.user_connect_webhook').id
-            ).on_freeswitch_cdr(cdr_data)
-        except Exception as e:
-            logger.exception('Failed to process FreeSWITCH CDR: %s', e)
-            return Response('Processing error', status=500)
+        # Fast-path singleton: when FreeSWITCH bursts sibling CDRs (A-leg +
+        # B-leg arrive within milliseconds), only the first webhook worker
+        # acquires the advisory lock and runs process_pending. The others
+        # return immediately — their inbox row is already persisted and the
+        # running worker's BATCH_CHAINS loop will pick it up, or the cron
+        # backstop will. Session-scoped (not xact) because process_pending
+        # commits mid-flight and we need the lock to span those commits.
+        cr = request.env.cr
+        cr.execute("SELECT pg_try_advisory_lock(%s)", [_INLINE_LOCK_KEY])
+        if cr.fetchone()[0]:
+            try:
+                Inbox.process_pending()
+            except Exception:
+                logger.exception('Inline CDR processing failed — cron will retry')
+            finally:
+                cr.execute("SELECT pg_advisory_unlock(%s)", [_INLINE_LOCK_KEY])
 
         return Response('OK', status=200)
-
-    def _parse_cdr_xml(self, xml_str):
-        """Parse FreeSWITCH CDR XML into a dict.
-
-        Extracts relevant fields from the CDR XML structure:
-        - Channel UUID
-        - Caller/called numbers from caller_profile
-        - Duration from billsec or times
-        - Direction
-        - Hangup cause
-        - Odoo channel variables (connect user IDs)
-        """
-        # FreeSWITCH CDR XML may contain element names with colons
-        # (e.g. SIP headers like sip:to-host) which are invalid XML
-        # namespace prefixes. Replace colons in tag names to avoid parse errors.
-        xml_str = re.sub(
-            r'<(/?)([a-zA-Z_][\w.-]*):([a-zA-Z_][\w.-]*)',
-            r'<\1\2_\3', xml_str)
-        root = ET.fromstring(xml_str)
-
-        # Channel UUID
-        uuid = self._xml_text(root, './/uuid')
-
-        # Caller profile
-        caller_profile = root.find('.//caller_profile')
-        caller = ''
-        called = ''
-        direction = 'inbound'
-
-        if caller_profile is not None:
-            caller = self._xml_text(caller_profile, 'caller_id_number')
-            called = self._xml_text(caller_profile, 'destination_number')
-            direction = self._xml_text(caller_profile, 'direction', 'inbound')
-
-        # Hangup cause
-        hangup_cause = self._xml_text(root, './/hangup_cause', 'NORMAL_CLEARING')
-
-        # Duration - prefer billsec, fallback to calculation from times
-        duration = 0
-        billsec = self._xml_text(root, './/billsec')
-        if billsec:
-            duration = int(billsec)
-        else:
-            times = root.find('.//times')
-            if times is not None:
-                answered = self._xml_text(times, 'answered_time', '0')
-                hangup = self._xml_text(times, 'hangup_time', '0')
-                if answered != '0' and hangup != '0':
-                    # Times are in microseconds
-                    duration = (int(hangup) - int(answered)) // 1000000
-
-        # Channel variables (set by our XML directory handler)
-        variables = root.find('.//variables')
-        caller_pbx_user_id = None
-        called_pbx_user_id = None
-        other_leg_uuid = None
-        chain_id = None
-        odoo_number_id = None
-
-        if variables is not None:
-            # Use effective_caller_id_number (set by Odoo directory) if
-            # caller_id_number is a SIP username rather than a number
-            effective_caller = self._xml_text(
-                variables, 'effective_caller_id_number')
-            if effective_caller and not caller.isdigit():
-                caller = effective_caller
-
-            other_leg_uuid = (
-                self._xml_text(variables, 'odoo_parent_uuid')
-                or self._xml_text(variables, 'Other-Leg-Unique-ID')
-            )
-            chain_id = self._xml_text(variables, 'odoo_chain_id')
-
-            odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
-            odoo_called_user = self._xml_text(
-                variables, 'odoo_called_user_id')
-            if other_leg_uuid:
-                # B-leg: odoo_connect_user_id is the called user
-                if odoo_user:
-                    called_pbx_user_id = int(odoo_user)
-            else:
-                # A-leg: odoo_connect_user_id is the caller,
-                # odoo_called_user_id is the called user
-                if odoo_user:
-                    caller_pbx_user_id = int(odoo_user)
-                if odoo_called_user:
-                    called_pbx_user_id = int(odoo_called_user)
-
-            odoo_number_id = self._xml_text(variables, 'odoo_number_id')
-
-        return {
-            'uuid': uuid,
-            'caller': caller,
-            'called': called,
-            'direction': direction,
-            'hangup_cause': hangup_cause,
-            'duration': duration,
-            'caller_pbx_user_id': caller_pbx_user_id,
-            'called_pbx_user_id': called_pbx_user_id,
-            'other_leg_uuid': other_leg_uuid,
-            'chain_id': chain_id,
-            'odoo_number_id': int(odoo_number_id) if odoo_number_id else None,
-        }
-
-    @staticmethod
-    def _xml_text(element, path, default=''):
-        """Safely get text from an XML element."""
-        el = element.find(path)
-        if el is not None and el.text:
-            return el.text.strip()
-        return default

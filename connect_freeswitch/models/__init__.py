@@ -1,4 +1,5 @@
 from . import call
+from . import cdr_inbox
 from . import fs_parking_slot
 from . import fs_template
 from . import endpoint
