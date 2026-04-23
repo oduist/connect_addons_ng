@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_helpdesk_ticket_webhook" model="ir.model.access">
+        <field name="name">helpdesk.ticket webhook</field>
+        <field name="model_id" ref="helpdesk.model_helpdesk_ticket"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="access_helpdesk_stage_webhook" model="ir.model.access">
+        <field name="name">helpdesk.stage webhook</field>
+        <field name="model_id" ref="helpdesk.model_helpdesk_stage"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="access_helpdesk_team_webhook" model="ir.model.access">
+        <field name="name">helpdesk.team webhook</field>
+        <field name="model_id" ref="helpdesk.model_helpdesk_team"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+    <record id="helpdesk_ticket_webhook_rule" model="ir.rule">
+        <field name="name">helpdesk.ticket webhook rule</field>
+        <field name="model_id" ref="helpdesk.model_helpdesk_ticket"/>
+        <field name="groups" eval="[(4, ref('connect.group_webhook'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+</odoo>
