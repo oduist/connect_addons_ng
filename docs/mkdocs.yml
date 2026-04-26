@@ -31,6 +31,7 @@ nav:
       - Core Configuration: admin/core-setup.md
       - Twilio Integration: admin/twilio-setup.md
       - FreeSWITCH Integration: admin/freeswitch-setup.md
+      - ElevenLabs Integration: admin/elevenlabs-setup.md
       - Call Parking: admin/parking.md
       - Security: admin/security.md
   - User Guide:
@@ -40,6 +41,7 @@ nav:
       - Messages (SMS & WhatsApp): user/messages.md
       - Recordings & Transcriptions: user/recordings.md
       - Call Flows (IVR): user/callflows.md
+      - ElevenLabs Agents: user/elevenlabs-agents.md
 
 markdown_extensions:
   - admonition

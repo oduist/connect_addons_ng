@@ -29,7 +29,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
 
   fs:
-    image: safarov/freeswitch:latest
+    image: oduist/freeswitch:latest
     container_name: freeswitch
     hostname: freeswitch
     network_mode: host
