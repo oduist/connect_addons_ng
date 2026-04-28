@@ -32,6 +32,7 @@ nav:
       - Twilio Integration: admin/twilio-setup.md
       - FreeSWITCH Integration: admin/freeswitch-setup.md
       - ElevenLabs Integration: admin/elevenlabs-setup.md
+      - ElevenLabs over FreeSWITCH: admin/elevenlabs-freeswitch.md
       - Call Parking: admin/parking.md
       - Security: admin/security.md
   - User Guide:

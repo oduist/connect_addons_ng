@@ -7,9 +7,9 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="connect_elevenlabs.agent_template_menu"
+    <menuitem id="agent_template_menu"
               sequence="65"
-              parent="connect.connect_voice_menu"
+              parent="elevenlabs_menu"
               name="Agent Templates"
               action="connect_elevenlabs.agent_template_action"/>
 

@@ -4,7 +4,7 @@
     <record id="elevenlabs_call_list" model="ir.ui.view">
         <field name="name">elevenlabs_call_list</field>
         <field name="model">connect.call</field>
-        <field name="inherit_id" ref="connect.connect_call_list"/>
+        <field name="inherit_id" ref="connect.view_connect_call_tree"/>
         <field name="arch" type="xml">
             <field name="partner" position="after">
                 <field name="elevenlabs_agent" optional="show"/>
@@ -16,9 +16,9 @@
     <record id="elevenlabs_call_form" model="ir.ui.view">
         <field name="name">elevenlabs_call_form</field>
         <field name="model">connect.call</field>
-        <field name="inherit_id" ref="connect.connect_call_form"/>
+        <field name="inherit_id" ref="connect.view_connect_call_form"/>
         <field name="arch" type="xml">
-            <page name="call" position="after">
+            <page name="channels" position="after">
                 <page name="elevenlabs" string="Agent" invisible="not elevenlabs_transcript">
                     <group>
                         <group>
@@ -33,28 +33,15 @@
                     </group>
                 </page>
             </page>
-            <page name="recording" position="attributes">
-                <attribute name="invisible">elevenlabs_agent != False or recording == False</attribute>
-            </page>
-            <field name="summary" position="after">
-                <field name="elevenlabs_summary" string="Agent Summary"/>
-            </field>
+            <xpath expr="//group[@name='recording']" position="attributes">
+                <attribute name="invisible">elevenlabs_agent or not recording_widget</attribute>
+            </xpath>
+            <xpath expr="//group[@name='summary']" position="after">
+                <group string="Agent Summary" invisible="not elevenlabs_summary">
+                    <field name="elevenlabs_summary" nolabel="1" colspan="2"/>
+                </group>
+            </xpath>
         </field>
     </record>
 
-    <record id="elevenlabs_call_search" model="ir.ui.view">
-        <field name="name">elevenlabs_call_search</field>
-        <field name="model">connect.call</field>
-        <field name="inherit_id" ref="connect.connect_call_search"/>
-        <field name="arch" type="xml">
-            <search>
-                <field name="partner" position="after">
-                    <field name="elevenlabs_agent"/>
-                </field>
-                <filter name="by_partner" position="after">
-                    <filter name="by_elevenlabs_agent" context="{'group_by': 'elevenlabs_agent'}"/>
-                </filter>
-            </search>
-        </field>
-    </record>
 </odoo>

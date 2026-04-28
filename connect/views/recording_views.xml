@@ -57,7 +57,7 @@
                     <group string="Transcript" invisible="not transcript">
                         <field name="transcript" nolabel="1" colspan="2"/>
                     </group>
-                    <group string="Summary" invisible="not summary">
+                    <group name="summary" string="Summary" invisible="not summary">
                         <field name="summary" nolabel="1" colspan="2"/>
                     </group>
                 </sheet>

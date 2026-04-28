@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_exten_tree_elevenlabs" model="ir.ui.view">
+        <field name="name">connect.exten.tree.elevenlabs</field>
+        <field name="model">connect.exten</field>
+        <field name="inherit_id" ref="connect.view_connect_exten_tree"/>
+        <field name="arch" type="xml">
+            <field name="model_friendly" position="after">
+                <field name="is_published"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_connect_exten_form_elevenlabs" model="ir.ui.view">
+        <field name="name">connect.exten.form.elevenlabs</field>
+        <field name="model">connect.exten</field>
+        <field name="inherit_id" ref="connect.view_connect_exten_form"/>
+        <field name="arch" type="xml">
+            <field name="dst" position="after">
+                <field name="is_published"/>
+            </field>
+        </field>
+    </record>
+</odoo>

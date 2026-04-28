@@ -12,3 +12,4 @@ class Exten(models.Model):
 
     dst = fields.Reference(selection_add=[('connect.elevenlabs_agent', 'Agent')])
     agent = fields.Many2one('connect.elevenlabs_agent')
+    is_published = fields.Boolean('Published', default=True)

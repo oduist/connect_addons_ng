@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+
+    <!-- ==================== ELEVENLABS DIALPLAN TEMPLATES ==================== -->
+
+    <record id="fs_template_dialplan_elevenlabs_sip" model="connect.freeswitch.template">
+        <field name="key">dialplan_elevenlabs_sip</field>
+        <field name="name">Dialplan - ElevenLabs SIP Bridge</field>
+        <field name="section">dialplan</field>
+        <field name="description">Bridge an inbound call leg to an ElevenLabs Conversational AI agent
+over a SIP trunk gateway. The gateway is provisioned manually from
+the ElevenLabs dashboard (see docs/admin/elevenlabs-freeswitch.md).
+
+Variables:
+  extension_number - dialed Odoo extension (regex anchor)
+  agent_uid        - ElevenLabs agent_id passed in the SIP user part
+                     and as X-Agent-Id header
+  gateway_name     - sofia gateway name (convention: 'elevenlabs')</field>
+        <field name="content"><![CDATA[<extension name="elevenlabs_agent_{{ extension_number }}">
+  <condition field="destination_number" expression="^{{ extension_number }}$">
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="sip_h_X-Agent-Id={{ agent_uid }}"/>
+    <action application="answer"/>
+    <action application="bridge" data="sofia/gateway/{{ gateway_name }}/{{ agent_uid }}"/>
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="elevenlabs_agent_{{ extension_number }}">
+  <condition field="destination_number" expression="^{{ extension_number }}$">
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="sip_h_X-Agent-Id={{ agent_uid }}"/>
+    <action application="answer"/>
+    <action application="bridge" data="sofia/gateway/{{ gateway_name }}/{{ agent_uid }}"/>
+  </condition>
+</extension>]]></field>
+    </record>
+
+    <record id="fs_template_dialplan_elevenlabs_audio_stream" model="connect.freeswitch.template">
+        <field name="key">dialplan_elevenlabs_audio_stream</field>
+        <field name="name">Dialplan - ElevenLabs Audio Stream Bridge</field>
+        <field name="section">dialplan</field>
+        <field name="description">Stream call audio over WebSocket to the connect_elevenlabs relay
+via mod_audio_stream. Relay terminates the stream and bridges into
+ElevenLabs Conversational AI. Requires mod_audio_stream loaded in
+FreeSWITCH (ADR-016) and pcm_16000 audio format on the agent.
+
+Variables:
+  extension_number - dialed Odoo extension (regex anchor)
+  agent_uid        - ElevenLabs agent_id, embedded in the WSS path
+  wss_base_url     - relay base URL (wss://...), no trailing slash</field>
+        <field name="content"><![CDATA[<extension name="elevenlabs_agent_stream_{{ extension_number }}">
+  <condition field="destination_number" expression="^{{ extension_number }}$">
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="answer"/>
+    <action application="set" data="audio_stream_metadata={&quot;agent_uid&quot;:&quot;{{ agent_uid }}&quot;}"/>
+    <action application="audio_stream" data="start {{ wss_base_url }}/freeswitch/stream/{{ agent_uid }}/${uuid}/${uuid} mono 16k"/>
+    <action application="park"/>
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="elevenlabs_agent_stream_{{ extension_number }}">
+  <condition field="destination_number" expression="^{{ extension_number }}$">
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="answer"/>
+    <action application="set" data="audio_stream_metadata={&quot;agent_uid&quot;:&quot;{{ agent_uid }}&quot;}"/>
+    <action application="audio_stream" data="start {{ wss_base_url }}/freeswitch/stream/{{ agent_uid }}/${uuid}/${uuid} mono 16k"/>
+    <action application="park"/>
+  </condition>
+</extension>]]></field>
+    </record>
+
+</odoo>

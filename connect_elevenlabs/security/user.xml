@@ -4,7 +4,7 @@
   <record id="connect_elevenlabs_voice_user" model="ir.model.access">
     <field name="name">connect_elevenlabs_voice_user</field>
     <field name="model_id" ref="connect_elevenlabs.model_connect_elevenlabs_voice"/>
-    <field name="group_id" ref="connect.group_connect_user"/>
+    <field name="group_id" ref="connect.group_user"/>
     <field name="perm_read" eval="1"/>
     <field name="perm_write" eval="0"/>
     <field name="perm_create" eval="0"/>
@@ -15,7 +15,7 @@
   <record id="connect_elevenlabs_file_user" model="ir.model.access">
     <field name="name">connect_elevenlabs_file_user</field>
     <field name="model_id" ref="connect_elevenlabs.model_connect_elevenlabs_file"/>
-    <field name="group_id" ref="connect.group_connect_user"/>
+    <field name="group_id" ref="connect.group_user"/>
     <field name="perm_read" eval="1"/>
     <field name="perm_write" eval="0"/>
     <field name="perm_create" eval="0"/>
@@ -37,7 +37,7 @@
   <record id="connect_elevenlabs_agent_user" model="ir.model.access">
     <field name="name">connect_elevenlabs_agent_user</field>
     <field name="model_id" ref="connect_elevenlabs.model_connect_elevenlabs_agent"/>
-    <field name="group_id" ref="connect.group_connect_user"/>
+    <field name="group_id" ref="connect.group_user"/>
     <field name="perm_read" eval="1"/>
     <field name="perm_write" eval="0"/>
     <field name="perm_create" eval="0"/>
@@ -48,7 +48,7 @@
   <record id="connect_elevenlabs_agent_tool_user" model="ir.model.access">
     <field name="name">connect_elevenlabs_agent_tool_user</field>
     <field name="model_id" ref="connect_elevenlabs.model_connect_elevenlabs_agent_tool"/>
-    <field name="group_id" ref="connect.group_connect_user"/>
+    <field name="group_id" ref="connect.group_user"/>
     <field name="perm_read" eval="1"/>
     <field name="perm_write" eval="0"/>
     <field name="perm_create" eval="0"/>
@@ -59,7 +59,7 @@
   <record id="connect_elevenlabs_agent_tool_params_user" model="ir.model.access">
     <field name="name">connect_elevenlabs_agent_tool_params_user</field>
     <field name="model_id" ref="connect_elevenlabs.model_connect_agent_tool_params"/>
-    <field name="group_id" ref="connect.group_connect_user"/>
+    <field name="group_id" ref="connect.group_user"/>
     <field name="perm_read" eval="1"/>
     <field name="perm_write" eval="0"/>
     <field name="perm_create" eval="0"/>
@@ -70,7 +70,7 @@
   <record id="connect_elevenlabs_agent_prompt_user" model="ir.model.access">
     <field name="name">connect_elevenlabs_agent_prompt_user</field>
     <field name="model_id" ref="connect_elevenlabs.model_connect_elevenlabs_agent_prompt"/>
-    <field name="group_id" ref="connect.group_connect_user"/>
+    <field name="group_id" ref="connect.group_user"/>
     <field name="perm_read" eval="1"/>
     <field name="perm_write" eval="0"/>
     <field name="perm_create" eval="0"/>
@@ -81,7 +81,7 @@
   <record id="connect_elevenlabs_agent_transfer_user" model="ir.model.access">
     <field name="name">connect_elevenlabs_agent_transfer_user</field>
     <field name="model_id" ref="connect_elevenlabs.model_connect_elevenlabs_agent_transfer"/>
-    <field name="group_id" ref="connect.group_connect_user"/>
+    <field name="group_id" ref="connect.group_user"/>
     <field name="perm_read" eval="1"/>
     <field name="perm_write" eval="0"/>
     <field name="perm_create" eval="0"/>

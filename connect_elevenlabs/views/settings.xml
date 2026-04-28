@@ -9,12 +9,12 @@
       <field name="code">action = model.open_elevenlabs_form()</field>
   </record>
 
-  <menuitem id="elevenlabs_menu" parent="connect.connect_settings_menu"
-      groups="connect.group_connect_admin"
+  <menuitem id="elevenlabs_menu" parent="connect.menu_connect_settings"
+      groups="connect.group_admin"
       name="ElevenLabs" sequence="1000"/>
 
   <menuitem id="elevenlabs_settings_menu" parent="elevenlabs_menu"
-      groups="connect.group_connect_admin"
+      groups="connect.group_admin"
       action="elevenlabs_action" name="Settings" sequence="100"/>
 
   <record id="connect_elevenlabs_settings_form" model="ir.ui.view">

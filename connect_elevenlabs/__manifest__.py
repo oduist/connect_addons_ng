@@ -13,7 +13,7 @@
     'category': 'Phone',
     'summary': 'Connect ElevenLabs integration module',
     'description': "",
-    'depends': ['connect', 'connect_twilio', 'calendar'],
+    'depends': ['connect', 'calendar'],
     'external_dependencies': {
         'python': ['elevenlabs'],
     },
@@ -39,6 +39,7 @@
         'views/agent_tool_params.xml',
         'views/number.xml',
         'views/recording.xml',
+        'views/exten.xml',
     ],
     'demo': [],
     'installable': True,
