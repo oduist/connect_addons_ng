@@ -11,7 +11,9 @@
     'summary': 'Twilio provider bridge for Connect ElevenLabs',
     'description': "Implements Twilio-specific render/transfer for connect.elevenlabs_agent.",
     'depends': ['connect_elevenlabs', 'connect_twilio'],
-    'data': [],
+    'data': [
+        'views/agent.xml',
+    ],
     'installable': True,
     'application': False,
     'auto_install': True,

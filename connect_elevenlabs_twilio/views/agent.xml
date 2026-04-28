@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="connect_elevenlabs_agent_form_twilio" model="ir.ui.view">
+        <field name="name">connect_elevenlabs_agent_form_twilio</field>
+        <field name="model">connect.elevenlabs_agent</field>
+        <field name="inherit_id" ref="connect_elevenlabs.connect_elevenlabs_agent_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='conversation']" position="after">
+                <page name="twilio" string="Twilio">
+                    <group>
+                        <field name="twilio_transport"/>
+                        <field name="twilio_sip_host"
+                               invisible="twilio_transport != 'sip_trunk'"/>
+                    </group>
+                    <div class="alert alert-info" role="alert"
+                         invisible="twilio_transport != 'sip_trunk'">
+                        <strong>SIP Trunk:</strong>
+                        Provision an inbound SIP trunk in the ElevenLabs dashboard
+                        and bind it to this agent. Twilio's
+                        <code>&lt;Dial&gt;&lt;Sip&gt;</code> hands the call straight
+                        to ElevenLabs over SIP — no relay, no audio fork. Transfer
+                        back relies on ElevenLabs forwarding the
+                        <code>X-Call-Sid</code> header in webhooks. See ADR-017.
+                    </div>
+                    <div class="alert alert-info" role="alert"
+                         invisible="twilio_transport != 'media_stream'">
+                        <strong>Media Streams:</strong>
+                        Twilio forks call audio over a WebSocket to the
+                        <code>connect_elevenlabs</code> relay
+                        (<em>elevenlabs_agent_url</em> in Settings). The relay
+                        terminates the stream and bridges into the ElevenLabs
+                        Conversational SDK.
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

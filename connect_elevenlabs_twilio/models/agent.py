@@ -1,16 +1,35 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from odoo import api, models
+from odoo import api, fields, models
 from odoo.addons.connect.models.settings import debug
 from odoo.addons.connect_twilio.models.twiml import pretty_xml
-from twilio.twiml.voice_response import Connect, VoiceResponse
+from twilio.twiml.voice_response import Connect, Dial, VoiceResponse
 
 logger = logging.getLogger(__name__)
 
 
 class ElevenlabsAgent(models.Model):
     _inherit = 'connect.elevenlabs_agent'
+
+    twilio_transport = fields.Selection(
+        [
+            ('media_stream', 'Twilio Media Streams (WSS to relay)'),
+            ('sip_trunk', 'Twilio SIP-bridge to ElevenLabs trunk'),
+        ],
+        string='Twilio Transport',
+        default='media_stream',
+        required=True,
+        help="How Twilio bridges the call to ElevenLabs. Media Streams forks "
+             "audio to our relay (full audio control). SIP Trunk hands the "
+             "call directly to an ElevenLabs SIP trunk (no relay). See ADR-017.",
+    )
+    twilio_sip_host = fields.Char(
+        string='ElevenLabs SIP Host',
+        default='sip.elevenlabs.io',
+        help="SIP host of the ElevenLabs inbound trunk. Used only when "
+             "Twilio Transport is 'SIP Trunk'.",
+    )
 
     def render(self, request, params={}):
         self.ensure_one()
@@ -22,6 +41,17 @@ class ElevenlabsAgent(models.Model):
                 "<Pause length='1'/></Response>"
             )
         channel_sid = request.get('CallSid')
+        agent_uid = self.agent_uid
+
+        if self.twilio_transport == 'sip_trunk':
+            host = self.twilio_sip_host or 'sip.elevenlabs.io'
+            response = VoiceResponse()
+            dial = Dial()
+            dial.sip(f"sip:{agent_uid}@{host}?X-Call-Sid={channel_sid}")
+            response.append(dial)
+            debug(self, pretty_xml(response))
+            return response
+
         call_id = (
             self.env['connect.channel']
             .search([('sid', '=', channel_sid)], limit=1)
@@ -33,7 +63,6 @@ class ElevenlabsAgent(models.Model):
             .get_param('elevenlabs_agent_url')
             .replace('https://', 'wss://')
         )
-        agent_uid = self.agent_uid
         connect = Connect()
         connect.stream(
             url=f"{elevenlabs_agent_url}/twilio/stream/{agent_uid}/{call_id}/{channel_sid}",
