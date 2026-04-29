@@ -184,6 +184,8 @@ class ElevenlabsAgent(models.Model):
     template = fields.Many2one("connect.elevenlabs_agent_template", ondelete="set null")
     transfer_to_agent = fields.One2many("connect.elevenlabs_agent_transfer", "agent")
     has_transfer_tool = fields.Boolean(compute="_compute_has_transfer_tool")
+    knowledge_base_id = fields.Char(string="Knowledge Base ID")
+    knowledge_base_note = fields.Char(string="Knowledge Base Note")
 
     @api.depends("tools")
     def _compute_has_transfer_tool(self):
