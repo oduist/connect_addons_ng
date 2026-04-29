@@ -98,6 +98,36 @@
                                 </group>
                             </group>
                         </page>
+                        <page name="sip_trunk" string="SIP Trunk">
+                            <group>
+                                <group>
+                                    <field name="sip_enabled"/>
+                                    <div colspan="2" invisible="sip_enabled">
+                                        <small>Enable to expose per-agent SIP trunk routing and credential override.</small>
+                                    </div>
+                                </group>
+                            </group>
+                            <group invisible="not sip_enabled">
+                                <group string="Routing">
+                                    <field name="sip_inbound_addresses"
+                                           placeholder="sip:1.2.3.4:5060, sip:5.6.7.8"/>
+                                    <field name="sip_outbound_addresses"
+                                           placeholder="sip:trunk.example.com"/>
+                                    <field name="sip_allowed_numbers"
+                                           placeholder="+15551234567, +15557654321"/>
+                                </group>
+                                <group string="Credentials">
+                                    <field name="sip_override_credentials"/>
+                                    <field name="sip_username"
+                                           invisible="not sip_override_credentials"/>
+                                    <field name="sip_password" password="1"
+                                           invisible="not sip_override_credentials"/>
+                                    <div colspan="2" invisible="sip_override_credentials">
+                                        <small>Using tenant defaults from <em>ElevenLabs Settings → SIP Trunk</em>.</small>
+                                    </div>
+                                </group>
+                            </group>
+                        </page>
                         <page name="dev" string="Development" groups="base.group_no_one">
                             <group>
                                 <group>

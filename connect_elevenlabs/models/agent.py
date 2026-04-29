@@ -187,6 +187,41 @@ class ElevenlabsAgent(models.Model):
     knowledge_base_id = fields.Char(string="Knowledge Base ID")
     knowledge_base_note = fields.Char(string="Knowledge Base Note")
 
+    # SIP trunk per-agent (ADR-019)
+    sip_enabled = fields.Boolean(default=False, string="Enable SIP Trunk")
+    sip_inbound_addresses = fields.Char(
+        string="Inbound Addresses",
+        help="Comma-separated SIP URIs / IPs / CIDRs allowed to send INVITEs to ElevenLabs.")
+    sip_outbound_addresses = fields.Char(
+        string="Outbound Addresses",
+        help="Comma-separated SIP URIs ElevenLabs may dial out to.")
+    sip_allowed_numbers = fields.Char(
+        string="Allowed Numbers",
+        help="Comma-separated E.164 numbers permitted to reach this agent. Empty = no per-number filter.")
+    sip_override_credentials = fields.Boolean(
+        default=False, string="Override SIP Credentials",
+        help="Use this agent's SIP username/password instead of the tenant defaults from Settings.")
+    sip_username = fields.Char(string="SIP Username")
+    sip_password = fields.Char(string="SIP Password")
+
+    def _resolve_sip_credentials(self):
+        """Return effective (username, password, auth_method) for this agent.
+
+        auth_method always comes from tenant settings. Credentials come
+        from the agent only when both ``sip_enabled`` and
+        ``sip_override_credentials`` are true; otherwise fall back to
+        the tenant defaults stored on ``connect.settings``."""
+        self.ensure_one()
+        Settings = self.env['connect.settings'].sudo()
+        auth_method = Settings.get_param('elevenlabs_sip_auth_method') or 'digest'
+        if self.sip_enabled and self.sip_override_credentials:
+            return self.sip_username, self.sip_password, auth_method
+        return (
+            Settings.get_param('elevenlabs_sip_username'),
+            Settings.get_param('elevenlabs_sip_password'),
+            auth_method,
+        )
+
     @api.depends("tools")
     def _compute_has_transfer_tool(self):
         transfer_tool = self.env.ref(

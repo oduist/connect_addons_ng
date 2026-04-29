@@ -64,6 +64,33 @@
             <group>
             </group>
           </page>
+          <page name="sip_trunk" string="SIP Trunk"
+              invisible="not elevenlabs_enabled or not display_elevenlabs_api_key">
+            <group>
+              <group>
+                <field name="elevenlabs_sip_enabled"/>
+                <div colspan="2" invisible="elevenlabs_sip_enabled">
+                  <small>Tenant-wide SIP trunk credentials. Enable to expose authentication settings; per-agent routing lives on each ElevenLabs agent.</small>
+                </div>
+              </group>
+            </group>
+            <group invisible="not elevenlabs_sip_enabled">
+              <group string="Authentication">
+                <field name="elevenlabs_sip_auth_method"/>
+                <field name="display_elevenlabs_sip_username" string="SIP Username"
+                       required="elevenlabs_sip_enabled and elevenlabs_sip_auth_method == 'digest'"/>
+                <field name="display_elevenlabs_sip_password" password="1" string="SIP Password"
+                       invisible="elevenlabs_sip_auth_method != 'digest'"
+                       required="elevenlabs_sip_enabled and elevenlabs_sip_auth_method == 'digest'"/>
+                <div colspan="2" invisible="elevenlabs_sip_auth_method != 'acl'">
+                  <small><strong>ACL mode:</strong> ElevenLabs egress IPs must be allow-listed on the SIP trunk side. Digest is recommended.</small>
+                </div>
+              </group>
+            </group>
+            <button name="elevenlabs_sync_sip_trunks" type="object"
+                    string="SYNC SIP TRUNKS" class="btn btn-secondary"
+                    invisible="not elevenlabs_sip_enabled"/>
+          </page>
           <page name="agent" string="Agent"
               invisible="not elevenlabs_enabled or not display_elevenlabs_api_key">
             <group>
