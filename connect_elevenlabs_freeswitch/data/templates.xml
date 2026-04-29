@@ -22,7 +22,7 @@ Variables:
     <action application="set" data="continue_on_fail=true"/>
     <action application="set" data="sip_h_X-Agent-Id={{ agent_uid }}"/>
     <action application="answer"/>
-    <action application="bridge" data="sofia/gateway/{{ gateway_name }}/{{ agent_uid }}"/>
+    <action application="bridge" data="{absolute_codec_string='PCMU,PCMA'}sofia/gateway/{{ gateway_name }}/{{ extension_number }}"/>
   </condition>
 </extension>]]></field>
         <field name="default_content"><![CDATA[<extension name="elevenlabs_agent_{{ extension_number }}">
@@ -31,7 +31,7 @@ Variables:
     <action application="set" data="continue_on_fail=true"/>
     <action application="set" data="sip_h_X-Agent-Id={{ agent_uid }}"/>
     <action application="answer"/>
-    <action application="bridge" data="sofia/gateway/{{ gateway_name }}/{{ agent_uid }}"/>
+    <action application="bridge" data="{absolute_codec_string='PCMU,PCMA'}sofia/gateway/{{ gateway_name }}/{{ extension_number }}"/>
   </condition>
 </extension>]]></field>
     </record>

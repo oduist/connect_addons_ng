@@ -90,3 +90,28 @@ fs_transport = fields.Selection(
   database (one `connect.freeswitch.gateway` named `elevenlabs`).
 - Failover between A and B at call time. Switching transport is an admin
   action on the agent record, not runtime.
+
+## Errata (post-implementation findings, 2026-04-29)
+
+Two assumptions in the original draft turned out to be wrong once the
+trunk was provisioned end-to-end against ElevenLabs. The template and
+docs have been corrected; recording the correction here so the mental
+model matches reality.
+
+1. **Routing key is the EL trunk's `phone_number`, not `agent_uid`.**
+   ElevenLabs binds an inbound trunk to a `phone_number` (an arbitrary
+   string admin sets when provisioning, e.g. `1927`). Inbound INVITEs
+   are dispatched by matching the SIP user-part against that
+   `phone_number`, not against the agent_id. The dialplan template now
+   uses `{{ extension_number }}` (= the dialed Odoo extension, which by
+   convention equals the trunk's `phone_number`) as SIP user-part. The
+   `agent_uid` is still passed as an `X-Agent-Id` SIP header for
+   logging/visibility, but it is not load-bearing for routing.
+
+2. **Codec must be forced to `PCMU`/`PCMA` on the dial-string.**
+   When FS bridges from an inbound leg whose codec is `L16` (loopback,
+   internal soft-bridges, etc.), `inherit_codec` defaults to true and
+   sofia offers `L16/8000` to EL, which responds `500` after
+   `180 Ringing`. The template now prefixes the bridge target with
+   `{absolute_codec_string='PCMU,PCMA'}` so the outbound leg negotiates
+   `PCMU/PCMA` regardless of the inbound codec.
