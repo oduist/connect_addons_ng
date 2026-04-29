@@ -33,11 +33,15 @@ class WebRTCController(http.Controller):
         if not socket_url:
             return {'enabled': False, 'reason': 'no_socket_url'}
 
+        # The Verto login MUST NOT contain '@' (mod_verto splits on '@' to
+        # derive the realm). Use the numeric res.users.id; the FS XML
+        # directory matches the same id. See
+        # specs/decisions/014-verto-login-uses-user-id.md.
         return {
             'enabled': True,
             'socketUrl': socket_url,
             'domain': domain,
-            'login': user.login,
+            'login': str(user.id),
             'password': connect_user.webrtc_password,
             'callerName': connect_user.name,
             'callerNumber': connect_user.exten_number or user.login,

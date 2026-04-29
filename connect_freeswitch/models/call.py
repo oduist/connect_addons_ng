@@ -159,9 +159,13 @@ class Call(models.Model):
             a_leg_parts.append(
                 '[{}]user/{}@{}'.format(','.join(leg_vars), ep.auth_user, domain))
 
-        # WebRTC (Verto) leg from user
-        if connect_user.webrtc_enabled and connect_user.originate_ring:
-            verto_login = connect_user.user.login
+        # WebRTC (Verto) leg from user.
+        # The Verto contact is addressed by res.users.id (not user.login)
+        # because the FS XML directory keys WebRTC users by id; see
+        # specs/decisions/014-verto-login-uses-user-id.md.
+        if connect_user.webrtc_enabled and connect_user.originate_ring \
+                and connect_user.user:
+            verto_login = str(connect_user.user.id)
             a_leg_parts.append(
                 "[leg_timeout=30,origination_caller_id_name='{name}'"
                 ",origination_caller_id_number={num}"
@@ -260,10 +264,12 @@ class Call(models.Model):
         for ep in target_endpoints:
             b_parts.append('user/{}@{}'.format(ep.auth_user, domain))
 
-        # WebRTC
-        if target_user.webrtc_enabled:
+        # WebRTC: address the Verto contact by res.users.id (matches the
+        # FS XML directory entry). See
+        # specs/decisions/014-verto-login-uses-user-id.md.
+        if target_user.webrtc_enabled and target_user.user:
             b_parts.append('user/{}@{}'.format(
-                target_user.user.login, domain))
+                target_user.user.id, domain))
 
         if b_parts:
             return ','.join(b_parts)
