@@ -121,3 +121,30 @@ class ConnectElevenlabsController(http.Controller):
                 'caller_user': call.caller_user.id,
             })
         return ''
+
+    @http.route('/connect_elevenlabs/conversation_init',
+                methods=['POST'], type='http', auth='public', csrf=False)
+    def conversation_init_webhook(self):
+        logger.info('Incoming request: /connect_elevenlabs/conversation_init')
+        if not self.check_post_call_webhook():
+            raise Unauthorized()
+        payload = json.loads(http.request.httprequest.get_data(as_text=True))
+        data = payload.get('data') or payload
+        agent_id = data.get('agent_id')
+        caller_id = data.get('caller_id') or data.get('from_number')
+        called_id = data.get('called_id') or data.get('to_number')
+        call_id = (data.get('dynamic_variables') or {}).get('call_id')
+        agent = http.request.env['connect.elevenlabs_agent'].with_user(
+            http.request.env.ref('connect.user_connect_webhook')).sudo().search(
+            [('agent_uid', '=', agent_id)], limit=1)
+        if not agent:
+            logger.warning('conversation_init: no agent for agent_id=%s', agent_id)
+            return http.request.make_response(
+                json.dumps({'type': 'conversation_initiation_client_data',
+                            'dynamic_variables': {}}),
+                headers=[('Content-Type', 'application/json')])
+        response = agent._build_conversation_init_response(
+            caller_id, called_id, call_id=call_id)
+        return http.request.make_response(
+            json.dumps(response),
+            headers=[('Content-Type', 'application/json')])

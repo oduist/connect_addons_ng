@@ -347,6 +347,47 @@ class ElevenlabsAgent(models.Model):
                       "Please try again with a correct number.".format(
                           exten_str, available))
 
+    def _build_conversation_init_response(self, caller_id, called_id, call_id=None):
+        """Build the JSON body EL expects from a Conversation Initiation
+        Webhook. If call_id is provided, reuses the (sale-override-aware)
+        elevenlabs_agent_get_call_data() on the existing connect.call;
+        otherwise resolves the partner from caller_id alone and returns
+        a minimal dynamic_variables block."""
+        self.ensure_one()
+        Call = self.env['connect.call'].sudo()
+        call = Call.browse(int(call_id)) if call_id else Call.browse()
+        if not call.exists():
+            # Best-effort match by caller+called (newest call this minute).
+            call = Call.search(
+                [('caller', '=', caller_id), ('called', '=', called_id)],
+                order='id desc', limit=1)
+        if call:
+            if not call.elevenlabs_agent:
+                call.elevenlabs_agent = self.id
+            dynamic_variables = call.elevenlabs_agent_get_call_data()
+        else:
+            # No call record — return a minimal payload.
+            partner = self.env['res.partner'].sudo().search(
+                [('phone', '=', caller_id)], limit=1)
+            dynamic_variables = {
+                'caller_number': caller_id,
+                'called_number': called_id,
+                'partner_name': partner.name or 'Not registered',
+                'existing_partner': 'Yes' if partner else 'No',
+                'partner_id': partner.id,
+                'greeting': partner.name or 'Dear customer',
+                'previous_conversation_id': '',
+                'previous_topics': '',
+            }
+        lang = dynamic_variables.get('partner_language') or self.language
+        return {
+            'type': 'conversation_initiation_client_data',
+            'dynamic_variables': dynamic_variables,
+            'conversation_config_override': {
+                'agent': {'language': lang},
+            },
+        }
+
     def create_elevenlabs_agent(self):
         client = self.env["connect.settings"].get_elevenlabs_client()
         try:
