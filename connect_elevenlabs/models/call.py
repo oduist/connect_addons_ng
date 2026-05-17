@@ -66,17 +66,6 @@ class Call(models.Model):
 
         return data
 
-    @api.model
-    def elevenlabs_agent_start_call_event(self, params):
-        call_id=params['call_id']
-        agent_uid=params['agent_uid']
-        # aio_odoorpc cannot pass positional args?
-        call = self.sudo().browse(int(call_id))
-        agent = self.env['connect.elevenlabs_agent'].sudo().search([('agent_uid', '=', agent_uid)])
-        # Link call to the Agent.
-        call.elevenlabs_agent = agent.id
-        return call.elevenlabs_agent_get_call_data()
-
     def _get_elevenlabs_recording_data(self):
         # Make one query to get all records.
         recordings = self.env['connect.recording'].search([('call', 'in', [k.id for k in self])])
