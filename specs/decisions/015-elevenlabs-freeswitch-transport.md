@@ -1,6 +1,6 @@
 # ADR-015: ElevenLabs ↔ FreeSWITCH Transport
 
-**Status:** Accepted
+**Status:** Superseded by ADR-020
 **Date:** 2026-04-28
 
 ## Context

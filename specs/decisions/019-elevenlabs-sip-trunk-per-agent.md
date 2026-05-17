@@ -1,6 +1,6 @@
 # ADR-019: ElevenLabs SIP Trunk Configuration — Per-Agent + Tenant Defaults
 
-**Status:** Accepted
+**Status:** Superseded by ADR-020
 **Date:** 2026-04-29
 **Refines:** ADR-018
 

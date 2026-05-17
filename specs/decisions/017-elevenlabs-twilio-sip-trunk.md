@@ -1,6 +1,6 @@
 # ADR-017: ElevenLabs ↔ Twilio SIP Trunk Transport
 
-**Status:** Accepted
+**Status:** Superseded by ADR-020
 **Date:** 2026-04-29
 
 ## Context
