@@ -605,8 +605,10 @@ class ElevenlabsAgent(models.Model):
         try:
             return AgentPlatformSettingsRequestModel(**kwargs)
         except Exception as e:
-            logger.warning(
-                "AgentPlatformSettingsRequestModel validation failed: %s. Using model_construct.", e)
+            logger.error(
+                "AgentPlatformSettingsRequestModel rejected workspace_overrides: %s. "
+                "Falling back to model_construct — the Conversation Initiation Webhook URL "
+                "may not be registered on ElevenLabs. Check SDK version compatibility.", e)
             return AgentPlatformSettingsRequestModel.model_construct(**kwargs)
 
     def compute_platform_settings(self):

@@ -60,8 +60,9 @@ It should show `State: REGED` (if REGISTER) or `NOREG` (if IP auth).
 ## Step 3 — Configure the agent
 
 Open **Connect → ElevenLabs → Agents → \<your agent\>** and switch to the
-**FreeSWITCH** tab. The **FreeSWITCH Transport** is set to `SIP Trunk to ElevenLabs`
-and requires no additional configuration.
+**FreeSWITCH** tab. The FreeSWITCH tab on the agent form shows only the SIP Trunk
+reference info — there is no transport selector; SIP Trunk is the only supported
+transport (ADR-020).
 
 ## Step 4 — Wire the extension
 
