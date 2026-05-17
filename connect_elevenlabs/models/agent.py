@@ -355,9 +355,12 @@ class ElevenlabsAgent(models.Model):
         a minimal dynamic_variables block."""
         self.ensure_one()
         Call = self.env['connect.call'].sudo()
-        call = Call.browse(int(call_id)) if call_id else Call.browse()
+        try:
+            call = Call.browse(int(call_id)) if call_id else Call.browse()
+        except (ValueError, TypeError):
+            call = Call.browse()
         if not call.exists():
-            # Best-effort match by caller+called (newest call this minute).
+            # Best-effort match by caller+called (most recent call).
             call = Call.search(
                 [('caller', '=', caller_id), ('called', '=', called_id)],
                 order='id desc', limit=1)
