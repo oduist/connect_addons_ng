@@ -290,23 +290,58 @@ class ElevenlabsAgent(models.Model):
         self.ensure_one()
         return self.env["connect.exten"].create_extension(self, "elevenlabs_agent")
 
-    def render(self, request, params={}):
-        # Provider bridge stub. Overridden by:
-        #   - connect_elevenlabs_twilio  (TwiML <Connect><Stream>)
-        #   - connect_elevenlabs_freeswitch (planned: mod_audio_fork / ESL)
+    def render(self, request, params=None):
+        """Twilio bridge entry — returns TwiML.
+        Overridden in connect_elevenlabs_twilio."""
         self.ensure_one()
         logger.warning(
-            "connect.elevenlabs_agent.render: no provider bridge installed."
-        )
+            "connect.elevenlabs_agent.render: no Twilio bridge installed.")
+        return ''
+
+    def generate_dialplan(self, params, exten=None):
+        """FreeSWITCH bridge entry — returns dialplan XML.
+        Overridden in connect_elevenlabs_freeswitch."""
+        self.ensure_one()
+        logger.warning(
+            "connect.elevenlabs_agent.generate_dialplan: no FreeSWITCH bridge installed.")
         return ''
 
     @api.model
     def transfer(self, channel_sid=None, exten=None):
-        # Provider bridge stub. Overridden by integration modules.
+        """Transfer-tool callback — overridden by each bridge to drive the
+        provider-specific REST/ESL call."""
         logger.warning(
-            "connect.elevenlabs_agent.transfer: no provider bridge installed."
-        )
+            "connect.elevenlabs_agent.transfer: no provider bridge installed.")
         return "ElevenLabs transfer requires a provider bridge (Twilio/FreeSWITCH)."
+
+    def _resolve_transfer_target(self, exten_str):
+        """Resolve a transfer-tool 'exten' argument to a connect.exten record.
+
+        Returns (exten_rec, None) on success or (None, error_message) on
+        failure, where error_message is the human-readable string returned
+        to ElevenLabs by the bridge's transfer() implementation.
+        """
+        if isinstance(exten_str, str) and not exten_str.isalnum():
+            return None, "Wrong extension format. Only digits, e.g. 101"
+        Exten = self.env['connect.exten'].sudo()
+        exten_rec = Exten.search([('number', '=', str(exten_str).strip())], limit=1)
+        if exten_rec:
+            return exten_rec, None
+        published = Exten.search([('is_published', '=', True)])
+        if not published:
+            return None, ("There is no public extension to connect the call. "
+                          "Cannot transfer")
+        if len(published) == 1:
+            logger.info(
+                "Extension %s not found; falling back to single published %s",
+                exten_str, published.number)
+            return published, None
+        available = ", ".join(
+            '<{}> "{}"'.format(p.number, p.dst.name if p.dst else '')
+            for p in published)
+        return None, ("Extension {} not found. Available extensions: {}. "
+                      "Please try again with a correct number.".format(
+                          exten_str, available))
 
     def create_elevenlabs_agent(self):
         client = self.env["connect.settings"].get_elevenlabs_client()
