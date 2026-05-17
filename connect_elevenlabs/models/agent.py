@@ -580,7 +580,15 @@ class ElevenlabsAgent(models.Model):
 
     def _build_platform_settings(self) -> AgentPlatformSettingsRequestModel:
         """Build proper AgentPlatformSettingsRequestModel object using new API types"""
-        return AgentPlatformSettingsRequestModel(
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''
+        webhook_url = (base_url.rstrip('/') + '/connect_elevenlabs/conversation_init') if base_url else None
+        workspace = {}
+        if webhook_url:
+            workspace['conversation_initiation_client_data_webhook'] = {
+                'url': webhook_url,
+                'request_headers': {},
+            }
+        kwargs = dict(
             overrides={
                 "conversation_config_override": {
                     "agent": {
@@ -592,7 +600,14 @@ class ElevenlabsAgent(models.Model):
                 "agent_concurrency_limit": self.agent_concurrency_limit,
                 "daily_limit": self.daily_limit,
             },
+            workspace_overrides=workspace or None,
         )
+        try:
+            return AgentPlatformSettingsRequestModel(**kwargs)
+        except Exception as e:
+            logger.warning(
+                "AgentPlatformSettingsRequestModel validation failed: %s. Using model_construct.", e)
+            return AgentPlatformSettingsRequestModel.model_construct(**kwargs)
 
     def compute_platform_settings(self):
         return {
