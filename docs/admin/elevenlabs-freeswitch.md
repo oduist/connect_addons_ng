@@ -1,11 +1,8 @@
 # ElevenLabs over FreeSWITCH
 
 Bridges an inbound call routed through FreeSWITCH to an ElevenLabs Conversational
-AI agent over a SIP trunk.
-
-> See `specs/decisions/015-elevenlabs-freeswitch-transport.md` for the
-> architectural decision and the rationale for shipping SIP trunking before
-> `mod_audio_fork`.
+AI agent over a SIP trunk. This is the single supported transport — the SIP trunk
+connects FreeSWITCH directly to ElevenLabs with no intermediate relay service.
 
 ## Prerequisites
 
@@ -63,14 +60,8 @@ It should show `State: REGED` (if REGISTER) or `NOREG` (if IP auth).
 ## Step 3 — Configure the agent
 
 Open **Connect → ElevenLabs → Agents → \<your agent\>** and switch to the
-**FreeSWITCH** tab.
-
-| Field | Value |
-|---|---|
-| **FreeSWITCH Transport** | `SIP Trunk to ElevenLabs` |
-
-> `WebSocket via mod_audio_fork` is reserved for a future sprint and raises
-> a validation error if selected today.
+**FreeSWITCH** tab. The **FreeSWITCH Transport** is set to `SIP Trunk to ElevenLabs`
+and requires no additional configuration.
 
 ## Step 4 — Wire the extension
 
@@ -105,64 +96,6 @@ bridge translates the request into an ESL `uuid_transfer` against the
 inbound leg, returning the caller into your normal dialplan. Make sure
 the target extension has `is_published = True` so the agent's tool sees
 it as a valid target.
-
-## Variant B — Audio Stream (`mod_audio_stream`)
-
-For deployments without ElevenLabs SIP trunking, or where you need full
-control over the audio path (custom logging, real-time analytics,
-encryption beyond what SIP gives you), switch the agent's
-**FreeSWITCH Transport** to **WebSocket via mod_audio_fork**.
-
-### Architecture
-
-```
-SIP caller --PSTN--> FreeSWITCH --[mod_audio_stream WSS L16/16k]-->
-   connect_elevenlabs relay (FastAPI) --[ElevenLabs Conversational SDK]-->
-      ElevenLabs Conversational AI
-```
-
-### Prerequisites
-
-- `connect_freeswitch` upgraded to a version that ships
-  `mod_audio_stream` in the FS image (rebuild the `oduist/freeswitch`
-  image — see `connect_freeswitch/deploy/Dockerfile`).
-- `connect_elevenlabs/service` (the relay) deployed at the URL stored
-  in **Settings → Agent URL** (`elevenlabs_agent_url` system parameter).
-- The FS container must reach the relay over `wss://` from the call
-  path. NAT/firewall must permit it.
-
-### Steps
-
-1. **Audio formats.** Set the agent's *Output Audio Format* and
-   *User Input Audio Format* to `pcm_16000`. Other formats raise a
-   validation error in this transport.
-2. **Switch transport.** Set **FreeSWITCH Transport** to
-   `WebSocket via mod_audio_fork`.
-3. **Wire the extension.** Same as variant A — click **Extension** on
-   the agent.
-4. **Verify the FS module.** From the FreeSWITCH container:
-   ```
-   fs_cli -x "module_exists mod_audio_stream"
-   fs_cli -x "audio_stream"
-   ```
-   The first should return `true`, the second prints the usage line.
-5. **Test.** Originate a call; in `fs_cli` you should see:
-   ```
-   audio_stream: connecting to wss://<relay>/freeswitch/stream/<agent>/<uuid>/<uuid>
-   ```
-   The relay logs (`connect_elevenlabs/service`) should report
-   `FS conversation session started`.
-
-### Trade-offs
-
-| | SIP Trunk (A) | Audio Stream (B) |
-|---|---|---|
-| Audio handling | EL terminates RTP | Relay terminates WS |
-| Setup | EL dashboard + 1 gateway | FS image rebuild + relay deploy |
-| Bandwidth | G.711 (~64 kbps) | PCM 16k (~256 kbps) on the WS leg |
-| Audio quality | Codec-bounded (G.711) | 16 kHz throughout |
-| Failure mode | EL outage hangs the call | Relay outage hangs the call |
-| Custom audio mid-call | Not possible | Possible (relay can mux/inject) |
 
 ## Troubleshooting
 

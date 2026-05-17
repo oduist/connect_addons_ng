@@ -4,8 +4,7 @@
 
 - An ElevenLabs account with conversational-AI access ([elevenlabs.io](https://elevenlabs.io))
 - An ElevenLabs API key (Profile → API Keys)
-- A public URL for the media-bridge service (see "Media Bridge" below)
-- Twilio integration already configured (`connect_twilio`) — ElevenLabs rides over Twilio Media Streams
+- A public HTTPS URL for your Odoo instance (required for ElevenLabs to reach the conversation initiation webhook)
 
 ## Account Configuration
 
@@ -17,8 +16,7 @@ Navigate to **Connect → Configuration → Settings** and open the **ElevenLabs
 |---|---|
 | **ElevenLabs API Key** | API key with ConvAI access. Masked for non-managers. |
 | **Agent Token** | Shared secret sent in the `x-elevenlabs-agent-token` header by ElevenLabs when calling back the agent tool webhooks. Rotated by the **Reset Token** action. |
-| **Post Call Webhook Secret** | HMAC secret for `elevenlabs-signature` header validation on post-call webhooks. Masked for non-managers. |
-| **Agent URL** | Public URL of the FastAPI media-bridge service (see below). |
+| **Post Call Webhook Secret** | HMAC secret for `elevenlabs-signature` header validation on post-call webhooks and conversation initiation webhooks. Masked for non-managers. |
 | **Default Voice** | ElevenLabs voice used for TTS playback of callflow/voicemail prompts. |
 | **Enabled** | Master switch. When off, the module falls back to standard Twilio `<Say>` TTS. |
 
@@ -30,7 +28,6 @@ Navigate to **Connect → Configuration → Settings** and open the **ElevenLabs
 - **Full Sync** — voices + tools + agents + rotate agent token.
 - **Regenerate Prompts** — regenerate every cached TTS audio file for callflow prompts and voicemail greetings.
 - **Unbind Account** — clear all local `agent_uid` / `tool_id` values so the next sync re-creates everything in a fresh ElevenLabs account.
-- **Ping Agent** — verify the media-bridge service can reach Odoo via JSON-RPC.
 
 ## Webhook URLs
 
@@ -48,36 +45,21 @@ Configure these on the ElevenLabs side (Agent → Analysis → Post-call webhook
 
 Copy the **Post Call Webhook URL** shown in the settings into the ElevenLabs dashboard.
 
-## Media Bridge
+## Conversation Initiation Webhook
 
-Call audio flows from Twilio Media Streams through a small FastAPI service that proxies bidirectional audio to the ElevenLabs Conversational AI WebSocket.
+When an agent record is saved, `update_elevenlabs_agent()` automatically writes the conversation initiation webhook URL into the agent's platform settings on ElevenLabs. The URL is:
 
 ```
-Twilio call  →  <Connect><Stream url="wss://bridge/twilio/stream/..."/>  →  FastAPI bridge  →  ElevenLabs ConvAI
+<base_url>/connect_elevenlabs/conversation_init
 ```
 
-The bridge source lives in `connect_elevenlabs/service/` (Dockerfile + `main.py`).
+ElevenLabs calls this endpoint before connecting each inbound SIP call so Odoo can inject dynamic variables (caller context, previous conversation history, available extensions) into the agent session.
 
-### Environment variables
+### Authentication
 
-| Variable | Description |
-|---|---|
-| `ELEVENLABS_API_KEY` | Same key entered in Odoo settings. |
-| `ODOO_URL` | Base URL of the Odoo instance (e.g. `https://connect.example.com`). |
-| `ODOO_DB` | Odoo database name. |
-| `ODOO_USER` | Login of a user with `connect.group_webhook`. |
-| `ODOO_PASSWORD` | That user's password. |
+The `conversation_init` route is HMAC-authenticated using the same secret stored in **Post Call Webhook Secret** (`elevenlabs_post_call_webhook_secret`). ElevenLabs signs both the conversation initiation request and post-call webhook with the workspace's webhook secret.
 
-Run on port 48000 behind HTTPS; the `Agent URL` field in Odoo must point at the public HTTPS URL.
-
-### Deployment
-
-```bash
-docker build -t connect-elevenlabs-bridge connect_elevenlabs/service/
-docker run -d --env-file bridge.env -p 48000:48000 connect-elevenlabs-bridge
-```
-
-Verify with the **Ping Agent** button in Odoo.
+> **Deployment note:** Operators must configure the **same** secret in both Odoo (the `elevenlabs_post_call_webhook_secret` field) and the ElevenLabs workspace webhook settings. A mismatch causes a `401 Unauthorized` response on every inbound call attempt.
 
 ## Transcription Provider
 

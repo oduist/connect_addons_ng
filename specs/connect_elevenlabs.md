@@ -12,9 +12,9 @@
 
 ## Overview
 
-`connect_elevenlabs` adds ElevenLabs conversational-AI agent support on top of `connect` + `connect_twilio`. It stores agents, voices, tools, knowledge references, and TTS audio files in Odoo, synchronises agents and tools with the ElevenLabs REST API, and handles post-call / transfer / calendar webhooks.
+`connect_elevenlabs` adds ElevenLabs conversational-AI agent support on top of `connect`. It stores agents, voices, tools, knowledge references, and TTS audio files in Odoo, synchronises agents and tools with the ElevenLabs REST API, and handles post-call / transfer / conversation-initiation / calendar webhooks.
 
-For call routing the module emits TwiML `<Connect><Stream url=…>` that hands audio to a companion FastAPI media bridge (`service/`) which terminates Twilio Media Streams and proxies audio to the ElevenLabs conversational-AI WebSocket. That is why the module depends on `connect_twilio` today — see ADR-014 for why an agnostic core module is not split out yet.
+Call routing is transport-agnostic: Twilio bridges via SIP (`connect_elevenlabs_twilio`) and FreeSWITCH bridges via SIP trunk (`connect_elevenlabs_freeswitch`). See ADR-020 for the SIP-trunk-only decision.
 
 ---
 
@@ -33,10 +33,8 @@ Adds ElevenLabs API credentials, webhook token, and transcript-provider selectio
 | `elevenlabs_agent_token` | Char | UUID default; groups `base.group_erp_manager` |
 | `elevenlabs_voice` | Many2one (`connect.elevenlabs_voice`) | Default TTS voice |
 | `elevenlabs_enabled` | Boolean | Master switch used by callflow/user TTS |
-| `elevenlabs_agent_url` | Char | Public URL of the FastAPI media bridge |
-| `elevenlabs_agent_parameters` | Text | |
 | `elevenlabs_post_call_webhook_url` | Char (compute) | `<api_url>/connect_elevenlabs/post_call` |
-| `elevenlabs_post_call_webhook_secret` | Char | groups `base.group_erp_manager` |
+| `elevenlabs_post_call_webhook_secret` | Char | HMAC secret for post-call and conversation-initiation webhook validation; groups `base.group_erp_manager` |
 | `display_elevenlabs_post_call_webhook_secret` | Char | masked |
 | `transcript_provider` | Selection | `selection_add=[('elevenlabs', 'Elevenlabs')]` |
 
@@ -52,7 +50,6 @@ Adds ElevenLabs API credentials, webhook token, and transcript-provider selectio
 | `elevenlabs_reset_token()` | Rotate `elevenlabs_agent_token` |
 | `elevenlabs_sync()` | Full sync: voices + token + tools + agents |
 | `elevenlabs_unbind_account()` | Clear all `agent_uid` / `tool_id` values |
-| `ping_agent()` | Ping the media-bridge FastAPI endpoint |
 | `open_elevenlabs_form()` | Action: open the ElevenLabs settings tab |
 
 Registers itself in `ODUIST_MODULES` and appends its two protected display fields to `PROTECTED_FIELDS`.
@@ -77,8 +74,8 @@ The main agent record. Stores prompt, voice, language settings, LLM choice, limi
 | `_compute_prompt_config()` | Inject call-context placeholders (`{{previous_topics}}`, `{{available_extensions}}`) |
 | `_compute_built_in_tools()` | Dictionary for system tools (transfer/voicemail/keypad) |
 | `compute_agent_tools()` | Return non-system tool IDs |
-| `render(request, params=None)` | Emit TwiML `<Connect><Stream url=wss://…/twilio/stream/{agent_uid}/{call_id}/{channel_sid}>` |
-| `transfer(channel_sid, exten)` | Twilio REST redirect of current call leg |
+| `render(request, params=None)` | Delegate to the active transport bridge to initiate an agent call |
+| `transfer(channel_sid, exten)` | Transfer the current call leg to the target extension via the active transport |
 | `create_extension()` | Allocate a `connect.exten` row |
 | `print_config()` | Debug: dump agent config from ElevenLabs |
 
@@ -130,7 +127,7 @@ TTS audio file generated from text. Fields: `text` (required), `file` (Binary), 
 | `elevenlabs_conversation_id` | Char | readonly |
 | `elevenlabs_recording_widget` | Html | compute (audio tag) |
 
-**Methods:** `elevenlabs_agent_get_call_data()` (payload for the media bridge: partner/extension/previous-conversation context), `elevenlabs_agent_start_call_event(params)` (model method called by the bridge), `_get_elevenlabs_recording_data()`. Also overrides `_get_recording_data()` to show an icon on agent calls with recordings.
+**Methods:** `elevenlabs_agent_get_call_data()` (payload for the conversation initiation webhook: partner/extension/previous-conversation context), `_get_elevenlabs_recording_data()`. Also overrides `_get_recording_data()` to show an icon on agent calls with recordings.
 
 ### 10. recording.py — `_inherit = 'connect.recording'`
 
@@ -208,12 +205,6 @@ All routes `type=jsonrpc` on Odoo 19+, token-gated via `x-elevenlabs-agent-token
 ## Views (connect_elevenlabs/views/)
 
 14 files (agent, agent_prompt, agent_template, agent_transfer, agent_tool, agent_tool_params, call, callflow, number, recording, settings, user, voice). `settings.xml` adds an ElevenLabs notebook tab on `connect.settings`.
-
-## Service (connect_elevenlabs/service/)
-
-`main.py` + `twilio_audio_interface.py` — FastAPI WebSocket at `/twilio/stream/{agent_uid}/{call_id}/{channel_sid}` bridging Twilio Media Streams to the ElevenLabs conversational-AI client. `Dockerfile` + `pyproject.toml` describe the deploy artefact.
-
----
 
 ## License
 
