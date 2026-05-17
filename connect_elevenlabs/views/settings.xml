@@ -91,16 +91,6 @@
                     string="SYNC SIP TRUNKS" class="btn btn-secondary"
                     invisible="not elevenlabs_sip_enabled"/>
           </page>
-          <page name="agent" string="Agent"
-              invisible="not elevenlabs_enabled or not display_elevenlabs_api_key">
-            <group>
-              <group>
-                <field name="elevenlabs_agent_url"/>
-                <field name="elevenlabs_agent_parameters" placeholder="param=value"/>
-              </group>
-            </group>
-            <button type="object" string="Agent Ping" icon="fa-check" name="ping_agent" style="width: 130px"/>
-          </page>
         </notebook>
       </sheet>
       </form>

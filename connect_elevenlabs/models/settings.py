@@ -32,7 +32,6 @@ class Elevenlabsettings(models.Model):
     display_elevenlabs_api_key = fields.Char()
     elevenlabs_voice = fields.Many2one('connect.elevenlabs_voice', ondelete='set null', string='Selected Voice')
     elevenlabs_enabled = fields.Boolean()
-    elevenlabs_agent_url = fields.Char(string='Agent URL', required=True, default='https://elevenlabs-agent.ngrok.io')
     elevenlabs_agent_parameters = fields.Text(string='Agent Parameters')
     elevenlabs_post_call_webhook_url = fields.Char(compute='_get_post_call_webhook_url')
     display_elevenlabs_post_call_webhook_secret = fields.Char()
@@ -161,14 +160,3 @@ class Elevenlabsettings(models.Model):
         self.connect_notify(
             f'SIP trunk reachable. {count} phone number(s) provisioned in ElevenLabs.',
             title='Elevenlabs SIP Trunk', notify_uid=self.env.user.id)
-
-    def ping_agent(self):
-        self.ensure_one()
-        try:
-            response = requests.post(urljoin(self.elevenlabs_agent_url, '/agent/ping'))
-            if response.text == 'true':
-                self.connect_notify('Pong', title='Elevenlabs Agent', notify_uid=self.env.user.id)
-            else:
-                self.connect_notify('Error! Check the Agent error log.', title='Elevenlabs Agent', notify_uid=self.env.user.id)
-        except Exception as e:
-            raise ValidationError(str(e))
