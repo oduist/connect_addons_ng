@@ -291,11 +291,11 @@ class ElevenlabsAgent(models.Model):
         return self.env["connect.exten"].create_extension(self, "elevenlabs_agent")
 
     def render(self, request, params=None):
-        """Twilio bridge entry — returns TwiML.
-        Overridden in connect_elevenlabs_twilio."""
+        """HTTP-route bridge entry — returns the provider response body
+        (e.g. TwiML for Twilio). Overridden by each provider bridge."""
         self.ensure_one()
         logger.warning(
-            "connect.elevenlabs_agent.render: no Twilio bridge installed.")
+            "connect.elevenlabs_agent.render: no provider bridge installed.")
         return ''
 
     def generate_dialplan(self, params, exten=None):
@@ -320,7 +320,11 @@ class ElevenlabsAgent(models.Model):
         Returns (exten_rec, None) on success or (None, error_message) on
         failure, where error_message is the human-readable string returned
         to ElevenLabs by the bridge's transfer() implementation.
+
+        Safe to call on either model or recordset self.
         """
+        if not exten_str:
+            return None, "No extension specified"
         if isinstance(exten_str, str) and not exten_str.isalnum():
             return None, "Wrong extension format. Only digits, e.g. 101"
         Exten = self.env['connect.exten'].sudo()
