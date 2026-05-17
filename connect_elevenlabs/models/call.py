@@ -1,4 +1,4 @@
-from odoo import models, fields, release, api
+from odoo import models, fields, release
 
 
 class Call(models.Model):
