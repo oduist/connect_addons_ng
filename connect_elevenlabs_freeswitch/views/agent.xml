@@ -8,9 +8,6 @@
         <field name="arch" type="xml">
             <xpath expr="//page[@name='conversation']" position="after">
                 <page name="freeswitch" string="FreeSWITCH">
-                    <group>
-                        <field name="fs_transport"/>
-                    </group>
                     <div class="alert alert-info" role="alert">
                         <strong>SIP Trunk:</strong>
                         Provision a SIP trunk in the ElevenLabs dashboard, then create a

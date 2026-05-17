@@ -2,14 +2,14 @@
 
 {
     'name': 'Connect ElevenLabs - FreeSWITCH Bridge',
-    'version': '1.0.0',
+    'version': '1.1.0',
     'author': 'Oduist',
     'maintainer': 'Oduist',
     'support': 'support@oduist.com',
     'license': 'Other proprietary',
     'category': 'Phone',
     'summary': 'FreeSWITCH provider bridge for Connect ElevenLabs',
-    'description': "FreeSWITCH-side ElevenLabs Conversational AI integration. Bridges inbound calls to ElevenLabs via SIP trunk (default). mod_audio_fork transport reserved for a follow-up sprint.",
+    'description': "FreeSWITCH-side ElevenLabs Conversational AI integration. Bridges inbound calls to ElevenLabs via SIP trunk.",
     'depends': ['connect_elevenlabs', 'connect_freeswitch'],
     'data': [
         'data/templates.xml',

@@ -36,37 +36,4 @@ Variables:
 </extension>]]></field>
     </record>
 
-    <record id="fs_template_dialplan_elevenlabs_audio_stream" model="connect.freeswitch.template">
-        <field name="key">dialplan_elevenlabs_audio_stream</field>
-        <field name="name">Dialplan - ElevenLabs Audio Stream Bridge</field>
-        <field name="section">dialplan</field>
-        <field name="description">Stream call audio over WebSocket to the connect_elevenlabs relay
-via mod_audio_stream. Relay terminates the stream and bridges into
-ElevenLabs Conversational AI. Requires mod_audio_stream loaded in
-FreeSWITCH (ADR-016) and pcm_16000 audio format on the agent.
-
-Variables:
-  extension_number - dialed Odoo extension (regex anchor)
-  agent_uid        - ElevenLabs agent_id, embedded in the WSS path
-  wss_base_url     - relay base URL (wss://...), no trailing slash</field>
-        <field name="content"><![CDATA[<extension name="elevenlabs_agent_stream_{{ extension_number }}">
-  <condition field="destination_number" expression="^{{ extension_number }}$">
-    <action application="set" data="hangup_after_bridge=true"/>
-    <action application="answer"/>
-    <action application="set" data="audio_stream_metadata={&quot;agent_uid&quot;:&quot;{{ agent_uid }}&quot;}"/>
-    <action application="audio_stream" data="start {{ wss_base_url }}/freeswitch/stream/{{ agent_uid }}/${uuid}/${uuid} mono 16k"/>
-    <action application="park"/>
-  </condition>
-</extension>]]></field>
-        <field name="default_content"><![CDATA[<extension name="elevenlabs_agent_stream_{{ extension_number }}">
-  <condition field="destination_number" expression="^{{ extension_number }}$">
-    <action application="set" data="hangup_after_bridge=true"/>
-    <action application="answer"/>
-    <action application="set" data="audio_stream_metadata={&quot;agent_uid&quot;:&quot;{{ agent_uid }}&quot;}"/>
-    <action application="audio_stream" data="start {{ wss_base_url }}/freeswitch/stream/{{ agent_uid }}/${uuid}/${uuid} mono 16k"/>
-    <action application="park"/>
-  </condition>
-</extension>]]></field>
-    </record>
-
 </odoo>
