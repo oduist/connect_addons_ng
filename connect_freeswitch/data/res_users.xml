@@ -9,8 +9,16 @@
         <field name="name">FreeSWITCH Agent</field>
         <field name="login">freeswitch_agent</field>
         <field name="partner_id" ref="partner_freeswitch_agent"/>
-        <field name="groups_id" eval="[(6, 0, [ref('base.group_portal'), ref('group_freeswitch_agent')])]"/>
         <field name="share">True</field>
+    </record>
+
+    <!-- Assign the agent user to portal and FreeSWITCH-agent groups
+         (in Odoo 19, groups_id is gone from res.users; we use user_ids on res.groups). -->
+    <record id="base.group_portal" model="res.groups">
+        <field name="user_ids" eval="[(4, ref('user_freeswitch_agent'))]"/>
+    </record>
+    <record id="group_freeswitch_agent" model="res.groups">
+        <field name="user_ids" eval="[(4, ref('user_freeswitch_agent'))]"/>
     </record>
 
 </odoo>
