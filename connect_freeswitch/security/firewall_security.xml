@@ -3,6 +3,7 @@
 
     <record id="group_freeswitch_agent" model="res.groups">
         <field name="name">FreeSWITCH Agent</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_portal'))]"/>
         <field name="comment">Identity used by FreeSWITCH-side services (firewall, future provisioning) when calling into Odoo via XML-RPC. Portal user — does not consume an enterprise seat.</field>
     </record>
 
