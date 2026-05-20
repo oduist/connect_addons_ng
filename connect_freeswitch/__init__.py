@@ -16,6 +16,31 @@ def post_init_hook(env):
             module.write({'create_date': fields.Datetime.now()})
         env['oduist.license'].update_license_status(raise_exc=False)
 
+        # Move the FreeSWITCH agent into Role/Portal and the agent group.
+        # Doing this in Python (after the user exists) sidesteps Odoo 19's
+        # exclusive-role validator that fires when XML data assigns both
+        # Role/User (the default) and Role/Portal at once.
+        user = env.ref(
+            'connect_freeswitch.user_freeswitch_agent',
+            raise_if_not_found=False,
+        )
+        group_portal = env.ref('base.group_portal', raise_if_not_found=False)
+        group_user = env.ref('base.group_user', raise_if_not_found=False)
+        group_agent = env.ref(
+            'connect_freeswitch.group_freeswitch_agent',
+            raise_if_not_found=False,
+        )
+        if user:
+            ops = []
+            if group_user:
+                ops.append((3, group_user.id))
+            if group_portal:
+                ops.append((4, group_portal.id))
+            if group_agent:
+                ops.append((4, group_agent.id))
+            if ops:
+                user.sudo().write({'group_ids': ops})
+
         # Generate firewall service credentials and create the agent singleton
         # on first install. Admin copies these to the service container's env.
         settings = env['connect.settings'].sudo()
@@ -24,10 +49,6 @@ def post_init_hook(env):
         if not settings.get_param('freeswitch_agent_password'):
             password = secrets.token_urlsafe(24)
             settings.set_param('freeswitch_agent_password', password)
-            user = env.ref(
-                'connect_freeswitch.user_freeswitch_agent',
-                raise_if_not_found=False,
-            )
             if user:
                 user.sudo().write({'password': password})
 
