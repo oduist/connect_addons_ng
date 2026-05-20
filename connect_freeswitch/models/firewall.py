@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import ipaddress
 import logging
+from datetime import timedelta
 
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
@@ -33,18 +34,18 @@ class FirewallWhitelist(models.Model):
     active = fields.Boolean(default=True)
     note = fields.Text()
 
-    _sql_constraints = [
-        (
-            "ip_or_cidr_unique",
-            "UNIQUE(ip_or_cidr)",
-            "This IP/CIDR is already in the whitelist.",
-        ),
-    ]
-
     @api.constrains("ip_or_cidr")
     def _check_ip_or_cidr(self):
         for rec in self:
             _validate_ip_or_cidr(rec.ip_or_cidr)
+            duplicates = self.search_count([
+                ("id", "!=", rec.id),
+                ("ip_or_cidr", "=", rec.ip_or_cidr),
+            ])
+            if duplicates:
+                raise ValidationError(
+                    "{} is already in the whitelist.".format(rec.ip_or_cidr)
+                )
 
 
 class FirewallBlacklist(models.Model):
@@ -61,18 +62,18 @@ class FirewallBlacklist(models.Model):
     active = fields.Boolean(default=True)
     note = fields.Text()
 
-    _sql_constraints = [
-        (
-            "ip_or_cidr_unique",
-            "UNIQUE(ip_or_cidr)",
-            "This IP/CIDR is already in the blacklist.",
-        ),
-    ]
-
     @api.constrains("ip_or_cidr")
     def _check_ip_or_cidr(self):
         for rec in self:
             _validate_ip_or_cidr(rec.ip_or_cidr)
+            duplicates = self.search_count([
+                ("id", "!=", rec.id),
+                ("ip_or_cidr", "=", rec.ip_or_cidr),
+            ])
+            if duplicates:
+                raise ValidationError(
+                    "{} is already in the blacklist.".format(rec.ip_or_cidr)
+                )
 
 
 class FirewallEvent(models.Model):
@@ -118,7 +119,7 @@ class FirewallEvent(models.Model):
                 "firewall_event_retention_days", 30
             )
         )
-        cutoff = fields.Datetime.subtract(fields.Datetime.now(), days=days)
+        cutoff = fields.Datetime.now() - timedelta(days=days)
         old = self.search([("ts", "<", cutoff)])
         count = len(old)
         if count:

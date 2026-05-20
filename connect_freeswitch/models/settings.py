@@ -104,26 +104,19 @@ class Settings(models.Model):
         default=False,
         help="Enable the FreeSWITCH firewall service for SIP brute-force protection.",
     )
-    firewall_service_token = fields.Char(
-        string="Firewall Service Token",
-        help="Shared secret used by Odoo and the firewall service to authenticate "
-             "each other. Set the same value in the AGENT_TOKEN env var of the service.",
-    )
+    firewall_service_token = fields.Char(groups="connect.group_admin")
     display_firewall_service_token = fields.Char(
         string="Firewall Service Token",
-        help="Visible to administrators only. Enter a new value to update the secret; "
-             "the field will be masked again after saving.",
+        help="Shared secret used by Odoo and the firewall service to "
+             "authenticate each other. Set the same value in the AGENT_TOKEN "
+             "env var of the service. Visible only to administrators.",
     )
-    freeswitch_agent_password = fields.Char(
-        string="FreeSWITCH Agent Password",
-        help="Password for the freeswitch_agent portal user. The firewall service "
-             "and any future FreeSWITCH-side automation log in to Odoo using this "
-             "password. Set the same value in the ODOO_PASSWORD env var of the service.",
-    )
+    freeswitch_agent_password = fields.Char(groups="connect.group_admin")
     display_freeswitch_agent_password = fields.Char(
         string="FreeSWITCH Agent Password",
-        help="Visible to administrators only. Enter a new value to update the password; "
-             "the field will be masked again after saving.",
+        help="Password for the freeswitch_agent portal user. The firewall "
+             "service and future FreeSWITCH-side automation log in to Odoo "
+             "with it. Set the same value in the ODOO_PASSWORD env var.",
     )
     firewall_heartbeat_interval = fields.Integer(
         string="Heartbeat Interval (sec)",
