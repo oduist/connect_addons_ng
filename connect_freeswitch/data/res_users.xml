@@ -12,11 +12,10 @@
         <field name="share">True</field>
     </record>
 
-    <!-- Assign the agent user to portal and FreeSWITCH-agent groups
-         (in Odoo 19, groups_id is gone from res.users; we use user_ids on res.groups). -->
-    <record id="base.group_portal" model="res.groups">
-        <field name="user_ids" eval="[(4, ref('user_freeswitch_agent'))]"/>
-    </record>
+    <!-- Add the agent to the FreeSWITCH Agent group.
+         share=True on the user already gives it portal-tier access — adding
+         it to base.group_portal explicitly conflicts with the agent group in
+         Odoo 19's exclusive role checks. -->
     <record id="group_freeswitch_agent" model="res.groups">
         <field name="user_ids" eval="[(4, ref('user_freeswitch_agent'))]"/>
     </record>
