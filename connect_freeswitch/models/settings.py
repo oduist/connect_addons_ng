@@ -6,8 +6,14 @@ import xmlrpc.client
 
 from odoo import api, fields, models
 from odoo.addons.connect.models.license import ODUIST_MODULES
+from odoo.addons.connect.models.settings import PROTECTED_FIELDS
 
 ODUIST_MODULES.append('connect_freeswitch')
+
+# Mask the firewall secrets the same way the core module masks openai_api_key.
+for _field in ("display_firewall_service_token", "display_freeswitch_agent_password"):
+    if _field not in PROTECTED_FIELDS:
+        PROTECTED_FIELDS.append(_field)
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +97,88 @@ class Settings(models.Model):
     freeswitch_calls = fields.Char(string="Active Calls", readonly=True)
     freeswitch_registrations = fields.Char(string="Registered Endpoints", readonly=True)
     freeswitch_gateway_statuses = fields.Text(string="Gateway Statuses", readonly=True)
+
+    # Firewall settings
+    firewall_enabled = fields.Boolean(
+        string="Firewall Enabled",
+        default=False,
+        help="Enable the FreeSWITCH firewall service for SIP brute-force protection.",
+    )
+    firewall_service_token = fields.Char(
+        string="Firewall Service Token",
+        help="Shared secret used by Odoo and the firewall service to authenticate "
+             "each other. Set the same value in the AGENT_TOKEN env var of the service.",
+    )
+    display_firewall_service_token = fields.Char(
+        string="Firewall Service Token",
+        help="Visible to administrators only. Enter a new value to update the secret; "
+             "the field will be masked again after saving.",
+    )
+    freeswitch_agent_password = fields.Char(
+        string="FreeSWITCH Agent Password",
+        help="Password for the freeswitch_agent portal user. The firewall service "
+             "and any future FreeSWITCH-side automation log in to Odoo using this "
+             "password. Set the same value in the ODOO_PASSWORD env var of the service.",
+    )
+    display_freeswitch_agent_password = fields.Char(
+        string="FreeSWITCH Agent Password",
+        help="Visible to administrators only. Enter a new value to update the password; "
+             "the field will be masked again after saving.",
+    )
+    firewall_heartbeat_interval = fields.Integer(
+        string="Heartbeat Interval (sec)",
+        default=60,
+        help="How often the firewall service reports its status to Odoo.",
+    )
+    firewall_event_retention_days = fields.Integer(
+        string="Event Retention (days)",
+        default=30,
+        help="How long firewall security events are kept in the database.",
+    )
+    firewall_tcp_ports = fields.Char(
+        string="Firewall TCP Ports",
+        default="5060,5061,5080,5081",
+        help="Comma-separated TCP ports to protect (SIP, SIPS, WSS).",
+    )
+    firewall_udp_ports = fields.Char(
+        string="Firewall UDP Ports",
+        default="5060,5061,5080,5081",
+        help="Comma-separated UDP ports to protect (SIP).",
+    )
+    firewall_banned_timeout = fields.Integer(
+        string="Auto-ban TTL (sec)",
+        default=86400,
+        help="How long an automatically banned IP stays in the banned ipset.",
+    )
+    firewall_authenticated_timeout = fields.Integer(
+        string="Trust TTL (sec)",
+        default=604800,
+        help="How long an IP stays trusted after a successful authentication.",
+    )
+    firewall_expire_short_timeout = fields.Integer(
+        string="Challenge Window (sec)",
+        default=30,
+        help="Time given to a new IP to respond to a SIP 401 challenge.",
+    )
+    firewall_expire_long_timeout = fields.Integer(
+        string="Default-Deny TTL (sec)",
+        default=86400,
+        help="Default-deny duration after a challenge is sent but not answered.",
+    )
+
+    def write(self, vals):
+        # When an admin updates the agent password, propagate it to the
+        # portal user record so XML-RPC login works with the new value.
+        new_password = vals.get("display_freeswitch_agent_password")
+        res = super().write(vals)
+        if new_password:
+            user = self.env.ref(
+                "connect_freeswitch.user_freeswitch_agent",
+                raise_if_not_found=False,
+            )
+            if user:
+                user.sudo().write({"password": new_password})
+        return res
 
     @api.model
     def freeswitch_api(self, command, args=''):

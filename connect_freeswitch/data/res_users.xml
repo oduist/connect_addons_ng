@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="partner_freeswitch_agent" model="res.partner">
+        <field name="name">FreeSWITCH Agent</field>
+    </record>
+
+    <record id="user_freeswitch_agent" model="res.users">
+        <field name="name">FreeSWITCH Agent</field>
+        <field name="login">freeswitch_agent</field>
+        <field name="partner_id" ref="partner_freeswitch_agent"/>
+        <field name="groups_id" eval="[(6, 0, [ref('base.group_portal'), ref('group_freeswitch_agent')])]"/>
+        <field name="share">True</field>
+    </record>
+
+</odoo>
