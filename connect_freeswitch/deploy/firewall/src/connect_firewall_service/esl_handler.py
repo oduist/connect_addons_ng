@@ -30,6 +30,7 @@ from .constants import (
     IPSET_EXPIRE_SHORT,
     addr_is_private,
 )
+from .event_bus import EventBus
 from .odoo_client import OdooClient
 
 logger = logging.getLogger(__name__)
@@ -90,9 +91,11 @@ def _is_success(event: Mapping[str, str]) -> bool:
 
 
 class ESLHandler:
-    def __init__(self, odoo: OdooClient, banned_ttl: int, trust_ttl: int,
+    def __init__(self, odoo: OdooClient, event_bus: EventBus,
+                 banned_ttl: int, trust_ttl: int,
                  expire_short_ttl: int, expire_long_ttl: int):
         self.odoo = odoo
+        self.event_bus = event_bus
         self.banned_ttl = banned_ttl
         self.trust_ttl = trust_ttl
         self.expire_short_ttl = expire_short_ttl
@@ -131,6 +134,10 @@ class ESLHandler:
                  "user_agent": ua, "account_id": account,
                  "details": subclass},
             )
+            self.event_bus.record({
+                "type": "auth_success", "ip": ip,
+                "user_agent": ua, "account_id": account,
+            })
             logger.info("AUTH SUCCESS %s (user=%s)", ip, account)
             return
 
@@ -143,6 +150,10 @@ class ESLHandler:
                 IPSET_EXPIRE_LONG, ip, comment=comment,
                 timeout=self.expire_long_ttl,
             )
+            self.event_bus.record({
+                "type": "challenge", "ip": ip,
+                "user_agent": ua, "account_id": account,
+            })
             logger.debug("CHALLENGE %s (user=%s)", ip, account)
             return
 
@@ -157,6 +168,11 @@ class ESLHandler:
                  "user_agent": ua, "account_id": account,
                  "details": subclass},
             )
+            self.event_bus.record({
+                "type": "auto_ban", "ip": ip,
+                "user_agent": ua, "account_id": account,
+                "ttl": self.banned_ttl,
+            })
             logger.info("AUTO-BAN %s (user=%s, ua=%s)", ip, account, ua)
             return
 

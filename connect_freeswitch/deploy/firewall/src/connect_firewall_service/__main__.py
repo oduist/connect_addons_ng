@@ -36,6 +36,7 @@ from .constants import (
 from . import iptables_manager, ipset_manager
 from .esl import ESLClient
 from .esl_handler import ESLHandler
+from .event_bus import EventBus
 from .http_server import build_app
 from .odoo_client import OdooClient
 from .reconciler import Reconciler
@@ -140,8 +141,10 @@ async def run(settings: ServiceSettings) -> None:
     # First sync is fire-and-forget; the Reconciler loop handles errors.
     reconciler.trigger("all")
 
+    event_bus = EventBus()
     handler = ESLHandler(
         odoo=odoo,
+        event_bus=event_bus,
         banned_ttl=settings.firewall_banned_timeout,
         trust_ttl=settings.firewall_authenticated_timeout,
         expire_short_ttl=settings.firewall_expire_short_timeout,
@@ -149,7 +152,7 @@ async def run(settings: ServiceSettings) -> None:
     )
 
     started_at = time.time()
-    app = build_app(settings, reconciler, odoo, started_at)
+    app = build_app(settings, reconciler, odoo, event_bus, started_at)
 
     tasks = [
         asyncio.create_task(odoo.outbox_worker(), name="outbox"),

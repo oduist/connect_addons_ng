@@ -9,13 +9,17 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import json
 import logging
 import secrets
 import time
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from . import ipset_manager
 from .config import ServiceSettings
@@ -25,10 +29,13 @@ from .constants import (
     IPSET_BLACKLIST,
     IPSET_WHITELIST,
 )
+from .event_bus import EventBus
 from .odoo_client import OdooClient
 from .reconciler import Reconciler
 
 logger = logging.getLogger(__name__)
+
+DASHBOARD_DIR = Path(__file__).resolve().parent.parent.parent / "dashboard"
 
 
 def _check_bearer(request: Request, token: str) -> bool:
@@ -60,9 +67,21 @@ def build_app(
     settings: ServiceSettings,
     reconciler: Reconciler,
     odoo: OdooClient,
+    event_bus: EventBus,
     started_at: float,
 ) -> FastAPI:
     app = FastAPI(title="connect-firewall-service")
+    jinja = Environment(
+        loader=FileSystemLoader(DASHBOARD_DIR / "templates"),
+        autoescape=select_autoescape(["html"]),
+    )
+    static_dir = DASHBOARD_DIR / "static"
+    if static_dir.is_dir():
+        app.mount(
+            "/firewall/static",
+            StaticFiles(directory=str(static_dir)),
+            name="firewall-static",
+        )
 
     @app.middleware("http")
     async def authenticate(request: Request, call_next):
@@ -141,6 +160,48 @@ def build_app(
             "ip": ip,
             "details": "from dashboard",
         })
+        event_bus.record({"type": "unban", "ip": ip})
         return {"removed": bool(ok)}
+
+    @app.get("/firewall/api/attempts-per-minute")
+    async def api_attempts():
+        return event_bus.attempts_per_minute()
+
+    @app.get("/firewall/api/top-ips")
+    async def api_top_ips():
+        return event_bus.top_ips()
+
+    # ------------------------------------------------------------------
+    # Server-Sent Events stream
+    # ------------------------------------------------------------------
+
+    @app.get("/firewall/events")
+    async def sse_events():
+        async def gen():
+            try:
+                async for event in event_bus.subscribe():
+                    et = event.get("type", "message")
+                    payload = json.dumps(event, default=str)
+                    yield "event: {}\ndata: {}\n\n".format(et, payload)
+            except asyncio.CancelledError:
+                return
+        return StreamingResponse(
+            gen(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no",
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # Dashboard shell page
+    # ------------------------------------------------------------------
+
+    @app.get("/firewall/", response_class=HTMLResponse)
+    @app.get("/firewall", response_class=HTMLResponse)
+    async def dashboard_index():
+        tpl = jinja.get_template("index.html")
+        return tpl.render(version=getattr(settings, "version", ""))
 
     return app
