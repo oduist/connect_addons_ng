@@ -9,11 +9,11 @@ for the architecture.
 ```
 docker buildx build --platform linux/amd64,linux/arm64 \
     --provenance=false --sbom=false \
-    -t oduist/connect-firewall:1.0.0 \
-    -t oduist/connect-firewall:latest \
+    -t oduist/freeswitch-firewall:1.0.0 \
+    -t oduist/freeswitch-firewall:latest \
     .
-docker push oduist/connect-firewall:1.0.0
-docker push oduist/connect-firewall:latest
+docker push oduist/freeswitch-firewall:1.0.0
+docker push oduist/freeswitch-firewall:latest
 ```
 
 ## Required environment variables

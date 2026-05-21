@@ -113,7 +113,7 @@ We considered creating a separate `connect_firewall` Odoo module that depends on
 - Brute-force protection becomes a first-class feature of the SIP integration; default-on after configuration (token + dashboard credentials) and admin-controlled.
 - All security events flow into Odoo and are visible alongside calls, recordings, and other telephony artefacts. Compliance/audit story improves.
 - The kernel (`ipset` + `iptables`) is the actual data plane; if the service or Odoo are down, existing bans and trust still apply. The control plane degrades gracefully — auto-ban detection keeps working without Odoo (events queue in memory and flush when Odoo comes back).
-- One new Docker image to maintain (`oduist/connect-firewall`), versioned independently from the Odoo module.
+- One new Docker image to maintain (`oduist/freeswitch-firewall`), versioned independently from the Odoo module.
 - A new portal user (`freeswitch_agent`) becomes the canonical identity for FreeSWITCH-side automation — future provisioning/sync work reuses it instead of inventing more service accounts.
 - The Asterisk-derived 6-table scheme is now duplicated in two codebases (Asterisk agent + FreeSWITCH service). They will diverge over time; that is acceptable because the two are independent products.
 - IPv6, multi-instance, escalation, and a data-driven UA blacklist are explicit non-goals for v1. Each can be added later without re-architecting.
