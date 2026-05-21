@@ -258,8 +258,13 @@ class FirewallAgent(models.Model):
     # ------------------------------------------------------------------
 
     @api.model
-    def fetch_config(self):
-        """Return all firewall_* settings the service needs at boot/sync."""
+    def fetch_config(self, *args, **kwargs):
+        """Return all firewall_* settings the service needs at boot/sync.
+
+        The ``*args`` / ``**kwargs`` swallow whatever XML-RPC clients send
+        — different libraries serialise positional arguments differently
+        (some inject an empty list, some don't), so we stay tolerant.
+        """
         settings = self.env["connect.settings"].sudo()
         keys = [
             "firewall_enabled",
@@ -274,21 +279,21 @@ class FirewallAgent(models.Model):
         return {k: settings.get_param(k) for k in keys}
 
     @api.model
-    def fetch_whitelist(self):
+    def fetch_whitelist(self, *args, **kwargs):
         recs = self.env["connect.firewall.whitelist"].sudo().search(
             [("active", "=", True)]
         )
         return [{"id": r.id, "name": r.name, "ip_or_cidr": r.ip_or_cidr} for r in recs]
 
     @api.model
-    def fetch_blacklist(self):
+    def fetch_blacklist(self, *args, **kwargs):
         recs = self.env["connect.firewall.blacklist"].sudo().search(
             [("active", "=", True)]
         )
         return [{"id": r.id, "name": r.name, "ip_or_cidr": r.ip_or_cidr} for r in recs]
 
     @api.model
-    def report_event(self, payload):
+    def report_event(self, payload=None, *args, **kwargs):
         """Service reports a security event for the audit log."""
         if not isinstance(payload, dict):
             return False
@@ -303,7 +308,8 @@ class FirewallAgent(models.Model):
         return rec.id
 
     @api.model
-    def report_applied(self, ip, action, status="ok", message=None):
+    def report_applied(self, ip=None, action=None, status="ok", message=None,
+                       *args, **kwargs):
         """Service confirms an inbound sync action was applied.
 
         Updates last_sync_at and pushes a popup to admin users.
@@ -334,7 +340,7 @@ class FirewallAgent(models.Model):
         return True
 
     @api.model
-    def report_heartbeat(self, payload):
+    def report_heartbeat(self, payload=None, *args, **kwargs):
         """Periodic heartbeat from the service.
 
         payload: dict with version/esl_connected/bans_count/
