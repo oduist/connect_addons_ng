@@ -111,14 +111,20 @@ class Settings(models.Model):
              "to <url>/firewall/sync. For Docker hosts, use host.docker.internal; "
              "otherwise the LAN IP of the host where the service container runs.",
     )
-    firewall_service_token = fields.Char(groups="connect.group_admin")
+    firewall_service_token = fields.Char(
+        string="Firewall Service Token (stored)",
+        groups="connect.group_admin",
+    )
     display_firewall_service_token = fields.Char(
         string="Firewall Service Token",
         help="Shared secret used by Odoo and the firewall service to "
              "authenticate each other. Set the same value in the AGENT_TOKEN "
              "env var of the service. Visible only to administrators.",
     )
-    freeswitch_agent_password = fields.Char(groups="connect.group_admin")
+    freeswitch_agent_password = fields.Char(
+        string="FreeSWITCH Agent Password (stored)",
+        groups="connect.group_admin",
+    )
     display_freeswitch_agent_password = fields.Char(
         string="FreeSWITCH Agent Password",
         help="Password for the freeswitch_agent portal user. The firewall "
