@@ -18,6 +18,7 @@ import asyncio
 import logging
 from collections import OrderedDict
 from typing import AsyncIterator, Iterable
+from urllib.parse import unquote
 
 logger = logging.getLogger(__name__)
 
@@ -67,13 +68,15 @@ class ESLClient:
             content_type = headers.get("Content-Type", "")
             if content_type == "text/event-plain":
                 # The body itself is a header block — merge it into the
-                # outer dict so callers see one flat mapping.
+                # outer dict so callers see one flat mapping. FreeSWITCH
+                # url-encodes header values in the plain stream, so decode
+                # each value here once.
                 for raw in body.decode("utf-8", "replace").split("\n"):
                     raw = raw.rstrip("\r")
                     if not raw or ":" not in raw:
                         continue
                     k, _, v = raw.partition(":")
-                    headers[k.strip()] = v.strip()
+                    headers[k.strip()] = unquote(v.strip())
             else:
                 headers["_body"] = body.decode("utf-8", "replace")
         return headers

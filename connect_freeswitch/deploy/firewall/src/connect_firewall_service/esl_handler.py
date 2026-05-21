@@ -35,20 +35,23 @@ from .odoo_client import OdooClient
 
 logger = logging.getLogger(__name__)
 
-# Headers we try, in order, to find the remote SIP IP. The asterisk-side
-# agent reads ``RemoteAddress`` (``IPV4/UDP/1.2.3.4/5060``); FreeSWITCH
-# usually exposes the bare IP in one of these.
+# Headers we try, in order, to find the remote SIP IP. Bare IP fields
+# come first (some sofia events expose ``Network-Ip``); after that we
+# fall back to parsing the Contact header where the public IP lives in
+# either ``received=<ip>`` (NAT case) or the URI host.
 _IP_HEADER_CANDIDATES = (
+    # Channel-variable form (lower-case, underscores) — used by
+    # sofia::wrong_call_state and several other CUSTOM events.
+    "network_ip", "remote_ip", "sip_from_host", "sip_contact_host",
+    # Header-style form some sofia builds expose for register events.
     "Network-Ip", "Network-IP", "network-ip",
+    "Remote-IP", "Remote-Ip", "remote-ip",
     "From-Host", "from-host",
-    "Contact-Host", "contact-host",
-    "sip_from_host", "sip_contact_host",
-    "Remote-IP", "Remote-Ip",
 )
 
-# Some FreeSWITCH builds wrap the address in ``IPV4/UDP/1.2.3.4/5060`` —
-# this regex extracts the first IPv4 we can find.
 _IPV4_RE = re.compile(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b")
+_RECEIVED_RE = re.compile(r"received=(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+_SIP_HOST_RE = re.compile(r"sip:[^@>]+@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
 
 
 def _extract_ip(event: Mapping[str, str]) -> Optional[str]:
@@ -59,6 +62,18 @@ def _extract_ip(event: Mapping[str, str]) -> Optional[str]:
         m = _IPV4_RE.search(val)
         if m:
             return m.group(0)
+    # Fall back to the Contact header. NAT'ed clients put the public IP
+    # in ``received=``; non-NAT clients put it straight in the URI.
+    for key in ("contact", "Contact"):
+        val = event.get(key)
+        if not val:
+            continue
+        m = _RECEIVED_RE.search(val)
+        if m:
+            return m.group(1)
+        m = _SIP_HOST_RE.search(val)
+        if m:
+            return m.group(1)
     return None
 
 
@@ -75,19 +90,30 @@ def _extract_account(event: Mapping[str, str]) -> str:
     return (
         event.get("username")
         or event.get("from-user")
+        or event.get("from_user")
         or event.get("From-User")
         or event.get("sip_from_user")
         or ""
     )
 
 
-def _is_success(event: Mapping[str, str]) -> bool:
-    """Best-effort detection of a successful register on register_attempt."""
+def _auth_result(event: Mapping[str, str]) -> Optional[str]:
     for key in ("auth-result", "Auth-Result"):
         v = event.get(key)
-        if v and v.upper() in ("AUTHENTICATED", "OK"):
-            return True
-    return False
+        if v:
+            return v.upper()
+    return None
+
+
+def _is_success(event: Mapping[str, str]) -> bool:
+    """Best-effort detection of a successful register on register_attempt."""
+    r = _auth_result(event)
+    return r in ("AUTHENTICATED", "OK")
+
+
+def _is_auth_failure(event: Mapping[str, str]) -> bool:
+    r = _auth_result(event)
+    return r in ("FORBIDDEN", "DENIED", "INVALID")
 
 
 class ESLHandler:
@@ -128,6 +154,7 @@ class ESLHandler:
                 timeout=self.trust_ttl,
             )
             ipset_manager.del_entry(IPSET_EXPIRE_LONG, ip)
+            ipset_manager.del_entry(IPSET_BANNED, ip)
             self.odoo.enqueue(
                 "report_event",
                 {"event_type": "auth_success", "ip": ip,
@@ -139,6 +166,28 @@ class ESLHandler:
                 "user_agent": ua, "account_id": account,
             })
             logger.info("AUTH SUCCESS %s (user=%s)", ip, account)
+            return
+
+        # register_attempt with auth-result FORBIDDEN/DENIED/INVALID is
+        # the failure path on modern sofia — it does not always emit a
+        # separate register_failure right after, so ban here.
+        if subclass == "sofia::register_attempt" and _is_auth_failure(event):
+            ipset_manager.add_entry(
+                IPSET_BANNED, ip, comment=comment, timeout=self.banned_ttl,
+            )
+            ipset_manager.del_entry(IPSET_EXPIRE_LONG, ip)
+            self.odoo.enqueue(
+                "report_event",
+                {"event_type": "auto_ban", "ip": ip,
+                 "user_agent": ua, "account_id": account,
+                 "details": "{} ({})".format(subclass, _auth_result(event) or "?")},
+            )
+            self.event_bus.record({
+                "type": "auto_ban", "ip": ip,
+                "user_agent": ua, "account_id": account,
+                "ttl": self.banned_ttl,
+            })
+            logger.info("AUTO-BAN %s (user=%s, ua=%s, attempt FORBIDDEN)", ip, account, ua)
             return
 
         if subclass in ("sofia::register_attempt", "sofia::pre_register"):
@@ -157,7 +206,9 @@ class ESLHandler:
             logger.debug("CHALLENGE %s (user=%s)", ip, account)
             return
 
-        if subclass == "sofia::register_failure":
+        if subclass in ("sofia::register_failure", "sofia::wrong_call_state"):
+            # wrong_call_state fires on INVITE without an established
+            # session — that's toll-fraud territory, ban immediately.
             ipset_manager.add_entry(
                 IPSET_BANNED, ip, comment=comment, timeout=self.banned_ttl,
             )
@@ -173,7 +224,7 @@ class ESLHandler:
                 "user_agent": ua, "account_id": account,
                 "ttl": self.banned_ttl,
             })
-            logger.info("AUTO-BAN %s (user=%s, ua=%s)", ip, account, ua)
+            logger.info("AUTO-BAN %s (user=%s, ua=%s, %s)", ip, account, ua, subclass)
             return
 
         # Other sofia::* events we don't act on (expire, gateway etc.).

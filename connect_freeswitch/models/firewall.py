@@ -294,10 +294,19 @@ class FirewallAgent(models.Model):
 
     @api.model
     def report_event(self, payload=None, *args, **kwargs):
-        """Service reports a security event for the audit log."""
+        """Service reports a security event for the audit log.
+
+        Some XML-RPC clients (aio_odoorpc) drop an extra positional in
+        front of our payload, so we accept the dict from either the
+        first positional or the first item in ``args``.
+        """
+        if not isinstance(payload, dict):
+            for candidate in args:
+                if isinstance(candidate, dict):
+                    payload = candidate
+                    break
         if not isinstance(payload, dict):
             return False
-        # Whitelist allowed keys to be safe.
         keys = {"event_type", "ip", "user_agent", "account_id", "service", "details", "ts"}
         clean = {k: v for k, v in payload.items() if k in keys and v is not None}
         if "event_type" not in clean:
@@ -346,6 +355,11 @@ class FirewallAgent(models.Model):
         payload: dict with version/esl_connected/bans_count/
         authenticated_count/uptime_seconds (any subset).
         """
+        if not isinstance(payload, dict):
+            for candidate in args:
+                if isinstance(candidate, dict):
+                    payload = candidate
+                    break
         singleton = self.sudo()._get_singleton()
         vals = {"last_seen": fields.Datetime.now()}
         if isinstance(payload, dict):

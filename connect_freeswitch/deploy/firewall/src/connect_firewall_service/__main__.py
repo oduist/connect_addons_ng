@@ -43,9 +43,19 @@ from .reconciler import Reconciler
 
 logger = logging.getLogger("connect_firewall_service")
 
-# Subscribing to CUSTOM gets us the sofia::* events we care about; the
-# subclass filter in ESLHandler still narrows the actual processing.
-ESL_SUBSCRIPTIONS = ("CUSTOM",)
+# ESL needs the CUSTOM event-class first, then the specific subclasses
+# we care about. Listing them explicitly keeps the bus quiet and avoids
+# missing events that some sofia builds do not deliver under a bare
+# ``events plain CUSTOM`` subscription.
+ESL_SUBSCRIPTIONS = (
+    "CUSTOM",
+    "sofia::pre_register",
+    "sofia::register_attempt",
+    "sofia::register",
+    "sofia::register_failure",
+    "sofia::expire",
+    "sofia::wrong_call_state",
+)
 
 
 def setup_logging(level: str) -> None:
@@ -53,6 +63,9 @@ def setup_logging(level: str) -> None:
         level=getattr(logging, level.upper(), logging.INFO),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    # Quiet down very noisy libraries even at DEBUG level.
+    for name in ("httpcore", "httpcore.http11", "httpcore.connection", "httpx"):
+        logging.getLogger(name).setLevel(logging.INFO)
 
 
 def install_firewall_baseline(settings: ServiceSettings) -> None:
@@ -83,6 +96,16 @@ async def esl_loop(settings: ServiceSettings, handler: ESLHandler) -> None:
         subscriptions=ESL_SUBSCRIPTIONS,
     )
     async for event in client.events():
+        # Trace at DEBUG so a quick log peek shows exactly which subclass
+        # arrived; spec is "Event-Name / Event-Subclass: from-user".
+        logger.debug(
+            "ESL recv: %s / %s (from=%s, contact=%s, auth-result=%s)",
+            event.get("Event-Name"),
+            event.get("Event-Subclass"),
+            event.get("from-user") or event.get("username"),
+            event.get("contact"),
+            event.get("auth-result"),
+        )
         try:
             handler.handle(event)
         except Exception:
