@@ -5,8 +5,8 @@ from datetime import timedelta
 
 import requests
 
-from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -147,8 +147,8 @@ class FirewallEvent(models.Model):
     ]
 
     event_type = fields.Selection(EVENT_TYPES, required=True, index=True)
-    ip = fields.Char(index=True)
-    user_agent = fields.Char()
+    ip = fields.Char(string="IP", index=True)
+    user_agent = fields.Char(string="User Agent")
     account_id = fields.Char(
         string="Account/Extension",
         help="SIP username from the failed REGISTER/INVITE, if known.",
@@ -156,11 +156,56 @@ class FirewallEvent(models.Model):
     service = fields.Char(help="udp/tcp/ws if known.")
     details = fields.Text()
     ts = fields.Datetime(
+        string="TS",
         required=True,
         default=fields.Datetime.now,
         index=True,
         help="Timestamp from the service (not Odoo create_date).",
     )
+    is_banned = fields.Boolean(
+        string="Banned",
+        compute="_compute_is_banned",
+        help="True if this event's IP is currently in the auto-ban set on "
+             "the service. Used to enable the Unban button.",
+    )
+
+    def _compute_is_banned(self):
+        """Best-effort check whether the IP is still in the live banned set.
+
+        We don't track expiry here — we ask the live ipset via the service's
+        public API. If the service is unreachable we fall back to showing
+        the button for any auto_ban event so the operator can still try.
+        """
+        # Cheap path: only resolve service URL once per recordset.
+        agent = self.env["connect.firewall.agent"].sudo()
+        banned_ips = agent._fetch_live_banned_ips()
+        for rec in self:
+            if rec.event_type == "auto_ban" and rec.ip:
+                rec.is_banned = (
+                    rec.ip in banned_ips if banned_ips is not None else True
+                )
+            else:
+                rec.is_banned = False
+
+    def action_unban_ip(self):
+        """Tell the firewall service to remove this IP from the banned set."""
+        self.ensure_one()
+        if not self.ip:
+            raise UserError(_("Event has no IP to unban."))
+        agent = self.env["connect.firewall.agent"].sudo()
+        ok, message = agent._call_service_unban(self.ip)
+        if ok:
+            return {
+                "type": "ir.actions.client",
+                "tag": "display_notification",
+                "params": {
+                    "type": "success",
+                    "title": _("Firewall"),
+                    "message": _("Unbanned %s") % self.ip,
+                    "sticky": False,
+                },
+            }
+        raise UserError(_("Unban failed: %s") % message)
 
     @api.model
     def _cron_cleanup(self):
@@ -267,6 +312,62 @@ class FirewallAgent(models.Model):
     def _cron_reconcile(self):
         """Periodic safety net: tell the service to re-pull everything."""
         self._trigger_sync("all")
+
+    @api.model
+    def _service_endpoint(self, path: str) -> tuple[str, str] | tuple[None, None]:
+        """Return (url, token) for a path on the firewall service, or
+        (None, None) if firewall is disabled / not configured."""
+        settings = self.env["connect.settings"].sudo()
+        if not settings.get_param("firewall_enabled"):
+            return None, None
+        base = settings.get_param("firewall_service_url")
+        token = settings.get_param("firewall_service_token")
+        if not base or not token:
+            return None, None
+        return base.rstrip("/") + path, token
+
+    @api.model
+    def _call_service_unban(self, ip: str) -> tuple[bool, str]:
+        """DELETE /firewall/api/bans/<ip> on the service."""
+        url, token = self._service_endpoint("/firewall/api/bans/" + ip)
+        if not url:
+            return False, _("Firewall service is not configured.")
+        try:
+            res = requests.delete(
+                url,
+                headers={"Authorization": "Bearer " + token},
+                timeout=SYNC_HTTP_TIMEOUT,
+            )
+            if res.status_code == 200:
+                self.env["connect.firewall.event"].sudo().create({
+                    "event_type": "manual_unban_applied",
+                    "ip": ip,
+                    "details": "from event view",
+                })
+                return True, ""
+            return False, "HTTP {}: {}".format(res.status_code, res.text[:200])
+        except Exception as exc:
+            return False, str(exc)
+
+    @api.model
+    def _fetch_live_banned_ips(self) -> set | None:
+        """GET /firewall/api/bans on the service, return a set of IPs.
+        Returns None when the service can't be reached, so callers can
+        fall back to showing UI controls anyway."""
+        url, token = self._service_endpoint("/firewall/api/bans")
+        if not url:
+            return None
+        try:
+            res = requests.get(
+                url,
+                headers={"Authorization": "Bearer " + token},
+                timeout=SYNC_HTTP_TIMEOUT,
+            )
+            if res.status_code != 200:
+                return None
+            return {row["entry"] for row in res.json() if "entry" in row}
+        except Exception:
+            return None
 
     # ------------------------------------------------------------------
     # Inbound XML-RPC: called by the firewall service over the portal user

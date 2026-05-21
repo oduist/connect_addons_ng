@@ -109,7 +109,44 @@
                 <field name="user_agent" optional="hide"/>
                 <field name="service" optional="hide"/>
                 <field name="details" optional="hide"/>
+                <field name="is_banned" column_invisible="1"/>
+                <button name="action_unban_ip" type="object"
+                        string="Unban" icon="fa-unlock"
+                        invisible="not is_banned"/>
             </list>
+        </field>
+    </record>
+
+    <record id="view_firewall_event_form" model="ir.ui.view">
+        <field name="name">connect.firewall.event.form</field>
+        <field name="model">connect.firewall.event</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false" delete="false">
+                <header>
+                    <button name="action_unban_ip" type="object"
+                            string="Unban" icon="fa-unlock"
+                            class="btn-primary"
+                            invisible="not is_banned"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="ts"/>
+                            <field name="event_type"/>
+                            <field name="ip"/>
+                            <field name="account_id"/>
+                        </group>
+                        <group>
+                            <field name="user_agent"/>
+                            <field name="service"/>
+                            <field name="is_banned" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Details">
+                        <field name="details" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
         </field>
     </record>
 
