@@ -127,6 +127,37 @@ class ESLHandler:
         self.expire_short_ttl = expire_short_ttl
         self.expire_long_ttl = expire_long_ttl
 
+    def _auto_ban(self, ip: str, account: str, ua: str, comment: str,
+                  details: str) -> None:
+        """Add an IP to the banned ipset and report it once.
+
+        Sofia often emits two events for the same failed registration
+        (register_attempt with FORBIDDEN immediately followed by
+        register_failure). The ipset move itself is idempotent thanks
+        to ``-exist``; we use ``is_member`` to keep Odoo's audit log
+        and the dashboard's event stream from showing duplicates.
+        """
+        already = ipset_manager.is_member(IPSET_BANNED, ip)
+        ipset_manager.add_entry(
+            IPSET_BANNED, ip, comment=comment, timeout=self.banned_ttl,
+        )
+        ipset_manager.del_entry(IPSET_EXPIRE_LONG, ip)
+        if already:
+            logger.debug("AUTO-BAN duplicate %s (%s) suppressed", ip, details)
+            return
+        self.odoo.enqueue(
+            "report_event",
+            {"event_type": "auto_ban", "ip": ip,
+             "user_agent": ua, "account_id": account,
+             "details": details},
+        )
+        self.event_bus.record({
+            "type": "auto_ban", "ip": ip,
+            "user_agent": ua, "account_id": account,
+            "ttl": self.banned_ttl,
+        })
+        logger.info("AUTO-BAN %s (user=%s, ua=%s, %s)", ip, account, ua, details)
+
     def handle(self, event: Mapping[str, str]) -> None:
         subclass = (
             event.get("Event-Subclass")
@@ -172,22 +203,10 @@ class ESLHandler:
         # the failure path on modern sofia — it does not always emit a
         # separate register_failure right after, so ban here.
         if subclass == "sofia::register_attempt" and _is_auth_failure(event):
-            ipset_manager.add_entry(
-                IPSET_BANNED, ip, comment=comment, timeout=self.banned_ttl,
+            self._auto_ban(
+                ip, account, ua, comment,
+                "{} ({})".format(subclass, _auth_result(event) or "?"),
             )
-            ipset_manager.del_entry(IPSET_EXPIRE_LONG, ip)
-            self.odoo.enqueue(
-                "report_event",
-                {"event_type": "auto_ban", "ip": ip,
-                 "user_agent": ua, "account_id": account,
-                 "details": "{} ({})".format(subclass, _auth_result(event) or "?")},
-            )
-            self.event_bus.record({
-                "type": "auto_ban", "ip": ip,
-                "user_agent": ua, "account_id": account,
-                "ttl": self.banned_ttl,
-            })
-            logger.info("AUTO-BAN %s (user=%s, ua=%s, attempt FORBIDDEN)", ip, account, ua)
             return
 
         if subclass in ("sofia::register_attempt", "sofia::pre_register"):
@@ -209,22 +228,7 @@ class ESLHandler:
         if subclass in ("sofia::register_failure", "sofia::wrong_call_state"):
             # wrong_call_state fires on INVITE without an established
             # session — that's toll-fraud territory, ban immediately.
-            ipset_manager.add_entry(
-                IPSET_BANNED, ip, comment=comment, timeout=self.banned_ttl,
-            )
-            ipset_manager.del_entry(IPSET_EXPIRE_LONG, ip)
-            self.odoo.enqueue(
-                "report_event",
-                {"event_type": "auto_ban", "ip": ip,
-                 "user_agent": ua, "account_id": account,
-                 "details": subclass},
-            )
-            self.event_bus.record({
-                "type": "auto_ban", "ip": ip,
-                "user_agent": ua, "account_id": account,
-                "ttl": self.banned_ttl,
-            })
-            logger.info("AUTO-BAN %s (user=%s, ua=%s, %s)", ip, account, ua, subclass)
+            self._auto_ban(ip, account, ua, comment, subclass)
             return
 
         # Other sofia::* events we don't act on (expire, gateway etc.).

@@ -111,18 +111,46 @@ def list_entries(name: str) -> list[dict]:
     return out
 
 
-def replace_contents(name: str, desired_entries: Iterable[str]) -> tuple[int, int]:
+def replace_contents(
+    name: str,
+    desired_entries: Iterable,
+) -> tuple[int, int]:
     """Bring the ipset to exactly the desired set of entries.
 
-    Returns (added, removed). Timeouts/comments on existing entries are
-    untouched — only the set membership is reconciled.
+    Accepts either a flat iterable of IP/CIDR strings or an iterable of
+    ``(entry, comment)`` tuples. Returns ``(added, removed)``.
+
+    When comments are supplied we always re-apply them (an ipset add with
+    ``-exist`` updates the comment for entries that already exist).
     """
+    pairs: list[tuple[str, str]] = []
+    for item in desired_entries:
+        if isinstance(item, (tuple, list)):
+            entry = item[0]
+            comment = item[1] if len(item) > 1 else ""
+        else:
+            entry, comment = item, ""
+        pairs.append((str(entry), str(comment or "")))
+    desired_map = dict(pairs)
     current = {e["entry"] for e in list_entries(name)}
-    desired = set(desired_entries)
-    to_add = desired - current
-    to_del = current - desired
+    desired_set = set(desired_map.keys())
+    to_add = desired_set - current
+    to_del = current - desired_set
     for entry in to_add:
-        add_entry(name, entry)
+        add_entry(name, entry, comment=desired_map.get(entry) or None)
+    for entry in desired_set & current:
+        # Refresh comment for entries that survived — name/note in Odoo
+        # may have changed.
+        c = desired_map.get(entry)
+        if c:
+            add_entry(name, entry, comment=c)
     for entry in to_del:
         del_entry(name, entry)
     return len(to_add), len(to_del)
+
+
+def is_member(name: str, entry: str) -> bool:
+    """True if ``entry`` is currently in the ipset."""
+    res = _run(["ipset", "test", name, entry])
+    # ipset test returns 0 if in set, 1 otherwise; suppress stderr noise.
+    return res.returncode == 0

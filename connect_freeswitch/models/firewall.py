@@ -298,14 +298,22 @@ class FirewallAgent(models.Model):
         recs = self.env["connect.firewall.whitelist"].sudo().search(
             [("active", "=", True)]
         )
-        return [{"id": r.id, "name": r.name, "ip_or_cidr": r.ip_or_cidr} for r in recs]
+        return [
+            {"id": r.id, "name": r.name, "ip_or_cidr": r.ip_or_cidr,
+             "note": r.note or ""}
+            for r in recs
+        ]
 
     @api.model
     def fetch_blacklist(self, *args, **kwargs):
         recs = self.env["connect.firewall.blacklist"].sudo().search(
             [("active", "=", True)]
         )
-        return [{"id": r.id, "name": r.name, "ip_or_cidr": r.ip_or_cidr} for r in recs]
+        return [
+            {"id": r.id, "name": r.name, "ip_or_cidr": r.ip_or_cidr,
+             "note": r.note or ""}
+            for r in recs
+        ]
 
     @api.model
     def report_event(self, payload=None, *args, **kwargs):

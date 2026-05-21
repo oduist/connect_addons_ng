@@ -29,6 +29,19 @@ DEBOUNCE_SECONDS = 1.0
 RECONCILE_INTERVAL = 300.0  # 5 minutes safety net
 
 
+def _format_comment(record: dict) -> str:
+    """Build the ipset comment shown in the dashboard from a whitelist /
+    blacklist record fetched from Odoo (uses ``name`` plus optional
+    ``note``)."""
+    parts = [str(record.get("name") or "").strip()]
+    note = str(record.get("note") or "").strip()
+    if note:
+        parts.append(note)
+    # ipset comments cap at 255 chars; ipset rejects newlines.
+    text = " — ".join(p for p in parts if p)
+    return text.replace("\n", " ")[:255]
+
+
 class Reconciler:
     def __init__(self, settings: ServiceSettings, odoo: OdooClient):
         self.settings = settings
@@ -75,13 +88,15 @@ class Reconciler:
         if scope in ("all", "whitelist"):
             wl = await self.odoo.call("fetch_whitelist") or []
             added, removed = ipset_manager.replace_contents(
-                IPSET_WHITELIST, (r["ip_or_cidr"] for r in wl),
+                IPSET_WHITELIST,
+                ((r["ip_or_cidr"], _format_comment(r)) for r in wl),
             )
             logger.info("whitelist sync: +%s -%s", added, removed)
         if scope in ("all", "blacklist"):
             bl = await self.odoo.call("fetch_blacklist") or []
             added, removed = ipset_manager.replace_contents(
-                IPSET_BLACKLIST, (r["ip_or_cidr"] for r in bl),
+                IPSET_BLACKLIST,
+                ((r["ip_or_cidr"], _format_comment(r)) for r in bl),
             )
             logger.info("blacklist sync: +%s -%s", added, removed)
 
