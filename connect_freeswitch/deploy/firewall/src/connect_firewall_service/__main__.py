@@ -127,7 +127,17 @@ async def run(settings: ServiceSettings) -> None:
         settings.firewall_enabled,
     )
 
-    install_firewall_baseline(settings)
+    # We always install the kernel baseline so the ESL handler can move
+    # IPs around even before the operator flips firewall_enabled in
+    # Odoo. The chain just isn't useful until they do — until then the
+    # default-ACCEPT terminator at the bottom keeps traffic flowing.
+    try:
+        install_firewall_baseline(settings)
+    except Exception:
+        logger.exception(
+            "install_firewall_baseline failed — check that the container "
+            "runs with --cap-add=NET_ADMIN and ipset/iptables are available"
+        )
 
     odoo = OdooClient(
         url=settings.odoo_url, db=settings.odoo_db,
