@@ -13,6 +13,21 @@ logger = logging.getLogger(__name__)
 SYNC_HTTP_TIMEOUT = 3  # seconds; reconcile cron is the safety net for misses
 
 
+def _first_dict(*values):
+    """Recursively find the first dict in ``values`` (lists / tuples
+    flattened on the fly). XML-RPC clients sometimes wrap our payload
+    in an extra layer of positional args; this helper hides that
+    detail from the handlers."""
+    stack = list(values)
+    while stack:
+        item = stack.pop(0)
+        if isinstance(item, dict):
+            return item
+        if isinstance(item, (list, tuple)):
+            stack[:0] = list(item)
+    return None
+
+
 def _validate_ip_or_cidr(value):
     if not value:
         raise ValidationError("IP address or CIDR is required.")
@@ -296,15 +311,13 @@ class FirewallAgent(models.Model):
     def report_event(self, payload=None, *args, **kwargs):
         """Service reports a security event for the audit log.
 
-        Some XML-RPC clients (aio_odoorpc) drop an extra positional in
-        front of our payload, so we accept the dict from either the
-        first positional or the first item in ``args``.
+        Different XML-RPC clients serialise positional arguments in
+        sometimes surprising ways (aio_odoorpc has been observed
+        wrapping the payload in an extra list, others drop an empty
+        positional in front of it). We flatten everything and pick the
+        first dict we can find.
         """
-        if not isinstance(payload, dict):
-            for candidate in args:
-                if isinstance(candidate, dict):
-                    payload = candidate
-                    break
+        payload = _first_dict(payload, *args)
         if not isinstance(payload, dict):
             return False
         keys = {"event_type", "ip", "user_agent", "account_id", "service", "details", "ts"}
@@ -355,11 +368,7 @@ class FirewallAgent(models.Model):
         payload: dict with version/esl_connected/bans_count/
         authenticated_count/uptime_seconds (any subset).
         """
-        if not isinstance(payload, dict):
-            for candidate in args:
-                if isinstance(candidate, dict):
-                    payload = candidate
-                    break
+        payload = _first_dict(payload, *args)
         singleton = self.sudo()._get_singleton()
         vals = {"last_seen": fields.Datetime.now()}
         if isinstance(payload, dict):
