@@ -96,7 +96,10 @@ class Reconciler:
                 await asyncio.sleep(DEBOUNCE_SECONDS)
                 # If more triggers arrived during the debounce, fold them in.
                 if self._event.is_set():
-                    if self._pending_scope == "all" or scope == "all":
+                    # Any mix of scopes upgrades to "all" — it's cheap and
+                    # avoids the bug where two different scopes inside the
+                    # debounce window would silently keep only the first.
+                    if scope != self._pending_scope:
                         scope = "all"
                     self._event.clear()
             except asyncio.TimeoutError:

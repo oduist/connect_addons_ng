@@ -11,6 +11,7 @@ import asyncio
 import base64
 import json
 import logging
+import os
 import secrets
 import time
 from pathlib import Path
@@ -35,7 +36,10 @@ from .reconciler import Reconciler
 
 logger = logging.getLogger(__name__)
 
-DASHBOARD_DIR = Path(__file__).resolve().parent.parent.parent / "dashboard"
+# Where the dashboard's HTML/CSS/JS lives at runtime. Defaults to the
+# /app/dashboard layout shipped by Dockerfile; override with the
+# DASHBOARD_DIR env var for local development.
+DASHBOARD_DIR = Path(os.environ.get("DASHBOARD_DIR", "/app/dashboard"))
 
 
 def _check_bearer(request: Request, token: str) -> bool:

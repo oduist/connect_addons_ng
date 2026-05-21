@@ -164,6 +164,13 @@ async def run(settings: ServiceSettings) -> None:
     started_at = time.time()
     app = build_app(settings, reconciler, odoo, event_bus, started_at)
 
+    def _log_task_exception(task: asyncio.Task) -> None:
+        if task.cancelled():
+            return
+        exc = task.exception()
+        if exc is not None:
+            logger.error("Task %s crashed: %s", task.get_name(), exc, exc_info=exc)
+
     tasks = [
         asyncio.create_task(odoo.outbox_worker(), name="outbox"),
         asyncio.create_task(esl_loop(settings, handler), name="esl"),
@@ -171,6 +178,8 @@ async def run(settings: ServiceSettings) -> None:
         asyncio.create_task(reconciler.run(), name="reconciler"),
         asyncio.create_task(http_loop(settings, app), name="http"),
     ]
+    for t in tasks:
+        t.add_done_callback(_log_task_exception)
 
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
