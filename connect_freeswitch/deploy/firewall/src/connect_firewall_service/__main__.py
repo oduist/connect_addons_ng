@@ -4,9 +4,9 @@ Bootstraps:
   * the kernel-level firewall baseline (ipsets + iptables chain);
   * the ESL listener that translates SIP REGISTER events into ipset moves;
   * the Odoo XML-RPC client + outbox worker for event reporting;
+  * the Reconciler (initial + on-demand + periodic state pulls from Odoo);
+  * the HTTP server (Bearer for Odoo, basic-auth for the dashboard);
   * a heartbeat loop that pings Odoo on a configurable interval.
-
-HTTP API and dashboard land in the next commit.
 """
 from __future__ import annotations
 
@@ -17,14 +17,13 @@ import time
 from contextlib import suppress
 
 import click
+import uvicorn
 
 from . import __version__
 from .config import (
     ServiceSettings,
     apply_cache_to_settings,
     load_runtime_cache,
-    runtime_cache_keys,
-    save_runtime_cache,
 )
 from .constants import (
     IPSET_AUTHENTICATED,
@@ -37,19 +36,15 @@ from .constants import (
 from . import iptables_manager, ipset_manager
 from .esl import ESLClient
 from .esl_handler import ESLHandler
+from .http_server import build_app
 from .odoo_client import OdooClient
+from .reconciler import Reconciler
 
 logger = logging.getLogger("connect_firewall_service")
 
-# Event subclasses we actively subscribe to. Other sofia events still
-# arrive via the catch-all but we only care about these for firewall.
-ESL_SUBSCRIPTIONS = (
-    "CUSTOM",
-    "sofia::register",
-    "sofia::register_attempt",
-    "sofia::register_failure",
-    "sofia::pre_register",
-)
+# Subscribing to CUSTOM gets us the sofia::* events we care about; the
+# subclass filter in ESLHandler still narrows the actual processing.
+ESL_SUBSCRIPTIONS = ("CUSTOM",)
 
 
 def setup_logging(level: str) -> None:
@@ -77,42 +72,6 @@ def install_firewall_baseline(settings: ServiceSettings) -> None:
     iptables_manager.apply_baseline(
         settings.firewall_tcp_ports, settings.firewall_udp_ports,
     )
-
-
-async def initial_sync_from_odoo(settings: ServiceSettings, odoo: OdooClient) -> None:
-    """Fetch latest config + whitelist/blacklist from Odoo and apply."""
-    try:
-        cfg = await odoo.call("fetch_config")
-        for key in runtime_cache_keys():
-            if key in cfg and cfg[key] is not None:
-                value = cfg[key]
-                if isinstance(getattr(settings, key, None), bool):
-                    setattr(settings, key, bool(value))
-                elif isinstance(getattr(settings, key, None), int):
-                    try:
-                        setattr(settings, key, int(value))
-                    except (TypeError, ValueError):
-                        pass
-                else:
-                    setattr(settings, key, value)
-        save_runtime_cache(
-            settings.config_cache_path,
-            {k: getattr(settings, k) for k in runtime_cache_keys()},
-        )
-        wl = await odoo.call("fetch_whitelist") or []
-        bl = await odoo.call("fetch_blacklist") or []
-        added_w, removed_w = ipset_manager.replace_contents(
-            IPSET_WHITELIST, (r["ip_or_cidr"] for r in wl),
-        )
-        added_b, removed_b = ipset_manager.replace_contents(
-            IPSET_BLACKLIST, (r["ip_or_cidr"] for r in bl),
-        )
-        logger.info(
-            "Initial sync done: whitelist +%s -%s, blacklist +%s -%s",
-            added_w, removed_w, added_b, removed_b,
-        )
-    except Exception:
-        logger.exception("Initial sync from Odoo failed (will rely on cache)")
 
 
 async def esl_loop(settings: ServiceSettings, handler: ESLHandler) -> None:
@@ -147,6 +106,18 @@ async def heartbeat_loop(settings: ServiceSettings, odoo: OdooClient,
         await asyncio.sleep(max(15, settings.firewall_heartbeat_interval))
 
 
+async def http_loop(settings: ServiceSettings, app) -> None:
+    config = uvicorn.Config(
+        app,
+        host=settings.http_bind_host,
+        port=settings.http_bind_port,
+        log_level=settings.log_level.lower(),
+        access_log=False,
+    )
+    server = uvicorn.Server(config)
+    await server.serve()
+
+
 async def run(settings: ServiceSettings) -> None:
     logger.info(
         "connect-firewall-service %s starting (Odoo=%s, ESL=%s:%s, enabled=%s)",
@@ -164,7 +135,10 @@ async def run(settings: ServiceSettings) -> None:
     # Try to connect once at boot — the outbox/heartbeat tasks will
     # reconnect transparently if this fails.
     await odoo.connect()
-    await initial_sync_from_odoo(settings, odoo)
+
+    reconciler = Reconciler(settings=settings, odoo=odoo)
+    # First sync is fire-and-forget; the Reconciler loop handles errors.
+    reconciler.trigger("all")
 
     handler = ESLHandler(
         odoo=odoo,
@@ -175,10 +149,14 @@ async def run(settings: ServiceSettings) -> None:
     )
 
     started_at = time.time()
+    app = build_app(settings, reconciler, odoo, started_at)
+
     tasks = [
         asyncio.create_task(odoo.outbox_worker(), name="outbox"),
         asyncio.create_task(esl_loop(settings, handler), name="esl"),
         asyncio.create_task(heartbeat_loop(settings, odoo, started_at), name="heartbeat"),
+        asyncio.create_task(reconciler.run(), name="reconciler"),
+        asyncio.create_task(http_loop(settings, app), name="http"),
     ]
 
     stop = asyncio.Event()
