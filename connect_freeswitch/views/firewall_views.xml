@@ -128,12 +128,11 @@
                         domain="[('event_type', '=', 'auth_success')]"/>
                 <filter string="Service Errors" name="service_error"
                         domain="[('event_type', '=', 'service_error')]"/>
-                <group expand="0" string="Group By">
-                    <filter string="Event Type" name="group_event_type"
-                            context="{'group_by': 'event_type'}"/>
-                    <filter string="IP" name="group_ip"
-                            context="{'group_by': 'ip'}"/>
-                </group>
+                <separator/>
+                <filter string="Group by Event Type" name="group_event_type"
+                        context="{'group_by': 'event_type'}"/>
+                <filter string="Group by IP" name="group_ip"
+                        context="{'group_by': 'ip'}"/>
             </search>
         </field>
     </record>
