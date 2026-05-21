@@ -3,10 +3,14 @@ import ipaddress
 import logging
 from datetime import timedelta
 
+import requests
+
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
+
+SYNC_HTTP_TIMEOUT = 3  # seconds; reconcile cron is the safety net for misses
 
 
 def _validate_ip_or_cidr(value):
@@ -47,6 +51,22 @@ class FirewallWhitelist(models.Model):
                     "{} is already in the whitelist.".format(rec.ip_or_cidr)
                 )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        self.env["connect.firewall.agent"]._trigger_sync("whitelist")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self.env["connect.firewall.agent"]._trigger_sync("whitelist")
+        return res
+
+    def unlink(self):
+        res = super().unlink()
+        self.env["connect.firewall.agent"]._trigger_sync("whitelist")
+        return res
+
 
 class FirewallBlacklist(models.Model):
     _name = "connect.firewall.blacklist"
@@ -74,6 +94,22 @@ class FirewallBlacklist(models.Model):
                 raise ValidationError(
                     "{} is already in the blacklist.".format(rec.ip_or_cidr)
                 )
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        recs = super().create(vals_list)
+        self.env["connect.firewall.agent"]._trigger_sync("blacklist")
+        return recs
+
+    def write(self, vals):
+        res = super().write(vals)
+        self.env["connect.firewall.agent"]._trigger_sync("blacklist")
+        return res
+
+    def unlink(self):
+        res = super().unlink()
+        self.env["connect.firewall.agent"]._trigger_sync("blacklist")
+        return res
 
 
 class FirewallEvent(models.Model):
@@ -175,3 +211,146 @@ class FirewallAgent(models.Model):
         if not rec:
             rec = self.create({"name": "FreeSWITCH Firewall Agent"})
         return rec
+
+    # ------------------------------------------------------------------
+    # Outbound: notify the firewall service that state changed
+    # ------------------------------------------------------------------
+
+    @api.model
+    def _trigger_sync(self, scope="all"):
+        """Schedule a sync notification to the service after the commit.
+
+        Multiple writes inside one transaction collapse into a single HTTP
+        POST: postcommit callbacks dedupe by (function, args).
+        """
+        settings = self.env["connect.settings"].sudo()
+        if not settings.get_param("firewall_enabled"):
+            return
+        url = settings.get_param("firewall_service_url")
+        token = settings.get_param("firewall_service_token")
+        if not url or not token:
+            return
+        sync_url = url.rstrip("/") + "/firewall/sync"
+
+        def _send():
+            try:
+                requests.post(
+                    sync_url,
+                    json={"scope": scope},
+                    headers={"Authorization": "Bearer " + token},
+                    timeout=SYNC_HTTP_TIMEOUT,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Firewall sync notification to %s failed (%s); reconcile cron will retry.",
+                    sync_url, exc,
+                )
+
+        self.env.cr.postcommit.add(_send)
+
+    @api.model
+    def _cron_reconcile(self):
+        """Periodic safety net: tell the service to re-pull everything."""
+        self._trigger_sync("all")
+
+    # ------------------------------------------------------------------
+    # Inbound XML-RPC: called by the firewall service over the portal user
+    # ------------------------------------------------------------------
+
+    @api.model
+    def fetch_config(self):
+        """Return all firewall_* settings the service needs at boot/sync."""
+        settings = self.env["connect.settings"].sudo()
+        keys = [
+            "firewall_enabled",
+            "firewall_heartbeat_interval",
+            "firewall_tcp_ports",
+            "firewall_udp_ports",
+            "firewall_banned_timeout",
+            "firewall_authenticated_timeout",
+            "firewall_expire_short_timeout",
+            "firewall_expire_long_timeout",
+        ]
+        return {k: settings.get_param(k) for k in keys}
+
+    @api.model
+    def fetch_whitelist(self):
+        recs = self.env["connect.firewall.whitelist"].sudo().search(
+            [("active", "=", True)]
+        )
+        return [{"id": r.id, "name": r.name, "ip_or_cidr": r.ip_or_cidr} for r in recs]
+
+    @api.model
+    def fetch_blacklist(self):
+        recs = self.env["connect.firewall.blacklist"].sudo().search(
+            [("active", "=", True)]
+        )
+        return [{"id": r.id, "name": r.name, "ip_or_cidr": r.ip_or_cidr} for r in recs]
+
+    @api.model
+    def report_event(self, payload):
+        """Service reports a security event for the audit log."""
+        if not isinstance(payload, dict):
+            return False
+        # Whitelist allowed keys to be safe.
+        keys = {"event_type", "ip", "user_agent", "account_id", "service", "details", "ts"}
+        clean = {k: v for k, v in payload.items() if k in keys and v is not None}
+        if "event_type" not in clean:
+            return False
+        if "ts" not in clean:
+            clean["ts"] = fields.Datetime.now()
+        rec = self.env["connect.firewall.event"].sudo().create(clean)
+        return rec.id
+
+    @api.model
+    def report_applied(self, ip, action, status="ok", message=None):
+        """Service confirms an inbound sync action was applied.
+
+        Updates last_sync_at and pushes a popup to admin users.
+        """
+        singleton = self.sudo()._get_singleton()
+        singleton.write({"last_sync_at": fields.Datetime.now()})
+        notif_type = "success" if status == "ok" else "warning"
+        body = "{} {} for {}".format(
+            "Applied" if status == "ok" else "Failed to apply",
+            action,
+            ip,
+        )
+        if message:
+            body += " — " + message
+        admin_group = self.env.ref("connect.group_admin", raise_if_not_found=False)
+        if admin_group:
+            for user in admin_group.sudo().user_ids:
+                self.env["bus.bus"]._sendone(
+                    user.partner_id,
+                    "simple_notification",
+                    {
+                        "type": notif_type,
+                        "title": "Firewall",
+                        "message": body,
+                        "sticky": status != "ok",
+                    },
+                )
+        return True
+
+    @api.model
+    def report_heartbeat(self, payload):
+        """Periodic heartbeat from the service.
+
+        payload: dict with version/esl_connected/bans_count/
+        authenticated_count/uptime_seconds (any subset).
+        """
+        singleton = self.sudo()._get_singleton()
+        vals = {"last_seen": fields.Datetime.now()}
+        if isinstance(payload, dict):
+            for k in (
+                "version",
+                "esl_connected",
+                "bans_count",
+                "authenticated_count",
+                "uptime_seconds",
+            ):
+                if k in payload:
+                    vals[k] = payload[k]
+        singleton.write(vals)
+        return True

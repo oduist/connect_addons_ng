@@ -104,6 +104,13 @@ class Settings(models.Model):
         default=False,
         help="Enable the FreeSWITCH firewall service for SIP brute-force protection.",
     )
+    firewall_service_url = fields.Char(
+        string="Firewall Service URL",
+        default="http://host.docker.internal:8081",
+        help="Base URL of the firewall service. Odoo posts sync notifications "
+             "to <url>/firewall/sync. For Docker hosts, use host.docker.internal; "
+             "otherwise the LAN IP of the host where the service container runs.",
+    )
     firewall_service_token = fields.Char(groups="connect.group_admin")
     display_firewall_service_token = fields.Char(
         string="Firewall Service Token",
@@ -171,6 +178,10 @@ class Settings(models.Model):
             )
             if user:
                 user.sudo().write({"password": new_password})
+        # Notify the firewall service that settings changed.
+        if any(k.startswith("firewall_") or k == "display_firewall_service_token"
+               for k in vals):
+            self.env["connect.firewall.agent"]._trigger_sync("settings")
         return res
 
     @api.model
