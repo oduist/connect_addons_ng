@@ -60,6 +60,15 @@ export class PhonePanel extends Component {
             this.props.bus.addEventListener("phoneToggle", this._onToggle);
             this.props.bus.addEventListener("phoneClose", this._onClose);
             this.props.bus.addEventListener("phoneNavigated", this._onNavigated);
+            // Verto fires phoneStateChanged once, ~1s after page load. If we
+            // mount later (the panel often does — it's lazy), we miss it and
+            // stay at the initial "disconnected" forever. Sync from the live
+            // client now that listeners are in place.
+            const vc = this.props.getVertoClient && this.props.getVertoClient();
+            if (vc) {
+                this.state.vertoState = vc.state || "disconnected";
+                this.state.callState = vc.callState || "idle";
+            }
         });
 
         onWillUnmount(() => {

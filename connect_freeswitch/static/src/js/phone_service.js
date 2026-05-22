@@ -140,7 +140,7 @@ export const phoneService = {
 
         registry.category("systray").add("connect_freeswitch.PhoneSystray", {
             Component: PhoneSystray,
-            props: { bus, displayMode },
+            props: { bus, displayMode, getVertoClient: () => vertoClient },
         }, { sequence: 50 });
 
         registry.category("main_components").add("connect_freeswitch.PhonePanel", {

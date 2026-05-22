@@ -153,6 +153,7 @@ export class PhoneSystray extends Component {
     static props = {
         bus: Object,
         displayMode: String,
+        getVertoClient: { type: Function, optional: true },
     };
 
     setup() {
@@ -171,6 +172,12 @@ export class PhoneSystray extends Component {
         onMounted(() => {
             this.props.bus.addEventListener("phoneStateChanged", this._onStateChanged);
             this.props.bus.addEventListener("phoneCallStateChanged", this._onCallStateChanged);
+            // Sync the current Verto state — see comment in PhonePanel.
+            const vc = this.props.getVertoClient && this.props.getVertoClient();
+            if (vc) {
+                this.state.vertoState = vc.state || "disconnected";
+                this.state.callState = vc.callState || "idle";
+            }
         });
 
         onWillUnmount(() => {
