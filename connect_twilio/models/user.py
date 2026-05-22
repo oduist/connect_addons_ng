@@ -29,6 +29,14 @@ class User(models.Model):
 
     username = fields.Char(required=True)
 
+    # Re-declare the core field with the Twilio-validation domain. The
+    # `status` field on connect.outgoing_callerid is added by this module,
+    # so the filter only makes sense (and only resolves) when Twilio is
+    # installed.
+    outgoing_callerid = fields.Many2one(
+        'connect.outgoing_callerid', ondelete='set null',
+        domain=['|', ('status', '=', 'validated'), ('callerid_type', '=', 'number')])
+
     if release.version_info[0] >= 19:
         _username_uniq = Constraint('UNIQUE(username)', 'This PBX username is already defined!')
     else:
