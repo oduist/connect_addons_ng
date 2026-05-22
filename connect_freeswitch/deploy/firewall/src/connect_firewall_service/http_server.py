@@ -43,6 +43,9 @@ DASHBOARD_DIR = Path(os.environ.get("DASHBOARD_DIR", "/app/dashboard"))
 
 
 def _check_bearer(request: Request, token: str) -> bool:
+    # When the service is still waiting for Odoo to deliver the token
+    # (AGENT_TOKEN env not set), reject any Bearer attempt: the dashboard
+    # can still use basic-auth in the meantime.
     if not token:
         return False
     auth = request.headers.get("Authorization", "")

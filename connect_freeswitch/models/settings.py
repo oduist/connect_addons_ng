@@ -172,7 +172,68 @@ class Settings(models.Model):
         help="Default-deny duration after a challenge is sent but not answered.",
     )
 
+    _TOKEN_MIN_LEN = 24
+    _TOKEN_ALLOWED_CHARS = set(
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+    )
+    _PASSWORD_MIN_LEN = 12
+
+    @api.model
+    def _validate_firewall_secret(self, kind, value):
+        """Raise ValidationError on weak / malformed secrets."""
+        from odoo.exceptions import ValidationError
+        if value in (False, None):
+            return
+        value = value.strip()
+        if not value:
+            return
+        if kind == "token":
+            if len(value) < self._TOKEN_MIN_LEN:
+                raise ValidationError(
+                    "Firewall Service Token must be at least {} characters long.".format(
+                        self._TOKEN_MIN_LEN
+                    )
+                )
+            bad = sorted({c for c in value if c not in self._TOKEN_ALLOWED_CHARS})
+            if bad:
+                raise ValidationError(
+                    "Firewall Service Token can only contain letters, digits, '_' and '-'; "
+                    "remove: {}".format(" ".join(bad))
+                )
+        elif kind == "password":
+            if len(value) < self._PASSWORD_MIN_LEN:
+                raise ValidationError(
+                    "FreeSWITCH Agent Password must be at least {} characters long.".format(
+                        self._PASSWORD_MIN_LEN
+                    )
+                )
+            if any(c.isspace() or ord(c) < 32 for c in value):
+                raise ValidationError(
+                    "FreeSWITCH Agent Password cannot contain spaces or control characters."
+                )
+
+    def action_generate_firewall_token(self):
+        """Generate a fresh URL-safe Firewall Service Token."""
+        import secrets
+        self.ensure_one()
+        self.sudo().write({"display_firewall_service_token": secrets.token_urlsafe(32)})
+        return True
+
+    def action_generate_agent_password(self):
+        """Generate a fresh password for the freeswitch_agent portal user."""
+        import secrets
+        self.ensure_one()
+        self.sudo().write({"display_freeswitch_agent_password": secrets.token_urlsafe(24)})
+        return True
+
     def write(self, vals):
+        # Validate the secrets before persisting anything.
+        if "display_firewall_service_token" in vals:
+            self._validate_firewall_secret("token", vals["display_firewall_service_token"])
+        if "display_freeswitch_agent_password" in vals:
+            self._validate_firewall_secret(
+                "password", vals["display_freeswitch_agent_password"]
+            )
         # When an admin updates the agent password, propagate it to the
         # portal user record so XML-RPC login works with the new value.
         new_password = vals.get("display_freeswitch_agent_password")

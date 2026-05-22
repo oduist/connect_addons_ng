@@ -55,12 +55,24 @@
                             <field name="firewall_enabled" widget="boolean_toggle"/>
                             <field name="firewall_service_url"
                                    placeholder="http://host.docker.internal:8081"/>
-                            <field name="display_firewall_service_token"
-                                   password="True"
-                                   placeholder="****"/>
-                            <field name="display_freeswitch_agent_password"
-                                   password="True"
-                                   placeholder="****"/>
+                            <label for="display_firewall_service_token"/>
+                            <div class="o_row">
+                                <field name="display_firewall_service_token"
+                                       password="True"
+                                       placeholder="**** (min 24 chars, [A-Za-z0-9_-])"/>
+                                <button name="action_generate_firewall_token"
+                                        type="object" icon="fa-refresh"
+                                        title="Generate a new token"/>
+                            </div>
+                            <label for="display_freeswitch_agent_password"/>
+                            <div class="o_row">
+                                <field name="display_freeswitch_agent_password"
+                                       password="True"
+                                       placeholder="**** (min 12 chars)"/>
+                                <button name="action_generate_agent_password"
+                                        type="object" icon="fa-refresh"
+                                        title="Generate a new password"/>
+                            </div>
                         </group>
                         <group string="Heartbeat &amp; Retention">
                             <field name="firewall_heartbeat_interval"/>

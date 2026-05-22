@@ -377,6 +377,13 @@ class FirewallAgent(models.Model):
     def fetch_config(self, *args, **kwargs):
         """Return all firewall_* settings the service needs at boot/sync.
 
+        Includes the shared ``firewall_service_token`` so the service
+        can authenticate inbound /firewall/sync requests without
+        needing AGENT_TOKEN as an env var. The portal user has already
+        proven itself by logging in, so handing the token back over
+        XML-RPC adds no exposure beyond what the password already
+        grants.
+
         The ``*args`` / ``**kwargs`` swallow whatever XML-RPC clients send
         — different libraries serialise positional arguments differently
         (some inject an empty list, some don't), so we stay tolerant.
@@ -391,6 +398,7 @@ class FirewallAgent(models.Model):
             "firewall_authenticated_timeout",
             "firewall_expire_short_timeout",
             "firewall_expire_long_timeout",
+            "firewall_service_token",
         ]
         return {k: settings.get_param(k) for k in keys}
 

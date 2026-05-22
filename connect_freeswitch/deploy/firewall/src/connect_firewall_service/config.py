@@ -27,7 +27,11 @@ class ServiceSettings(BaseSettings):
     odoo_password: str
 
     # --- Shared secret between Odoo and this service ------------------
-    agent_token: str
+    # Optional: if not set in the env we fetch it from Odoo on first
+    # successful login. /firewall/sync is rejected until a token is
+    # known. Setting it here is still useful when you want a strict
+    # boot-time pin or when Odoo is unreachable at startup.
+    agent_token: str = ""
 
     # --- FreeSWITCH ESL -----------------------------------------------
     fs_esl_host: str = "127.0.0.1"
