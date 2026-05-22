@@ -9,6 +9,22 @@ from twilio.twiml.voice_response import Dial, VoiceResponse
 logger = logging.getLogger(__name__)
 
 
+# Twilio SIP signaling IP ranges (per Twilio Programmable Voice docs).
+# Used as the default `el_inbound_allowed_ips` on agents when the
+# Twilio bridge is installed (ADR-021).
+TWILIO_SIP_SIGNALING_IPS = (
+    "54.172.60.0/23",
+    "54.244.51.0/24",
+    "54.171.127.192/30",
+    "35.156.191.128/25",
+    "35.162.40.0/23",
+    "54.65.63.192/26",
+    "54.169.127.128/26",
+    "54.252.254.64/26",
+    "177.71.206.192/26",
+)
+
+
 class ElevenlabsAgent(models.Model):
     _inherit = 'connect.elevenlabs_agent'
 
@@ -16,6 +32,9 @@ class ElevenlabsAgent(models.Model):
         string='ElevenLabs SIP Host',
         default='sip.elevenlabs.io',
         help="SIP host of the ElevenLabs inbound trunk.",
+    )
+    el_inbound_allowed_ips = fields.Text(
+        default="\n".join(TWILIO_SIP_SIGNALING_IPS),
     )
 
     def render(self, request, params=None):
