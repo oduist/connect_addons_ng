@@ -61,7 +61,7 @@ docker push oduist/freeswitch:latest
 | `SOUND_TYPES` | `music:en-us-callie` | Sound types and languages |
 | `FS_LOG_LEVEL` | `info` | FreeSWITCH core log level |
 | `FS_SOFIA_LOG_LEVEL` | `0` | Sofia SIP log level |
-| `FS_ESL_PASSWORD` | `ClueCon` | Password for mod_event_socket. When set, the entrypoint substitutes it into `autoload_configs/event_socket.conf.xml` before FreeSWITCH starts. Use the same value in any ESL client (e.g. the firewall service). |
+| `FS_ESL_PASSWORD` | `ConnectNGESLPassword` (baked into `autoload_configs/event_socket.conf.xml`) | Password for mod_event_socket. When set, the entrypoint substitutes it into the config before FreeSWITCH starts. Use the same value in any ESL client (e.g. the firewall service). |
 | `FS_DOMAIN` | — | SIP / WSS domain; used to extract TLS certs from Traefik ACME and as `force-register-domain` in sofia. |
 
 ## Usage with docker-compose

@@ -28,7 +28,7 @@ environment:
   # --- FreeSWITCH ESL ----------------------------------------------------
   FS_ESL_HOST: 127.0.0.1
   FS_ESL_PORT: 8021
-  FS_ESL_PASSWORD: ${FS_ESL_PASSWORD}             # default ClueCon in our image
+  FS_ESL_PASSWORD: ${FS_ESL_PASSWORD}             # match the value in the fs container (default ConnectNGESLPassword)
 
   # --- HTTP / dashboard --------------------------------------------------
   HTTP_BIND_HOST: 127.0.0.1                       # exposed via Traefik

@@ -32,7 +32,7 @@ class ServiceSettings(BaseSettings):
     # --- FreeSWITCH ESL -----------------------------------------------
     fs_esl_host: str = "127.0.0.1"
     fs_esl_port: int = 8021
-    fs_esl_password: str = "ClueCon"
+    fs_esl_password: str = "ConnectNGESLPassword"
 
     # --- Local HTTP server --------------------------------------------
     http_bind_host: str = "127.0.0.1"
