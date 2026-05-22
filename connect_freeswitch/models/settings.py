@@ -227,13 +227,19 @@ class Settings(models.Model):
         return True
 
     def write(self, vals):
-        # Validate the secrets before persisting anything.
-        if "display_firewall_service_token" in vals:
-            self._validate_firewall_secret("token", vals["display_firewall_service_token"])
-        if "display_freeswitch_agent_password" in vals:
-            self._validate_firewall_secret(
-                "password", vals["display_freeswitch_agent_password"]
-            )
+        # The core settings.write() does a second-pass write under the
+        # 'skip_protected_fields' context to replace the displayed
+        # secret with asterisks. Skip our validation in that pass so we
+        # don't reject the masked value.
+        if not self.env.context.get("skip_protected_fields"):
+            if "display_firewall_service_token" in vals:
+                self._validate_firewall_secret(
+                    "token", vals["display_firewall_service_token"]
+                )
+            if "display_freeswitch_agent_password" in vals:
+                self._validate_firewall_secret(
+                    "password", vals["display_freeswitch_agent_password"]
+                )
         # When an admin updates the agent password, propagate it to the
         # portal user record so XML-RPC login works with the new value.
         new_password = vals.get("display_freeswitch_agent_password")
