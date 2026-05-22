@@ -25,8 +25,11 @@ class User(models.Model):
     voicemail_enabled = fields.Boolean()
     voicemail_prompt = fields.Text(
         default="Hello, this is {{user.name}}. I'm unable to take your call right now. Please leave a message after the tone.")
-    outgoing_callerid = fields.Many2one('connect.outgoing_callerid', ondelete='set null',
-        domain=['|', ('status', '=', 'validated'), ('callerid_type', '=', 'number')])
+    # Core defines the field with no domain — `status` is a Twilio-only
+    # concept (caller-ID validation) and referencing it from core breaks
+    # name_search whenever connect_twilio is not installed. connect_twilio
+    # re-declares the field with the validation-aware domain.
+    outgoing_callerid = fields.Many2one('connect.outgoing_callerid', ondelete='set null')
     missed_calls_notify = fields.Boolean(default=False, help='Notify user on missed calls.')
     greeting_message = fields.Char()
     summary_prompt = fields.Char()
