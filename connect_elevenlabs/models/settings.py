@@ -57,13 +57,13 @@ class Elevenlabsettings(models.Model):
         }
 
     def _get_post_call_webhook_url(self):
-        api_url = self.env['connect.settings'].sudo().get_param('api_url')
+        api_url = (self.env['connect.settings'].sudo().get_param('api_url') or '').strip()
         self.elevenlabs_post_call_webhook_url = urljoin(api_url, 'connect_elevenlabs/post_call')
 
     def _get_conversation_initiation_webhook_url(self):
-        api_url = self.env['connect.settings'].sudo().get_param('api_url')
+        api_url = (self.env['connect.settings'].sudo().get_param('api_url') or '').strip()
         self.elevenlabs_conversation_initiation_webhook_url = urljoin(
-            api_url or '', 'connect_elevenlabs/conversation_init')
+            api_url, 'connect_elevenlabs/conversation_init')
 
     def get_elevenlabs_client(self):
         # Take this using super access because nobody must be able to access it.
