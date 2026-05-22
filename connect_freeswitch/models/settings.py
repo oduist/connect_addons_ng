@@ -213,17 +213,17 @@ class Settings(models.Model):
                 )
 
     def action_generate_firewall_token(self):
-        """Generate a fresh URL-safe Firewall Service Token."""
+        """Generate a fresh URL-safe Firewall Service Token.
+
+        The token is fetched by the service from Odoo automatically, so
+        the admin does not need to read it after generation. Pairing
+        the agent password with a generator would not make sense
+        because the admin can never read its current value to put it
+        into the service's ODOO_PASSWORD env var.
+        """
         import secrets
         self.ensure_one()
         self.sudo().write({"display_firewall_service_token": secrets.token_urlsafe(32)})
-        return True
-
-    def action_generate_agent_password(self):
-        """Generate a fresh password for the freeswitch_agent portal user."""
-        import secrets
-        self.ensure_one()
-        self.sudo().write({"display_freeswitch_agent_password": secrets.token_urlsafe(24)})
         return True
 
     def write(self, vals):
