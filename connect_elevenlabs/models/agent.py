@@ -5,9 +5,15 @@ import logging
 # Supress a warning message.
 import warnings
 
-import requests
+from elevenlabs.conversational_ai.phone_numbers.types import (
+    PhoneNumbersCreateRequestBody_SipTrunk,
+)
 from elevenlabs.core.api_error import ApiError
-from elevenlabs.types import AgentPlatformSettingsRequestModel, ConversationalConfig
+from elevenlabs.types import (
+    AgentPlatformSettingsRequestModel,
+    ConversationalConfig,
+    InboundSipTrunkConfigRequestModel,
+)
 from odoo import api, fields, models, release
 from odoo.addons.connect.models.settings import debug
 from odoo.exceptions import ValidationError
@@ -180,6 +186,23 @@ class ElevenlabsAgent(models.Model):
     silence_end_call_timeout = fields.Integer(required=True, default=10)
     exten = fields.Many2one("connect.exten", ondelete="set null", readonly=True)
     exten_number = fields.Char(related="exten.number")
+    # SIP routing (ADR-021): one EL phone_number entity per active agent,
+    # provisioned when exten is assigned. Authentication on the EL side
+    # is IP-allow-list — `el_inbound_allowed_ips` is bridge-specific
+    # (Twilio defaults to Twilio signaling IPs; FreeSWITCH leaves it
+    # empty/allow-all).
+    el_virtual_number_uid = fields.Char(
+        string="ElevenLabs Virtual Number ID",
+        readonly=True,
+        groups="base.group_erp_manager",
+        help="ElevenLabs phone_number entity ID registered with agent_uid "
+             "as the SIP identifier. Created when an extension is assigned.",
+    )
+    el_inbound_allowed_ips = fields.Text(
+        string="Inbound Allowed IPs",
+        help="IP addresses or CIDR ranges (comma- or newline-separated) "
+             "ElevenLabs will accept inbound SIP INVITEs from. Empty allows all.",
+    )
     template = fields.Many2one("connect.elevenlabs_agent_template", ondelete="set null")
     transfer_to_agent = fields.One2many("connect.elevenlabs_agent_transfer", "agent")
     has_transfer_tool = fields.Boolean(compute="_compute_has_transfer_tool")
@@ -215,9 +238,25 @@ class ElevenlabsAgent(models.Model):
 
     def write(self, vals):
         self.env['oduist.license'].check_license('connect_elevenlabs', silent=False)
-        if vals.get('exten'):
-            # Skip all syncing.
-            return super().write(vals)
+        if 'exten' in vals:
+            # Exten lifecycle is the trigger for SIP-trunk provisioning
+            # on the EL side (ADR-021). Skip the rest of the EL sync —
+            # the exten side may already be in the middle of a write loop.
+            res = super().write(vals)
+            if not self.env.context.get('skip_el_sync'):
+                for rec in self:
+                    if not rec.agent_uid:
+                        continue
+                    try:
+                        if rec.exten:
+                            rec._ensure_el_virtual_number()
+                        else:
+                            rec._remove_el_virtual_number()
+                    except Exception as e:
+                        logger.warning(
+                            "EL virtual number sync failed for agent %s: %s",
+                            rec.id, e)
+            return res
         res = super().write(vals)
         if "prompt" in vals and "active_prompt_version" not in vals:
             for rec in self:
@@ -239,6 +278,13 @@ class ElevenlabsAgent(models.Model):
         return res
 
     def unlink(self):
+        for rec in self:
+            if rec.el_virtual_number_uid:
+                try:
+                    rec._remove_el_virtual_number()
+                except Exception as e:
+                    logger.warning(
+                        "EL virtual number remove failed on unlink: %s", e)
         try:
             self.delete_elevenlabs_agent()
         except Exception as e:
@@ -285,6 +331,111 @@ class ElevenlabsAgent(models.Model):
         agent = self.create_elevenlabs_agent()
         self.with_context(skip_elevenlabs=True).write({"agent_uid": agent.agent_id})
         self.update_elevenlabs_agent()
+
+    # ------------------------------------------------------------------
+    # ElevenLabs virtual phone-number lifecycle (ADR-021)
+    # ------------------------------------------------------------------
+
+    def _ensure_el_virtual_number(self):
+        """Register agent_uid as a virtual EL phone number for SIP routing.
+
+        Called when an extension is assigned. ElevenLabs accepts SIP
+        INVITEs only for registered phone_number entities; here we
+        register one per agent using agent_uid as the SIP user-part
+        identifier and attach the agent to it. Authentication on the
+        EL side is via the inbound IP allow-list."""
+        self.ensure_one()
+        if not self.agent_uid:
+            return
+        identifier = self.agent_uid
+
+        try:
+            client = self.env['connect.settings'].get_elevenlabs_client()
+        except Exception as e:
+            logger.warning("EL client unavailable for virtual number sync: %s", e)
+            return
+
+        allowed_text = self.el_inbound_allowed_ips or ''
+        allowed = [
+            ip.strip()
+            for ip in allowed_text.replace('\n', ',').split(',')
+            if ip.strip()
+        ]
+        inbound_cfg = InboundSipTrunkConfigRequestModel(
+            allowed_addresses=allowed if allowed else None,
+        )
+
+        if self.el_virtual_number_uid:
+            try:
+                client.conversational_ai.phone_numbers.update(
+                    self.el_virtual_number_uid,
+                    agent_id=self.agent_uid,
+                    inbound_trunk_config=inbound_cfg,
+                )
+                return
+            except ApiError as e:
+                if e.status_code != 404:
+                    logger.warning("EL virtual number update failed: %s", e)
+                    return
+                # 404 — entity gone on EL side, fall through to create.
+                self.with_context(skip_el_sync=True).el_virtual_number_uid = False
+
+        try:
+            result = client.conversational_ai.phone_numbers.create(
+                request=PhoneNumbersCreateRequestBody_SipTrunk(
+                    provider='sip_trunk',
+                    phone_number=identifier,
+                    label='EL Agent SIP Route ({})'.format(identifier[:12]),
+                    inbound_trunk_config=inbound_cfg,
+                )
+            )
+            uid = result.phone_number_id
+        except ApiError as e:
+            if e.status_code == 409:
+                # Entity already exists for this identifier — find and reuse.
+                uid = None
+                try:
+                    for pn in client.conversational_ai.phone_numbers.list():
+                        if getattr(pn, 'phone_number', None) == identifier:
+                            uid = getattr(pn, 'phone_number_id', None)
+                            break
+                except Exception as list_err:
+                    logger.warning("EL phone number list failed: %s", list_err)
+                if not uid:
+                    logger.warning("EL virtual number conflict but no uid found")
+                    return
+            else:
+                logger.warning("EL virtual number create failed: %s", e)
+                return
+
+        try:
+            client.conversational_ai.phone_numbers.update(
+                uid, agent_id=self.agent_uid)
+        except Exception as e:
+            logger.warning("EL virtual number agent assign failed: %s", e)
+
+        self.with_context(skip_el_sync=True).el_virtual_number_uid = uid
+        logger.info("EL virtual number registered: %s -> agent %s",
+                    identifier, self.agent_uid)
+
+    def _remove_el_virtual_number(self):
+        """Delete the virtual EL phone number registration."""
+        self.ensure_one()
+        if not self.el_virtual_number_uid:
+            return
+        try:
+            client = self.env['connect.settings'].get_elevenlabs_client()
+            client.conversational_ai.phone_numbers.delete(
+                self.el_virtual_number_uid)
+            logger.info("EL virtual number deleted: %s",
+                        self.el_virtual_number_uid)
+        except ApiError as e:
+            if e.status_code != 404:
+                logger.warning("EL virtual number delete failed: %s", e)
+        except Exception as e:
+            logger.warning("EL virtual number delete failed: %s", e)
+        finally:
+            self.with_context(skip_el_sync=True).el_virtual_number_uid = False
 
     def create_extension(self):
         self.ensure_one()
@@ -579,15 +730,12 @@ class ElevenlabsAgent(models.Model):
         return prompt_dict
 
     def _build_platform_settings(self) -> AgentPlatformSettingsRequestModel:
-        """Build proper AgentPlatformSettingsRequestModel object using new API types"""
-        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''
-        webhook_url = (base_url.rstrip('/') + '/connect_elevenlabs/conversation_init') if base_url else None
-        workspace = {}
-        if webhook_url:
-            workspace['conversation_initiation_client_data_webhook'] = {
-                'url': webhook_url,
-                'request_headers': {},
-            }
+        """Build proper AgentPlatformSettingsRequestModel object using new API types.
+
+        The Conversation Initiation Webhook is configured workspace-wide
+        from `connect.settings._push_elevenlabs_initiation_webhook`
+        (ADR-021), not per-agent — no `workspace_overrides` here.
+        """
         kwargs = dict(
             overrides={
                 "conversation_config_override": {
@@ -600,15 +748,13 @@ class ElevenlabsAgent(models.Model):
                 "agent_concurrency_limit": self.agent_concurrency_limit,
                 "daily_limit": self.daily_limit,
             },
-            workspace_overrides=workspace or None,
         )
         try:
             return AgentPlatformSettingsRequestModel(**kwargs)
         except Exception as e:
             logger.error(
-                "AgentPlatformSettingsRequestModel rejected workspace_overrides: %s. "
-                "Falling back to model_construct — the Conversation Initiation Webhook URL "
-                "may not be registered on ElevenLabs. Check SDK version compatibility.", e)
+                "AgentPlatformSettingsRequestModel build failed: %s. "
+                "Falling back to model_construct.", e)
             return AgentPlatformSettingsRequestModel.model_construct(**kwargs)
 
     def compute_platform_settings(self):

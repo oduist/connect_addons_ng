@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import urllib.parse
 from urllib.parse import urljoin
-import requests
 import uuid
 from elevenlabs import ElevenLabs
 
@@ -18,10 +16,7 @@ logger = logging.getLogger(__name__)
 
 PROTECTED_FIELDS.append('display_elevenlabs_api_key')
 PROTECTED_FIELDS.append('display_elevenlabs_post_call_webhook_secret')
-PROTECTED_FIELDS.append('display_elevenlabs_sip_username')
-PROTECTED_FIELDS.append('display_elevenlabs_sip_password')
 
-ELEVENLABS_API_BASE = 'https://api.elevenlabs.io'
 
 class Elevenlabsettings(models.Model):
     _inherit = 'connect.settings'
@@ -35,16 +30,11 @@ class Elevenlabsettings(models.Model):
     elevenlabs_post_call_webhook_url = fields.Char(compute='_get_post_call_webhook_url')
     display_elevenlabs_post_call_webhook_secret = fields.Char()
     elevenlabs_post_call_webhook_secret = fields.Char(groups="base.group_erp_manager")
-    # SIP trunk tenant defaults (ADR-018, refined by ADR-019)
-    elevenlabs_sip_enabled = fields.Boolean(default=False, string='Enable SIP Trunk')
-    elevenlabs_sip_auth_method = fields.Selection(
-        [('digest', 'Digest (username/password)'),
-         ('acl', 'ACL (IP allow-list)')],
-        default='digest', string='SIP Auth Method')
-    elevenlabs_sip_username = fields.Char(groups="base.group_erp_manager")
-    display_elevenlabs_sip_username = fields.Char()
-    elevenlabs_sip_password = fields.Char(groups="base.group_erp_manager")
-    display_elevenlabs_sip_password = fields.Char()
+    # Conversation Initiation Webhook (ADR-021) — workspace-level URL EL
+    # POSTs to at conversation start. Pushed to EL via
+    # `_push_elevenlabs_initiation_webhook` on token reset / sync.
+    elevenlabs_conversation_initiation_webhook_url = fields.Char(
+        compute='_get_conversation_initiation_webhook_url')
 
     # Transcript elevenlabs webhook
     transcript_provider = fields.Selection(
@@ -70,6 +60,11 @@ class Elevenlabsettings(models.Model):
         api_url = self.env['connect.settings'].sudo().get_param('api_url')
         self.elevenlabs_post_call_webhook_url = urljoin(api_url, 'connect_elevenlabs/post_call')
 
+    def _get_conversation_initiation_webhook_url(self):
+        api_url = self.env['connect.settings'].sudo().get_param('api_url')
+        self.elevenlabs_conversation_initiation_webhook_url = urljoin(
+            api_url or '', 'connect_elevenlabs/conversation_init')
+
     def get_elevenlabs_client(self):
         # Take this using super access because nobody must be able to access it.
         key = self.sudo().get_param('elevenlabs_api_key')
@@ -77,6 +72,36 @@ class Elevenlabsettings(models.Model):
             raise ValidationError('Elevenlabs API key not set!')
         return ElevenLabs(api_key=key)
 
+    def _push_elevenlabs_initiation_webhook(self):
+        """Push the Conversation Initiation Client Data Webhook to EL workspace settings.
+
+        Workspace-level webhook (PATCH /v1/convai/settings) — one config
+        for all agents in the account. URL and token come from this
+        record; agent-level overrides are intentionally not used
+        (see ADR-021)."""
+        rec = self.sudo()
+        if not rec.elevenlabs_enabled:
+            return
+        url = rec.elevenlabs_conversation_initiation_webhook_url
+        token = rec.elevenlabs_agent_token
+        if not url or not token:
+            return
+        try:
+            client = rec.get_elevenlabs_client()
+        except ValidationError:
+            return
+        try:
+            client.conversational_ai.settings.update(
+                conversation_initiation_client_data_webhook={
+                    'url': url,
+                    'request_headers': {
+                        'x-elevenlabs-agent-token': token,
+                    },
+                },
+            )
+            logger.info("EL initiation webhook pushed: %s", url)
+        except Exception as e:
+            logger.exception("EL initiation webhook push failed: %s", e)
 
     def elevenlabs_get_voices(self):
         self.env['connect.elevenlabs_voice'].get_voices()
@@ -93,6 +118,8 @@ class Elevenlabsettings(models.Model):
     def elevenlabs_reset_token(self):
         # Generate new token.
         self.set_param('elevenlabs_agent_token', str(uuid.uuid4()))
+        # Push the new token into the workspace webhook header (ADR-021).
+        self._push_elevenlabs_initiation_webhook()
 
 
     def elevenlabs_sync_tools(self):
@@ -121,41 +148,13 @@ class Elevenlabsettings(models.Model):
 
     def elevenlabs_unbind_account(self):
         """Sync with new ElevenLabs account: clear agent and tool IDs"""
-        # Clear all agent UIDs
-        self.env['connect.elevenlabs_agent'].with_context(skip_elevenlabs=True).search([]).write({'agent_uid': None})
+        # Clear all agent UIDs and virtual-number bindings (ADR-021).
+        self.env['connect.elevenlabs_agent'].with_context(skip_elevenlabs=True).search([]).write({
+            'agent_uid': None,
+            'el_virtual_number_uid': False,
+        })
         # Clear all tool IDs
         self.env['connect.elevenlabs_agent_tool'].with_context(skip_elevenlabs=True).search([]).write(
             {'tool_id': None, 'synced': False})
 
         self.connect_notify('Unbind done!', title='Elevenlabs Agent', notify_uid=self.env.user.id)
-
-    def elevenlabs_sync_sip_trunks(self):
-        """Read-only sanity check for SIP-trunk config (ADR-018, ADR-019).
-
-        Validates credentials presence and reports the count of phone
-        numbers currently provisioned in ElevenLabs. No mutation."""
-        self.ensure_one()
-        if not self.elevenlabs_sip_enabled:
-            raise ValidationError('SIP trunk is disabled. Enable it first.')
-        # Force API key validation via the SDK helper.
-        self.get_elevenlabs_client()
-        if self.elevenlabs_sip_auth_method == 'digest':
-            username = self.sudo().get_param('elevenlabs_sip_username')
-            password = self.sudo().get_param('elevenlabs_sip_password')
-            if not username or not password:
-                raise ValidationError(
-                    'Digest auth requires both SIP username and SIP password.')
-        api_key = self.sudo().get_param('elevenlabs_api_key')
-        try:
-            response = requests.get(
-                urljoin(ELEVENLABS_API_BASE, '/v1/convai/phone-numbers'),
-                headers={'xi-api-key': api_key},
-                timeout=15)
-            response.raise_for_status()
-        except requests.RequestException as e:
-            raise ValidationError(f'ElevenLabs SIP sync failed: {e}')
-        numbers = response.json() or []
-        count = len(numbers) if isinstance(numbers, list) else 0
-        self.connect_notify(
-            f'SIP trunk reachable. {count} phone number(s) provisioned in ElevenLabs.',
-            title='Elevenlabs SIP Trunk', notify_uid=self.env.user.id)

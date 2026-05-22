@@ -52,44 +52,27 @@
               </group>
             </group>
           </page>
-          <page name="webhook" string="Webhook"
+          <page name="webhook" string="Webhooks"
               invisible="not elevenlabs_enabled or not display_elevenlabs_api_key">
-            <group>
+            <group string="Post Call Webhook">
                 <div colspan="2">
-                  <small><strong>Add Elevenlabs post call webhook URL in <a href="https://elevenlabs.io/app/conversational-ai/settings" target="_blank">Elevenlabs Settings</a></strong>.</small>
+                  <small>Add the Post Call Webhook URL in
+                    <a href="https://elevenlabs.io/app/conversational-ai/settings" target="_blank">Elevenlabs Settings</a>.
+                  </small>
                 </div>
-                <field name="elevenlabs_post_call_webhook_url" string="Post Call Webhook URL"/>
-                <field name="display_elevenlabs_post_call_webhook_secret" string="Post Call Webhook Secret" password="True"/>
+                <field name="elevenlabs_post_call_webhook_url" string="URL"/>
+                <field name="display_elevenlabs_post_call_webhook_secret" string="Secret" password="True"/>
             </group>
-            <group>
-            </group>
-          </page>
-          <page name="sip_trunk" string="SIP Trunk"
-              invisible="not elevenlabs_enabled or not display_elevenlabs_api_key">
-            <group>
-              <group>
-                <field name="elevenlabs_sip_enabled"/>
-                <div colspan="2" invisible="elevenlabs_sip_enabled">
-                  <small>Tenant-wide SIP trunk credentials. Enable to expose authentication settings; per-agent routing lives on each ElevenLabs agent.</small>
+            <group string="Conversation Initiation Client Data Webhook">
+                <div colspan="2">
+                  <small>Workspace-level webhook (ADR-021). Pushed
+                    automatically on SYNC / token reset. Read-only here.
+                  </small>
                 </div>
-              </group>
+                <field name="elevenlabs_conversation_initiation_webhook_url"
+                       string="URL"
+                       widget="CopyClipboardChar"/>
             </group>
-            <group invisible="not elevenlabs_sip_enabled">
-              <group string="Authentication">
-                <field name="elevenlabs_sip_auth_method"/>
-                <field name="display_elevenlabs_sip_username" string="SIP Username"
-                       required="elevenlabs_sip_enabled and elevenlabs_sip_auth_method == 'digest'"/>
-                <field name="display_elevenlabs_sip_password" password="1" string="SIP Password"
-                       invisible="elevenlabs_sip_auth_method != 'digest'"
-                       required="elevenlabs_sip_enabled and elevenlabs_sip_auth_method == 'digest'"/>
-                <div colspan="2" invisible="elevenlabs_sip_auth_method != 'acl'">
-                  <small><strong>ACL mode:</strong> ElevenLabs egress IPs must be allow-listed on the SIP trunk side. Digest is recommended.</small>
-                </div>
-              </group>
-            </group>
-            <button name="elevenlabs_sync_sip_trunks" type="object"
-                    string="SYNC SIP TRUNKS" class="btn btn-secondary"
-                    invisible="not elevenlabs_sip_enabled"/>
           </page>
         </notebook>
       </sheet>

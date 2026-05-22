@@ -81,6 +81,26 @@
                                 </group>
                             </group>
                         </page>
+                        <page name="sip_routing" string="SIP Routing">
+                            <div class="alert alert-info" role="alert">
+                                <strong>Per-agent SIP trunk (ADR-021).</strong>
+                                The ElevenLabs SIP phone-number entity is
+                                provisioned automatically when an extension is
+                                assigned (Conversation tab). Calls are routed
+                                to <code>sofia/gateway/elevenlabs/&lt;agent_uid&gt;</code>.
+                                Authentication on the EL side is by inbound IP.
+                            </div>
+                            <group>
+                                <group>
+                                    <field name="el_inbound_allowed_ips"
+                                           placeholder="e.g. 1.2.3.4&#10;10.0.0.0/24&#10;(empty = allow all)"/>
+                                </group>
+                                <group>
+                                    <field name="el_virtual_number_uid"
+                                           groups="base.group_erp_manager"/>
+                                </group>
+                            </group>
+                        </page>
                         <page name="llm" string="LLM / TTS">
                             <group>
                                 <group>
