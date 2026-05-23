@@ -100,15 +100,19 @@ extension means the agent is a draft — no EL entity is created.
 ### 3. FreeSWITCH dialplan — direct dial, no gateway
 
 The `dialplan_elevenlabs_sip` template bridges to a fully-formed
-SIP URI targeting EL's TLS termination, with the SIP user part
-set to the per-agent `el_virtual_number_uid` (EL's stable
-`phone_number_id`, e.g. `phnum_5101…`):
+SIP URI targeting EL's TLS termination. The SIP user part is the
+agent's `agent_uid`, because EL routes inbound INVITEs by matching
+the `phone_number` field of the registered phone_number entity —
+and that's what `_ensure_el_virtual_number` stores there
+(§2). Using the entity ID (`phnum_…`) returns SIP 404
+`UNALLOCATED_NUMBER`. `el_virtual_number_uid` is the control-plane
+handle for create/update/delete via EL's API only:
 
 ```xml
 <action application="set" data="sip_h_X-Agent-Id={{ agent_uid }}"/>
 <action application="set" data="sip_h_X-Call-Sid=${uuid}"/>
 <action application="bridge"
-        data="{absolute_codec_string='PCMU,PCMA'}sofia/external/sip:{{ el_virtual_number_uid }}@sip.rtc.elevenlabs.io:5061;transport=tls"/>
+        data="{absolute_codec_string='PCMU,PCMA'}sofia/external/sip:{{ agent_uid }}@sip.rtc.elevenlabs.io:5061;transport=tls"/>
 ```
 
 `extension_number` still gates the FS `<condition>`. No

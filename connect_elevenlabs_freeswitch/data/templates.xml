@@ -17,10 +17,17 @@ The FreeSWITCH channel UUID is forwarded as X-Call-Sid so EL echoes
 it back in the conversation_initiation / post_call webhooks, letting
 us tie the EL conversation to a specific connect.call row.
 
+The SIP user-part is `agent_uid` itself: ElevenLabs routes inbound
+INVITEs by matching the `phone_number` field of the registered
+phone_number entity, which we provision as `agent_uid` in
+`_ensure_el_virtual_number`. Using the entity ID (phnum_…) yields
+SIP 404 UNALLOCATED_NUMBER. `el_virtual_number_uid` is only the
+control-plane handle for create/update/delete via EL's API.
+
 Variables:
-  extension_number     - dialed Odoo extension (regex anchor)
-  agent_uid            - ElevenLabs agent_id (carried in X-Agent-Id header)
-  el_virtual_number_uid - EL phone_number_id (phnum_…); the SIP user part</field>
+  extension_number      - dialed Odoo extension (regex anchor)
+  agent_uid             - ElevenLabs agent_id (SIP user-part + X-Agent-Id header)
+  el_virtual_number_uid - EL phone_number_id (phnum_…); kept for context, not used in URI</field>
         <field name="content"><![CDATA[<extension name="elevenlabs_agent_{{ extension_number }}">
   <condition field="destination_number" expression="^{{ extension_number }}$">
     <action application="set" data="hangup_after_bridge=true"/>
@@ -28,7 +35,7 @@ Variables:
     <action application="set" data="sip_h_X-Agent-Id={{ agent_uid }}"/>
     <action application="set" data="sip_h_X-Call-Sid=${uuid}"/>
     <action application="answer"/>
-    <action application="bridge" data="{absolute_codec_string='PCMU,PCMA'}sofia/external/sip:{{ el_virtual_number_uid }}@sip.rtc.elevenlabs.io:5061;transport=tls"/>
+    <action application="bridge" data="{absolute_codec_string='PCMU,PCMA'}sofia/external/sip:{{ agent_uid }}@sip.rtc.elevenlabs.io:5061;transport=tls"/>
   </condition>
 </extension>]]></field>
         <field name="default_content"><![CDATA[<extension name="elevenlabs_agent_{{ extension_number }}">
@@ -38,7 +45,7 @@ Variables:
     <action application="set" data="sip_h_X-Agent-Id={{ agent_uid }}"/>
     <action application="set" data="sip_h_X-Call-Sid=${uuid}"/>
     <action application="answer"/>
-    <action application="bridge" data="{absolute_codec_string='PCMU,PCMA'}sofia/external/sip:{{ el_virtual_number_uid }}@sip.rtc.elevenlabs.io:5061;transport=tls"/>
+    <action application="bridge" data="{absolute_codec_string='PCMU,PCMA'}sofia/external/sip:{{ agent_uid }}@sip.rtc.elevenlabs.io:5061;transport=tls"/>
   </condition>
 </extension>]]></field>
     </record>
