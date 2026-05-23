@@ -114,8 +114,16 @@ class FreeSwitchCDRController(http.Controller):
             if effective_caller and not caller.isdigit():
                 caller = effective_caller
 
+            # `Other-Leg-Unique-ID` is an event header — present on live
+            # channels but NOT serialized by mod_xml_cdr (mod_xml_cdr only
+            # emits channel variables under <variables>). For bridged legs
+            # FreeSWITCH stores the peer leg's UUID as `signal_bond`, with
+            # `bridge_uuid` / `last_bridge_to` as historical fallbacks.
             other_leg_uuid = (
                 self._xml_text(variables, 'odoo_parent_uuid')
+                or self._xml_text(variables, 'signal_bond')
+                or self._xml_text(variables, 'bridge_uuid')
+                or self._xml_text(variables, 'last_bridge_to')
                 or self._xml_text(variables, 'Other-Leg-Unique-ID')
             )
 
