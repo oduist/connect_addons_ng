@@ -1,25 +1,9 @@
-import hashlib
 import logging
 import re
 from odoo import fields, models, api
 from odoo.exceptions import UserError
 from odoo.addons.connect.models.settings import debug
 from odoo.addons.connect.models.call import CALL_END_STATUSES
-
-
-def _bridge_lock_key(uuid, other_uuid):
-    """Stable int64 key derived from the unordered pair of leg UUIDs.
-
-    Used as a Postgres advisory lock to serialize CDR webhooks of two
-    bridged legs across worker processes. Returns None when there is
-    no second leg (no bridge => no race possible).
-    """
-    if not other_uuid:
-        return None
-    pair = ''.join(sorted([uuid, other_uuid]))
-    digest = hashlib.md5(pair.encode()).digest()
-    # int64 range; signed because pg_advisory_xact_lock takes bigint.
-    return int.from_bytes(digest[:8], 'big', signed=True)
 
 logger = logging.getLogger(__name__)
 
@@ -309,20 +293,6 @@ class Call(models.Model):
         """
         self = self.sudo()
         debug(self, 'FreeSWITCH CDR: %s' % cdr_data)
-
-        # Serialize bridged-pair CDRs across worker processes. mod_xml_cdr
-        # POSTs each leg's CDR independently, and under Odoo's default
-        # REPEATABLE READ isolation two overlapping transactions cannot
-        # see each other's sibling rows — the result is two unlinked
-        # channels and a duplicate connect.call. A transaction-scoped
-        # advisory lock keyed by the sorted (uuid, other_leg_uuid) pair
-        # makes the later worker wait, then take its snapshot AFTER the
-        # earlier one commits, so the sibling lookup succeeds.
-        lock_key = _bridge_lock_key(
-            cdr_data['uuid'], cdr_data.get('other_leg_uuid'))
-        if lock_key is not None:
-            self.env.cr.execute(
-                'SELECT pg_advisory_xact_lock(%s)', [lock_key])
 
         status = HANGUP_CAUSE_MAP.get(
             cdr_data.get('hangup_cause', ''), 'failed')

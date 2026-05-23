@@ -47,6 +47,21 @@ class FreeSwitchCDRController(http.Controller):
             logger.exception('Failed to process FreeSWITCH CDR: %s', e)
             return Response('Processing error', status=500)
 
+        # mod_xml_cdr POSTs each bridged leg's CDR independently, so two
+        # workers can race under REPEATABLE READ — the second never sees
+        # the first's freshly-created sibling channel and ends up with
+        # parent_channel=False + its own connect.call. Committing here
+        # ends the txn; the next ORM statement opens a fresh one with a
+        # snapshot that includes whatever the racing worker committed,
+        # giving `reconcile_bridge_link` everything it needs to fix up
+        # the parent link and merge the orphan call.
+        try:
+            request.env.cr.commit()
+            request.env['connect.channel'].sudo().reconcile_bridge_link(
+                cdr_data['uuid'])
+        except Exception as e:
+            logger.exception('CDR bridge reconcile failed: %s', e)
+
         return Response('OK', status=200)
 
     def _parse_cdr_xml(self, xml_str):
