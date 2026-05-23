@@ -151,7 +151,12 @@ class ConnectElevenlabsController(http.Controller):
                 methods=['POST'], type='http', auth='public', csrf=False)
     def conversation_init_webhook(self):
         logger.info('Incoming request: /connect_elevenlabs/conversation_init')
-        if not self.check_post_call_webhook():
+        # EL does not HMAC-sign the conversation initiation webhook; it
+        # authenticates via the `x-elevenlabs-agent-token` request header
+        # that `_push_elevenlabs_initiation_webhook` registers on the
+        # workspace settings. Use check_tool_token (same mechanism as
+        # tool calls) instead of the post-call HMAC check.
+        if not self.check_tool_token():
             raise Unauthorized()
         payload = json.loads(http.request.httprequest.get_data(as_text=True))
         data = payload.get('data') or payload
