@@ -3,6 +3,7 @@ from . import fs_parking_slot
 from . import fs_template
 from . import endpoint
 from . import exten
+from . import firewall
 from . import fs_callflow
 from . import fs_fifo
 from . import fs_user

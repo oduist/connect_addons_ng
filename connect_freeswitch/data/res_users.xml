@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="partner_freeswitch_agent" model="res.partner">
+        <field name="name">FreeSWITCH Agent</field>
+    </record>
+
+    <!-- User is created here without group assignments. The post_init_hook
+         strips the default Role/User group and assigns Role/Portal +
+         group_freeswitch_agent programmatically; doing it in XML triggers
+         Odoo 19's exclusive-role validator because new users get Role/User
+         from the default factory before our XML rows are applied. -->
+    <record id="user_freeswitch_agent" model="res.users">
+        <field name="name">FreeSWITCH Agent</field>
+        <field name="login">freeswitch_agent</field>
+        <field name="partner_id" ref="partner_freeswitch_agent"/>
+    </record>
+
+</odoo>
