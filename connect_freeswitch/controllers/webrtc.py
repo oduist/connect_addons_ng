@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 import logging
-from odoo import http
+from odoo import http, release
 from odoo.http import request
 
 _logger = logging.getLogger(__name__)
+
+# Odoo 19 introduced the 'jsonrpc' route type; on 18.0 the equivalent is 'json'.
+_JSON_ROUTE = 'jsonrpc' if release.version_info[0] >= 19 else 'json'
 
 
 class WebRTCController(http.Controller):
     """Controller for WebRTC/Verto client configuration."""
 
-    @http.route('/connect/webrtc/config', type='json', auth='user', methods=['POST'])
+    @http.route('/connect/webrtc/config', type=_JSON_ROUTE, auth='user', methods=['POST'])
     def get_webrtc_config(self):
         """
         Get WebRTC configuration for the current user.
