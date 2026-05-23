@@ -158,19 +158,26 @@ class ConnectElevenlabsController(http.Controller):
         # tool calls) instead of the post-call HMAC check.
         if not self.check_tool_token():
             raise Unauthorized()
-        raw = http.request.httprequest.get_data(as_text=True)
-        logger.info('conversation_init raw payload: %s', raw[:4000])
-        payload = json.loads(raw)
+        payload = json.loads(http.request.httprequest.get_data(as_text=True))
         data = payload.get('data') or payload
         agent_id = data.get('agent_id')
         caller_id = data.get('caller_id') or data.get('from_number')
-        called_id = data.get('called_id') or data.get('to_number')
+        # EL serializes the destination as `called_number` on SIP-trunk
+        # calls (vs `called_id` / `to_number` in other shapes).
+        called_id = (data.get('called_id')
+                     or data.get('to_number')
+                     or data.get('called_number'))
         dyn = data.get('dynamic_variables') or {}
-        # call_id = Odoo connect.call.id (Twilio path).
-        # call_sid = FreeSWITCH channel UUID, set in dialplan as X-Call-Sid
-        #            and echoed back by EL (FS path, ADR-021).
+        # call_id = Odoo connect.call.id (Twilio path: pre-created and
+        #           forwarded via dynamic_variables).
+        # call_sid = FreeSWITCH channel UUID (FS path per ADR-021).
+        # EL surfaces our custom SIP headers under `sip_headers` —
+        # `data.call_sid` is EL's own session id (SCL_…), not ours.
         call_id = dyn.get('call_id')
-        call_sid = dyn.get('call_sid')
+        sip_headers = data.get('sip_headers') or {}
+        call_sid = (sip_headers.get('X-Call-Sid')
+                    or sip_headers.get('x-call-sid')
+                    or dyn.get('call_sid'))
         agent = http.request.env['connect.elevenlabs_agent'].with_user(
             http.request.env.ref('connect.user_connect_webhook')).sudo().search(
             [('agent_uid', '=', agent_id)], limit=1)
