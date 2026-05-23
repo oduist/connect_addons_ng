@@ -46,6 +46,26 @@ Use oduflow to manage module development and deployment.
 
 Code includes `release.version_info[0]` checks to support Odoo 17.0, 18.0, and 19.0 differences (Html field sanitize, check_access methods, Constraint class, user_ids attribute).
 
+### Cross-branch versioning rules
+
+The same product ships on each Odoo branch; only the leading series prefix
+differs. Concretely:
+
+- **Manifest versions are aligned across branches.** If a module is at
+  `19.0.1.8.13` on the `19.0` branch, the same module on the `18.0`
+  branch must be at `18.0.1.8.13` once the corresponding change is
+  ported. The tail (`1.8.13`) is the product version; the head (`19.0`,
+  `18.0`) only marks the target Odoo series.
+- **Each branch keeps only its own series migrations.** The `18.0` branch
+  carries `migrations/18.0.x.x.x/`, the `19.0` branch carries
+  `migrations/19.0.x.x.x/`. Do not leave migration folders for other
+  Odoo series sitting in a branch — they never run there and only
+  confuse readers.
+- **Backports use the same Python helpers.** When the change involves a
+  Python migration script, both branches should call the same module
+  function (e.g. `setup_firewall(env)`), with the per-series migration
+  folder acting purely as the entry point Odoo can match.
+
 ## Conventions
 
 - Models follow `connect.<name>` naming (e.g., `connect.call`, `connect.recording`)
