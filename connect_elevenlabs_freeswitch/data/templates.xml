@@ -7,22 +7,28 @@
         <field name="key">dialplan_elevenlabs_sip</field>
         <field name="name">Dialplan - ElevenLabs SIP Bridge</field>
         <field name="section">dialplan</field>
-        <field name="description">Bridge an inbound call leg to an ElevenLabs Conversational AI agent
-over a SIP trunk gateway. The gateway is provisioned manually from
-the ElevenLabs dashboard (see docs/admin/elevenlabs-freeswitch.md).
+        <field name="description">Bridge an inbound call leg directly to an ElevenLabs Conversational
+AI agent over TLS-encrypted SIP. The agent is addressed by its EL
+phone_number entity (el_virtual_number_uid), provisioned automatically
+when an extension is assigned to the agent (ADR-021). No FreeSWITCH
+gateway record is needed — the SIP URI is fully self-contained.
+
+The FreeSWITCH channel UUID is forwarded as X-Call-Sid so EL echoes
+it back in the conversation_initiation / post_call webhooks, letting
+us tie the EL conversation to a specific connect.call row.
 
 Variables:
-  extension_number - dialed Odoo extension (regex anchor)
-  agent_uid        - ElevenLabs agent_id passed in the SIP user part
-                     and as X-Agent-Id header
-  gateway_name     - sofia gateway name (convention: 'elevenlabs')</field>
+  extension_number     - dialed Odoo extension (regex anchor)
+  agent_uid            - ElevenLabs agent_id (carried in X-Agent-Id header)
+  el_virtual_number_uid - EL phone_number_id (phnum_…); the SIP user part</field>
         <field name="content"><![CDATA[<extension name="elevenlabs_agent_{{ extension_number }}">
   <condition field="destination_number" expression="^{{ extension_number }}$">
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
     <action application="set" data="sip_h_X-Agent-Id={{ agent_uid }}"/>
+    <action application="set" data="sip_h_X-Call-Sid=${uuid}"/>
     <action application="answer"/>
-    <action application="bridge" data="{absolute_codec_string='PCMU,PCMA'}sofia/gateway/{{ gateway_name }}/{{ agent_uid }}"/>
+    <action application="bridge" data="{absolute_codec_string='PCMU,PCMA'}sofia/external/sip:{{ el_virtual_number_uid }}@sip.rtc.elevenlabs.io:5061;transport=tls"/>
   </condition>
 </extension>]]></field>
         <field name="default_content"><![CDATA[<extension name="elevenlabs_agent_{{ extension_number }}">
@@ -30,8 +36,9 @@ Variables:
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
     <action application="set" data="sip_h_X-Agent-Id={{ agent_uid }}"/>
+    <action application="set" data="sip_h_X-Call-Sid=${uuid}"/>
     <action application="answer"/>
-    <action application="bridge" data="{absolute_codec_string='PCMU,PCMA'}sofia/gateway/{{ gateway_name }}/{{ agent_uid }}"/>
+    <action application="bridge" data="{absolute_codec_string='PCMU,PCMA'}sofia/external/sip:{{ el_virtual_number_uid }}@sip.rtc.elevenlabs.io:5061;transport=tls"/>
   </condition>
 </extension>]]></field>
     </record>

@@ -6,15 +6,16 @@ from odoo import api, models
 logger = logging.getLogger(__name__)
 
 
-FS_GATEWAY_NAME = 'elevenlabs'
-
-
 class ElevenlabsAgent(models.Model):
     _inherit = 'connect.elevenlabs_agent'
 
     def generate_dialplan(self, params, exten=None):
-        """Render FS dialplan that bridges the inbound call to ElevenLabs
-        over the SIP gateway."""
+        """Render FS dialplan that bridges the inbound call directly to
+        the agent's ElevenLabs SIP endpoint over TLS (ADR-021).
+
+        The SIP URI is fully self-contained — no connect.freeswitch.gateway
+        record is involved. The user part is `el_virtual_number_uid`
+        (EL's phone_number_id, provisioned when an extension is assigned)."""
         self.ensure_one()
         if not exten:
             logger.warning(
@@ -24,11 +25,16 @@ class ElevenlabsAgent(models.Model):
             logger.warning(
                 "Agent %s has no agent_uid; cannot bridge", self.id)
             return ''
+        if not self.el_virtual_number_uid:
+            logger.warning(
+                "Agent %s has no el_virtual_number_uid; cannot route to EL. "
+                "Has an extension been assigned?", self.id)
+            return ''
         Template = self.env['connect.freeswitch.template'].sudo()
         return Template.render('dialplan_elevenlabs_sip', {
             'extension_number': exten.number,
             'agent_uid': self.agent_uid,
-            'gateway_name': FS_GATEWAY_NAME,
+            'el_virtual_number_uid': self.el_virtual_number_uid,
         })
 
     @api.model
