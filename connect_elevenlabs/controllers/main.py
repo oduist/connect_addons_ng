@@ -84,13 +84,38 @@ class ConnectElevenlabsController(http.Controller):
         data = json.loads(http.request.httprequest.get_data(as_text=True)).get('data')
 
         dynamic_variables = data.get('conversation_initiation_client_data').get('dynamic_variables')
-        call_id = int(dynamic_variables.get('call_id'))
+        # call_id  = Odoo connect.call.id (Twilio path).
+        # call_sid = FreeSWITCH channel UUID, set in dialplan as X-Call-Sid
+        #            and echoed by EL (FS path, ADR-021).
+        raw_call_id = dynamic_variables.get('call_id')
+        call_sid = dynamic_variables.get('call_sid')
         transcript_summary = data.get('analysis').get('transcript_summary')
         transcript_data = data.get('transcript')
         transcript_list = [f"{transcript['role']}: {transcript['message']}" for transcript in transcript_data]
         transcript = '\n'.join(transcript_list)
 
-        call = http.request.env['connect.call'].with_user(user_connect_webhook).browse(call_id)
+        Call = http.request.env['connect.call'].with_user(user_connect_webhook)
+        call = Call.browse()
+        try:
+            if raw_call_id is not None:
+                call = Call.browse(int(raw_call_id))
+                if not call.exists():
+                    call = Call.browse()
+        except (TypeError, ValueError):
+            call = Call.browse()
+        if not call and call_sid:
+            channel = http.request.env['connect.channel'].with_user(
+                user_connect_webhook).sudo().search(
+                [('sid', '=', call_sid)], limit=1)
+            if channel and channel.call:
+                call = channel.call
+        if not call:
+            logger.warning(
+                'post_call_webhook: no connect.call found for '
+                'call_id=%s call_sid=%s — dropping post-call data',
+                raw_call_id, call_sid)
+            return ''
+        call_id = call.id
         call.write({
             'elevenlabs_summary': transcript_summary,
             'elevenlabs_conversation_id': data.get('conversation_id', '')
@@ -110,7 +135,7 @@ class ConnectElevenlabsController(http.Controller):
                 'elevenlabs_transcript': transcript,
                 'elevenlabs_summary': transcript_summary,
                 'sid': data.get('conversation_id'),
-                'call_sid': call.channels[0].sid,
+                'call_sid': call_sid or (call.channels[0].sid if call.channels else ''),
                 'start_time': call.create_date,
                 'elevenlabs_media_file': audio_data,
                 'duration': data['metadata']['call_duration_secs'],
@@ -133,7 +158,12 @@ class ConnectElevenlabsController(http.Controller):
         agent_id = data.get('agent_id')
         caller_id = data.get('caller_id') or data.get('from_number')
         called_id = data.get('called_id') or data.get('to_number')
-        call_id = (data.get('dynamic_variables') or {}).get('call_id')
+        dyn = data.get('dynamic_variables') or {}
+        # call_id = Odoo connect.call.id (Twilio path).
+        # call_sid = FreeSWITCH channel UUID, set in dialplan as X-Call-Sid
+        #            and echoed back by EL (FS path, ADR-021).
+        call_id = dyn.get('call_id')
+        call_sid = dyn.get('call_sid')
         agent = http.request.env['connect.elevenlabs_agent'].with_user(
             http.request.env.ref('connect.user_connect_webhook')).sudo().search(
             [('agent_uid', '=', agent_id)], limit=1)
@@ -144,7 +174,7 @@ class ConnectElevenlabsController(http.Controller):
                             'dynamic_variables': {}}),
                 headers=[('Content-Type', 'application/json')])
         response = agent._build_conversation_init_response(
-            caller_id, called_id, call_id=call_id)
+            caller_id, called_id, call_id=call_id, call_sid=call_sid)
         return http.request.make_response(
             json.dumps(response),
             headers=[('Content-Type', 'application/json')])

@@ -97,21 +97,30 @@ Assigning an extension is the moment the agent enters the phone
 system; that's when the SIP route must exist on the EL side. No
 extension means the agent is a draft — no EL entity is created.
 
-### 3. FreeSWITCH dialplan
+### 3. FreeSWITCH dialplan — direct dial, no gateway
 
-The `dialplan_elevenlabs_sip` template now bridges on the
-registered identifier (the agent's `agent_uid`), not on the
-dialed extension number:
+The `dialplan_elevenlabs_sip` template bridges to a fully-formed
+SIP URI targeting EL's TLS termination, with the SIP user part
+set to the per-agent `el_virtual_number_uid` (EL's stable
+`phone_number_id`, e.g. `phnum_5101…`):
 
 ```xml
+<action application="set" data="sip_h_X-Agent-Id={{ agent_uid }}"/>
+<action application="set" data="sip_h_X-Call-Sid=${uuid}"/>
 <action application="bridge"
-        data="{absolute_codec_string='PCMU,PCMA'}sofia/gateway/{{ gateway_name }}/{{ agent_uid }}"/>
+        data="{absolute_codec_string='PCMU,PCMA'}sofia/external/sip:{{ el_virtual_number_uid }}@sip.rtc.elevenlabs.io:5061;transport=tls"/>
 ```
 
-`extension_number` still gates the FS `<condition>`. The
-`connect.freeswitch.gateway` named `elevenlabs` keeps pointing to
-EL's SIP termination host — one trunk per account, per-agent
-routing through the SIP user part.
+`extension_number` still gates the FS `<condition>`. No
+`connect.freeswitch.gateway` record is needed — the SIP URI is
+self-contained. The `external` sofia profile carries TLS for the
+outbound leg; see ADR-021 §7 below and the bumped
+`connect_freeswitch` template.
+
+`sip_h_X-Call-Sid=${uuid}` exports the FreeSWITCH channel UUID as
+a SIP custom header. EL surfaces it as
+`dynamic_variables.call_sid` in the conversation initiation /
+post-call webhooks, which is what §6 (Correlation) consumes.
 
 ### 4. Conversation Initiation Webhook (workspace-level)
 
@@ -151,6 +160,60 @@ shape is dropped.
   Operators fill in the FreeSWITCH public IP for production. The
   dev/test environment used in this repo is behind dynamic NAT,
   so an empty default is the pragmatic choice.
+
+### 6. Correlation: connect.call ↔ EL conversation
+
+The Twilio path pre-creates a `connect.call` row in the Twilio
+controller and passes its id to EL via a SIP URI parameter
+(`?X-Call-Sid=…`). EL echoes it back as
+`dynamic_variables.call_id` in the conversation initiation and
+post-call webhooks, letting us load the right row by Odoo id.
+
+The FreeSWITCH path has no pre-created `connect.call` at
+dialplan render time — `connect.call` and `connect.channel`
+records are created later by the `mod_xml_cdr` webhook. Instead,
+we tag the call by its **FreeSWITCH channel UUID**, which is the
+same value the CDR controller stores as `connect.channel.sid`:
+
+* The dialplan exports `${uuid}` (FS runtime channel UUID) as a
+  SIP custom header `X-Call-Sid`.
+* EL surfaces the header as `dynamic_variables.call_sid`.
+* `_build_conversation_init_response()` and `post_call_webhook`
+  resolve the underlying `connect.call` in this order:
+    1. `dynamic_variables.call_id` (Twilio path)
+    2. `dynamic_variables.call_sid` → `connect.channel.sid` →
+       `connect.channel.call` (FS path)
+    3. Last-resort match by `caller + called` (most recent call).
+
+If neither matches in `post_call`, the handler logs and drops
+the post-call data rather than crashing — previously a missing
+`call_id` raised `TypeError(int(None))` and the entire post-call
+payload (transcript, summary, recording) was lost.
+
+### 7. TLS on the `external` sofia profile
+
+The bridge target uses `;transport=tls` to `sip.rtc.elevenlabs.io:5061`.
+For sofia to make the outbound TLS leg, the `external` profile
+must have TLS enabled. The `config_sofia` template now sets:
+
+```xml
+<param name="tls" value="true"/>
+<param name="tls-only" value="false"/>
+<param name="tls-sip-port" value="5081"/>
+<param name="tls-version" value="tlsv1.2,tlsv1.3"/>
+<param name="tls-cert-dir" value="$${certs_dir}"/>
+```
+
+`tls-sip-port=5081` is the local listening port for inbound TLS
+(separate from EL's 5061). The cert is the image's existing
+`wss.pem` (also used by Verto). EL's leaf cert is publicly-trusted,
+so no extra CA trust setup is needed.
+
+Additionally, the `_get_sofia_config` controller no longer
+returns 404 when there are zero `connect.freeswitch.gateway`
+records — the `external` profile is rendered unconditionally so
+direct-dial paths (this ADR's `sofia/external/sip:…`) work in
+fresh installs.
 
 ### Demolition
 

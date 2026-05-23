@@ -498,18 +498,32 @@ class ElevenlabsAgent(models.Model):
                       "Please try again with a correct number.".format(
                           exten_str, available))
 
-    def _build_conversation_init_response(self, caller_id, called_id, call_id=None):
+    def _build_conversation_init_response(self, caller_id, called_id,
+                                          call_id=None, call_sid=None):
         """Build the JSON body EL expects from a Conversation Initiation
-        Webhook. If call_id is provided, reuses the (sale-override-aware)
-        elevenlabs_agent_get_call_data() on the existing connect.call;
-        otherwise resolves the partner from caller_id alone and returns
-        a minimal dynamic_variables block."""
+        Webhook. Resolves the underlying connect.call by, in order:
+
+        1. `call_id` — Odoo id of connect.call (Twilio path: pre-created
+           in the Twilio controller and passed via SIP URI parameter).
+        2. `call_sid` — FreeSWITCH channel UUID, looked up through
+           connect.channel.sid → connect.channel.call (FS path per
+           ADR-021; channel is created by the CDR webhook).
+        3. Best-effort match by caller+called (most recent).
+
+        If a connect.call is resolved, reuses the (sale-override-aware)
+        elevenlabs_agent_get_call_data() on it; otherwise returns a
+        minimal dynamic_variables block built from caller_id alone."""
         self.ensure_one()
         Call = self.env['connect.call'].sudo()
+        Channel = self.env['connect.channel'].sudo()
         try:
             call = Call.browse(int(call_id)) if call_id else Call.browse()
         except (ValueError, TypeError):
             call = Call.browse()
+        if not call.exists() and call_sid:
+            channel = Channel.search([('sid', '=', call_sid)], limit=1)
+            if channel and channel.call:
+                call = channel.call
         if not call.exists():
             # Best-effort match by caller+called (most recent call).
             call = Call.search(
