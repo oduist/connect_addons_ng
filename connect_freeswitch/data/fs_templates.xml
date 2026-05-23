@@ -564,6 +564,12 @@ Variables:
       <settings>
         <param name="context" value="public"/>
         <param name="sip-port" value="5080"/>
+        <!-- TLS for outbound to providers (e.g. sip.rtc.elevenlabs.io:5061;transport=tls). -->
+        <param name="tls" value="true"/>
+        <param name="tls-only" value="false"/>
+        <param name="tls-sip-port" value="5081"/>
+        <param name="tls-version" value="tlsv1.2,tlsv1.3"/>
+        <param name="tls-cert-dir" value="$${certs_dir}"/>
         <param name="rtp-timer-name" value="soft"/>
         <param name="codec-prefs" value="OPUS,PCMU,PCMA"/>
         <param name="auth-calls" value="true"/>
@@ -598,6 +604,12 @@ Variables:
       <settings>
         <param name="context" value="public"/>
         <param name="sip-port" value="5080"/>
+        <!-- TLS for outbound to providers (e.g. sip.rtc.elevenlabs.io:5061;transport=tls). -->
+        <param name="tls" value="true"/>
+        <param name="tls-only" value="false"/>
+        <param name="tls-sip-port" value="5081"/>
+        <param name="tls-version" value="tlsv1.2,tlsv1.3"/>
+        <param name="tls-cert-dir" value="$${certs_dir}"/>
         <param name="rtp-timer-name" value="soft"/>
         <param name="codec-prefs" value="OPUS,PCMU,PCMA"/>
         <param name="auth-calls" value="true"/>
