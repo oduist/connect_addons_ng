@@ -4,9 +4,15 @@ from . import models
 import logging
 import secrets
 
-from odoo import fields
+from odoo import fields, release
 
 _logger = logging.getLogger(__name__)
+
+
+# In Odoo 19 the M2M between res.users and res.groups was renamed from
+# groups_id to group_ids. Keep one source of truth here so callers do
+# not have to repeat the check.
+USER_GROUPS_FIELD = 'group_ids' if release.version_info[0] >= 19 else 'groups_id'
 
 
 def setup_firewall(env):
@@ -24,15 +30,16 @@ def setup_firewall(env):
         raise_if_not_found=False,
     )
     if user:
+        current = user[USER_GROUPS_FIELD]
         ops = []
-        if group_user and group_user in user.group_ids:
+        if group_user and group_user in current:
             ops.append((3, group_user.id))
-        if group_portal and group_portal not in user.group_ids:
+        if group_portal and group_portal not in current:
             ops.append((4, group_portal.id))
-        if group_agent and group_agent not in user.group_ids:
+        if group_agent and group_agent not in current:
             ops.append((4, group_agent.id))
         if ops:
-            user.sudo().write({'group_ids': ops})
+            user.sudo().write({USER_GROUPS_FIELD: ops})
 
     settings = env['connect.settings'].sudo()
     if not settings.get_param('firewall_service_token'):
