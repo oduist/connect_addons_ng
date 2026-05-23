@@ -177,6 +177,51 @@ class Channel(models.Model):
 
         return channel
 
+    @api.model
+    def reconcile_bridge_link(self, sid):
+        """Link `sid`'s channel to its bridge sibling (and merge calls).
+
+        Callers run this in a fresh transaction (typically after committing
+        the CDR webhook handler) to recover from snapshot races: when two
+        bridged-leg CDRs arrive concurrently, Odoo's REPEATABLE READ
+        isolation can leave the second worker unable to see the first
+        worker's freshly-created sibling row, so `process_channel_event`
+        creates an unlinked channel and `process_call_event` mints a
+        duplicate `connect.call`. With a fresh snapshot both legs are
+        visible; this helper performs the parent_channel link and merges
+        the orphan call into the parent's call.
+
+        Idempotent — repeated invocations short-circuit cleanly.
+        """
+        ch = self.search([('sid', '=', sid)], limit=1)
+        if not ch:
+            return
+        # Forward link — we know our parent_sid but didn't see the row.
+        if not ch.parent_channel and ch.parent_sid:
+            parent = self.search([('sid', '=', ch.parent_sid)], limit=1)
+            if parent:
+                ch.parent_channel = parent.id
+                self._merge_calls(ch, parent)
+        # Reverse link — another leg arrived first referencing us as parent.
+        orphans = self.search([
+            ('parent_sid', '=', sid),
+            ('parent_channel', '=', False),
+            ('id', '!=', ch.id),
+        ])
+        for orphan in orphans:
+            orphan.parent_channel = ch.id
+            self._merge_calls(orphan, ch)
+
+    @api.model
+    def _merge_calls(self, child, parent):
+        """Move `child` onto `parent.call`; drop child's old call if empty."""
+        if not child.call or not parent.call or child.call == parent.call:
+            return
+        old_call = child.call
+        child.call = parent.call.id
+        if not old_call.channels:
+            old_call.unlink()
+
     def _find_partner(self, caller_pbx_user, called_pbx_user, caller, called, direction):
         """Determine which number is external and find the partner."""
         Partner = self.env['res.partner']
