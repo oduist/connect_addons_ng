@@ -116,9 +116,17 @@ class ConnectElevenlabsController(http.Controller):
                 raw_call_id, call_sid)
             return ''
         call_id = call.id
+        # Attach the EL agent record so the call form surfaces it
+        # alongside the conversation. EL stamps the agent on the
+        # post_call payload at top level (data.agent_id).
+        agent_uid = data.get('agent_id')
+        agent_rec = http.request.env['connect.elevenlabs_agent'].with_user(
+            user_connect_webhook).sudo().search(
+            [('agent_uid', '=', agent_uid)], limit=1) if agent_uid else None
         call.write({
             'elevenlabs_summary': transcript_summary,
-            'elevenlabs_conversation_id': data.get('conversation_id', '')
+            'elevenlabs_conversation_id': data.get('conversation_id', ''),
+            **({'elevenlabs_agent': agent_rec.id} if agent_rec else {}),
         })
 
         # Recording
