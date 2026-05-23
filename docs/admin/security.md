@@ -70,3 +70,7 @@ A special inactive Odoo user (`connect.user_connect_webhook`) is defined in core
 3. **Restrict FreeSWITCH access** — Use firewall rules to limit which IPs can reach `/freeswitch/*` endpoints
 4. **Rotate API keys** regularly
 5. **Limit admin access** — Only grant Connect Admin to users who need to configure the system
+6. **Deploy the SIP firewall** — for any FreeSWITCH host exposed to the
+   public Internet, run the [SIP Firewall service](firewall.md). It
+   blocks brute-force registrations at the kernel level and gives you
+   an audit trail of every authentication attempt inside Odoo.

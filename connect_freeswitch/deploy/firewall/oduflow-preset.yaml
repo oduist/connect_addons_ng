@@ -1,0 +1,63 @@
+# oduflow service preset for connect-firewall-service.
+#
+# This file documents the recommended way to run the firewall service
+# alongside a FreeSWITCH container in oduflow. The container must run on
+# the host network and own NET_ADMIN so ipset/iptables work against the
+# host kernel. ESL traffic stays on 127.0.0.1.
+#
+# Apply by creating a service in oduflow with these values.
+
+name: firewall
+image: oduist/freeswitch-firewall:1.0.0
+network_mode: host
+cap_add:
+  - NET_ADMIN
+
+# Required: copy these from Odoo (Configuration → General Settings →
+# Firewall). Do NOT commit the actual values — they are per-installation.
+environment:
+  # --- Odoo XML-RPC ------------------------------------------------------
+  ODOO_URL: ${ODOO_URL}                           # e.g. https://pbx.example.com
+  ODOO_DB:  ${ODOO_DB}                            # database name
+  ODOO_USER: freeswitch_agent
+  ODOO_PASSWORD: ${FREESWITCH_AGENT_PASSWORD}     # from connect.settings
+
+  # --- Shared secret with Odoo (firewall_service_token) ------------------
+  AGENT_TOKEN: ${FIREWALL_AGENT_TOKEN}
+
+  # --- FreeSWITCH ESL ----------------------------------------------------
+  FS_ESL_HOST: 127.0.0.1
+  FS_ESL_PORT: 8021
+  FS_ESL_PASSWORD: ${FS_ESL_PASSWORD}             # match the value in the fs container (default ConnectNGESLPassword)
+
+  # --- HTTP / dashboard --------------------------------------------------
+  HTTP_BIND_HOST: 127.0.0.1                       # exposed via Traefik
+  HTTP_BIND_PORT: 8081
+  DASHBOARD_USER: admin
+  DASHBOARD_PASSWORD: ${FIREWALL_DASHBOARD_PASSWORD}
+
+  LOG_LEVEL: INFO
+
+volumes:
+  - firewall-cache:/var/lib/connect-firewall
+
+
+# ------------------------------------------------------------------------
+# Traefik file provider snippet (add to your dynamic config). Routes
+# /firewall/* on the public Odoo host to the local firewall service.
+# ------------------------------------------------------------------------
+#
+# http:
+#   routers:
+#     firewall:
+#       rule: "Host(`pbx.example.com`) && PathPrefix(`/firewall`)"
+#       entryPoints: [websecure]
+#       tls: {}
+#       service: firewall
+#       # Basic auth is enforced by the service itself; if you want a
+#       # second layer at Traefik, add a basicAuth middleware here.
+#   services:
+#     firewall:
+#       loadBalancer:
+#         servers:
+#           - url: "http://127.0.0.1:8081"

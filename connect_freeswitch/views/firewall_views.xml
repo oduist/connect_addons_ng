@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================ -->
+    <!-- Whitelist                                                    -->
+    <!-- ============================================================ -->
+
+    <record id="view_firewall_whitelist_list" model="ir.ui.view">
+        <field name="name">connect.firewall.whitelist.list</field>
+        <field name="model">connect.firewall.whitelist</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="ip_or_cidr"/>
+                <field name="note" optional="show"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_firewall_whitelist_form" model="ir.ui.view">
+        <field name="name">connect.firewall.whitelist.form</field>
+        <field name="model">connect.firewall.whitelist</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="ip_or_cidr"/>
+                        <field name="active"/>
+                    </group>
+                    <group string="Notes">
+                        <field name="note" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_firewall_whitelist" model="ir.actions.act_window">
+        <field name="name">Firewall Whitelist</field>
+        <field name="res_model">connect.firewall.whitelist</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No whitelist entries yet.</p>
+            <p>Whitelisted IPs and subnets bypass all automatic banning logic.</p>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Blacklist                                                    -->
+    <!-- ============================================================ -->
+
+    <record id="view_firewall_blacklist_list" model="ir.ui.view">
+        <field name="name">connect.firewall.blacklist.list</field>
+        <field name="model">connect.firewall.blacklist</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="ip_or_cidr"/>
+                <field name="note" optional="show"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_firewall_blacklist_form" model="ir.ui.view">
+        <field name="name">connect.firewall.blacklist.form</field>
+        <field name="model">connect.firewall.blacklist</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="ip_or_cidr"/>
+                        <field name="active"/>
+                    </group>
+                    <group string="Notes">
+                        <field name="note" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_firewall_blacklist" model="ir.actions.act_window">
+        <field name="name">Firewall Blacklist</field>
+        <field name="res_model">connect.firewall.blacklist</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No permanent bans yet.</p>
+            <p>Add an IP or subnet here to block it permanently. Temporary auto-bans live in the kernel only and are visible in the firewall dashboard.</p>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Events (read-only audit log)                                 -->
+    <!-- ============================================================ -->
+
+    <record id="view_firewall_event_list" model="ir.ui.view">
+        <field name="name">connect.firewall.event.list</field>
+        <field name="model">connect.firewall.event</field>
+        <field name="arch" type="xml">
+            <list create="false" edit="false" delete="false">
+                <field name="ts"/>
+                <field name="event_type"/>
+                <field name="ip"/>
+                <field name="account_id"/>
+                <field name="user_agent" optional="hide"/>
+                <field name="service" optional="hide"/>
+                <field name="details" optional="hide"/>
+                <field name="is_banned" column_invisible="1"/>
+                <button name="action_unban_ip" type="object"
+                        string="Unban" icon="fa-unlock"
+                        invisible="not is_banned"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_firewall_event_form" model="ir.ui.view">
+        <field name="name">connect.firewall.event.form</field>
+        <field name="model">connect.firewall.event</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false" delete="false">
+                <header>
+                    <button name="action_unban_ip" type="object"
+                            string="Unban" icon="fa-unlock"
+                            class="btn-primary"
+                            invisible="not is_banned"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="ts"/>
+                            <field name="event_type"/>
+                            <field name="ip"/>
+                            <field name="account_id"/>
+                        </group>
+                        <group>
+                            <field name="user_agent"/>
+                            <field name="service"/>
+                            <field name="is_banned" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Details">
+                        <field name="details" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_firewall_event_search" model="ir.ui.view">
+        <field name="name">connect.firewall.event.search</field>
+        <field name="model">connect.firewall.event</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="ip"/>
+                <field name="account_id"/>
+                <filter string="Auto-Bans" name="auto_ban"
+                        domain="[('event_type', '=', 'auto_ban')]"/>
+                <filter string="Auth Failures" name="auth_fail"
+                        domain="[('event_type', '=', 'auth_fail')]"/>
+                <filter string="Auth Successes" name="auth_success"
+                        domain="[('event_type', '=', 'auth_success')]"/>
+                <filter string="Service Errors" name="service_error"
+                        domain="[('event_type', '=', 'service_error')]"/>
+                <separator/>
+                <filter string="Group by Event Type" name="group_event_type"
+                        context="{'group_by': 'event_type'}"/>
+                <filter string="Group by IP" name="group_ip"
+                        context="{'group_by': 'ip'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_firewall_event" model="ir.actions.act_window">
+        <field name="name">Firewall Events</field>
+        <field name="res_model">connect.firewall.event</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_firewall_event_search"/>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Agent status (singleton form)                                -->
+    <!-- ============================================================ -->
+
+    <record id="view_firewall_agent_form" model="ir.ui.view">
+        <field name="name">connect.firewall.agent.form</field>
+        <field name="model">connect.firewall.agent</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Status">
+                            <field name="status" widget="badge"
+                                   decoration-success="status == 'online'"
+                                   decoration-warning="status == 'stale'"
+                                   decoration-danger="status == 'offline'"/>
+                            <field name="esl_connected" widget="boolean_toggle" readonly="1"/>
+                            <field name="version"/>
+                            <field name="uptime_seconds"/>
+                        </group>
+                        <group string="Last Reports">
+                            <field name="last_seen"/>
+                            <field name="last_sync_at"/>
+                            <field name="bans_count"/>
+                            <field name="authenticated_count"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_firewall_agent" model="ir.actions.act_window">
+        <field name="name">Firewall Agent</field>
+        <field name="res_model">connect.firewall.agent</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context">{'create': False, 'delete': False}</field>
+    </record>
+
+    <!-- Replace the agent menu action with one that opens the singleton. -->
+    <record id="action_firewall_agent_open" model="ir.actions.server">
+        <field name="name">Open Firewall Agent</field>
+        <field name="model_id" ref="model_connect_firewall_agent"/>
+        <field name="state">code</field>
+        <field name="code">
+singleton = model.sudo()._get_singleton()
+action = {
+    'type': 'ir.actions.act_window',
+    'name': 'Firewall Agent',
+    'res_model': 'connect.firewall.agent',
+    'view_mode': 'form',
+    'res_id': singleton.id,
+    'target': 'current',
+}
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Menus under Connect/PBX                                      -->
+    <!-- ============================================================ -->
+
+    <menuitem id="menu_firewall_root"
+              name="Firewall"
+              parent="connect.menu_connect_pbx"
+              sequence="80"/>
+
+    <menuitem id="menu_firewall_agent"
+              name="Agent Status"
+              parent="menu_firewall_root"
+              action="action_firewall_agent_open"
+              sequence="10"/>
+
+    <menuitem id="menu_firewall_whitelist"
+              name="Whitelist"
+              parent="menu_firewall_root"
+              action="action_firewall_whitelist"
+              sequence="20"/>
+
+    <menuitem id="menu_firewall_blacklist"
+              name="Blacklist"
+              parent="menu_firewall_root"
+              action="action_firewall_blacklist"
+              sequence="30"/>
+
+    <menuitem id="menu_firewall_events"
+              name="Events"
+              parent="menu_firewall_root"
+              action="action_firewall_event"
+              sequence="40"/>
+
+</odoo>

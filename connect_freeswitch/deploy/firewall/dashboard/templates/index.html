@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Connect Firewall</title>
+    <link rel="stylesheet" href="/firewall/static/style.css">
+    <script type="importmap">
+    {
+      "imports": {
+        "lit": "https://esm.sh/lit@3",
+        "lit/decorators.js": "https://esm.sh/lit@3/decorators.js"
+      }
+    }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Connect Firewall</h1>
+        <heartbeat-panel></heartbeat-panel>
+    </header>
+    <main>
+        <section class="col">
+            <h2>Active auto-bans</h2>
+            <active-bans></active-bans>
+            <h2>Whitelist</h2>
+            <whitelist-view></whitelist-view>
+        </section>
+        <section class="col">
+            <h2>Attempts / minute (last hour)</h2>
+            <attempts-sparkline></attempts-sparkline>
+            <h2>Top IPs (last 24h)</h2>
+            <top-ips></top-ips>
+            <h2>Live event stream</h2>
+            <event-stream></event-stream>
+        </section>
+    </main>
+    <script type="module" src="/firewall/static/components/heartbeat-panel.js"></script>
+    <script type="module" src="/firewall/static/components/active-bans.js"></script>
+    <script type="module" src="/firewall/static/components/whitelist-view.js"></script>
+    <script type="module" src="/firewall/static/components/attempts-sparkline.js"></script>
+    <script type="module" src="/firewall/static/components/top-ips.js"></script>
+    <script type="module" src="/firewall/static/components/event-stream.js"></script>
+</body>
+</html>
