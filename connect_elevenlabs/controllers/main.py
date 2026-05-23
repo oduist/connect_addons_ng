@@ -158,7 +158,9 @@ class ConnectElevenlabsController(http.Controller):
         # tool calls) instead of the post-call HMAC check.
         if not self.check_tool_token():
             raise Unauthorized()
-        payload = json.loads(http.request.httprequest.get_data(as_text=True))
+        raw = http.request.httprequest.get_data(as_text=True)
+        logger.info('conversation_init raw payload: %s', raw[:4000])
+        payload = json.loads(raw)
         data = payload.get('data') or payload
         agent_id = data.get('agent_id')
         caller_id = data.get('caller_id') or data.get('from_number')
