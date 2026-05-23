@@ -547,6 +547,15 @@ class ElevenlabsAgent(models.Model):
                 'previous_conversation_id': '',
                 'previous_topics': '',
             }
+        # Always echo the correlation handles back to EL so post_call can
+        # resolve the connect.call. At init time the FS-path connect.call
+        # often does not exist yet (CDR fires only at hangup); without
+        # this round-trip the call_sid is dropped and post_call lands
+        # with call_id=None / call_sid=None and cannot attach the agent.
+        if call_sid:
+            dynamic_variables['call_sid'] = call_sid
+        if call_id:
+            dynamic_variables['call_id'] = call_id
         lang = dynamic_variables.get('partner_language') or self.language
         return {
             'type': 'conversation_initiation_client_data',
