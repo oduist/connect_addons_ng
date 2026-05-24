@@ -348,17 +348,24 @@ class Settings(models.Model):
             gw_response = self.freeswitch_api(
                 'sofia', 'xmlstatus gateway {}'.format(gw.name))
             gw_status = 'Unknown'
-            if gw_response and not gw_response.startswith('-ERR'):
+            if not gw_response:
+                gw_status = 'Unreachable'
+            elif gw_response.startswith('-ERR'):
+                gw_status = 'Not loaded'
+            elif gw_response.lstrip().startswith('<'):
                 try:
                     gw_root = ET.fromstring(gw_response)
                     raw = gw_root.findtext('status', 'Unknown').strip()
                     gw_status = status_map.get(raw, raw)
                 except ET.ParseError:
                     gw_status = 'Parse error'
-            elif gw_response and gw_response.startswith('-ERR'):
-                gw_status = 'Not found in sofia'
             else:
-                gw_status = 'Unreachable'
+                # Sofia returns plain text like "Invalid Gateway!" when the
+                # gateway failed to load (e.g. missing password while
+                # register=true). Surface the first line verbatim so the
+                # admin can act on the actual reason.
+                gw_status = 'Not loaded ({})'.format(
+                    gw_response.splitlines()[0].strip())
             gateway_lines.append('{}: {}'.format(gw.name, gw_status))
 
         self.write({
