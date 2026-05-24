@@ -12,7 +12,6 @@ dynamic = ["dependencies"]
 
 [tool.hatch.build.targets.wheel]
 only-include = ["connect", "connect_twilio", "connect_freeswitch"]
-exclude = ["connect/tests", "connect_twilio/tests", "connect_freeswitch/tests"]
 
 [tool.hatch-odoo]
 addons_dirs = ["."]
