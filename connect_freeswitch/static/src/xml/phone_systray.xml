@@ -3,7 +3,7 @@
 
     <t t-name="connect_freeswitch.PhoneSystray">
         <li class="o_nav_entry o_phone_systray">
-            <a href="#" class="dropdown-toggle" t-on-click.prevent="toggleDialpad" t-att-class="getIconClass()">
+            <a href="#" class="dropdown-toggle" title="Phone (FreeSWITCH)" t-on-click.prevent="toggleDialpad" t-att-class="getIconClass()">
                 <i class="fa fa-phone"/>
             </a>
         </li>
@@ -47,7 +47,7 @@
     <t t-name="connect_freeswitch.PhoneDialpad">
         <div class="o_phone_dialpad">
             <div class="o_phone_dialpad_header">
-                <span class="o_phone_dialpad_title">Phone</span>
+                <span class="o_phone_dialpad_title">FreeSWITCH Phone</span>
                 <span t-att-class="'o_phone_status badge ' + (isConnected ? 'bg-success' : 'bg-secondary')">
                     <t t-esc="getStateText()"/>
                 </span>

@@ -28,3 +28,20 @@ def post_init_hook(env):
         setup_firewall(env)
     except Exception as e:
         _logger.error('Error in post_init_hook: %s', str(e))
+
+
+def uninstall_hook(env):
+    """Clean up FS-specific config that lives outside the module's own
+    XML data so a fresh re-install (or a switch to a Twilio-only deploy)
+    starts from a clean slate.
+
+    - firewall_service_token: shared secret used by firewall API; if left
+      behind a future reinstall would reuse a token the operator may no
+      longer know about. Drop it.
+    """
+    try:
+        env['ir.config_parameter'].sudo().search(
+            [('key', '=', 'firewall_service_token')]
+        ).unlink()
+    except Exception as e:
+        _logger.error('Error in uninstall_hook: %s', str(e))
