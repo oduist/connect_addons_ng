@@ -43,9 +43,6 @@ DASHBOARD_DIR = Path(os.environ.get("DASHBOARD_DIR", "/app/dashboard"))
 
 
 def _check_bearer(request: Request, token: str) -> bool:
-    # When the service is still waiting for Odoo to deliver the token
-    # (AGENT_TOKEN env not set), reject any Bearer attempt: the dashboard
-    # can still use basic-auth in the meantime.
     if not token:
         return False
     auth = request.headers.get("Authorization", "")
@@ -133,7 +130,7 @@ def build_app(
         return {
             "version": getattr(settings, "version", None),
             "esl_connected": True,  # populated by ESL loop in v2
-            "odoo_connected": odoo._rpc is not None,
+            "odoo_connected": odoo.last_call_ok,
             "uptime_seconds": int(time.time() - started_at),
             "last_sync_at": reconciler.last_sync_at,
             "last_sync_scope": reconciler.last_sync_scope,
@@ -162,7 +159,7 @@ def build_app(
     @app.delete("/firewall/api/bans/{ip}")
     async def api_unban(ip: str):
         ok = ipset_manager.del_entry(IPSET_BANNED, ip)
-        odoo.enqueue("report_event", {
+        odoo.enqueue_event({
             "event_type": "manual_unban_applied",
             "ip": ip,
             "details": "from dashboard",

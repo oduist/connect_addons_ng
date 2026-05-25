@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-
-    <record id="group_freeswitch_agent" model="res.groups">
-        <field name="name">FreeSWITCH Agent</field>
-        <field name="comment">Identity used by FreeSWITCH-side services (firewall, future provisioning) when calling into Odoo via XML-RPC. Portal user — does not consume an enterprise seat.</field>
-    </record>
-
-</odoo>
