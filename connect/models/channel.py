@@ -214,11 +214,26 @@ class Channel(models.Model):
 
     @api.model
     def _merge_calls(self, child, parent):
-        """Move `child` onto `parent.call`; drop child's old call if empty."""
+        """Move `child` onto `parent.call`; drop child's old call if empty.
+
+        Before unlinking the orphan call, rescue caller/called/partner
+        into the surviving call if survivor's slots are empty: under the
+        bridge-pair CDR race the orphan may carry the dialed digits while
+        the survivor was minted from the opaque-token leg (see ADR-022).
+        """
         if not child.call or not parent.call or child.call == parent.call:
             return
         old_call = child.call
         child.call = parent.call.id
+        backfill = {}
+        if not parent.call.called and old_call.called:
+            backfill['called'] = old_call.called
+        if not parent.call.caller and old_call.caller:
+            backfill['caller'] = old_call.caller
+        if not parent.call.partner and old_call.partner:
+            backfill['partner'] = old_call.partner.id
+        if backfill:
+            parent.call.write(backfill)
         if not old_call.channels:
             old_call.unlink()
 

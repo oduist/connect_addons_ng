@@ -188,6 +188,15 @@ class Call(models.Model):
         channel.call.duration = channel.call.channels.sorted(
             key='id', reverse=False)[0].duration
 
+        # Backfill empty caller/called when a sibling leg arrives with data.
+        # Bridge-pair CDR race: if the B-leg's CDR is processed before the
+        # A-leg's, the call gets created with empty caller/called; the A-leg
+        # then links via parent_channel but never writes its numbers.
+        if not channel.call.caller and channel.caller_number:
+            channel.call.caller = channel.caller_number
+        if not channel.call.called and channel.called_number:
+            channel.call.called = channel.called_number
+
         # Set called from 2nd leg for click2call external calls
         if (channel.parent_channel
                 and channel.parent_channel.technical_direction == 'outbound-api'):
