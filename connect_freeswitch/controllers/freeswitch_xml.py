@@ -101,15 +101,14 @@ class FreeSwitchXMLController(http.Controller):
                     endpoint.connect_user_id, user, actual_domain)
             return self._directory_for_endpoint(endpoint, user, actual_domain)
 
-        # 2. Search by res.users id (Verto WebRTC registration).
-        # Verto logins are the numeric res.users.id (not res.users.login)
-        # because mod_verto splits the JSON-RPC login on '@' to derive the
-        # realm, and email logins would break authentication. See
-        # connect_freeswitch/models/settings.py:get_webrtc_config and
+        # 2. Search by Verto WebRTC login (format: <login-local><res.users.id>).
+        # The login is built without '@' because mod_verto splits the JSON-RPC
+        # login on '@' to derive the SIP realm; see
         # specs/decisions/014-verto-login-uses-user-id.md.
-        if user.isdigit():
+        res_user = ConnectUser._resolve_verto_login(user)
+        if res_user:
             connect_user = ConnectUser.search([
-                ('user', '=', int(user)),
+                ('user', '=', res_user.id),
                 ('webrtc_enabled', '=', True),
                 ('active', '=', True),
             ], limit=1)
@@ -163,8 +162,8 @@ class FreeSwitchXMLController(http.Controller):
     def _directory_for_webrtc_user(self, connect_user, xml_user_id, domain):
         """Directory entry for a WebRTC/Verto user registration.
 
-        xml_user_id is the numeric res.users.id (string form) chosen as the
-        Verto login to avoid '@' in the JSON-RPC login parameter. See
+        xml_user_id is the Verto login string sent by mod_verto:
+        ``<login-local-part><res.users.id>`` (e.g. ``litnimax42``). See
         specs/decisions/014-verto-login-uses-user-id.md.
         """
         dial_string = "${{verto_contact({user_id}@{domain})}}".format(
@@ -201,11 +200,11 @@ class FreeSwitchXMLController(http.Controller):
             dial_parts.append("${{sofia_contact(*/{auth_user}@{domain})}}".format(
                 auth_user=ep.auth_user, domain=domain))
 
-        # WebRTC contact: use res.users.id as the Verto login (matches the
-        # WebRTC directory entry and the login the JS softphone sends).
-        # See specs/decisions/014-verto-login-uses-user-id.md.
+        # WebRTC contact: address by the same Verto login string the JS
+        # softphone uses to register (<login-local><res.users.id>). See
+        # specs/decisions/014-verto-login-uses-user-id.md.
         if connect_user.webrtc_enabled and connect_user.user:
-            verto_login = str(connect_user.user.id)
+            verto_login = connect_user._get_verto_login()
             dial_parts.append("${{verto_contact({user_id}@{domain})}}".format(
                 user_id=verto_login, domain=domain))
 
@@ -281,9 +280,9 @@ class FreeSwitchXMLController(http.Controller):
             })
 
         # All active WebRTC users.
-        # Verto users are keyed by res.users.id (not user.login) to keep
-        # the directory consistent with the JSON-RPC login string sent by
-        # the softphone. See specs/decisions/014-verto-login-uses-user-id.md.
+        # Verto users are keyed by the same login the JS softphone sends:
+        # <login-local><res.users.id>. See
+        # specs/decisions/014-verto-login-uses-user-id.md.
         webrtc_users = ConnectUser.search([
             ('webrtc_enabled', '=', True),
             ('webrtc_password', '!=', False),
@@ -292,13 +291,12 @@ class FreeSwitchXMLController(http.Controller):
         for wu in webrtc_users:
             if not wu.user:
                 continue
+            verto_login = wu._get_verto_login()
             ep_data.append({
-                'auth_user': str(wu.user.id),
+                'auth_user': verto_login,
                 'password': wu.webrtc_password,
                 'cid_name': wu.name,
-                # Avoid leaking the internal numeric id as caller-id-number;
-                # prefer extension or display name.
-                'cid_num': wu.exten_number or wu.name or str(wu.user.id),
+                'cid_num': wu.exten_number or wu.name or verto_login,
                 'connect_user_id': str(wu.id),
                 'endpoint_id': '',
                 'odoo_user_id': str(wu.user.id),

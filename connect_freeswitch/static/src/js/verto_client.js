@@ -299,16 +299,17 @@ export class VertoClient {
 
     async _login() {
         // Defensive guard: the server-side get_webrtc_config returns the
-        // numeric res.users.id as `login`, never the email-style res.users.login.
-        // mod_verto splits the JSON-RPC `login` parameter on '@' to derive
-        // (user, realm), so any '@' in `this.login` would break authentication.
-        // If we ever see one, log a warning to make the regression obvious.
+        // login as <login-local-part><res.users.id> (e.g. "litnimax42"),
+        // never the raw email-style res.users.login. mod_verto splits the
+        // JSON-RPC `login` parameter on '@' to derive (user, realm), so any
+        // '@' in `this.login` would break authentication. If we ever see
+        // one, log a warning to make the regression obvious.
         // See specs/decisions/014-verto-login-uses-user-id.md.
         if (typeof this.login === 'string' && this.login.includes('@')) {
             console.warn(
                 '[Verto] login contains "@" (' + this.login + '). ' +
                 'This will likely fail because mod_verto splits on "@" to ' +
-                'derive the SIP realm. Expected a numeric res.users.id from ' +
+                'derive the SIP realm. Expected <login-local><id> from ' +
                 'get_webrtc_config.'
             );
         }

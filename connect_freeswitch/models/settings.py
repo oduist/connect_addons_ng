@@ -236,19 +236,17 @@ class Settings(models.Model):
             if url:
                 ice_servers.append({'urls': url})
 
-        # The Verto login string MUST NOT contain '@': mod_verto splits the
-        # JSON-RPC `login` parameter on '@' to derive (user, realm), so any
-        # email-style res.users.login (e.g. "alice@example.org") would make
-        # FreeSWITCH look up directory domain "example.org" and reject the
-        # login. Use the numeric, server-controlled res.users.id instead;
-        # the FS XML directory matches the same id (see
-        # connect_freeswitch.controllers.freeswitch_xml). See
+        # The Verto login is built as <login-local-part><res.users.id> (e.g.
+        # "litnimax42"). The '@'-stripping keeps mod_verto happy (it splits
+        # the JSON-RPC login on '@' to derive the realm); the trailing id
+        # makes the login globally unique even when two res.users share the
+        # same email local part across domains. See
         # specs/decisions/014-verto-login-uses-user-id.md.
         return {
             'enabled': True,
             'socketUrl': socket_url,
             'domain': domain,
-            'login': str(user.id),
+            'login': connect_user._get_verto_login(),
             'password': connect_user.webrtc_password,
             'callerName': connect_user.name,
             'callerNumber': connect_user.exten_number or user.login,

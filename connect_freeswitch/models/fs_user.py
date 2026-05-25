@@ -34,6 +34,44 @@ class User(models.Model):
                     break
         return super().write(vals)
 
+    def _get_verto_login(self):
+        """Return the Verto JSON-RPC login for this user's res.users.
+
+        Format: ``<login-local-part><res.users.id>`` (e.g. ``litnimax42``).
+        Built from the local part of ``res.users.login`` (the slice before
+        ``@``) concatenated with the numeric user id. Guaranteed not to
+        contain ``@`` (mod_verto splits the login string on ``@`` to derive
+        the SIP realm). See specs/decisions/014-verto-login-uses-user-id.md.
+        """
+        self.ensure_one()
+        if not self.user:
+            return ''
+        local = (self.user.login or '').split('@', 1)[0] or 'user'
+        return '{}{}'.format(local, self.user.id)
+
+    @api.model
+    def _resolve_verto_login(self, login_str):
+        """Reverse of ``_get_verto_login``: find res.users by the Verto login.
+
+        Splits the string into ``<local><id>`` where ``<id>`` is the longest
+        run of trailing digits, then verifies the local part matches
+        ``user.login.split('@')[0]``. Returns an empty ``res.users`` recordset
+        on miss.
+        """
+        if not login_str:
+            return self.env['res.users']
+        m = re.match(r'^(.+?)(\d+)$', login_str)
+        if not m:
+            return self.env['res.users']
+        local, uid = m.group(1), int(m.group(2))
+        user = self.env['res.users'].sudo().browse(uid).exists()
+        if not user:
+            return self.env['res.users']
+        expected = (user.login or '').split('@', 1)[0] or 'user'
+        if local != expected:
+            return self.env['res.users']
+        return user
+
     def generate_dialplan(self, params, exten=None):
         """Generate FreeSWITCH dialplan to bridge to this user's endpoints."""
         self.ensure_one()
