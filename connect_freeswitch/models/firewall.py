@@ -13,21 +13,6 @@ logger = logging.getLogger(__name__)
 SYNC_HTTP_TIMEOUT = 3  # seconds; reconcile cron is the safety net for misses
 
 
-def _first_dict(*values):
-    """Recursively find the first dict in ``values`` (lists / tuples
-    flattened on the fly). XML-RPC clients sometimes wrap our payload
-    in an extra layer of positional args; this helper hides that
-    detail from the handlers."""
-    stack = list(values)
-    while stack:
-        item = stack.pop(0)
-        if isinstance(item, dict):
-            return item
-        if isinstance(item, (list, tuple)):
-            stack[:0] = list(item)
-    return None
-
-
 def _validate_ip_or_cidr(value):
     if not value:
         raise ValidationError("IP address or CIDR is required.")
@@ -370,23 +355,17 @@ class FirewallAgent(models.Model):
             return None
 
     # ------------------------------------------------------------------
-    # Inbound XML-RPC: called by the firewall service over the portal user
+    # Inbound: called by the firewall service via /freeswitch/firewall/api/*
+    # controllers (Bearer-authenticated against firewall_service_token).
     # ------------------------------------------------------------------
 
     @api.model
-    def fetch_config(self, *args, **kwargs):
-        """Return all firewall_* settings the service needs at boot/sync.
+    def fetch_config(self):
+        """Return the firewall_* settings the service needs at boot/sync.
 
-        Includes the shared ``firewall_service_token`` so the service
-        can authenticate inbound /firewall/sync requests without
-        needing AGENT_TOKEN as an env var. The portal user has already
-        proven itself by logging in, so handing the token back over
-        XML-RPC adds no exposure beyond what the password already
-        grants.
-
-        The ``*args`` / ``**kwargs`` swallow whatever XML-RPC clients send
-        — different libraries serialise positional arguments differently
-        (some inject an empty list, some don't), so we stay tolerant.
+        The shared ``firewall_service_token`` is intentionally **not**
+        returned — the service must already know it (the very same
+        token authenticated this request).
         """
         settings = self.env["connect.settings"].sudo()
         keys = [
@@ -398,12 +377,11 @@ class FirewallAgent(models.Model):
             "firewall_authenticated_timeout",
             "firewall_expire_short_timeout",
             "firewall_expire_long_timeout",
-            "firewall_service_token",
         ]
         return {k: settings.get_param(k) for k in keys}
 
     @api.model
-    def fetch_whitelist(self, *args, **kwargs):
+    def fetch_whitelist(self):
         recs = self.env["connect.firewall.whitelist"].sudo().search(
             [("active", "=", True)]
         )
@@ -414,7 +392,7 @@ class FirewallAgent(models.Model):
         ]
 
     @api.model
-    def fetch_blacklist(self, *args, **kwargs):
+    def fetch_blacklist(self):
         recs = self.env["connect.firewall.blacklist"].sudo().search(
             [("active", "=", True)]
         )
@@ -425,16 +403,8 @@ class FirewallAgent(models.Model):
         ]
 
     @api.model
-    def report_event(self, payload=None, *args, **kwargs):
-        """Service reports a security event for the audit log.
-
-        Different XML-RPC clients serialise positional arguments in
-        sometimes surprising ways (aio_odoorpc has been observed
-        wrapping the payload in an extra list, others drop an empty
-        positional in front of it). We flatten everything and pick the
-        first dict we can find.
-        """
-        payload = _first_dict(payload, *args)
+    def report_event(self, payload):
+        """Service reports a security event for the audit log."""
         if not isinstance(payload, dict):
             return False
         keys = {"event_type", "ip", "user_agent", "account_id", "service", "details", "ts"}
@@ -447,8 +417,7 @@ class FirewallAgent(models.Model):
         return rec.id
 
     @api.model
-    def report_applied(self, ip=None, action=None, status="ok", message=None,
-                       *args, **kwargs):
+    def report_applied(self, ip=None, action=None, status="ok", message=None):
         """Service confirms an inbound sync action was applied.
 
         Updates last_sync_at and pushes a popup to admin users.
@@ -479,13 +448,12 @@ class FirewallAgent(models.Model):
         return True
 
     @api.model
-    def report_heartbeat(self, payload=None, *args, **kwargs):
+    def report_heartbeat(self, payload):
         """Periodic heartbeat from the service.
 
         payload: dict with version/esl_connected/bans_count/
         authenticated_count/uptime_seconds (any subset).
         """
-        payload = _first_dict(payload, *args)
         singleton = self.sudo()._get_singleton()
         vals = {"last_seen": fields.Datetime.now()}
         if isinstance(payload, dict):

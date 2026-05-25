@@ -1,6 +1,8 @@
 # ADR-014: FreeSWITCH firewall service (SIP brute-force protection)
 
-**Status:** Accepted
+**Status:** Accepted (the auth/control-plane section is superseded by
+ADR-015 — the service no longer authenticates as a portal user, see
+the "Superseded" note below)
 **Date:** 2026-05-20
 
 ## Context
@@ -123,9 +125,33 @@ We considered creating a separate `connect_firewall` Odoo module that depends on
 1. **Exact FreeSWITCH ESL event names** for the Asterisk equivalents of `SuccessfulAuth` / `ChallengeSent` / `InvalidPassword`. The best candidates are `sofia::register`, `sofia::register_attempt`, and `sofia::register_failure` with varying `failure-status`/`auth-result` headers. To be confirmed by subscribing to `event plain ALL` on a test FreeSWITCH and replaying valid/invalid REGISTER scenarios. Findings to be recorded as comments in the ESL handler module.
 2. **Whitelist seeding for SIP-trunk providers** (Twilio Elastic SIP, Voxbeam, etc.) is left as an admin task documented in `docs/admin/firewall.md`. No code-side presets in v1 — keeps the project independent of any particular provider.
 
+## Superseded
+
+The "portal user + XML-RPC" pieces of this ADR were superseded in
+v1.1.0 of the firewall service. Specifically:
+
+- "Connects to Odoo as a portal user (no enterprise-license
+  consumption)" (Service shape section) and "Service → Odoo: XML-RPC
+  under the portal user — `fetch_config`, …" (Transport section)
+  no longer apply.
+- The "One portal user, used by the firewall service and future
+  FS→Odoo integrations" subsection (and the access matrix it
+  describes) is obsolete: the `freeswitch_agent` user, the
+  `group_freeswitch_agent` group, and the five `*_agent` access rules
+  were removed in module migration `19.0.1.8.17`.
+
+The replacement is described in **ADR-015**: the service authenticates
+to Odoo via dedicated `/freeswitch/firewall/api/*` HTTP controllers,
+using the same shared Bearer token (`firewall_service_token`) that
+already authenticated the reverse direction. All other decisions in
+this ADR (six ipset tables, challenge window, kernel UA filter,
+declarative sync semantics, IPv4 single-instance, in-memory state,
+Lit dashboard, everything-in-`connect_freeswitch`) remain in force.
+
 ## References
 
 - `.context/firewall_service_plan.md` — implementation plan derived from this ADR.
 - `.context/attachments/UPq7uy/pasted_text_2026-05-20_15-30-58.txt` — Asterisk-side reference agent (boot installation of the 6-table scheme).
 - ADR-004 `freeswitch-xml-rpc.md` — Odoo↔FreeSWITCH XML-RPC channel used by other features.
 - ADR-008 `freeswitch-gateway-acl.md` — static ACL precedent at the SIP layer.
+- ADR-015 `firewall-token-controllers.md` — the replacement control plane.
