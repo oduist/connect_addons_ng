@@ -35,6 +35,7 @@ nav:
       - ElevenLabs over FreeSWITCH: admin/elevenlabs-freeswitch.md
       - Call Parking: admin/parking.md
       - Security: admin/security.md
+      - SIP Firewall: admin/firewall.md
   - User Guide:
       - Getting Started: user/getting-started.md
       - Making and Receiving Calls: user/calls.md

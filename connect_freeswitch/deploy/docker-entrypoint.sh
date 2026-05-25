@@ -123,8 +123,35 @@ except Exception as e:
     fi
 }
 
+apply_esl_password() {
+    # Replace the ClueCon default in event_socket.conf.xml with whatever
+    # the operator put in FS_ESL_PASSWORD. Leave the file alone if the
+    # var is not set so behaviour stays backwards-compatible.
+    if [ -z "$FS_ESL_PASSWORD" ]; then
+        return
+    fi
+    case "$FS_ESL_PASSWORD" in
+        *\<*|*\>*|*\"*|*\&*)
+            echo "Refusing to apply FS_ESL_PASSWORD: contains XML metacharacter." >&2
+            return
+            ;;
+    esac
+    CONF=/usr/local/freeswitch/etc/freeswitch/autoload_configs/event_socket.conf.xml
+    if [ ! -f "$CONF" ]; then
+        echo "Cannot find $CONF; skipping ESL password substitution." >&2
+        return
+    fi
+    if ! grep -q 'name="password"' "$CONF"; then
+        echo "No password param in $CONF; skipping ESL password substitution." >&2
+        return
+    fi
+    sed -i 's|<param name="password" value="[^"]*"/>|<param name="password" value="'"$FS_ESL_PASSWORD"'"/>|' "$CONF"
+    echo "Applied FS_ESL_PASSWORD to event_socket.conf.xml"
+}
+
 download_sounds
 setup_tls
+apply_esl_password
 
 trap 'freeswitch -stop' TERM
 

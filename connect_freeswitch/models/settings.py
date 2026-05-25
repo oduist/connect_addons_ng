@@ -6,8 +6,13 @@ import xmlrpc.client
 
 from odoo import api, fields, models
 from odoo.addons.connect.models.license import ODUIST_MODULES
+from odoo.addons.connect.models.settings import PROTECTED_FIELDS
 
 ODUIST_MODULES.append('connect_freeswitch')
+
+# Mask the firewall service token the same way the core module masks openai_api_key.
+if "display_firewall_service_token" not in PROTECTED_FIELDS:
+    PROTECTED_FIELDS.append("display_firewall_service_token")
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +96,116 @@ class Settings(models.Model):
     freeswitch_calls = fields.Char(string="Active Calls", readonly=True)
     freeswitch_registrations = fields.Char(string="Registered Endpoints", readonly=True)
     freeswitch_gateway_statuses = fields.Text(string="Gateway Statuses", readonly=True)
+
+    # Firewall settings
+    firewall_enabled = fields.Boolean(
+        string="Firewall Enabled",
+        default=False,
+        help="Enable the FreeSWITCH firewall service for SIP brute-force protection.",
+    )
+    firewall_service_url = fields.Char(
+        string="Firewall Service URL",
+        default="http://host.docker.internal:8081",
+        help="Base URL of the firewall service. Odoo posts sync notifications "
+             "to <url>/firewall/sync. For Docker hosts, use host.docker.internal; "
+             "otherwise the LAN IP of the host where the service container runs.",
+    )
+    firewall_service_token = fields.Char(
+        string="Firewall Service Token (stored)",
+        groups="connect.group_admin",
+    )
+    display_firewall_service_token = fields.Char(
+        string="Firewall Service Token",
+        help="Shared secret used by Odoo and the firewall service to "
+             "authenticate each other. Generate a fresh value (≥24 chars, "
+             "[A-Za-z0-9_-]) and copy it into the AGENT_TOKEN env var of "
+             "the service before saving — the value is masked back to "
+             "**** immediately afterwards. Visible only to administrators.",
+    )
+    firewall_heartbeat_interval = fields.Integer(
+        string="Heartbeat Interval (sec)",
+        default=60,
+        help="How often the firewall service reports its status to Odoo.",
+    )
+    firewall_event_retention_days = fields.Integer(
+        string="Event Retention (days)",
+        default=30,
+        help="How long firewall security events are kept in the database.",
+    )
+    firewall_tcp_ports = fields.Char(
+        string="Firewall TCP Ports",
+        default="5060,5061,5080,5081",
+        help="Comma-separated TCP ports to protect (SIP, SIPS, WSS).",
+    )
+    firewall_udp_ports = fields.Char(
+        string="Firewall UDP Ports",
+        default="5060,5061,5080,5081",
+        help="Comma-separated UDP ports to protect (SIP).",
+    )
+    firewall_banned_timeout = fields.Integer(
+        string="Auto-ban TTL (sec)",
+        default=86400,
+        help="How long an automatically banned IP stays in the banned ipset.",
+    )
+    firewall_authenticated_timeout = fields.Integer(
+        string="Trust TTL (sec)",
+        default=604800,
+        help="How long an IP stays trusted after a successful authentication.",
+    )
+    firewall_expire_short_timeout = fields.Integer(
+        string="Challenge Window (sec)",
+        default=30,
+        help="Time given to a new IP to respond to a SIP 401 challenge.",
+    )
+    firewall_expire_long_timeout = fields.Integer(
+        string="Default-Deny TTL (sec)",
+        default=86400,
+        help="Default-deny duration after a challenge is sent but not answered.",
+    )
+
+    _TOKEN_MIN_LEN = 24
+    _TOKEN_ALLOWED_CHARS = set(
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+    )
+
+    @api.model
+    def _validate_firewall_secret(self, value):
+        """Raise ValidationError on weak / malformed Firewall Service Token."""
+        from odoo.exceptions import ValidationError
+        if value in (False, None):
+            return
+        value = value.strip()
+        if not value:
+            return
+        if len(value) < self._TOKEN_MIN_LEN:
+            raise ValidationError(
+                "Firewall Service Token must be at least {} characters long.".format(
+                    self._TOKEN_MIN_LEN
+                )
+            )
+        bad = sorted({c for c in value if c not in self._TOKEN_ALLOWED_CHARS})
+        if bad:
+            raise ValidationError(
+                "Firewall Service Token can only contain letters, digits, '_' and '-'; "
+                "remove: {}".format(" ".join(bad))
+            )
+
+    def write(self, vals):
+        # The core settings.write() does a second-pass write under the
+        # 'skip_protected_fields' context to replace the displayed
+        # secret with asterisks. Skip our validation in that pass so we
+        # don't reject the masked value.
+        if not self.env.context.get("skip_protected_fields"):
+            if "display_firewall_service_token" in vals:
+                self._validate_firewall_secret(
+                    vals["display_firewall_service_token"]
+                )
+        res = super().write(vals)
+        # Notify the firewall service that settings changed.
+        if any(k.startswith("firewall_") or k == "display_firewall_service_token"
+               for k in vals):
+            self.env["connect.firewall.agent"]._trigger_sync("settings")
+        return res
 
     @api.model
     def freeswitch_api(self, command, args=''):
@@ -183,17 +298,24 @@ class Settings(models.Model):
             gw_response = self.freeswitch_api(
                 'sofia', 'xmlstatus gateway {}'.format(gw.name))
             gw_status = 'Unknown'
-            if gw_response and not gw_response.startswith('-ERR'):
+            if not gw_response:
+                gw_status = 'Unreachable'
+            elif gw_response.startswith('-ERR'):
+                gw_status = 'Not loaded'
+            elif gw_response.lstrip().startswith('<'):
                 try:
                     gw_root = ET.fromstring(gw_response)
                     raw = gw_root.findtext('status', 'Unknown').strip()
                     gw_status = status_map.get(raw, raw)
                 except ET.ParseError:
                     gw_status = 'Parse error'
-            elif gw_response and gw_response.startswith('-ERR'):
-                gw_status = 'Not found in sofia'
             else:
-                gw_status = 'Unreachable'
+                # Sofia returns plain text like "Invalid Gateway!" when the
+                # gateway failed to load (e.g. missing password while
+                # register=true). Surface the first line verbatim so the
+                # admin can act on the actual reason.
+                gw_status = 'Not loaded ({})'.format(
+                    gw_response.splitlines()[0].strip())
             gateway_lines.append('{}: {}'.format(gw.name, gw_status))
 
         self.write({

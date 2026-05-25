@@ -156,4 +156,84 @@
         <field name="perm_unlink" eval="False"/>
     </record>
 
+    <!-- connect.firewall.whitelist access rules -->
+    <record id="access_firewall_whitelist_admin" model="ir.model.access">
+        <field name="name">connect.firewall.whitelist admin</field>
+        <field name="model_id" ref="model_connect_firewall_whitelist"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+    <record id="access_firewall_whitelist_user" model="ir.model.access">
+        <field name="name">connect.firewall.whitelist user</field>
+        <field name="model_id" ref="model_connect_firewall_whitelist"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.firewall.blacklist access rules -->
+    <record id="access_firewall_blacklist_admin" model="ir.model.access">
+        <field name="name">connect.firewall.blacklist admin</field>
+        <field name="model_id" ref="model_connect_firewall_blacklist"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+    <record id="access_firewall_blacklist_user" model="ir.model.access">
+        <field name="name">connect.firewall.blacklist user</field>
+        <field name="model_id" ref="model_connect_firewall_blacklist"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.firewall.event access rules -->
+    <record id="access_firewall_event_admin" model="ir.model.access">
+        <field name="name">connect.firewall.event admin</field>
+        <field name="model_id" ref="model_connect_firewall_event"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+    <record id="access_firewall_event_user" model="ir.model.access">
+        <field name="name">connect.firewall.event user</field>
+        <field name="model_id" ref="model_connect_firewall_event"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.firewall.agent access rules -->
+    <record id="access_firewall_agent_admin" model="ir.model.access">
+        <field name="name">connect.firewall.agent admin</field>
+        <field name="model_id" ref="model_connect_firewall_agent"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="access_firewall_agent_user" model="ir.model.access">
+        <field name="name">connect.firewall.agent user</field>
+        <field name="model_id" ref="model_connect_firewall_agent"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
 </odoo>
