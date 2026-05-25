@@ -27,7 +27,7 @@ SIP_TWILIO_EDGES.insert(0, ['roaming', 'Global Low-latency Roaming'])
 class User(models.Model):
     _inherit = 'connect.user'
 
-    username = fields.Char(required=True)
+    username = fields.Char()
 
     # Re-declare the core field with the Twilio-validation domain. The
     # `status` field on connect.outgoing_callerid is added by this module,
@@ -71,7 +71,6 @@ class User(models.Model):
     )
     domain = fields.Many2one(
         'connect.domain',
-        required=True,
         ondelete='cascade',
         default=lambda x: x.env['connect.domain'].search(
             [('subdomain', 'not like', 'byoc')], limit=1
@@ -79,17 +78,17 @@ class User(models.Model):
     )
     sip_enabled = fields.Boolean('SIP Phone Enabled')
     sip_priority = fields.Selection(
-        [('1', '1'), ('2', '2')], required=True, default='2'
+        [('1', '1'), ('2', '2')], default='2'
     )
     client_enabled = fields.Boolean('Web Phone Enabled', default=True)
     client_priority = fields.Selection(
-        [('1', '1'), ('2', '2')], required=True, default='1'
+        [('1', '1'), ('2', '2')], default='1'
     )
     sip_ring_timeout = fields.Integer(
-        required=True, default=30, string='SIP ring timeout'
+        default=30, string='SIP ring timeout'
     )
     client_ring_timeout = fields.Integer(
-        required=True, default=10, string='Web client ring timeout'
+        default=10, string='Web client ring timeout'
     )
     uri = fields.Char('SIP URI', compute='_get_sip_uri')
     connect_uri = fields.Char(
@@ -103,7 +102,6 @@ class User(models.Model):
     )
     twilio_edge = fields.Selection(
         selection=SIP_TWILIO_EDGES,
-        required=True,
         default='roaming',
     )
 
@@ -112,6 +110,10 @@ class User(models.Model):
         settings = self.env['connect.settings']
         default_edge = settings.get_param('twilio_edge') or 'roaming'
         for rec in self:
+            if not rec.username or not rec.domain:
+                rec.uri = False
+                rec.connect_uri = False
+                continue
             edge = rec.twilio_edge or default_edge
             rec.uri = '{}@{}'.format(
                 rec.username, rec.domain.domain_name
@@ -286,66 +288,80 @@ class User(models.Model):
         random.shuffle(password_chars)
         return ''.join(password_chars)
 
+    def _twilio_configured(self):
+        return bool(
+            self.env['connect.settings'].sudo().get_param('account_sid')
+        )
+
     @api.model_create_multi
     def create(self, vals_list):
         recs = super().create(vals_list)
-        if not self.env.context.get('no_twilio_create'):
-            for rec in recs:
-                try:
-                    if rec.sip_enabled and rec.password:
-                        if not self.env.context.get(
-                            'skip_create_credential'
-                        ):
-                            rec.sid = rec._create_sip_account(
-                                username=rec.username,
-                                password=rec.password,
-                            )
-                        rec.with_context(
-                            skip_sync=True
-                        ).password = '*' * len(rec.password)
-                except Exception as e:
-                    if 'A strong password is required' in str(e):
-                        msg = (
-                            'A strong password is required. It must have a '
-                            'minimum length of 12, at least one number, '
-                            'uppercase char and lowercase character.'
-                        )
-                        raise ValidationError(msg)
-                    else:
-                        raise ValidationError(
-                            format_connect_response(e)
-                        )
+        if self.env.context.get('no_twilio_create'):
+            return recs
+        if not self._twilio_configured():
+            return recs
+        for rec in recs:
+            if not (rec.sip_enabled and rec.password and rec.username):
+                continue
+            try:
+                if not self.env.context.get('skip_create_credential'):
+                    rec.sid = rec._create_sip_account(
+                        username=rec.username,
+                        password=rec.password,
+                    )
+                rec.with_context(
+                    skip_sync=True
+                ).password = '*' * len(rec.password)
+            except Exception as e:
+                if 'A strong password is required' in str(e):
+                    msg = (
+                        'A strong password is required. It must have a '
+                        'minimum length of 12, at least one number, '
+                        'uppercase char and lowercase character.'
+                    )
+                    raise ValidationError(msg)
+                else:
+                    raise ValidationError(
+                        format_connect_response(e)
+                    )
         return recs
 
     def write(self, vals):
         if self.env.context.get('skip_sync'):
-            res = super().write(vals)
-            return res
+            return super().write(vals)
         if 'username' in vals:
-            raise ValidationError('Username cannot be changed!')
+            for rec in self:
+                if rec.sid:
+                    raise ValidationError(
+                        'Username cannot be changed once a Twilio SIP '
+                        'account exists for this user!'
+                    )
+        if not self._twilio_configured():
+            return super().write(vals)
         for rec in self:
-            if vals.get('password'):
-                if not self.env["connect.settings"].get_param(
-                    "twilio_auto_sync"
-                ):
-                    vals['password'] = '*' * len(vals['password'])
-                else:
-                    if rec.sid:
-                        rec._update_sip_password(vals['password'])
-                    else:
-                        vals['sid'] = self._create_sip_account(
-                            rec.username, vals['password']
-                        )
-                    vals['password'] = '*' * len(vals['password'])
-        res = super().write(vals)
-        return res
+            if not vals.get('password'):
+                continue
+            if not self.env['connect.settings'].get_param(
+                'twilio_auto_sync'
+            ):
+                vals['password'] = '*' * len(vals['password'])
+            else:
+                if rec.sid:
+                    rec._update_sip_password(vals['password'])
+                elif rec.username:
+                    vals['sid'] = self._create_sip_account(
+                        rec.username, vals['password']
+                    )
+                vals['password'] = '*' * len(vals['password'])
+        return super().write(vals)
 
     def unlink(self):
-        for rec in self:
-            if self.env["connect.settings"].get_param(
-                "twilio_auto_sync"
-            ):
-                rec.delete_sip_account()
+        if self._twilio_configured() and self.env['connect.settings'].get_param(
+            'twilio_auto_sync'
+        ):
+            for rec in self:
+                if rec.sid:
+                    rec.delete_sip_account()
         return super(User, self).unlink()
 
     def render_client(self, response, request, params):
