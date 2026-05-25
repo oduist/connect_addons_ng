@@ -8,7 +8,7 @@
 # Apply by creating a service in oduflow with these values.
 
 name: firewall
-image: oduist/freeswitch-firewall:1.0.0
+image: oduist/freeswitch-firewall:1.1.0
 network_mode: host
 cap_add:
   - NET_ADMIN
@@ -16,13 +16,14 @@ cap_add:
 # Required: copy these from Odoo (Configuration → General Settings →
 # Firewall). Do NOT commit the actual values — they are per-installation.
 environment:
-  # --- Odoo XML-RPC ------------------------------------------------------
+  # --- Odoo control plane -------------------------------------------------
   ODOO_URL: ${ODOO_URL}                           # e.g. https://pbx.example.com
-  ODOO_DB:  ${ODOO_DB}                            # database name
-  ODOO_USER: freeswitch_agent
-  ODOO_PASSWORD: ${FREESWITCH_AGENT_PASSWORD}     # from connect.settings
 
   # --- Shared secret with Odoo (firewall_service_token) ------------------
+  # REQUIRED. The service refuses to start without it. Must match the
+  # value generated in Odoo settings; the same token is used for both
+  # directions (service → /freeswitch/firewall/api/* and Odoo →
+  # /firewall/sync on this service).
   AGENT_TOKEN: ${FIREWALL_AGENT_TOKEN}
 
   # --- FreeSWITCH ESL ----------------------------------------------------

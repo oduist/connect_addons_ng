@@ -10,10 +10,9 @@ from odoo.addons.connect.models.settings import PROTECTED_FIELDS
 
 ODUIST_MODULES.append('connect_freeswitch')
 
-# Mask the firewall secrets the same way the core module masks openai_api_key.
-for _field in ("display_firewall_service_token", "display_freeswitch_agent_password"):
-    if _field not in PROTECTED_FIELDS:
-        PROTECTED_FIELDS.append(_field)
+# Mask the firewall service token the same way the core module masks openai_api_key.
+if "display_firewall_service_token" not in PROTECTED_FIELDS:
+    PROTECTED_FIELDS.append("display_firewall_service_token")
 
 logger = logging.getLogger(__name__)
 
@@ -118,18 +117,10 @@ class Settings(models.Model):
     display_firewall_service_token = fields.Char(
         string="Firewall Service Token",
         help="Shared secret used by Odoo and the firewall service to "
-             "authenticate each other. Set the same value in the AGENT_TOKEN "
-             "env var of the service. Visible only to administrators.",
-    )
-    freeswitch_agent_password = fields.Char(
-        string="FreeSWITCH Agent Password (stored)",
-        groups="connect.group_admin",
-    )
-    display_freeswitch_agent_password = fields.Char(
-        string="FreeSWITCH Agent Password",
-        help="Password for the freeswitch_agent portal user. The firewall "
-             "service and future FreeSWITCH-side automation log in to Odoo "
-             "with it. Set the same value in the ODOO_PASSWORD env var.",
+             "authenticate each other. Generate a fresh value (≥24 chars, "
+             "[A-Za-z0-9_-]) and copy it into the AGENT_TOKEN env var of "
+             "the service before saving — the value is masked back to "
+             "**** immediately afterwards. Visible only to administrators.",
     )
     firewall_heartbeat_interval = fields.Integer(
         string="Heartbeat Interval (sec)",
@@ -176,55 +167,28 @@ class Settings(models.Model):
     _TOKEN_ALLOWED_CHARS = set(
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
     )
-    _PASSWORD_MIN_LEN = 12
 
     @api.model
-    def _validate_firewall_secret(self, kind, value):
-        """Raise ValidationError on weak / malformed secrets."""
+    def _validate_firewall_secret(self, value):
+        """Raise ValidationError on weak / malformed Firewall Service Token."""
         from odoo.exceptions import ValidationError
         if value in (False, None):
             return
         value = value.strip()
         if not value:
             return
-        if kind == "token":
-            if len(value) < self._TOKEN_MIN_LEN:
-                raise ValidationError(
-                    "Firewall Service Token must be at least {} characters long.".format(
-                        self._TOKEN_MIN_LEN
-                    )
+        if len(value) < self._TOKEN_MIN_LEN:
+            raise ValidationError(
+                "Firewall Service Token must be at least {} characters long.".format(
+                    self._TOKEN_MIN_LEN
                 )
-            bad = sorted({c for c in value if c not in self._TOKEN_ALLOWED_CHARS})
-            if bad:
-                raise ValidationError(
-                    "Firewall Service Token can only contain letters, digits, '_' and '-'; "
-                    "remove: {}".format(" ".join(bad))
-                )
-        elif kind == "password":
-            if len(value) < self._PASSWORD_MIN_LEN:
-                raise ValidationError(
-                    "FreeSWITCH Agent Password must be at least {} characters long.".format(
-                        self._PASSWORD_MIN_LEN
-                    )
-                )
-            if any(c.isspace() or ord(c) < 32 for c in value):
-                raise ValidationError(
-                    "FreeSWITCH Agent Password cannot contain spaces or control characters."
-                )
-
-    def action_generate_firewall_token(self):
-        """Generate a fresh URL-safe Firewall Service Token.
-
-        The token is fetched by the service from Odoo automatically, so
-        the admin does not need to read it after generation. Pairing
-        the agent password with a generator would not make sense
-        because the admin can never read its current value to put it
-        into the service's ODOO_PASSWORD env var.
-        """
-        import secrets
-        self.ensure_one()
-        self.sudo().write({"display_firewall_service_token": secrets.token_urlsafe(32)})
-        return True
+            )
+        bad = sorted({c for c in value if c not in self._TOKEN_ALLOWED_CHARS})
+        if bad:
+            raise ValidationError(
+                "Firewall Service Token can only contain letters, digits, '_' and '-'; "
+                "remove: {}".format(" ".join(bad))
+            )
 
     def write(self, vals):
         # The core settings.write() does a second-pass write under the
@@ -234,23 +198,9 @@ class Settings(models.Model):
         if not self.env.context.get("skip_protected_fields"):
             if "display_firewall_service_token" in vals:
                 self._validate_firewall_secret(
-                    "token", vals["display_firewall_service_token"]
+                    vals["display_firewall_service_token"]
                 )
-            if "display_freeswitch_agent_password" in vals:
-                self._validate_firewall_secret(
-                    "password", vals["display_freeswitch_agent_password"]
-                )
-        # When an admin updates the agent password, propagate it to the
-        # portal user record so XML-RPC login works with the new value.
-        new_password = vals.get("display_freeswitch_agent_password")
         res = super().write(vals)
-        if new_password:
-            user = self.env.ref(
-                "connect_freeswitch.user_freeswitch_agent",
-                raise_if_not_found=False,
-            )
-            if user:
-                user.sudo().write({"password": new_password})
         # Notify the firewall service that settings changed.
         if any(k.startswith("firewall_") or k == "display_firewall_service_token"
                for k in vals):

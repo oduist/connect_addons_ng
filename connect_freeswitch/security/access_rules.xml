@@ -175,15 +175,6 @@
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
-    <record id="access_firewall_whitelist_agent" model="ir.model.access">
-        <field name="name">connect.firewall.whitelist freeswitch_agent</field>
-        <field name="model_id" ref="model_connect_firewall_whitelist"/>
-        <field name="group_id" ref="group_freeswitch_agent"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
-    </record>
 
     <!-- connect.firewall.blacklist access rules -->
     <record id="access_firewall_blacklist_admin" model="ir.model.access">
@@ -199,15 +190,6 @@
         <field name="name">connect.firewall.blacklist user</field>
         <field name="model_id" ref="model_connect_firewall_blacklist"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
-    </record>
-    <record id="access_firewall_blacklist_agent" model="ir.model.access">
-        <field name="name">connect.firewall.blacklist freeswitch_agent</field>
-        <field name="model_id" ref="model_connect_firewall_blacklist"/>
-        <field name="group_id" ref="group_freeswitch_agent"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
         <field name="perm_create" eval="False"/>
@@ -233,15 +215,6 @@
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
     </record>
-    <record id="access_firewall_event_agent" model="ir.model.access">
-        <field name="name">connect.firewall.event freeswitch_agent</field>
-        <field name="model_id" ref="model_connect_firewall_event"/>
-        <field name="group_id" ref="group_freeswitch_agent"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="False"/>
-    </record>
 
     <!-- connect.firewall.agent access rules -->
     <record id="access_firewall_agent_admin" model="ir.model.access">
@@ -257,26 +230,6 @@
         <field name="name">connect.firewall.agent user</field>
         <field name="model_id" ref="model_connect_firewall_agent"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
-    </record>
-    <record id="access_firewall_agent_agent" model="ir.model.access">
-        <field name="name">connect.firewall.agent freeswitch_agent</field>
-        <field name="model_id" ref="model_connect_firewall_agent"/>
-        <field name="group_id" ref="group_freeswitch_agent"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="False"/>
-    </record>
-
-    <!-- connect.settings read access for the FreeSWITCH agent -->
-    <record id="access_connect_settings_freeswitch_agent" model="ir.model.access">
-        <field name="name">connect.settings freeswitch_agent read</field>
-        <field name="model_id" ref="connect.model_connect_settings"/>
-        <field name="group_id" ref="group_freeswitch_agent"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
         <field name="perm_create" eval="False"/>

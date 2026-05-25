@@ -1,14 +1,12 @@
 {
     'name': 'Oduist Connect FreeSWITCH',
-    'version': '19.0.1.8.16',
+    'version': '19.0.1.8.17',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'FreeSWITCH integration for Oduist Connect',
     'depends': ['connect', 'web'],
     'data': [
-        'security/firewall_security.xml',
         'security/access_rules.xml',
-        'data/res_users.xml',
         'data/ir_cron.xml',
         'data/fs_templates.xml',
         'data/parking_slots.xml',

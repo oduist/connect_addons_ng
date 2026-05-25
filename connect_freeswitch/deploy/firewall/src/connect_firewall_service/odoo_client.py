@@ -1,120 +1,117 @@
-"""Async XML-RPC client for the paired Odoo + an in-memory outbox.
+"""HTTP client for the paired Odoo + an in-memory outbox.
 
-We keep this thin: just enough to call methods on
-``connect.firewall.agent`` under the portal user. The outbox is a plain
-asyncio.Queue + background task — if Odoo is down the queue grows in
-memory; the kernel-level firewall keeps working regardless.
+Talks to /freeswitch/firewall/api/* on Odoo, authenticated with the
+shared ``firewall_service_token`` carried as ``Authorization: Bearer
+<token>``. The outbox is a plain asyncio.Queue + background task —
+when Odoo is down the queue grows in memory; the kernel-level
+firewall keeps working regardless.
 """
 from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import Any, Iterable
 
 import httpx
-from aio_odoorpc import AsyncOdooRPC
 
 logger = logging.getLogger(__name__)
 
 OUTBOX_MAX = 5000
-RECONNECT_DELAY = 5.0
 SEND_FAIL_DELAY = 5.0
+REQUEST_TIMEOUT = 10.0
 
 
 class OdooClient:
-    def __init__(self, url: str, db: str, user: str, password: str):
-        self.url = url.rstrip("/")
-        self.db = db
-        self.user = user
-        self.password = password
+    def __init__(self, base_url: str, token: str):
+        self.base = base_url.rstrip("/") + "/freeswitch/firewall/api"
+        self.token = token
         self._http: httpx.AsyncClient | None = None
-        self._rpc: AsyncOdooRPC | None = None
-        self._outbox: asyncio.Queue[tuple[str, tuple, dict]] = asyncio.Queue(
+        self._outbox: asyncio.Queue[tuple[str, dict]] = asyncio.Queue(
             maxsize=OUTBOX_MAX,
         )
-        self._connected = asyncio.Event()
+        self.last_call_ok: bool = False
 
     # ------------------------------------------------------------------
-    # Connect / call
+    # HTTP plumbing
     # ------------------------------------------------------------------
 
-    async def connect(self) -> bool:
+    def _client(self) -> httpx.AsyncClient:
         if self._http is None:
             self._http = httpx.AsyncClient(
-                base_url=self.url + "/jsonrpc", follow_redirects=True,
+                base_url=self.base,
+                headers={"Authorization": "Bearer " + self.token},
+                timeout=REQUEST_TIMEOUT,
             )
-        self._rpc = AsyncOdooRPC(
-            database=self.db,
-            username_or_uid=self.user,
-            password=self.password,
-            http_client=self._http,
-        )
-        try:
-            ok = await self._rpc.login()
-        except Exception as exc:
-            logger.warning("Odoo login error: %s", exc)
-            return False
-        if not ok:
-            logger.warning("Odoo login returned False")
-            return False
-        logger.info("Connected to Odoo at %s as %s", self.url, self.user)
-        self._connected.set()
-        return True
+        return self._http
 
     async def close(self) -> None:
-        self._connected.clear()
         if self._http is not None:
             try:
                 await self._http.aclose()
             except Exception:
                 pass
             self._http = None
-        self._rpc = None
 
-    async def call(self, method: str, args: list | None = None, kwargs: dict | None = None) -> Any:
-        """Synchronous (awaitable) call to connect.firewall.agent.<method>."""
-        if self._rpc is None:
-            raise RuntimeError("Odoo client not connected")
-        return await self._rpc.execute_kw(
-            model_name="connect.firewall.agent",
-            method=method,
-            args=args or [],
-            kwargs=kwargs or {},
-        )
+    async def _request(self, method: str, path: str,
+                       payload: dict | None = None) -> Any:
+        client = self._client()
+        if method == "GET":
+            resp = await client.get(path)
+        else:
+            resp = await client.post(path, json=payload or {})
+        resp.raise_for_status()
+        self.last_call_ok = True
+        if not resp.content:
+            return None
+        return resp.json()
 
-    # ------------------------------------------------------------------
-    # Async fire-and-forget via the outbox
-    # ------------------------------------------------------------------
-
-    def enqueue(self, method: str, *args: Any, **kwargs: Any) -> None:
-        """Schedule a call without awaiting Odoo. Drops oldest if full."""
+    async def get(self, path: str) -> Any:
         try:
-            self._outbox.put_nowait((method, args, kwargs))
+            return await self._request("GET", path)
+        except Exception:
+            self.last_call_ok = False
+            raise
+
+    async def post(self, path: str, payload: dict | None = None) -> Any:
+        try:
+            return await self._request("POST", path, payload)
+        except Exception:
+            self.last_call_ok = False
+            raise
+
+    # ------------------------------------------------------------------
+    # Async fire-and-forget via the outbox (used for events only;
+    # heartbeats are sent synchronously so a stuck Odoo surfaces
+    # immediately rather than piling up).
+    # ------------------------------------------------------------------
+
+    def enqueue_event(self, payload: dict) -> None:
+        """Schedule POST /event without awaiting Odoo. Drops oldest if full."""
+        self._enqueue("/event", payload)
+
+    def _enqueue(self, path: str, payload: dict) -> None:
+        try:
+            self._outbox.put_nowait((path, payload))
         except asyncio.QueueFull:
             try:
                 self._outbox.get_nowait()
             except asyncio.QueueEmpty:
                 pass
             try:
-                self._outbox.put_nowait((method, args, kwargs))
+                self._outbox.put_nowait((path, payload))
             except asyncio.QueueFull:
-                logger.error("Outbox saturated; dropping %s", method)
+                logger.error("Outbox saturated; dropping %s", path)
 
     async def outbox_worker(self) -> None:
         """Background task: drain the outbox, retrying on errors."""
         while True:
-            method, args, kwargs = await self._outbox.get()
+            path, payload = await self._outbox.get()
             while True:
-                if self._rpc is None:
-                    if not await self.connect():
-                        await asyncio.sleep(RECONNECT_DELAY)
-                        continue
                 try:
-                    await self.call(method, list(args), kwargs)
+                    await self.post(path, payload)
                     break
                 except Exception as exc:
                     logger.warning(
-                        "Odoo call %s failed (%s); will retry", method, exc,
+                        "Odoo POST %s failed (%s); will retry", path, exc,
                     )
-                    await self.close()
                     await asyncio.sleep(SEND_FAIL_DELAY)

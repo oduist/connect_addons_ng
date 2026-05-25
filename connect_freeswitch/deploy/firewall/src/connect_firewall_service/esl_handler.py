@@ -145,8 +145,7 @@ class ESLHandler:
         if already:
             logger.debug("AUTO-BAN duplicate %s (%s) suppressed", ip, details)
             return
-        self.odoo.enqueue(
-            "report_event",
+        self.odoo.enqueue_event(
             {"event_type": "auto_ban", "ip": ip,
              "user_agent": ua, "account_id": account,
              "details": details},
@@ -186,8 +185,7 @@ class ESLHandler:
             )
             ipset_manager.del_entry(IPSET_EXPIRE_LONG, ip)
             ipset_manager.del_entry(IPSET_BANNED, ip)
-            self.odoo.enqueue(
-                "report_event",
+            self.odoo.enqueue_event(
                 {"event_type": "auth_success", "ip": ip,
                  "user_agent": ua, "account_id": account,
                  "details": subclass},

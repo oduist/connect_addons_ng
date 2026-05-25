@@ -21,17 +21,17 @@ class ServiceSettings(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
 
     # --- Odoo ---------------------------------------------------------
+    # Base URL of the paired Odoo. The service appends
+    # /freeswitch/firewall/api/* paths to it.
     odoo_url: str
-    odoo_db: str
-    odoo_user: str = "freeswitch_agent"
-    odoo_password: str
 
     # --- Shared secret between Odoo and this service ------------------
-    # Optional: if not set in the env we fetch it from Odoo on first
-    # successful login. /firewall/sync is rejected until a token is
-    # known. Setting it here is still useful when you want a strict
-    # boot-time pin or when Odoo is unreachable at startup.
-    agent_token: str = ""
+    # Required. Authenticates the service against Odoo's
+    # /freeswitch/firewall/api/* controllers and is also accepted on
+    # /firewall/sync coming from Odoo. Must match
+    # connect.settings.firewall_service_token. The service fails fast
+    # at boot if unset.
+    agent_token: str
 
     # --- FreeSWITCH ESL -----------------------------------------------
     fs_esl_host: str = "127.0.0.1"

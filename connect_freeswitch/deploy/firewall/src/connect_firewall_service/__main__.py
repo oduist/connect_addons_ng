@@ -118,13 +118,13 @@ async def heartbeat_loop(settings: ServiceSettings, odoo: OdooClient,
         try:
             bans = ipset_manager.list_entries(IPSET_BANNED)
             auth = ipset_manager.list_entries(IPSET_AUTHENTICATED)
-            await odoo.call("report_heartbeat", [{
+            await odoo.post("/heartbeat", {
                 "version": __version__,
                 "esl_connected": True,
                 "bans_count": len(bans),
                 "authenticated_count": len(auth),
                 "uptime_seconds": int(time.time() - started_at),
-            }])
+            })
         except Exception as exc:
             logger.debug("Heartbeat failed: %s", exc)
         await asyncio.sleep(max(15, settings.firewall_heartbeat_interval))
@@ -163,12 +163,8 @@ async def run(settings: ServiceSettings) -> None:
         )
 
     odoo = OdooClient(
-        url=settings.odoo_url, db=settings.odoo_db,
-        user=settings.odoo_user, password=settings.odoo_password,
+        base_url=settings.odoo_url, token=settings.agent_token,
     )
-    # Try to connect once at boot — the outbox/heartbeat tasks will
-    # reconnect transparently if this fails.
-    await odoo.connect()
 
     reconciler = Reconciler(settings=settings, odoo=odoo)
     # First sync is fire-and-forget; the Reconciler loop handles errors.
