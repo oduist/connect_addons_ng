@@ -358,11 +358,17 @@ class Settings(models.Model):
             if url:
                 ice_servers.append({'urls': url})
 
+        # The Verto login is built as <login-local-part><res.users.id> (e.g.
+        # "litnimax42"). The '@'-stripping keeps mod_verto happy (it splits
+        # the JSON-RPC login on '@' to derive the realm); the trailing id
+        # makes the login globally unique even when two res.users share the
+        # same email local part across domains. See
+        # specs/decisions/016-verto-login-uses-user-id.md.
         return {
             'enabled': True,
             'socketUrl': socket_url,
             'domain': domain,
-            'login': user.login,
+            'login': connect_user._get_verto_login(),
             'password': connect_user.webrtc_password,
             'callerName': connect_user.name,
             'callerNumber': connect_user.exten_number or user.login,

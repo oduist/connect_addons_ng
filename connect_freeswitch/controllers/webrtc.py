@@ -36,11 +36,15 @@ class WebRTCController(http.Controller):
         if not socket_url:
             return {'enabled': False, 'reason': 'no_socket_url'}
 
+        # Verto login = <login-local-part><res.users.id> (e.g. "litnimax42").
+        # Strips '@' (mod_verto splits on '@' to derive the realm) and stays
+        # unique across users that share an email local part. See
+        # specs/decisions/016-verto-login-uses-user-id.md.
         return {
             'enabled': True,
             'socketUrl': socket_url,
             'domain': domain,
-            'login': user.login,
+            'login': connect_user._get_verto_login(),
             'password': connect_user.webrtc_password,
             'callerName': connect_user.name,
             'callerNumber': connect_user.exten_number or user.login,
