@@ -2,7 +2,7 @@
 
 {
     'name': 'Connect ElevenLabs - FreeSWITCH Bridge',
-    'version': '1.1.3',
+    'version': '1.1.4',
     'author': 'Oduist',
     'maintainer': 'Oduist',
     'support': 'support@oduist.com',
@@ -13,7 +13,6 @@
     'depends': ['connect_elevenlabs', 'connect_freeswitch'],
     'data': [
         'data/templates.xml',
-        'views/agent.xml',
     ],
     'installable': True,
     'application': False,
