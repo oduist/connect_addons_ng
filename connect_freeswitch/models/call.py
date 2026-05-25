@@ -162,7 +162,7 @@ class Call(models.Model):
         # WebRTC (Verto) leg from user.
         # The Verto contact is addressed by the user's Verto login
         # (<login-local><res.users.id>), matching the FS XML directory. See
-        # specs/decisions/014-verto-login-uses-user-id.md.
+        # specs/decisions/016-verto-login-uses-user-id.md.
         if connect_user.webrtc_enabled and connect_user.originate_ring \
                 and connect_user.user:
             verto_login = connect_user._get_verto_login()
@@ -266,7 +266,7 @@ class Call(models.Model):
 
         # WebRTC: address the Verto contact by the user's Verto login
         # (<login-local><res.users.id>), matching the FS XML directory.
-        # See specs/decisions/014-verto-login-uses-user-id.md.
+        # See specs/decisions/016-verto-login-uses-user-id.md.
         if target_user.webrtc_enabled and target_user.user:
             b_parts.append('user/{}@{}'.format(
                 target_user._get_verto_login(), domain))

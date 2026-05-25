@@ -1,4 +1,4 @@
-# ADR-014: Verto login uses `<login-local-part><res.users.id>`
+# ADR-016: Verto login uses `<login-local-part><res.users.id>`
 
 **Status:** Accepted (revised 2026-05-17)
 **Date:** 2026-04-29 (original), 2026-05-17 (revised)

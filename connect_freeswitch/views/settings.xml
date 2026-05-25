@@ -49,6 +49,36 @@
                         </group>
                     </group>
                 </page>
+                <page name="firewall" string="Firewall">
+                    <group>
+                        <group string="Service">
+                            <field name="firewall_enabled" widget="boolean_toggle"/>
+                            <field name="firewall_service_url"
+                                   placeholder="http://host.docker.internal:8081"/>
+                            <field name="display_firewall_service_token"
+                                   password="True"
+                                   placeholder="**** (min 24 chars, [A-Za-z0-9_-])"/>
+                        </group>
+                        <group string="Heartbeat &amp; Retention">
+                            <field name="firewall_heartbeat_interval"/>
+                            <field name="firewall_event_retention_days"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Protected Ports">
+                            <field name="firewall_tcp_ports"
+                                   placeholder="5060,5061,5080,5081"/>
+                            <field name="firewall_udp_ports"
+                                   placeholder="5060,5061,5080,5081"/>
+                        </group>
+                        <group string="Timeouts (seconds)">
+                            <field name="firewall_banned_timeout"/>
+                            <field name="firewall_authenticated_timeout"/>
+                            <field name="firewall_expire_short_timeout"/>
+                            <field name="firewall_expire_long_timeout"/>
+                        </group>
+                    </group>
+                </page>
             </page>
         </field>
     </record>

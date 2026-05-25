@@ -1,0 +1,237 @@
+# Connect FreeSWITCH Module Specification
+
+## Module Info
+
+- **Name:** Oduist Connect FreeSWITCH
+- **Technical:** `connect_freeswitch`
+- **Depends:** `connect`, `web`
+- **Application:** False
+- **License:** Proprietary
+
+## Overview
+
+The `connect_freeswitch` module extends the core `connect` module with
+FreeSWITCH-specific functionality. Like `connect_twilio` it follows the
+abstract-core / concrete-integration pattern: core defines models and
+abstract hooks, FreeSWITCH-side code adds fields and behaviour via
+`_inherit`.
+
+It ships **three deliverables**:
+
+1. The Odoo addon proper — models, views, controllers under
+   `connect_freeswitch/`.
+2. A custom FreeSWITCH Docker image (`oduist/freeswitch`) under
+   `deploy/`, used as the SIP backend.
+3. A standalone SIP-firewall service (`oduist/freeswitch-firewall`)
+   under `deploy/firewall/`, paired with the Odoo module and the FS
+   image — see the dedicated section below.
+
+Major features:
+- WebRTC via FreeSWITCH `mod_verto` with a phone widget in the Odoo UI;
+- XML-curl directory + dialplan generation driven by Odoo records;
+- mod_fifo-backed call queues with static dialplan consumers (ADR-013);
+- call parking with BLF subscriptions (ADR-012);
+- gateway / outgoing route management;
+- piper TTS module embedded in the image;
+- SIP brute-force firewall integration (see below, ADR-014).
+
+---
+
+## Models
+
+### settings.py — `_inherit = "connect.settings"`
+
+Adds FreeSWITCH-side configuration plus the firewall settings. Key
+firewall-related fields:
+
+| Field | Type | Notes |
+|---|---|---|
+| `firewall_enabled` | Boolean | master toggle |
+| `firewall_service_url` | Char | base URL of the firewall service container |
+| `firewall_service_token` / `display_firewall_service_token` | Char | shared Bearer secret used in **both** directions (Odoo → `/firewall/sync` on the service and service → `/freeswitch/firewall/api/*` on Odoo). Masked; admin-only; validator requires ≥24 chars urlsafe. |
+| `firewall_heartbeat_interval` | Integer | seconds, default 60 |
+| `firewall_event_retention_days` | Integer | how long the audit log is kept; default 30 |
+| `firewall_tcp_ports`, `firewall_udp_ports` | Char | comma-separated ports protected by the iptables chain |
+| `firewall_banned_timeout` | Integer | auto-ban TTL (24 h default) |
+| `firewall_authenticated_timeout` | Integer | trust TTL after a successful registration (7 days, sliding) |
+| `firewall_expire_short_timeout` | Integer | challenge-response window (30 s) |
+| `firewall_expire_long_timeout` | Integer | default-deny TTL after a challenge is sent but not answered (24 h) |
+
+`write()` is extended to:
+* validate the Firewall Service Token (length + character set) when an
+  admin edits it in the UI;
+* schedule a `/firewall/sync` POST via `cr.postcommit` whenever any
+  `firewall_*` field changes.
+
+### firewall.py — firewall models
+
+| Model | Purpose |
+|---|---|
+| `connect.firewall.whitelist` | static IP / CIDR records that bypass all banning logic |
+| `connect.firewall.blacklist` | static IP / CIDR records that are always blocked (manual permanent bans) |
+| `connect.firewall.event` | audit log of every security-relevant event reported by the service |
+| `connect.firewall.agent` | singleton holding service heartbeat data; backing model for the `/freeswitch/firewall/api/*` controllers the service calls |
+
+**Whitelist / Blacklist** share the same shape (`name`, `ip_or_cidr`,
+`active`, `note`). `@api.constrains` validates the address with
+`ipaddress.ip_network()` and enforces uniqueness per table. Each
+`create` / `write` / `unlink` schedules `connect.firewall.agent._trigger_sync()`.
+
+**Event** is read-only from the UI (`create=false edit=false`) — it is
+populated only by the service via the `/freeswitch/firewall/api/event`
+controller. The `event_type` Selection covers: `auth_success`, `auth_fail`, `auto_ban`,
+`manual_ban_applied`, `manual_unban_applied`, `whitelist_changed`,
+`blacklist_changed`, `settings_changed`, `service_started`,
+`service_error`. The `is_banned` computed flag, evaluated by polling
+the service's live `/firewall/api/bans`, drives the Unban button.
+
+**Agent (singleton)** holds `last_seen`, `version`, `esl_connected`,
+`bans_count`, `authenticated_count`, `uptime_seconds` and a `status`
+Selection (`online` / `stale` / `offline`) computed from `last_seen`
+against `firewall_heartbeat_interval`.
+
+`connect.firewall.agent` backs the **HTTP controllers under
+`/freeswitch/firewall/api/*`** that the service calls (see
+`controllers/firewall_api.py`). Each request must carry
+`Authorization: Bearer <firewall_service_token>`; the controller
+runs `sudo()` after the token check.
+
+| Method | Route | Direction | Purpose |
+|---|---|---|---|
+| `fetch_config()` | `GET /freeswitch/firewall/api/config` | service → Odoo | returns `firewall_*` settings (without `firewall_service_token`) |
+| `fetch_whitelist()` | `GET /freeswitch/firewall/api/whitelist` | service → Odoo | active whitelist records (`ip_or_cidr`, `name`, `note`) |
+| `fetch_blacklist()` | `GET /freeswitch/firewall/api/blacklist` | service → Odoo | active blacklist records |
+| `report_event(payload)` | `POST /freeswitch/firewall/api/event` | service → Odoo | create one `connect.firewall.event` |
+| `report_heartbeat(payload)` | `POST /freeswitch/firewall/api/heartbeat` | service → Odoo | updates the agent singleton |
+| `report_applied(ip, action, status="ok", message=None)` | `POST /freeswitch/firewall/api/applied` | service → Odoo | updates `last_sync_at` and sends a bus notification to admins |
+| `_trigger_sync(scope="all")` | — | Odoo (internal) | schedules a Bearer-authenticated POST to `<firewall_service_url>/firewall/sync` via `cr.postcommit` |
+| `_call_service_unban(ip)` | — | Odoo (internal) | DELETE `/firewall/api/bans/<ip>` and log a `manual_unban_applied` event |
+| `_fetch_live_banned_ips()` | — | Odoo (internal) | GET `/firewall/api/bans` to drive `connect.firewall.event.is_banned` |
+| `_cron_reconcile()` | — | ir.cron | every 5 min, calls `_trigger_sync("all")` as a safety net |
+
+### Other models
+
+Beyond firewall, the module contains:
+
+| Model | Purpose |
+|---|---|
+| `connect.user` (`_inherit`) | adds WebRTC fields and dial-string generation |
+| `connect.endpoint` (`_inherit`) | SIP endpoint management |
+| `connect.exten` (`_inherit`) | extension number tooling |
+| `connect.callflow` (`_inherit`) | callflow extension for FreeSWITCH-specific destinations |
+| `connect.number` (`_inherit`) | DID assignment |
+| `connect.freeswitch.gateway` | SIP gateway records, rendered into pjsip_wizard XML |
+| `connect.freeswitch.outgoing_route` | outbound routing rules |
+| `connect.freeswitch.template` | Jinja2 templates for dialplan / directory XML |
+| `connect.fs_fifo` | mod_fifo queue records (ADR-013) |
+| `connect.freeswitch.parking.slot` | call parking (ADR-012) |
+
+---
+
+## Security
+
+The firewall service does not log into Odoo as any user. Instead, it
+calls the `/freeswitch/firewall/api/*` HTTP controllers with
+`Authorization: Bearer <firewall_service_token>`; the controllers run
+`sudo()` after the token check passes. The same shared token also
+authenticates Odoo → service calls (`/firewall/sync`,
+`/firewall/api/bans/<ip>`).
+
+The token (`connect.settings.firewall_service_token` / its display
+twin) is bootstrapped on install / upgrade by `setup_firewall(env)` in
+`connect_freeswitch/__init__.py` and validated on admin edits
+(≥24 chars, `[A-Za-z0-9_-]` only).
+
+### Access rules
+
+See `security/access_rules.xml`.
+
+| Model | `connect_admin` | `connect_user` |
+|---|---|---|
+| `connect.firewall.whitelist` | CRUD | read |
+| `connect.firewall.blacklist` | CRUD | read |
+| `connect.firewall.event` | read + unlink | read |
+| `connect.firewall.agent` | read + write | read |
+
+Whitelist / blacklist edits are admin-only via the Odoo UI; the
+service has no model-level access at all because it goes through the
+sudoed controller.
+
+---
+
+## Crons (`data/ir_cron.xml`)
+
+| Name | Code | Interval |
+|---|---|---|
+| `Firewall: reconcile state with the service` | `model._cron_reconcile()` | 5 minutes |
+| `Firewall: delete old security events` | `model._cron_cleanup()` | daily |
+
+The reconcile cron is the safety net for missed postcommit POSTs;
+event cleanup keeps the audit log within `firewall_event_retention_days`.
+
+---
+
+## Views
+
+`views/firewall_views.xml`:
+* tree + form for whitelist and blacklist (admins only);
+* read-only tree + form for events, plus a search view with quick
+  filters by event type and group-by IP;
+* a singleton form for the agent record with status badge;
+* the Unban button on auto_ban events (visible only when the IP is
+  still in the live banned set);
+* a `Connect → PBX → Firewall` menu structure with sub-items
+  `Agent Status`, `Whitelist`, `Blacklist`, `Events`.
+
+`views/settings.xml`:
+* extends the existing settings page with a `Firewall` page —
+  Enabled toggle, Service URL, masked Firewall Service Token,
+  heartbeat interval, retention, ports, timeouts.
+
+---
+
+## Deploy
+
+### FreeSWITCH image (`deploy/`)
+
+`oduist/freeswitch` is built from source (`v1.10.12`) with a curated
+module list (sofia, fifo, verto, http_cache, piper_tts, …). Config
+lives under `deploy/freeswitch/conf/`. `docker-entrypoint.sh` runs
+sound-file download, TLS extraction from Traefik ACME, and now also
+substitutes `FS_ESL_PASSWORD` into `event_socket.conf.xml`. The
+baked-in ESL password is `ConnectNGESLPassword` (project-specific,
+not the FreeSWITCH default `ClueCon`).
+
+### Firewall service image (`deploy/firewall/`)
+
+`oduist/freeswitch-firewall` is a small Python container that:
+
+* connects to FreeSWITCH via ESL (`mod_event_socket`);
+* maintains the six-table `ipset` / `iptables` chain `connect_fw_voip`
+  on the host kernel — requires `--network host --cap-add NET_ADMIN`;
+* exposes HTTP for `/firewall/sync`, `/firewall/api/*` and a Lit-based
+  dashboard at `/firewall/`;
+* calls Odoo HTTP controllers at `/freeswitch/firewall/api/*`
+  authenticated with the shared `firewall_service_token` Bearer.
+
+The original six-table / iptables design is captured in
+**`specs/decisions/014-freeswitch-firewall-service.md`**; the shift
+from portal-user RPC to shared-bearer HTTP controllers (v1.1.0) is
+captured in **`specs/decisions/015-firewall-token-controllers.md`**.
+
+Operational guide for admins lives in **`docs/admin/firewall.md`**.
+
+---
+
+## Tests
+
+`tests/test_firewall.py` (gated test suite — symlinked from
+`tests_suite/connect_freeswitch/tests/`) covers:
+
+* whitelist / blacklist IP+CIDR validation and uniqueness;
+* token validator on `connect.settings`;
+* `fetch_config` / `fetch_whitelist` / `fetch_blacklist` /
+  `report_event` / `report_heartbeat` / `report_applied`;
+* `_cron_cleanup` retention logic;
+* the Unban action (`is_banned` compute + `action_unban_ip`)
+  with the service calls mocked out.

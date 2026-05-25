@@ -41,7 +41,7 @@ class User(models.Model):
         Built from the local part of ``res.users.login`` (the slice before
         ``@``) concatenated with the numeric user id. Guaranteed not to
         contain ``@`` (mod_verto splits the login string on ``@`` to derive
-        the SIP realm). See specs/decisions/014-verto-login-uses-user-id.md.
+        the SIP realm). See specs/decisions/016-verto-login-uses-user-id.md.
         """
         self.ensure_one()
         if not self.user:

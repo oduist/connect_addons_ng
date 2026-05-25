@@ -104,7 +104,7 @@ class FreeSwitchXMLController(http.Controller):
         # 2. Search by Verto WebRTC login (format: <login-local><res.users.id>).
         # The login is built without '@' because mod_verto splits the JSON-RPC
         # login on '@' to derive the SIP realm; see
-        # specs/decisions/014-verto-login-uses-user-id.md.
+        # specs/decisions/016-verto-login-uses-user-id.md.
         res_user = ConnectUser._resolve_verto_login(user)
         if res_user:
             connect_user = ConnectUser.search([
@@ -164,7 +164,7 @@ class FreeSwitchXMLController(http.Controller):
 
         xml_user_id is the Verto login string sent by mod_verto:
         ``<login-local-part><res.users.id>`` (e.g. ``litnimax42``). See
-        specs/decisions/014-verto-login-uses-user-id.md.
+        specs/decisions/016-verto-login-uses-user-id.md.
         """
         dial_string = "${{verto_contact({user_id}@{domain})}}".format(
             user_id=xml_user_id, domain=domain)
@@ -202,7 +202,7 @@ class FreeSwitchXMLController(http.Controller):
 
         # WebRTC contact: address by the same Verto login string the JS
         # softphone uses to register (<login-local><res.users.id>). See
-        # specs/decisions/014-verto-login-uses-user-id.md.
+        # specs/decisions/016-verto-login-uses-user-id.md.
         if connect_user.webrtc_enabled and connect_user.user:
             verto_login = connect_user._get_verto_login()
             dial_parts.append("${{verto_contact({user_id}@{domain})}}".format(
@@ -282,7 +282,7 @@ class FreeSwitchXMLController(http.Controller):
         # All active WebRTC users.
         # Verto users are keyed by the same login the JS softphone sends:
         # <login-local><res.users.id>. See
-        # specs/decisions/014-verto-login-uses-user-id.md.
+        # specs/decisions/016-verto-login-uses-user-id.md.
         webrtc_users = ConnectUser.search([
             ('webrtc_enabled', '=', True),
             ('webrtc_password', '!=', False),

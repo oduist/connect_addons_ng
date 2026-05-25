@@ -304,7 +304,7 @@ export class VertoClient {
         // JSON-RPC `login` parameter on '@' to derive (user, realm), so any
         // '@' in `this.login` would break authentication. If we ever see
         // one, log a warning to make the regression obvious.
-        // See specs/decisions/014-verto-login-uses-user-id.md.
+        // See specs/decisions/016-verto-login-uses-user-id.md.
         if (typeof this.login === 'string' && this.login.includes('@')) {
             console.warn(
                 '[Verto] login contains "@" (' + this.login + '). ' +

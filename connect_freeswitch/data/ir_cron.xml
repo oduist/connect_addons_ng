@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="ir_cron_firewall_reconcile" model="ir.cron">
+        <field name="name">Firewall: reconcile state with the service</field>
+        <field name="model_id" ref="model_connect_firewall_agent"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_reconcile()</field>
+        <field name="interval_number">5</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="ir_cron_firewall_event_cleanup" model="ir.cron">
+        <field name="name">Firewall: delete old security events</field>
+        <field name="model_id" ref="model_connect_firewall_event"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_cleanup()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+
+</odoo>
