@@ -44,13 +44,13 @@ A whitelisted IP / CIDR short-circuits the whole pipeline.
 ## Components
 
 ```
-┌──────────────┐     postcommit POST /firewall/sync    ┌──────────────────┐
+┌──────────────┐     POST /firewall/sync (Bearer)      ┌──────────────────┐
 │     Odoo     │ ─────────────────────────────────────▶│ firewall service │
-│ (connect_fw) │ ◀──── XML-RPC report_event/heartbeat ─│ (oduist/         │
-│              │                                       │  freeswitch-     │
-│ - whitelist  │            ESL events                 │  firewall)       │
-│ - blacklist  │            ◀────────────              │                  │
-│ - events log │                                       │ - ipset / iptables
+│ (connect_fw) │ ◀── HTTP /freeswitch/firewall/api/* ──│ (oduist/         │
+│              │     (Bearer; fetch/report)            │  freeswitch-     │
+│ - whitelist  │                                       │  firewall)       │
+│ - blacklist  │            ESL events                 │                  │
+│ - events log │            ◀────────────              │ - ipset / iptables
 │ - settings   │                                       │ - HTTP / SSE
 │ - agent st.  │                                       │   dashboard
 └──────────────┘                                       └─────────┬────────┘
@@ -62,11 +62,19 @@ A whitelisted IP / CIDR short-circuits the whole pipeline.
 ```
 
 * **Odoo** owns the configuration, the static whitelist/blacklist, the
-  event audit log and the agent status singleton.
+  event audit log and the agent status singleton. It exposes a small
+  HTTP control plane under `/freeswitch/firewall/api/*` that the
+  service polls (`config`, `whitelist`, `blacklist`) and posts to
+  (`heartbeat`, `event`, `applied`).
 * **firewall service** is a small async Python container; it talks to
-  FreeSWITCH via `mod_event_socket` (ESL), to Odoo via XML-RPC, and
-  manipulates `ipset` / `iptables` on the host kernel. It also serves
-  a Lit-based dashboard at `/firewall/`.
+  FreeSWITCH via `mod_event_socket` (ESL), to Odoo over plain HTTP
+  authenticated with a shared Bearer token, and manipulates `ipset` /
+  `iptables` on the host kernel. It also serves a Lit-based dashboard
+  at `/firewall/`.
+
+Both directions use the **same** shared secret
+(`connect.settings.firewall_service_token` in Odoo, `AGENT_TOKEN` env
+var on the service). There is no dedicated Odoo user for the service.
 
 The data plane (`ipset` + `iptables`) lives in the host kernel and is
 **not** affected by restarts of either container.
@@ -84,10 +92,8 @@ The service container must:
 
 | Variable | Purpose |
 |---|---|
-| `ODOO_URL` | base URL of the Odoo instance (e.g. `https://pbx.example.com`) |
-| `ODOO_DB` | database name |
-| `ODOO_USER` | always `freeswitch_agent` (created by the module's post_init_hook) |
-| `ODOO_PASSWORD` | the value the admin sets in **Configuration → General Settings → Firewall → FreeSWITCH Agent Password** |
+| `ODOO_URL` | base URL of the Odoo instance (e.g. `https://pbx.example.com`). The service appends `/freeswitch/firewall/api/*` paths to it. |
+| `AGENT_TOKEN` | shared Bearer token. Must match **Firewall Service Token** in Odoo settings. Used in both directions (this service → Odoo and Odoo → `/firewall/sync` on this service). The service refuses to start without it. |
 | `FS_ESL_HOST` | usually `127.0.0.1` |
 | `FS_ESL_PORT` | usually `8021` |
 | `FS_ESL_PASSWORD` | password of FreeSWITCH `mod_event_socket`. The shipped FS image bakes in `ConnectNGESLPassword`; set `FS_ESL_PASSWORD` on both containers if you want a different value. |
@@ -98,7 +104,6 @@ Optionally:
 
 | Variable | Effect |
 |---|---|
-| `AGENT_TOKEN` | If set, used as the shared Bearer token for inbound `/firewall/sync` requests. If left empty, the service fetches the current token from Odoo on first login. |
 | `LOG_LEVEL` | `INFO` (default) or `DEBUG` |
 | `CONFIG_CACHE_PATH` | local JSON cache (default `/var/lib/connect-firewall/config.json`) |
 
@@ -106,14 +111,12 @@ Optionally:
 
 ```yaml
 firewall:
-  image: oduist/freeswitch-firewall:1.0.9
+  image: oduist/freeswitch-firewall:1.1.0
   network_mode: host
   cap_add: [NET_ADMIN]
   environment:
     ODOO_URL: https://pbx.example.com
-    ODOO_DB: production
-    ODOO_USER: freeswitch_agent
-    ODOO_PASSWORD: <copy from Odoo settings>
+    AGENT_TOKEN: <copy from Firewall Service Token in Odoo settings>
     FS_ESL_HOST: 127.0.0.1
     FS_ESL_PASSWORD: ConnectNGESLPassword
     DASHBOARD_USER: admin
@@ -128,20 +131,18 @@ A ready preset for `oduflow` lives at
 ## Setting up in Odoo
 
 1. Install or upgrade `connect_freeswitch` — `post_init_hook` (or the
-   per-version migration on upgrade) creates the portal user
-   `freeswitch_agent`, generates an initial token and password, and
-   creates the agent singleton.
+   per-version migration on upgrade) generates an initial **Firewall
+   Service Token** and creates the agent singleton.
 2. Open **Configuration → General Settings → Firewall** as an admin:
    * Toggle **Firewall Enabled** on.
    * Set **Firewall Service URL** to where Traefik (or whichever
      reverse-proxy you use) reaches the service container.
-   * Click the **🔄** next to **Firewall Service Token** to generate a
-     fresh strong token. The service picks it up automatically on its
-     next login.
-   * Set **FreeSWITCH Agent Password** to something strong (≥12 chars,
-     no spaces). Copy the value out into your `ODOO_PASSWORD`
-     environment variable before saving, because the field gets
-     masked back to `****` immediately after.
+   * **Firewall Service Token**: either keep the auto-generated value
+     or paste your own (≥24 chars, `[A-Za-z0-9_-]` only). Copy the
+     value into the `AGENT_TOKEN` env var of the firewall service
+     container **before saving**, because the field gets masked back
+     to `****` immediately after. Restart the service container so it
+     picks up the new token.
    * Adjust port lists and timeouts if you need to deviate from the
      defaults.
 3. Connect → PBX → Firewall → **Whitelist**: add your trunk providers,
@@ -172,8 +173,7 @@ A ready preset for `oduflow` lives at
 |---|---|---|
 | Firewall Enabled | False | Master switch. When off, the service still runs but reports `firewall_enabled=False`. |
 | Firewall Service URL | `http://host.docker.internal:8081` | Odoo posts `/firewall/sync` here. |
-| Firewall Service Token | *generated* | Shared Bearer secret. ≥24 chars, `[A-Za-z0-9_-]` only. |
-| FreeSWITCH Agent Password | *generated* | Portal-user password used for XML-RPC login. ≥12 chars, no spaces. |
+| Firewall Service Token | *generated* | Shared Bearer secret. ≥24 chars, `[A-Za-z0-9_-]` only. The service uses the same value for both directions; restart the container after changing it. |
 | Heartbeat Interval | 60 s | How often the service pings Odoo. |
 | Event Retention | 30 days | How long the audit log is kept; the daily cron prunes older. |
 | Firewall TCP/UDP Ports | `5060,5061,5080,5081` | Where the chain hooks in. Must match the ports `sofia` actually listens on. |
@@ -203,11 +203,12 @@ iptables -L INPUT -v -n | grep connect_fw_voip
 
 If the agent stays *offline* in Odoo:
 
-* check `ODOO_USER` / `ODOO_PASSWORD` — the easiest mistake is the
-  password being rotated in Odoo but not redeployed to the container;
-* check that the `freeswitch_agent` user is in `Role / Portal` and in
-  the `FreeSWITCH Agent` group (the post-install migration takes care
-  of this, but custom data-loading can disturb it);
+* check that `AGENT_TOKEN` in the service env matches **Firewall
+  Service Token** in Odoo settings — the easiest mistake is rotating
+  the token in Odoo but not redeploying the container;
+* check that `/freeswitch/firewall/api/heartbeat` on Odoo is reachable
+  from inside the firewall container (curl with the Bearer header
+  should return `{"ok":true}`);
 * check that `/firewall/sync` is reachable from inside the Odoo
   container — Odoo sends notifications to this URL, not the service
   to Odoo.

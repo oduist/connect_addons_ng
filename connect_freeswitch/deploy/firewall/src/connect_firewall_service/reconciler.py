@@ -74,13 +74,6 @@ class Reconciler:
             if value != current:
                 setattr(self.settings, key, value)
                 changed = True
-        # Pull the shared token from Odoo if the operator didn't pin it
-        # in the env. Lets the firewall service accept /firewall/sync
-        # without AGENT_TOKEN duplicated in two places.
-        token_from_odoo = cfg.get("firewall_service_token")
-        if token_from_odoo and not self.settings.agent_token:
-            self.settings.agent_token = token_from_odoo
-            logger.info("Picked up firewall_service_token from Odoo")
         if changed:
             save_runtime_cache(
                 self.settings.config_cache_path,
@@ -89,18 +82,18 @@ class Reconciler:
 
     async def _sync_once(self, scope: str) -> None:
         if scope in ("all", "settings"):
-            cfg = await self.odoo.call("fetch_config")
+            cfg = await self.odoo.get("/config")
             if isinstance(cfg, dict):
                 await self._apply_settings(cfg)
         if scope in ("all", "whitelist"):
-            wl = await self.odoo.call("fetch_whitelist") or []
+            wl = await self.odoo.get("/whitelist") or []
             added, removed = ipset_manager.replace_contents(
                 IPSET_WHITELIST,
                 ((r["ip_or_cidr"], _format_comment(r)) for r in wl),
             )
             logger.info("whitelist sync: +%s -%s", added, removed)
         if scope in ("all", "blacklist"):
-            bl = await self.odoo.call("fetch_blacklist") or []
+            bl = await self.odoo.get("/blacklist") or []
             added, removed = ipset_manager.replace_contents(
                 IPSET_BLACKLIST,
                 ((r["ip_or_cidr"], _format_comment(r)) for r in bl),

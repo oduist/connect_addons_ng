@@ -123,7 +123,7 @@ Integration model (connect_twilio/models/foo.py):
 | Credential management | SIP accounts, API keys, JWT tokens |
 | Provider-specific models | connect.twiml, connect.domain, connect.whatsapp_sender, connect.firewall.{whitelist,blacklist,event,agent} |
 | Frontend SDK | Twilio Voice SDK phone widget, Verto WebRTC client |
-| Auxiliary services | `connect_freeswitch` ships a paired SIP-firewall service (own Docker image, talks ESL + iptables on the host kernel, see ADR-014). The portal user `freeswitch_agent` is the canonical identity used by such services when calling back into Odoo. |
+| Auxiliary services | `connect_freeswitch` ships a paired SIP-firewall service (own Docker image, talks ESL + iptables on the host kernel, see ADR-014). The service authenticates to Odoo via dedicated `/freeswitch/firewall/api/*` HTTP controllers carrying the shared `firewall_service_token` as `Authorization: Bearer …` — no dedicated Odoo user (ADR-015). |
 | Message sending | send() implementation via provider API |
 | Provider-specific fields | SIDs, webhook URLs, provider-specific status codes |
 
