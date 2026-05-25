@@ -5,12 +5,15 @@ from datetime import timedelta
 
 import requests
 
-from odoo import _, api, fields, models
+from odoo import _, api, fields, models, release
 from odoo.exceptions import UserError, ValidationError
 
 logger = logging.getLogger(__name__)
 
 SYNC_HTTP_TIMEOUT = 3  # seconds; reconcile cron is the safety net for misses
+
+# res.groups M2M to res.users was renamed from `users` to `user_ids` in Odoo 19.
+_GROUP_USERS_FIELD = 'user_ids' if release.version_info[0] >= 19 else 'users'
 
 
 def _validate_ip_or_cidr(value):
@@ -434,7 +437,7 @@ class FirewallAgent(models.Model):
             body += " — " + message
         admin_group = self.env.ref("connect.group_admin", raise_if_not_found=False)
         if admin_group:
-            for user in admin_group.sudo().user_ids:
+            for user in admin_group.sudo()[_GROUP_USERS_FIELD]:
                 self.env["bus.bus"]._sendone(
                     user.partner_id,
                     "simple_notification",
