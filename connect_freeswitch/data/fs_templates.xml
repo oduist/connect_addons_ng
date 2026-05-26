@@ -462,9 +462,8 @@ Variables:
   fifo_name          - FIFO queue name (e.g. fs_fifo_42)
   number             - Extension number (escaped for regex)
   exten_id           - connect.exten record ID (may be empty)
-  max_wait           - Seconds to wait in the queue
-  moh                - Music-on-Hold source
-  announce_position  - Boolean, announce caller position
+  max_wait           - Seconds to wait in the queue (enforced via fifo_orbit_exten)
+  moh                - Music-on-Hold source (fed as fifo's `music_file` arg)
   record_calls       - Boolean, record the call leg
   recording_url      - URL for recording webhook (if record_calls)
   members            - List of dicts with 'dial_string' for each agent
@@ -485,13 +484,15 @@ Variables:
     <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
     {% endif %}
     <action application="set" data="fifo_music={{ moh }}"/>
-    {% if announce_position %}
-    <action application="set" data="fifo_orbit_announce_position=true"/>
-    {% endif %}
+    <!-- mod_fifo's max-wait is expressed as an orbit-exten with timeout in
+         the form "exten:seconds". Leaving the exten empty makes the caller
+         simply leave the fifo after <max_wait> seconds and fall through to
+         the next dialplan action (timeout_action below). -->
+    <action application="set" data="fifo_orbit_exten=:{{ max_wait }}"/>
     <action application="set" data="fifo_caller_exit_key=#"/>
     <action application="set" data="continue_on_fail=true"/>
     <action application="set" data="hangup_after_bridge=true"/>
-    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }} {{ max_wait }}"/>
+    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }}"/>
     {% if timeout_action == 'voicemail' and voicemail_user %}
     <action application="sleep" data="500"/>
     <action application="voicemail" data="default ${domain_name} {{ voicemail_user }}"/>
@@ -516,13 +517,15 @@ Variables:
     <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
     {% endif %}
     <action application="set" data="fifo_music={{ moh }}"/>
-    {% if announce_position %}
-    <action application="set" data="fifo_orbit_announce_position=true"/>
-    {% endif %}
+    <!-- mod_fifo's max-wait is expressed as an orbit-exten with timeout in
+         the form "exten:seconds". Leaving the exten empty makes the caller
+         simply leave the fifo after <max_wait> seconds and fall through to
+         the next dialplan action (timeout_action below). -->
+    <action application="set" data="fifo_orbit_exten=:{{ max_wait }}"/>
     <action application="set" data="fifo_caller_exit_key=#"/>
     <action application="set" data="continue_on_fail=true"/>
     <action application="set" data="hangup_after_bridge=true"/>
-    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }} {{ max_wait }}"/>
+    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }}"/>
     {% if timeout_action == 'voicemail' and voicemail_user %}
     <action application="sleep" data="500"/>
     <action application="voicemail" data="default ${domain_name} {{ voicemail_user }}"/>
