@@ -14,6 +14,11 @@ class Call(models.Model):
     _order = 'id desc'
 
     name = fields.Char(compute='_get_name')
+    provider_id = fields.Many2one(
+        'connect.provider', ondelete='set null', index=True, copy=False,
+        help='Telephony provider that handled this call. May be empty on '
+             'legacy rows that predate the provider registry.',
+    )
     channels = fields.One2many('connect.channel', 'call', readonly=True)
     recording = fields.Many2one('connect.recording', compute='_get_recording_data')
     transcript = fields.Text(compute='_get_recording_data')

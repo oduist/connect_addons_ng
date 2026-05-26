@@ -10,6 +10,10 @@ class CallFlow(models.Model):
     _order = 'name asc'
 
     name = fields.Char(required=True)
+    provider_id = fields.Many2one(
+        'connect.provider', ondelete='set null', index=True, copy=False,
+        help='Telephony provider that renders this callflow.',
+    )
     exten = fields.Many2one('connect.exten', ondelete='set null', readonly=True)
     exten_number = fields.Char(related='exten.number', store=True)
     language = fields.Char(default='en-US', required=True)

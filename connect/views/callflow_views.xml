@@ -7,6 +7,7 @@
             <list>
                 <field name="name"/>
                 <field name="exten_number" string="Extension"/>
+                <field name="provider_id" optional="hide"/>
             </list>
         </field>
     </record>
@@ -31,6 +32,7 @@
                             <field name="voice"/>
                             <field name="record_calls"/>
                             <field name="gather_input"/>
+                            <field name="provider_id" readonly="1"/>
                         </group>
                         <group string="Voicemail">
                             <field name="voicemail_enabled"/>

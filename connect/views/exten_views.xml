@@ -8,6 +8,7 @@
                 <field name="number"/>
                 <field name="dst"/>
                 <field name="model_friendly" string="Type"/>
+                <field name="provider_id" optional="hide"/>
             </list>
         </field>
     </record>
@@ -23,6 +24,7 @@
                             <field name="number"/>
                             <field name="dst"/>
                             <field name="model_friendly" string="Type" readonly="1"/>
+                            <field name="provider_id" readonly="1"/>
                         </group>
                     </group>
                 </sheet>

@@ -10,6 +10,7 @@
                 <field name="destination"/>
                 <field name="user"/>
                 <field name="callflow"/>
+                <field name="provider_id" optional="hide"/>
             </list>
         </field>
     </record>
@@ -30,6 +31,7 @@
                             <field name="destination"/>
                             <field name="user" invisible="destination != 'user'"/>
                             <field name="callflow" invisible="destination != 'callflow'"/>
+                            <field name="provider_id" readonly="1"/>
                         </group>
                     </group>
                 </sheet>

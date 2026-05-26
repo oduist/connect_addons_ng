@@ -13,6 +13,10 @@ class Exten(models.Model):
 
     name = fields.Char(compute='_get_name', copy=False)
     number = fields.Char('Extension Number', required=True, copy=False)
+    provider_id = fields.Many2one(
+        'connect.provider', ondelete='set null', index=True, copy=False,
+        help='Telephony provider that renders this extension.',
+    )
     model = fields.Char('AppModel')
     model_friendly = fields.Char('Model', compute='_get_model_friendly', store=True, copy=False)
     res_id = fields.Integer()

@@ -16,6 +16,10 @@ class Number(models.Model):
     ], ondelete='set null')
     callflow = fields.Many2one('connect.callflow', ondelete='set null')
     user = fields.Many2one('connect.user', ondelete='set null')
+    provider_id = fields.Many2one(
+        'connect.provider', ondelete='set null', index=True, copy=False,
+        help='Telephony provider that owns this DID.',
+    )
 
     def write(self, vals):
         if 'destination' in vals:
