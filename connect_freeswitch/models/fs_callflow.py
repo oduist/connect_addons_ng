@@ -82,6 +82,13 @@ class CallFlow(models.Model):
 
         choices = self._ivr_choice_data()
 
+        # gather_digits drives both the bind_digit_input_timeout (inter-digit
+        # wait inside FreeSWITCH dmachine) and the invalid-input regex length.
+        # For single-digit IVRs we shrink the timeout to ~100ms so a press
+        # fires almost instantly instead of the 1500ms dmachine default.
+        gather_digits = max(int(self.gather_digits or 1), 1)
+        dmachine_timeout = 100 if gather_digits == 1 else 1500
+
         invalid_msg = (self.invalid_input_message or '').strip()
         invalid_regex = ''
         if invalid_msg:
@@ -90,10 +97,11 @@ class CallFlow(models.Model):
                 used_chars.update(choice['digits'])
             allowed = [c for c in '0123456789*#' if c not in used_chars]
             if allowed:
+                quant = '' if gather_digits == 1 else '{{1,{}}}'.format(gather_digits)
                 # FreeSWITCH digit parser treats `~` as a regex pattern.
-                # Match a single digit that is NOT one of the bound choices,
-                # so exact-match bindings (1, 2, ...) win for valid input.
-                invalid_regex = '~^[{}]$'.format(''.join(allowed))
+                # Match digits that are NOT among the bound choices, so exact
+                # bindings (1, 2, ...) win for valid input.
+                invalid_regex = '~^[{}]{}$'.format(''.join(allowed), quant)
 
         return self.env['connect.freeswitch.template'].render('dialplan_ivr', {
             'callflow_id': self.id,
@@ -106,6 +114,7 @@ class CallFlow(models.Model):
             'ring_bridge': ring_bridge,
             'fifo_number': fifo_number,
             'invalid_regex': invalid_regex,
+            'dmachine_timeout': dmachine_timeout,
         })
 
     def _generate_ivr_invalid_dialplan(self):
