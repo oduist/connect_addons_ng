@@ -209,7 +209,7 @@ Variables:
   fs_domain       - FreeSWITCH SIP domain (unused in this template; kept for symmetry)
   ring_bridge     - Comma-separated bridge string for ring_users fallback after timeout (optional)
   fifo_number     - FS Queue extension number for IVR default branch (optional)
-  invalid_msg     - Truthy when invalid_input_message is set; enables the catch-all bind</field>
+  invalid_regex   - Pre-built `~^[<unused-digits>]$` pattern for the catch-all bind (optional)</field>
         <field name="content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
     <action application="answer"/>
@@ -221,8 +221,8 @@ Variables:
     <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:transfer,{{ choice.transfer_target }} XML default"/>
     {% endif %}
     {% endfor %}
-    {% if invalid_msg %}
-    <action application="bind_digit_action" data="cf_{{ callflow_id }},~^[0-9*#]+$,exec:execute_extension,cf_invalid_{{ callflow_id }} XML default"/>
+    {% if invalid_regex %}
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ invalid_regex }},exec:execute_extension,cf_invalid_{{ callflow_id }} XML default"/>
     {% endif %}
     <action application="digit_action_set_realm" data="cf_{{ callflow_id }}"/>
     <action application="speak" data="piper|{{ lang }}|{{ prompt }}"/>
@@ -250,8 +250,8 @@ Variables:
     <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:transfer,{{ choice.transfer_target }} XML default"/>
     {% endif %}
     {% endfor %}
-    {% if invalid_msg %}
-    <action application="bind_digit_action" data="cf_{{ callflow_id }},~^[0-9*#]+$,exec:execute_extension,cf_invalid_{{ callflow_id }} XML default"/>
+    {% if invalid_regex %}
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ invalid_regex }},exec:execute_extension,cf_invalid_{{ callflow_id }} XML default"/>
     {% endif %}
     <action application="digit_action_set_realm" data="cf_{{ callflow_id }}"/>
     <action application="speak" data="piper|{{ lang }}|{{ prompt }}"/>

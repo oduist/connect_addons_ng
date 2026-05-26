@@ -80,17 +80,32 @@ class CallFlow(models.Model):
                 ring_parts.append('user/{}@{}'.format(user.exten_number, fs_domain))
         ring_bridge = ','.join(ring_parts)
 
+        choices = self._ivr_choice_data()
+
+        invalid_msg = (self.invalid_input_message or '').strip()
+        invalid_regex = ''
+        if invalid_msg:
+            used_chars = set()
+            for choice in choices:
+                used_chars.update(choice['digits'])
+            allowed = [c for c in '0123456789*#' if c not in used_chars]
+            if allowed:
+                # FreeSWITCH digit parser treats `~` as a regex pattern.
+                # Match a single digit that is NOT one of the bound choices,
+                # so exact-match bindings (1, 2, ...) win for valid input.
+                invalid_regex = '~^[{}]$'.format(''.join(allowed))
+
         return self.env['connect.freeswitch.template'].render('dialplan_ivr', {
             'callflow_id': self.id,
             'number': re.escape(number),
             'lang': lang,
             'prompt': prompt,
             'timeout': timeout,
-            'choices': self._ivr_choice_data(),
+            'choices': choices,
             'fs_domain': fs_domain,
             'ring_bridge': ring_bridge,
             'fifo_number': fifo_number,
-            'invalid_msg': (self.invalid_input_message or '').strip(),
+            'invalid_regex': invalid_regex,
         })
 
     def _generate_ivr_invalid_dialplan(self):
