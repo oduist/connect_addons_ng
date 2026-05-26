@@ -15,12 +15,11 @@ class CallFlow(models.Model):
     language = fields.Char(default='en-US', required=True)
     voice = fields.Char(required=True, default='Woman')
     gather_input = fields.Boolean()
+    # Core only ships DTMF. Speech-aware backends (e.g. connect_twilio) extend
+    # this selection via selection_add. FreeSWITCH stays DTMF-only.
     gather_input_type = fields.Selection(string='Input Type',
-        selection=[
-            ('dtmf speech', 'DTMF + speech'),
-            ('dtmf', 'DTMF'),
-            ('speech', 'Speech')
-        ], required=True, default='dtmf speech')
+        selection=[('dtmf', 'DTMF')],
+        required=True, default='dtmf')
     gather_timeout = fields.Integer(string='Timeout', default=5)
     gather_hints = fields.Char('Hints', default='This is a phrase I expect to hear, department name or extension number')
     prompt_message = fields.Text('Prompt Message',
