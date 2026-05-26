@@ -206,6 +206,11 @@ class CallFlow(models.Model):
         ).format(id=self.id, number=re.escape(number), fifo=fifo_number)
 
     def _get_piper_language(self):
-        """Map callflow language (e.g. 'en-US') to piper short code (e.g. 'en')."""
-        lang = self.language or 'en-US'
-        return lang.split('-')[0]
+        """Return the BCP-47 language code used as the Piper TTS model key.
+
+        The full BCP-47 tag (e.g. ``en-US``, ``pt-BR``) is matched against
+        ``<model language="..."/>`` entries in ``piper_tts.conf.xml`` so that
+        regional variants such as ``pt-BR`` and ``pt-PT`` resolve to distinct
+        voices.
+        """
+        return self.language or 'en-US'
