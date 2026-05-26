@@ -185,8 +185,20 @@ A ready preset for `oduflow` lives at
 ## Troubleshooting
 
 ```bash
-# 1. Is the service alive?
-curl -sk -u admin:<pw> https://<host>/firewall/healthz
+# 1a. Process-level liveness (no auth, always 200 while the service is up).
+#     Wire this to Kubernetes / Traefik / Docker liveness probes — it must
+#     not flap when Odoo is down, otherwise the orchestrator restarts the
+#     container in a loop while the upstream recovers.
+curl -sk https://<host>/healthz
+
+# 1b. Dependency-aware readiness check (no auth, the URL to point external
+#     monitoring at — Uptime Kuma, Prometheus blackbox exporter, etc.).
+#     Returns 200 + {"status":"ok","odoo":true,"esl":true} when both Odoo
+#     and FreeSWITCH ESL are reachable; 503 + {"status":"error","odoo":...,
+#     "esl":...} otherwise.
+curl -sk -i https://<host>/firewall/healthz
+
+# 1c. Rich JSON for the dashboard (auth required — Bearer token or basic).
 curl -sk -u admin:<pw> https://<host>/firewall/api/heartbeat | jq
 
 # 2. Is ESL really connected?
