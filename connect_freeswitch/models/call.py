@@ -86,8 +86,10 @@ class Call(models.Model):
         return slot.action_park_channel_uuid(uuid)
 
     @api.model
-    def originate_call(self, number, res_model=None, res_id=None):
-        """Originate a call via FreeSWITCH.
+    def _freeswitch_originate_call(self, number, res_model=None, res_id=None, **_):
+        """FreeSWITCH impl of outbound origination. Called from
+        `FreeSwitchProvider._originate_call`; not invoked directly any
+        more. Renamed from `originate_call` for ODU-4 façade.
 
         Rings the current user's endpoints (a-leg), then bridges to the
         target number via the matching outgoing route (b-leg).
