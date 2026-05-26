@@ -90,7 +90,24 @@ class CallFlow(models.Model):
             'fs_domain': fs_domain,
             'ring_bridge': ring_bridge,
             'fifo_number': fifo_number,
+            'invalid_msg': (self.invalid_input_message or '').strip(),
         })
+
+    def _generate_ivr_invalid_dialplan(self):
+        """Generate the IVR catch-all extension that speaks invalid_input_message
+        and routes back into the IVR. Returns empty XML if no message is set."""
+        self.ensure_one()
+        msg = (self.invalid_input_message or '').strip()
+        if not msg:
+            return ''
+        number = self.exten_number or str(self.id)
+        return self.env['connect.freeswitch.template'].render(
+            'dialplan_ivr_invalid', {
+                'callflow_id': self.id,
+                'number': number,
+                'lang': self._get_piper_language(),
+                'invalid_msg': msg,
+            })
 
     def _generate_ivr_choice_dialplan(self, digits):
         """Generate dialplan for an IVR user-choice landing extension.

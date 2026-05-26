@@ -220,6 +220,9 @@ Variables:
     <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:transfer,{{ choice.transfer_target }} XML default"/>
     {% endif %}
     {% endfor %}
+    {% if invalid_msg %}
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},~^[0-9*#]+$,exec:execute_extension,cf_invalid_{{ callflow_id }} XML default"/>
+    {% endif %}
     <action application="digit_action_set_realm" data="cf_{{ callflow_id }}"/>
     <action application="speak" data="piper|{{ lang }}|{{ prompt }}"/>
     <action application="sleep" data="{{ timeout }}"/>
@@ -246,6 +249,9 @@ Variables:
     <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:transfer,{{ choice.transfer_target }} XML default"/>
     {% endif %}
     {% endfor %}
+    {% if invalid_msg %}
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},~^[0-9*#]+$,exec:execute_extension,cf_invalid_{{ callflow_id }} XML default"/>
+    {% endif %}
     <action application="digit_action_set_realm" data="cf_{{ callflow_id }}"/>
     <action application="speak" data="piper|{{ lang }}|{{ prompt }}"/>
     <action application="sleep" data="{{ timeout }}"/>

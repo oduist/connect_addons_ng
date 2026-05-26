@@ -385,6 +385,16 @@ class FreeSwitchXMLController(http.Controller):
                     parts.append(choice_xml)
                     return ''.join(parts)
 
+        # IVR catch-all (invalid DTMF) extension.
+        ivr_invalid = re.match(r'^cf_invalid_(\d+)$', destination)
+        if ivr_invalid:
+            cf = request.env['connect.callflow'].sudo().browse(int(ivr_invalid.group(1)))
+            if cf.exists():
+                invalid_xml = cf._generate_ivr_invalid_dialplan()
+                if invalid_xml:
+                    parts.append(invalid_xml)
+                    return ''.join(parts)
+
         # Try exact extension match
         exten = Exten.search([('number', '=', destination)], limit=1)
         if exten:
