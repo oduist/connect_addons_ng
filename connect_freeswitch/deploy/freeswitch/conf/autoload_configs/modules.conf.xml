@@ -25,6 +25,7 @@
     <load module="mod_dialplan_xml"/>
     <load module="mod_fifo"/>
     <load module="mod_valet_parking"/>
+    <load module="mod_local_stream"/>
 
     <!-- Codecs -->
     <load module="mod_opus"/>
