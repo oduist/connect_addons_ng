@@ -17,8 +17,8 @@ class CallFlow(models.Model):
     def generate_dialplan(self, params, exten=None):
         """Generate FreeSWITCH dialplan XML for this callflow.
 
-        For IVR (gather_input): generates speak (TTS) + read (digit collection)
-        with inline condition branches for each choice.
+        For IVR (gather_input): generates bind_digit_action bindings plus speak (TTS)
+        so a DTMF press during the prompt instantly triggers the matching action.
         For ring groups (ring_users without gather): generates bridge to all users.
         """
         self.ensure_one()
@@ -37,39 +37,38 @@ class CallFlow(models.Model):
                     '</condition></extension>').format(
                         id=self.id, number=re.escape(number))
 
-    def _generate_ivr_dialplan(self, number):
-        """Generate IVR dialplan with speak + read and inline choice conditions."""
-        var_name = 'cf_digit_{}'.format(self.id)
-        min_digits = 1
-        max_digits = self.gather_digits or 1
-        timeout = (self.gather_timeout or 5) * 1000
-        prompt = self.prompt_message or ''
-        lang = self._get_piper_language()
-
-        fs_domain = self.env['connect.settings'].sudo().get_param('freeswitch_domain') or '${domain}'
-
+    def _ivr_choice_data(self):
+        """Build the list of {digits, dst_type, ...} dicts used by IVR templates."""
         choices = []
         for choice in self.choices:
             if not choice.choice_digits or not choice.exten:
                 continue
             dst = choice.exten.dst
             if dst and dst._name == 'connect.user':
-                user_number = dst.exten_number
                 choices.append({
-                    'digits_escaped': re.escape(choice.choice_digits),
+                    'digits': choice.choice_digits,
                     'dst_type': 'user',
                     'user_id': dst.id,
-                    'user_number': user_number,
+                    'user_number': dst.exten_number or '',
                     'transfer_target': '',
                 })
             else:
                 choices.append({
-                    'digits_escaped': re.escape(choice.choice_digits),
+                    'digits': choice.choice_digits,
                     'dst_type': 'other',
                     'user_id': '',
                     'user_number': '',
                     'transfer_target': choice.exten.number,
                 })
+        return choices
+
+    def _generate_ivr_dialplan(self, number):
+        """Generate IVR dialplan that uses bind_digit_action so DTMF interrupts speak."""
+        timeout = (self.gather_timeout or 5) * 1000
+        prompt = self.prompt_message or ''
+        lang = self._get_piper_language()
+
+        fs_domain = self.env['connect.settings'].sudo().get_param('freeswitch_domain') or '${domain}'
 
         fifo_number = ''
         if self.fs_fifo_id and self.fs_fifo_id.exten_number:
@@ -80,14 +79,34 @@ class CallFlow(models.Model):
             'number': re.escape(number),
             'lang': lang,
             'prompt': prompt,
-            'min_digits': min_digits,
-            'max_digits': max_digits,
             'timeout': timeout,
-            'var_name': var_name,
-            'choices': choices,
+            'choices': self._ivr_choice_data(),
             'fs_domain': fs_domain,
             'fifo_number': fifo_number,
         })
+
+    def _generate_ivr_choice_dialplan(self, digits):
+        """Generate dialplan for an IVR user-choice landing extension.
+
+        Called by the controller when FreeSWITCH routes destination=cf_call_<id>_<digits>
+        after a bind_digit_action fired. Returns an extension that sets the per-call
+        variables (so the Odoo event handler knows which user was rung) and bridges.
+        """
+        self.ensure_one()
+        for choice in self._ivr_choice_data():
+            if choice['digits'] == digits and choice['dst_type'] == 'user':
+                fs_domain = self.env['connect.settings'].sudo().get_param(
+                    'freeswitch_domain') or '${domain}'
+                return self.env['connect.freeswitch.template'].render(
+                    'dialplan_ivr_choice', {
+                        'callflow_id': self.id,
+                        'digits': digits,
+                        'digits_escaped': re.escape(digits),
+                        'user_id': choice['user_id'],
+                        'user_number': choice['user_number'],
+                        'fs_domain': fs_domain,
+                    })
+        return ''
 
     def _generate_ring_group_dialplan(self, number, exten=None):
         """Generate ring group dialplan bridging to multiple users."""
