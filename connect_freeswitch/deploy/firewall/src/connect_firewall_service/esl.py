@@ -41,6 +41,7 @@ class ESLClient:
         self.subscriptions = list(subscriptions)
         self._reader: asyncio.StreamReader | None = None
         self._writer: asyncio.StreamWriter | None = None
+        self.is_connected: bool = False
 
     # ------------------------------------------------------------------
     # Low-level I/O
@@ -112,12 +113,14 @@ class ESLClient:
                 raise ESLAuthError(
                     "ESL subscribe failed: " + (reply.get("Reply-Text") or "?")
                 )
+        self.is_connected = True
         logger.info(
             "ESL connected to %s:%s, subscriptions=%s",
             self.host, self.port, self.subscriptions or "ALL",
         )
 
     async def close(self) -> None:
+        self.is_connected = False
         if self._writer is not None:
             try:
                 self._writer.close()
@@ -142,6 +145,7 @@ class ESLClient:
                     msg = await self._read_message()
                     yield msg
             except Exception as exc:
+                self.is_connected = False
                 logger.warning(
                     "ESL connection lost (%s); reconnecting in %.1fs",
                     exc, backoff,

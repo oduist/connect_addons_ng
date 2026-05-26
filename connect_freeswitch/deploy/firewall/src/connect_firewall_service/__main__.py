@@ -88,13 +88,7 @@ def install_firewall_baseline(settings: ServiceSettings) -> None:
     )
 
 
-async def esl_loop(settings: ServiceSettings, handler: ESLHandler) -> None:
-    client = ESLClient(
-        host=settings.fs_esl_host,
-        port=settings.fs_esl_port,
-        password=settings.fs_esl_password,
-        subscriptions=ESL_SUBSCRIPTIONS,
-    )
+async def esl_loop(handler: ESLHandler, client: ESLClient) -> None:
     async for event in client.events():
         # Trace at DEBUG so a quick log peek shows exactly which subclass
         # arrived; spec is "Event-Name / Event-Subclass: from-user".
@@ -113,6 +107,7 @@ async def esl_loop(settings: ServiceSettings, handler: ESLHandler) -> None:
 
 
 async def heartbeat_loop(settings: ServiceSettings, odoo: OdooClient,
+                         esl_client: ESLClient,
                          started_at: float) -> None:
     while True:
         try:
@@ -120,7 +115,7 @@ async def heartbeat_loop(settings: ServiceSettings, odoo: OdooClient,
             auth = ipset_manager.list_entries(IPSET_AUTHENTICATED)
             await odoo.post("/heartbeat", {
                 "version": __version__,
-                "esl_connected": True,
+                "esl_connected": esl_client.is_connected,
                 "bans_count": len(bans),
                 "authenticated_count": len(auth),
                 "uptime_seconds": int(time.time() - started_at),
@@ -179,9 +174,15 @@ async def run(settings: ServiceSettings) -> None:
         expire_short_ttl=settings.firewall_expire_short_timeout,
         expire_long_ttl=settings.firewall_expire_long_timeout,
     )
+    esl_client = ESLClient(
+        host=settings.fs_esl_host,
+        port=settings.fs_esl_port,
+        password=settings.fs_esl_password,
+        subscriptions=ESL_SUBSCRIPTIONS,
+    )
 
     started_at = time.time()
-    app = build_app(settings, reconciler, odoo, event_bus, started_at)
+    app = build_app(settings, reconciler, odoo, esl_client, event_bus, started_at)
 
     def _log_task_exception(task: asyncio.Task) -> None:
         if task.cancelled():
@@ -192,8 +193,11 @@ async def run(settings: ServiceSettings) -> None:
 
     tasks = [
         asyncio.create_task(odoo.outbox_worker(), name="outbox"),
-        asyncio.create_task(esl_loop(settings, handler), name="esl"),
-        asyncio.create_task(heartbeat_loop(settings, odoo, started_at), name="heartbeat"),
+        asyncio.create_task(esl_loop(handler, esl_client), name="esl"),
+        asyncio.create_task(
+            heartbeat_loop(settings, odoo, esl_client, started_at),
+            name="heartbeat",
+        ),
         asyncio.create_task(reconciler.run(), name="reconciler"),
         asyncio.create_task(http_loop(settings, app), name="http"),
     ]
