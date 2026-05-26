@@ -214,9 +214,9 @@ Variables:
     <action application="sleep" data="500"/>
     {% for choice in choices %}
     {% if choice.dst_type == 'user' %}
-    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},execute_extension:cf_call_{{ callflow_id }}_{{ choice.digits }} XML default,both"/>
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:execute_extension:cf_call_{{ callflow_id }}_{{ choice.digits }} XML default"/>
     {% else %}
-    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},transfer:{{ choice.transfer_target }} XML default,both"/>
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:transfer:{{ choice.transfer_target }} XML default"/>
     {% endif %}
     {% endfor %}
     <action application="digit_action_set_realm" data="cf_{{ callflow_id }}"/>
@@ -234,9 +234,9 @@ Variables:
     <action application="sleep" data="500"/>
     {% for choice in choices %}
     {% if choice.dst_type == 'user' %}
-    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},execute_extension:cf_call_{{ callflow_id }}_{{ choice.digits }} XML default,both"/>
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:execute_extension:cf_call_{{ callflow_id }}_{{ choice.digits }} XML default"/>
     {% else %}
-    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},transfer:{{ choice.transfer_target }} XML default,both"/>
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:transfer:{{ choice.transfer_target }} XML default"/>
     {% endif %}
     {% endfor %}
     <action application="digit_action_set_realm" data="cf_{{ callflow_id }}"/>
