@@ -64,11 +64,6 @@
                 <field name="display_elevenlabs_post_call_webhook_secret" string="Secret" password="True"/>
             </group>
             <group string="Conversation Initiation Client Data Webhook">
-                <div colspan="2">
-                  <small>Workspace-level webhook (ADR-021). Pushed
-                    automatically on SYNC / token reset. Read-only here.
-                  </small>
-                </div>
                 <field name="elevenlabs_conversation_initiation_webhook_url"
                        string="URL"
                        widget="CopyClipboardChar"/>
