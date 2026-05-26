@@ -24,14 +24,6 @@ class FsFifo(models.Model):
              'Defaults to the global `hold_music` variable defined in vars.xml '
              '(silence_stream://0 out of the box).',
     )
-    # Position announcement is not implemented in mod_fifo (only the
-    # post-orbit announcement is). The field is kept so existing data and UI
-    # don't break, but it has no effect on the generated dialplan.
-    announce_position = fields.Boolean(
-        default=False,
-        help='Reserved. mod_fifo does not announce the caller position; this '
-             'flag currently has no effect.',
-    )
     member_user_ids = fields.Many2many(
         'connect.user', 'fs_fifo_user_rel', 'fifo_id', 'user_id',
         string='User Agents',
