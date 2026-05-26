@@ -60,3 +60,20 @@ class ConnectProvider(models.Model):
         if 'provider_id' in record._fields and record.provider_id:
             return record.provider_id
         return self.browse()
+
+    # ---------------------------------------------------------------
+    # Provider-method abstracts. Each provider module inherits this
+    # class and overrides the methods it supports, guarding the body
+    # with `if self.code != 'xxx': return super()._method(...)` so the
+    # dispatch chain walks through every installed provider until the
+    # one matching the recordset's code handles the call.
+    # ---------------------------------------------------------------
+
+    def _originate_call(self, number, res_model=None, res_id=None, user=None, **kwargs):
+        """Outbound call origination. Concrete implementation lives on
+        each provider module (TwilioProvider, FreeSwitchProvider, …).
+        Reaching this base means no installed provider claimed the
+        dispatch — likely a misconfigured `connect.provider` record."""
+        raise NotImplementedError(
+            f'Provider {self.code!r} does not implement _originate_call'
+        )

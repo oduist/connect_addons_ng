@@ -363,6 +363,16 @@ class Call(models.Model):
         )
 
     @api.model
+    def originate_call(self, number, res_model=None, res_id=None, **kwargs):
+        """Façade — same dispatch as `connect.settings.originate_call`.
+        Kept for callers that came through `connect.call` (e.g. the
+        FreeSWITCH phone-field widget calls `connect.call.originate_call`
+        via JSON-RPC)."""
+        return self.env['connect.settings'].originate_call(
+            number=number, res_model=res_model, res_id=res_id, **kwargs
+        )
+
+    @api.model
     def get_widget_calls(self, domain, limit=None, offset=0, order='id desc', fields=[]):
         calls = self.search(domain, offset, limit, order)
         payload = []

@@ -221,6 +221,22 @@ class Settings(models.Model):
             data = data[0]
         setattr(data, param, value)
 
+    @api.model
+    def originate_call(self, number, res_model=None, res_id=None, user=None, **kwargs):
+        """Façade — dispatches outbound origination through the active
+        `connect.provider`. Provider modules implement `_originate_call`
+        on `connect.provider`; this façade only picks the provider and
+        delegates."""
+        provider = self.env['connect.provider']._default()
+        if not provider:
+            raise UserError(
+                "No telephony provider configured. Install connect_twilio "
+                "or connect_freeswitch."
+            )
+        return provider._originate_call(
+            number=number, res_model=res_model, res_id=res_id, user=user, **kwargs
+        )
+
     @api.model_create_multi
     def create(self, vals_list):
         if release.version_info[0] >= 17:
