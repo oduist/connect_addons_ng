@@ -302,8 +302,13 @@ class FreeSwitchXMLController(http.Controller):
         - public context: inbound DID routing via connect.number
         - default context: extension lookup, then outgoing routes, then fallback
         """
-        context = params.get('Caller-Context', params.get('Hunt-Context', 'default'))
-        destination = params.get('Caller-Destination-Number', '')
+        # Hunt-* reflects the CURRENT routing lookup (e.g. after
+        # execute_extension/transfer to a new destination), while Caller-* is
+        # the original A-leg destination. Prefer Hunt when present so that
+        # in-call hops (like the IVR's cf_call_<id>_<digit> landing extension)
+        # are routed correctly.
+        context = params.get('Hunt-Context') or params.get('Caller-Context') or 'default'
+        destination = params.get('Hunt-Destination-Number') or params.get('Caller-Destination-Number', '')
 
         debug(request.env['connect.settings'].sudo(), "Dialplan request: context=%s, destination=%s" % (context, destination))
 
