@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Twilio',
-    'version': '19.0.1.1.3',
+    'version': '19.0.1.1.4',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Twilio integration for Oduist Connect',
@@ -40,6 +40,7 @@
         ],
     },
     'post_init_hook': 'post_init_hook',
+    'uninstall_hook': 'uninstall_hook',
     'installable': True,
     'application': False,
     'license': 'Other proprietary',
