@@ -323,8 +323,13 @@ class FreeSwitchXMLController(http.Controller):
         - public context: inbound DID routing via connect.number
         - default context: extension lookup, then outgoing routes, then fallback
         """
-        context = params.get('Caller-Context', params.get('Hunt-Context', 'default'))
-        destination = params.get('Caller-Destination-Number', '')
+        # Hunt-* reflects the CURRENT routing lookup (e.g. after
+        # execute_extension/transfer to a new destination), while Caller-* is
+        # the original A-leg destination. Prefer Hunt when present so that
+        # in-call hops (like the IVR's cf_call_<id>_<digit> landing extension)
+        # are routed correctly.
+        context = params.get('Hunt-Context') or params.get('Caller-Context') or 'default'
+        destination = params.get('Hunt-Destination-Number') or params.get('Caller-Destination-Number', '')
 
         debug(request.env['connect.settings'].sudo(), "Dialplan request: context=%s, destination=%s" % (context, destination))
 
@@ -388,6 +393,28 @@ class FreeSwitchXMLController(http.Controller):
                 'webhook_url': webhook_url,
             }))
             return ''.join(parts)
+
+        # IVR user-choice landing extension: bind_digit_action in dialplan_ivr
+        # transfers here when a user-typed choice is picked. Sets per-call
+        # variables and bridges to the user.
+        ivr_choice = re.match(r'^cf_call_(\d+)_(.+)$', destination)
+        if ivr_choice:
+            cf = request.env['connect.callflow'].sudo().browse(int(ivr_choice.group(1)))
+            if cf.exists():
+                choice_xml = cf._generate_ivr_choice_dialplan(ivr_choice.group(2))
+                if choice_xml:
+                    parts.append(choice_xml)
+                    return ''.join(parts)
+
+        # IVR catch-all (invalid DTMF) extension.
+        ivr_invalid = re.match(r'^cf_invalid_(\d+)$', destination)
+        if ivr_invalid:
+            cf = request.env['connect.callflow'].sudo().browse(int(ivr_invalid.group(1)))
+            if cf.exists():
+                invalid_xml = cf._generate_ivr_invalid_dialplan()
+                if invalid_xml:
+                    parts.append(invalid_xml)
+                    return ''.join(parts)
 
         # Try exact extension match
         exten = Exten.search([('number', '=', destination)], limit=1)

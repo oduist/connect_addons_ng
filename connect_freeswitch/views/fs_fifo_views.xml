@@ -35,7 +35,6 @@
                         <group string="Queue Behavior">
                             <field name="max_wait_time"/>
                             <field name="moh_sound"/>
-                            <field name="announce_position"/>
                         </group>
                     </group>
                     <group string="Timeout Action">
