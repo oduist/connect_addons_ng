@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_provider_list" model="ir.ui.view">
+        <field name="name">connect.provider.list</field>
+        <field name="model">connect.provider</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="config_model" optional="hide"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_connect_provider_form" model="ir.ui.view">
+        <field name="name">connect.provider.form</field>
+        <field name="model">connect.provider</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="bg-danger" invisible="active"/>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="name"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="config_model"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_connect_provider" model="ir.actions.act_window">
+        <field name="name">Providers</field>
+        <field name="res_model">connect.provider</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'active_test': False}</field>
+    </record>
+
+    <menuitem id="menu_connect_providers"
+              name="Providers"
+              parent="menu_connect_settings"
+              action="action_connect_provider"
+              sequence="50"/>
+</odoo>

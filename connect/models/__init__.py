@@ -13,6 +13,7 @@ from . import message
 from . import message_configuration
 from . import number
 from . import outgoing_callerid
+from . import provider
 from . import recording
 from . import res_partner
 from . import res_users

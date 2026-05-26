@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect',
-    'version': '19.0.3.1.3',
+    'version': '19.0.3.1.5',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Communication platform for Odoo',
@@ -30,6 +30,7 @@
         'views/recording_views.xml',
         'views/number_views.xml',
         'views/outgoing_callerid_views.xml',
+        'views/provider_views.xml',
         'views/exten_views.xml',
         'views/callflow_views.xml',
         'views/debug_views.xml',
