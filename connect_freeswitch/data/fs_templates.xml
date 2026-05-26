@@ -210,12 +210,12 @@ Variables:
   ring_bridge     - Comma-separated bridge string for ring_users fallback after timeout (optional)
   fifo_number     - FS Queue extension number for IVR default branch (optional)
   invalid_regex   - Pre-built `~^[unused-digits]$` pattern for the catch-all bind (optional)
-  dmachine_timeout - bind_digit_input_timeout in ms (100 for single-digit menus, 1500 for multi-digit)</field>
+  dmachine_timeout - bind_digit_digit_timeout in ms (100 for single-digit menus, 1500 for multi-digit)</field>
         <field name="content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
     <action application="answer"/>
     <action application="sleep" data="500"/>
-    <action application="set" data="bind_digit_input_timeout={{ dmachine_timeout }}"/>
+    <action application="set" data="bind_digit_digit_timeout={{ dmachine_timeout }}"/>
     {% for choice in choices %}
     {% if choice.dst_type == 'user' %}
     <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:execute_extension,cf_call_{{ callflow_id }}_{{ choice.digits }} XML default"/>
@@ -245,7 +245,7 @@ Variables:
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
     <action application="answer"/>
     <action application="sleep" data="500"/>
-    <action application="set" data="bind_digit_input_timeout={{ dmachine_timeout }}"/>
+    <action application="set" data="bind_digit_digit_timeout={{ dmachine_timeout }}"/>
     {% for choice in choices %}
     {% if choice.dst_type == 'user' %}
     <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:execute_extension,cf_call_{{ callflow_id }}_{{ choice.digits }} XML default"/>

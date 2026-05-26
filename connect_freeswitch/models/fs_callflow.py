@@ -82,7 +82,7 @@ class CallFlow(models.Model):
 
         choices = self._ivr_choice_data()
 
-        # gather_digits drives both the bind_digit_input_timeout (inter-digit
+        # gather_digits drives both the bind_digit_digit_timeout (inter-digit
         # wait inside FreeSWITCH dmachine) and the invalid-input regex length.
         # For single-digit IVRs we shrink the timeout to ~100ms so a press
         # fires almost instantly instead of the 1500ms dmachine default.
