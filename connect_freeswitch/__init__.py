@@ -19,6 +19,12 @@ def setup_firewall(env):
     env['connect.firewall.agent'].sudo()._get_singleton()
 
 
+def register_provider(env):
+    """Idempotent upsert of the FreeSWITCH entry in connect.provider.
+    Called from post_init_hook and from per-version post-migration scripts."""
+    env['connect.provider'].sudo()._register_code(code='freeswitch', name='FreeSWITCH', sequence=20)
+
+
 def post_init_hook(env):
     try:
         module = env['ir.module.module'].search([('name', '=', 'connect_freeswitch')], limit=1)
@@ -26,6 +32,7 @@ def post_init_hook(env):
             module.write({'create_date': fields.Datetime.now()})
         env['oduist.license'].update_license_status(raise_exc=False)
         setup_firewall(env)
+        register_provider(env)
     except Exception as e:
         _logger.error('Error in post_init_hook: %s', str(e))
 
@@ -38,10 +45,13 @@ def uninstall_hook(env):
     - firewall_service_token: shared secret used by firewall API; if left
       behind a future reinstall would reuse a token the operator may no
       longer know about. Drop it.
+    - connect.provider 'freeswitch' is deactivated (not deleted) so any
+      connect.call.provider_id still referencing it keeps resolving.
     """
     try:
         env['ir.config_parameter'].sudo().search(
             [('key', '=', 'firewall_service_token')]
         ).unlink()
+        env['connect.provider'].sudo()._deactivate('freeswitch')
     except Exception as e:
         _logger.error('Error in uninstall_hook: %s', str(e))
