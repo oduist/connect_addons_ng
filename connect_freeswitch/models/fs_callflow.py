@@ -74,6 +74,12 @@ class CallFlow(models.Model):
         if self.fs_fifo_id and self.fs_fifo_id.exten_number:
             fifo_number = self.fs_fifo_id.exten_number
 
+        ring_parts = []
+        for user in self.ring_users:
+            if user.exten_number:
+                ring_parts.append('user/{}@{}'.format(user.exten_number, fs_domain))
+        ring_bridge = ','.join(ring_parts)
+
         return self.env['connect.freeswitch.template'].render('dialplan_ivr', {
             'callflow_id': self.id,
             'number': re.escape(number),
@@ -82,6 +88,7 @@ class CallFlow(models.Model):
             'timeout': timeout,
             'choices': self._ivr_choice_data(),
             'fs_domain': fs_domain,
+            'ring_bridge': ring_bridge,
             'fifo_number': fifo_number,
         })
 

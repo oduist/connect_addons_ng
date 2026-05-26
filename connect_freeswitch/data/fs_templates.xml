@@ -207,6 +207,7 @@ Variables:
     user_number     - User extension number (if dst_type == 'user')
     transfer_target - Transfer destination (if dst_type == 'other')
   fs_domain       - FreeSWITCH SIP domain (unused in this template; kept for symmetry)
+  ring_bridge     - Comma-separated bridge string for ring_users fallback after timeout (optional)
   fifo_number     - FS Queue extension number for IVR default branch (optional)</field>
         <field name="content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
@@ -223,6 +224,12 @@ Variables:
     <action application="speak" data="piper|{{ lang }}|{{ prompt }}"/>
     <action application="sleep" data="{{ timeout }}"/>
     <action application="clear_digit_action" data="cf_{{ callflow_id }}"/>
+    {% if ring_bridge %}
+    <action application="set" data="call_timeout=30"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="bridge" data="{{ ring_bridge }}"/>
+    {% endif %}
     {% if fifo_number %}
     <action application="transfer" data="{{ fifo_number }} XML default"/>
     {% endif %}
@@ -243,6 +250,12 @@ Variables:
     <action application="speak" data="piper|{{ lang }}|{{ prompt }}"/>
     <action application="sleep" data="{{ timeout }}"/>
     <action application="clear_digit_action" data="cf_{{ callflow_id }}"/>
+    {% if ring_bridge %}
+    <action application="set" data="call_timeout=30"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="bridge" data="{{ ring_bridge }}"/>
+    {% endif %}
     {% if fifo_number %}
     <action application="transfer" data="{{ fifo_number }} XML default"/>
     {% endif %}
