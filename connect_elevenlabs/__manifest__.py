@@ -2,7 +2,7 @@
 
 {
     'name': 'Connect ElevenLabs',
-    'version': '1.1.6',
+    'version': '1.1.7',
     'author': 'Oduist',
     'price': 0,
     'currency': 'EUR',
@@ -50,4 +50,5 @@
         'web.assets_backend': [],
     },
     'post_init_hook': 'post_init_hook',
+    'uninstall_hook': 'uninstall_hook',
 }
