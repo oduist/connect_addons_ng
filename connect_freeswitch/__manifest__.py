@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect FreeSWITCH',
-    'version': '18.0.1.8.20',
+    'version': '18.0.1.8.21',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'FreeSWITCH integration for Oduist Connect',

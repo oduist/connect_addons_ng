@@ -24,10 +24,6 @@ class FsFifo(models.Model):
              'Defaults to the global `hold_music` variable defined in vars.xml '
              '(silence_stream://0 out of the box).',
     )
-    announce_position = fields.Boolean(
-        default=False,
-        help='Announce the caller position in the queue.',
-    )
     member_user_ids = fields.Many2many(
         'connect.user', 'fs_fifo_user_rel', 'fifo_id', 'user_id',
         string='User Agents',
@@ -118,7 +114,6 @@ class FsFifo(models.Model):
             'exten_id': exten.id if exten else None,
             'max_wait': self.max_wait_time or 60,
             'moh': self.moh_sound or '$${hold_music}',
-            'announce_position': bool(self.announce_position),
             'record_calls': bool(self.record_calls),
             'recording_url': recording_url,
             'members': members,
