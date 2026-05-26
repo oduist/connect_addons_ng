@@ -209,7 +209,7 @@ Variables:
   fs_domain       - FreeSWITCH SIP domain (unused in this template; kept for symmetry)
   ring_bridge     - Comma-separated bridge string for ring_users fallback after timeout (optional)
   fifo_number     - FS Queue extension number for IVR default branch (optional)
-  invalid_regex   - Pre-built `~^[<unused-digits>]$` pattern for the catch-all bind (optional)</field>
+  invalid_regex   - Pre-built `~^[unused-digits]$` pattern for the catch-all bind (optional)</field>
         <field name="content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
     <action application="answer"/>
