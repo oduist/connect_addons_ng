@@ -149,7 +149,11 @@ class Settings(models.Model):
         return twiml
 
     @api.model
-    def originate_call(self, number, res_model=None, res_id=None, user=None, whatsapp_call=False):
+    def _twilio_originate_call(self, number, res_model=None, res_id=None, user=None, whatsapp_call=False, **_):
+        """Twilio impl of outbound origination. Called from
+        `TwilioProvider._originate_call`; not invoked directly any more.
+        The previous public name `originate_call` was renamed to make it
+        clear this is provider-private (ODU-4 façade)."""
         self.env["oduist.license"].check_license("connect", silent=False)
         number = strip_number(number)
         if len(number) > MAX_EXTEN_LEN:
