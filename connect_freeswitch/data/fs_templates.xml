@@ -208,7 +208,8 @@ Variables:
     transfer_target - Transfer destination (if dst_type == 'other')
   fs_domain       - FreeSWITCH SIP domain (unused in this template; kept for symmetry)
   ring_bridge     - Comma-separated bridge string for ring_users fallback after timeout (optional)
-  fifo_number     - FS Queue extension number for IVR default branch (optional)</field>
+  fifo_number     - FS Queue extension number for IVR default branch (optional)
+  invalid_msg     - Truthy when invalid_input_message is set; enables the catch-all bind</field>
         <field name="content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
     <action application="answer"/>
@@ -827,6 +828,33 @@ Variables:
     {% endfor %}
   </fifos>
 </configuration>]]></field>
+    </record>
+
+    <record id="fs_template_dialplan_ivr_invalid" model="connect.freeswitch.template">
+        <field name="key">dialplan_ivr_invalid</field>
+        <field name="name">Dialplan - IVR Invalid Input</field>
+        <field name="section">dialplan</field>
+        <field name="description">Catch-all extension played when the caller dials a digit that does not
+match any IVR choice. Speaks invalid_input_message via Piper TTS and
+transfers the caller back into the IVR so they can try again.
+
+Variables:
+  callflow_id     - connect.callflow record ID
+  number          - The IVR's own extension number (target of the re-entry transfer)
+  lang            - Piper TTS language code
+  invalid_msg     - Text spoken to the caller before re-entry</field>
+        <field name="content"><![CDATA[<extension name="cf_invalid_{{ callflow_id }}">
+  <condition field="destination_number" expression="^cf_invalid_{{ callflow_id }}$" break="on-false">
+    <action application="speak" data="piper|{{ lang }}|{{ invalid_msg }}"/>
+    <action application="transfer" data="{{ number }} XML default"/>
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="cf_invalid_{{ callflow_id }}">
+  <condition field="destination_number" expression="^cf_invalid_{{ callflow_id }}$" break="on-false">
+    <action application="speak" data="piper|{{ lang }}|{{ invalid_msg }}"/>
+    <action application="transfer" data="{{ number }} XML default"/>
+  </condition>
+</extension>]]></field>
     </record>
 
 </odoo>
