@@ -39,73 +39,81 @@ setup_tls() {
 
     if [ -f "$ACME_FILE" ] && [ -n "$FS_DOMAIN" ]; then
         echo "Extracting TLS certificate for $FS_DOMAIN from Traefik ACME..."
-        # Extract cert and key for FS_DOMAIN from Traefik acme.json
-        # acme.json stores certs as base64-encoded PEM
-        CERT=$(python3 -c "
-import json, base64, sys
-try:
-    with open('$ACME_FILE') as f:
-        data = json.load(f)
-    for resolver in data.values():
-        for cert in (resolver.get('Certificates') or []):
-            main = cert.get('domain', {}).get('main', '')
-            sans = cert.get('domain', {}).get('sans') or []
-            if main == '$FS_DOMAIN' or '$FS_DOMAIN' in sans:
-                print(base64.b64decode(cert['certificate']).decode(), end='')
-                sys.exit(0)
-    # Try wildcard match
-    parts = '$FS_DOMAIN'.split('.', 1)
-    if len(parts) == 2:
-        wildcard = '*.' + parts[1]
-        for resolver in data.values():
-            for cert in (resolver.get('Certificates') or []):
-                main = cert.get('domain', {}).get('main', '')
-                sans = cert.get('domain', {}).get('sans') or []
-                if main == wildcard or wildcard in sans:
-                    print(base64.b64decode(cert['certificate']).decode(), end='')
-                    sys.exit(0)
-    sys.exit(1)
-except Exception as e:
-    print(str(e), file=sys.stderr)
-    sys.exit(1)
-")
+        # Extract the freshest non-expired cert+key bundle for FS_DOMAIN
+        # from Traefik's acme.json. acme.json may contain entries from
+        # multiple resolvers (e.g. an old "le" alongside a new "letsencrypt"),
+        # so we collect all matches, drop expired ones, and pick the one
+        # with the latest notAfter — that is the renewed certificate.
+        BUNDLE=$(FS_DOMAIN="$FS_DOMAIN" ACME_FILE="$ACME_FILE" python3 <<'PY'
+import base64, datetime, json, os, subprocess, sys
 
-        KEY=$(python3 -c "
-import json, base64, sys
-try:
-    with open('$ACME_FILE') as f:
-        data = json.load(f)
-    for resolver in data.values():
-        for cert in (resolver.get('Certificates') or []):
-            main = cert.get('domain', {}).get('main', '')
-            sans = cert.get('domain', {}).get('sans') or []
-            if main == '$FS_DOMAIN' or '$FS_DOMAIN' in sans:
-                print(base64.b64decode(cert['key']).decode(), end='')
-                sys.exit(0)
-    parts = '$FS_DOMAIN'.split('.', 1)
-    if len(parts) == 2:
-        wildcard = '*.' + parts[1]
-        for resolver in data.values():
-            for cert in (resolver.get('Certificates') or []):
-                main = cert.get('domain', {}).get('main', '')
-                sans = cert.get('domain', {}).get('sans') or []
-                if main == wildcard or wildcard in sans:
-                    print(base64.b64decode(cert['key']).decode(), end='')
-                    sys.exit(0)
-    sys.exit(1)
-except Exception as e:
-    print(str(e), file=sys.stderr)
-    sys.exit(1)
-")
+target = os.environ["FS_DOMAIN"]
+parts = target.split(".", 1)
+wildcard = "*." + parts[1] if len(parts) == 2 else None
 
-        if [ -n "$CERT" ] && [ -n "$KEY" ]; then
-            # Combine key + cert into PEM files (FS expects key first)
-            printf '%s\n%s' "$KEY" "$CERT" > "$TLS_DIR/wss.pem"
+try:
+    with open(os.environ["ACME_FILE"]) as f:
+        data = json.load(f)
+except Exception as exc:
+    print(f"acme.json read error: {exc}", file=sys.stderr)
+    sys.exit(1)
+
+candidates = []
+for resolver_name, resolver in data.items():
+    for cert in (resolver.get("Certificates") or []):
+        dom = cert.get("domain", {})
+        names = {dom.get("main", "")} | set(dom.get("sans") or [])
+        if not (target in names or (wildcard and wildcard in names)):
+            continue
+        try:
+            cert_pem = base64.b64decode(cert["certificate"]).decode()
+            key_pem = base64.b64decode(cert["key"]).decode()
+        except Exception as exc:
+            print(f"skip {resolver_name}: decode error: {exc}", file=sys.stderr)
+            continue
+        r = subprocess.run(
+            ["openssl", "x509", "-noout", "-enddate"],
+            input=cert_pem, capture_output=True, text=True,
+        )
+        if r.returncode != 0:
+            print(f"skip {resolver_name}: openssl error: {r.stderr.strip()}", file=sys.stderr)
+            continue
+        end = r.stdout.strip().split("=", 1)[1]
+        not_after = datetime.datetime.strptime(end, "%b %d %H:%M:%S %Y %Z")
+        candidates.append((not_after, resolver_name, cert_pem, key_pem))
+
+now = datetime.datetime.utcnow()
+fresh = [c for c in candidates if c[0] > now]
+if not fresh:
+    if candidates:
+        latest = max(candidates, key=lambda c: c[0])
+        print(
+            f"all matching certificates expired (latest: {latest[1]} notAfter={latest[0]})",
+            file=sys.stderr,
+        )
+    sys.exit(1)
+
+fresh.sort(key=lambda c: c[0], reverse=True)
+not_after, resolver_name, cert_pem, key_pem = fresh[0]
+print(
+    f"picked cert from resolver {resolver_name!r} notAfter={not_after.isoformat()}Z",
+    file=sys.stderr,
+)
+# FS expects key first, then cert
+sys.stdout.write(key_pem)
+if not key_pem.endswith("\n"):
+    sys.stdout.write("\n")
+sys.stdout.write(cert_pem)
+PY
+)
+
+        if [ -n "$BUNDLE" ]; then
+            printf '%s' "$BUNDLE" > "$TLS_DIR/wss.pem"
             cp "$TLS_DIR/wss.pem" "$TLS_DIR/dtls-srtp.pem"
             echo "TLS certificate installed from Traefik ACME for $FS_DOMAIN"
             return
         fi
-        echo "Warning: certificate for $FS_DOMAIN not found in ACME store"
+        echo "Warning: no valid (non-expired) certificate for $FS_DOMAIN in ACME store"
     fi
 
     # Fallback: generate self-signed certificate if none exists
