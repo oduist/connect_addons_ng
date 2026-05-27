@@ -1,6 +1,6 @@
 """Coalesce free-text callflow language values into the new Selection.
 
-Before 19.0.3.1.2 ``connect.callflow.language`` was a plain ``Char`` and could
+Before 18.0.3.1.2 ``connect.callflow.language`` was a plain ``Char`` and could
 hold anything. With this version it becomes a ``Selection``. Any value that is
 not part of the new Selection list (returned by ``_get_language_selection``)
 would make the form crash with ``ValueError`` on load, so we coalesce stray
