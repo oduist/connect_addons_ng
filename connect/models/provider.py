@@ -1,3 +1,5 @@
+import logging
+
 from odoo import api, fields, models
 from odoo.models import Constraint
 
@@ -70,3 +72,22 @@ class ConnectProvider(models.Model):
         raise NotImplementedError(
             f'Provider {self.code!r} does not implement _originate_call'
         )
+
+    def _verify_webhook(self, request, data=None):
+        """Unified webhook authentication (ADR-023 Phase 7 / ODU-15).
+
+        Each provider implements this with its native mechanism:
+          - Twilio: HMAC signature (`X-Twilio-Signature`)
+          - FreeSWITCH: bearer token in Authorization header
+          - ElevenLabs: token in `x-elevenlabs-agent-token`
+
+        Returns True if the request is authentic. Reaching this base
+        means no installed provider override matched the dispatch code
+        — return False (deny) and log.
+        """
+        _logger = logging.getLogger('connect.webhook')
+        _logger.warning(
+            'webhook verify denied: provider %r has no _verify_webhook impl',
+            self.code,
+        )
+        return False

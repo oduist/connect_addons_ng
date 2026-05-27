@@ -1,4 +1,11 @@
+"""FreeSWITCH provider adapter — implements abstracts on
+`connect.provider` (ODU-4 originate, ODU-15 webhook auth)."""
+import logging
+import secrets
+
 from odoo import models
+
+logger = logging.getLogger(__name__)
 
 
 class FreeSwitchProvider(models.Model):
@@ -14,3 +21,20 @@ class FreeSwitchProvider(models.Model):
         return self.env['connect.call']._freeswitch_originate_call(
             number=number, res_model=res_model, res_id=res_id,
         )
+
+    def _verify_webhook(self, request, data=None):
+        """Bearer-token auth (ADR-015 / ODU-15). Used by the firewall
+        service ↔ Odoo direction; the same token authenticates Odoo
+        when it POSTs `/firewall/sync` to the service."""
+        if self.code != 'freeswitch':
+            return super()._verify_webhook(request, data=data)
+        expected = self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_service_token or ''
+        if not expected:
+            return False
+        auth = request.httprequest.headers.get('Authorization', '')
+        if not auth.lower().startswith('bearer '):
+            return False
+        ok = secrets.compare_digest(auth[7:].strip(), expected)
+        if not ok:
+            logger.warning('FreeSWITCH firewall webhook token mismatch')
+        return ok

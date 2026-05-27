@@ -1,4 +1,15 @@
+"""Twilio provider adapter: implements abstracts on `connect.provider`.
+
+ODU-4 introduced `_originate_call`; ODU-15 adds `_verify_webhook` for
+the unified webhook auth surface.
+"""
+import logging
+
+from twilio.request_validator import RequestValidator
+
 from odoo import models
+
+logger = logging.getLogger(__name__)
 
 
 class TwilioProvider(models.Model):
@@ -12,3 +23,17 @@ class TwilioProvider(models.Model):
         return self.env['connect.provider.twilio.config'].sudo()._originate_call(
             number=number, res_model=res_model, res_id=res_id, user=user, **kwargs
         )
+
+    def _verify_webhook(self, request, data=None):
+        if self.code != 'twilio':
+            return super()._verify_webhook(request, data=data)
+        cfg = self.env['connect.provider.twilio.config'].sudo()._get()
+        if not cfg.verify_requests:
+            return True
+        validator = RequestValidator(cfg.auth_token)
+        url = request.httprequest.url.replace('http:', 'https:')
+        signature = request.httprequest.headers.get('X-Twilio-Signature', '')
+        ok = validator.validate(url, data or {}, signature)
+        if not ok:
+            logger.warning('Twilio webhook signature mismatch on %s', url)
+        return ok

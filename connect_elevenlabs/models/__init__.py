@@ -9,6 +9,7 @@ from . import exten
 from . import file
 from . import number
 from . import provider_config
+from . import provider
 from . import settings
 from . import user
 from . import voice
