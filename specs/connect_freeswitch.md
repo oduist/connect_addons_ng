@@ -201,7 +201,7 @@ sound-file download, TLS extraction from Traefik ACME, and
 substitutes `FS_ESL_PASSWORD` into `event_socket.conf.xml` (the file
 ships with the placeholder `__SET_FS_ESL_PASSWORD__`). `FS_ESL_PASSWORD`
 is **required** — the entrypoint exits non-zero before starting
-FreeSWITCH if it is unset. See ADR-019 for the rationale.
+FreeSWITCH if it is unset. See ADR-020 for the rationale.
 
 ### Firewall service image (`deploy/firewall/`)
 

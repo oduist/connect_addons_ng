@@ -29,6 +29,12 @@
             <xpath expr="//field[@name='user']" position="after">
                 <field name="username"/>
             </xpath>
+
+            <!-- Twilio adds the `status` field on connect.outgoing_callerid; -->
+            <!-- restrict picker to validated CallerIDs or DID numbers. -->
+            <xpath expr="//field[@name='outgoing_callerid']" position="attributes">
+                <attribute name="domain">['|', ('status', '=', 'validated'), ('callerid_type', '=', 'number')]</attribute>
+            </xpath>
             <xpath expr="//field[@name='active']" position="after">
                 <field name="domain"/>
                 <field name="twilio_edge"
