@@ -73,6 +73,7 @@ applications/mod_dptools
 applications/mod_http_cache
 applications/mod_fifo
 applications/mod_valet_parking
+formats/mod_local_stream
 dialplans/mod_dialplan_xml
 codecs/mod_opus
 formats/mod_sndfile
@@ -147,10 +148,15 @@ COPY --from=builder /opt/piper /opt/piper
 
 RUN ldconfig
 
-# Required runtime directories
+# Required runtime directories. The entrypoint downloads sound tarballs into
+# /usr/share/freeswitch/sounds (mounted as a volume), but mod_local_stream
+# resolves $${sounds_dir} which points inside the FreeSWITCH prefix, so we
+# expose the same path under both locations via a symlink.
 RUN mkdir -p /usr/local/freeswitch/var/run/freeswitch \
              /usr/local/freeswitch/var/log/freeswitch \
-             /usr/share/freeswitch/sounds
+             /usr/share/freeswitch/sounds \
+    && rm -rf /usr/local/freeswitch/share/freeswitch/sounds \
+    && ln -s /usr/share/freeswitch/sounds /usr/local/freeswitch/share/freeswitch/sounds
 
 # Convenience symlinks
 RUN ln -sf /usr/local/freeswitch/bin/freeswitch /usr/bin/freeswitch \
@@ -165,7 +171,7 @@ COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 ENV ODOO_URL=http://localhost:8069 \
-    SOUND_RATES=8000:16000 \
+    SOUND_RATES=8000:16000:32000:48000 \
     SOUND_TYPES=music:en-us-callie \
     EPMD=false \
     DUMPCAP=false \
