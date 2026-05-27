@@ -180,13 +180,21 @@ class Call(models.Model):
 
         a_leg = ','.join(a_leg_parts)
 
-        # Caller ID for b-leg (what the called party sees)
-        first_ep = endpoints[:1]
-        caller_number = connect_user.exten_number or (first_ep.auth_user if first_ep else '')
-
         # Check if target is an internal extension
         exten = self.env['connect.exten'].search(
             [('number', '=', number)], limit=1)
+
+        # Caller ID for b-leg (what the called party sees)
+        first_ep = endpoints[:1]
+        if exten:
+            caller_number = connect_user.exten_number or (first_ep.auth_user if first_ep else '')
+        else:
+            caller_number = (
+                connect_user.outgoing_callerid.number
+                or connect_user.exten_number
+                or (first_ep.auth_user if first_ep else '')
+            )
+
         if exten:
             # Internal call — bridge to extension's destination
             b_leg = self._build_internal_b_leg(exten, domain)

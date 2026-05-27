@@ -487,7 +487,7 @@ Default WhatsApp content template: `voice_call_request` - used for voice call co
 | File | Inherits | Changes |
 |------|----------|---------|
 | `views/settings_views.xml` | `connect.connect_settings_form` | Add Twilio balance group, API keys page, development page, fetch_call_prices |
-| `views/user_views.xml` | `connect.view_connect_user_form`, `connect.view_connect_user_tree` | Add SIP/Client phone tab, domain, edge, whatsapp_sender, application; list adds sip_enabled/client_enabled columns |
+| `views/user_views.xml` | `connect.view_connect_user_form`, `connect.view_connect_user_tree` | Add SIP/Client phone tab, domain, edge, whatsapp_sender, application; list adds sip_enabled/client_enabled columns; override `outgoing_callerid` domain to require `status='validated'` (Twilio-only field) |
 | `views/number_views.xml` | `connect.view_connect_number_form`, `connect.view_connect_number_tree` | Add twiml routing option and twiml column |
 | `views/outgoing_callerid_views.xml` | `connect.view_connect_outgoing_callerid_form` | Add Validate button and validation_code field |
 
