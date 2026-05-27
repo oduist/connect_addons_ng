@@ -1,8 +1,7 @@
 import jinja2
 import logging
-from odoo import api, fields, models, release, tools
-if release.version_info[0] >= 19:
-    from odoo.models import Constraint
+from odoo import api, fields, models, tools
+from odoo.models import Constraint
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +24,7 @@ class FreeSwitchTemplate(models.Model):
     default_content = fields.Text(readonly=True)
     is_customized = fields.Boolean(compute='_compute_is_customized', store=True)
 
-    if release.version_info[0] >= 19:
-        _key_uniq = Constraint('UNIQUE(key)', 'Template key must be unique!')
-    else:
-        _sql_constraints = [
-            ('key_uniq', 'UNIQUE(key)', 'Template key must be unique!'),
-        ]
+    _key_uniq = Constraint('UNIQUE(key)', 'Template key must be unique!')
 
     @api.depends('content', 'default_content')
     def _compute_is_customized(self):

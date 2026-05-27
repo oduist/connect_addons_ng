@@ -1,10 +1,9 @@
 import ipaddress
 import logging
 import re
-from odoo import fields, models, api, release
+from odoo import fields, models, api
 from odoo.exceptions import ValidationError
-if release.version_info[0] >= 19:
-    from odoo.models import Constraint
+from odoo.models import Constraint
 
 logger = logging.getLogger(__name__)
 
@@ -31,12 +30,7 @@ class FreeSwitchGateway(models.Model):
              'Example: 185.3.68.0/24')
     active = fields.Boolean(default=True)
 
-    if release.version_info[0] >= 19:
-        _name_uniq = Constraint('UNIQUE(name)', 'Gateway name must be unique!')
-    else:
-        _sql_constraints = [
-            ('name_uniq', 'UNIQUE(name)', 'Gateway name must be unique!'),
-        ]
+    _name_uniq = Constraint('UNIQUE(name)', 'Gateway name must be unique!')
 
     @api.constrains('name')
     def _check_name(self):
