@@ -60,7 +60,7 @@
 
     <menuitem id="menu_freeswitch_template"
               name="XML Templates"
-              parent="connect.menu_connect_pbx"
+              parent="connect_freeswitch.menu_connect_freeswitch"
               action="action_freeswitch_template"
               sequence="80"
               groups="connect.group_admin"/>

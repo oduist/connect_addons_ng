@@ -49,7 +49,7 @@
 
     <menuitem id="menu_freeswitch_outgoing_route"
               name="Outgoing Routes"
-              parent="connect.menu_connect_pbx"
+              parent="connect_freeswitch.menu_connect_freeswitch"
               action="action_freeswitch_outgoing_route"
               sequence="71"
               groups="connect.group_admin"/>

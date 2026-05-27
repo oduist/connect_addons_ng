@@ -57,7 +57,7 @@
 
     <menuitem id="menu_freeswitch_gateway"
               name="SIP Gateways"
-              parent="connect.menu_connect_pbx"
+              parent="connect_freeswitch.menu_connect_freeswitch"
               action="action_freeswitch_gateway"
               sequence="70"
               groups="connect.group_admin"/>

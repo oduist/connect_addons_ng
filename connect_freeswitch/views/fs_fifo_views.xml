@@ -91,7 +91,7 @@
 
     <menuitem id="menu_connect_fs_fifo"
               name="FS Queues"
-              parent="connect.menu_connect_pbx"
+              parent="connect_freeswitch.menu_connect_freeswitch"
               action="action_connect_fs_fifo"
               sequence="55"
               groups="connect.group_admin"/>

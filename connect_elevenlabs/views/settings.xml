@@ -9,9 +9,13 @@
       <field name="code">action = model._get().action_open_form()</field>
   </record>
 
-  <menuitem id="elevenlabs_menu" parent="connect.menu_connect_settings"
+  <!-- ODU-14 / ADR-023 Pillar 7: provider-owned menu root for ElevenLabs.
+       Moved up from under connect.menu_connect_settings (where it was
+       nested under Configuration) to be a top-level sibling of the FS
+       and Twilio roots. -->
+  <menuitem id="elevenlabs_menu" parent="connect.menu_connect_root"
       groups="connect.group_admin"
-      name="ElevenLabs" sequence="1000"/>
+      name="ElevenLabs" sequence="80"/>
 
   <menuitem id="elevenlabs_settings_menu" parent="elevenlabs_menu"
       groups="connect.group_admin"

@@ -248,7 +248,7 @@ action = {
 
     <menuitem id="menu_firewall_root"
               name="Firewall"
-              parent="connect.menu_connect_pbx"
+              parent="connect_freeswitch.menu_connect_freeswitch"
               sequence="80"/>
 
     <menuitem id="menu_firewall_agent"
