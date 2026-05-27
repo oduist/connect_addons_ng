@@ -117,7 +117,7 @@ class ElevenlabsAgentTool(models.Model):
 
             elif self.tool_type == 'webhook':
                 # Build webhook tool configuration
-                agent_token = self.env['connect.settings'].sudo().get_param('elevenlabs_agent_token')
+                agent_token = self.env['connect.provider.elevenlabs.config'].sudo()._get().agent_token
                 api_schema = {
                     'method': self.method,
                     'url': self.get_tool_url(),
@@ -220,7 +220,7 @@ class ElevenlabsAgentTool(models.Model):
         if not self.tool_id:
             return
 
-        client = self.env['connect.settings'].get_elevenlabs_client()
+        client = self.env['connect.provider.elevenlabs.config']._get().get_client()
 
         try:
             # Try model-based approach first
@@ -250,7 +250,7 @@ class ElevenlabsAgentTool(models.Model):
         if not self.tool_id:
             return
 
-        client = self.env['connect.settings'].get_elevenlabs_client()
+        client = self.env['connect.provider.elevenlabs.config']._get().get_client()
 
         try:
             client.conversational_ai.tools.delete(tool_id=self.tool_id)
@@ -262,7 +262,7 @@ class ElevenlabsAgentTool(models.Model):
 
     def _sync_to_elevenlabs(self):
         """Internal method to sync tool to ElevenLabs"""
-        client = self.env['connect.settings'].get_elevenlabs_client()
+        client = self.env['connect.provider.elevenlabs.config']._get().get_client()
         try:
             tool_config = self.compute_agent_tools_config()
             tool = client.conversational_ai.tools.create(
@@ -276,7 +276,7 @@ class ElevenlabsAgentTool(models.Model):
 
     def remove_all_from_elevenlabs(self):
         """Delete all tools from ElevenLabs and mark all Odoo tools as not synced"""
-        client = self.env['connect.settings'].get_elevenlabs_client()
+        client = self.env['connect.provider.elevenlabs.config']._get().get_client()
         deleted_count = 0
         failed_tools = []
         try:

@@ -25,7 +25,7 @@ class ConnectElevenlabsController(http.Controller):
         if not token:
             logger.warning('Tool token check failed: no x-elevenlabs-agent-token header in request')
             return False
-        expected_token = http.request.env['connect.settings'].sudo().get_param('elevenlabs_agent_token')
+        expected_token = http.request.env['connect.provider.elevenlabs.config'].sudo()._get().agent_token
         if not expected_token:
             logger.warning('Tool token check failed: elevenlabs_agent_token is not configured in settings')
             return False
@@ -50,7 +50,7 @@ class ConnectElevenlabsController(http.Controller):
             return False
         # Validate signature
         full_payload_to_sign = f"{timestamp}.{payload}"
-        webhook_secret = http.request.env['connect.settings'].sudo().get_param('elevenlabs_post_call_webhook_secret')
+        webhook_secret = http.request.env['connect.provider.elevenlabs.config'].sudo()._get().post_call_webhook_secret
         mac = hmac.new(
             key=webhook_secret.encode("utf-8"),
             msg=full_payload_to_sign.encode("utf-8"),
@@ -131,7 +131,7 @@ class ConnectElevenlabsController(http.Controller):
 
         # Recording
         url = f"https://api.elevenlabs.io/v1/convai/conversations/{data.get('conversation_id')}/audio"
-        elevenlabs_api_key = http.request.env['connect.settings'].sudo().get_param('elevenlabs_api_key')
+        elevenlabs_api_key = http.request.env['connect.provider.elevenlabs.config'].sudo()._get().api_key
         headers = {"Content-Type": "application/json", "xi-api-key": elevenlabs_api_key}
 
         response = requests.get(url, headers=headers)

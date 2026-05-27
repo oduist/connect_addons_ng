@@ -38,7 +38,7 @@ class ElevenlabsFile(models.Model):
 
     @api.constrains('text')
     def _regenerate_file(self):
-        if not self.env['connect.settings'].sudo().get_param('elevenlabs_enabled'):
+        if not self.env['connect.provider.elevenlabs.config'].sudo()._get().enabled:
             return
         for rec in self:
             rec.write({
@@ -73,10 +73,10 @@ class ElevenlabsFile(models.Model):
 
     def generate_elevenlabs_voice(self, text):
         try:
-            client = self.env['connect.settings'].get_elevenlabs_client()
+            client = self.env['connect.provider.elevenlabs.config']._get().get_client()
             audio = client.text_to_speech.convert(
                 text=text,
-                voice_id=self.env['connect.settings'].sudo().get_param('elevenlabs_voice').voice_id,
+                voice_id=self.env['connect.provider.elevenlabs.config'].sudo()._get().voice.voice_id,
                 model_id="eleven_multilingual_v2"
             )
             data = b''.join(audio)

@@ -55,7 +55,7 @@ class Recording(models.Model):
             return super().transcribe_recording(openai_api_key, summary_prompt)
         transcript_provider = self.env['connect.settings'].sudo().get_param('transcript_provider')
         if transcript_provider == 'elevenlabs':
-            client = self.env['connect.settings'].get_elevenlabs_client()
+            client = self.env['connect.provider.elevenlabs.config']._get().get_client()
 
             response = requests.get(self.media_url)
             response.raise_for_status()

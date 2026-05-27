@@ -28,27 +28,27 @@ class ElevenLabsCallflow(models.Model):
             related='voicemail_prompt_file.preview_audio', string='voicemail_prompt_widget')
 
     def _get_elevenlabs_enabled(self):
-        elevenlabs_enabled = self.env['connect.settings'].sudo().get_param('elevenlabs_enabled')
+        elevenlabs_enabled = self.env['connect.provider.elevenlabs.config'].sudo()._get().enabled
         for rec in self:
             rec.elevenlabs_enabled = elevenlabs_enabled
 
     @api.constrains('prompt_message')
     def _generate_elevenlabs_prompt_message(self):
-        if not self.env['connect.settings'].sudo().get_param('elevenlabs_enabled'):
+        if not self.env['connect.provider.elevenlabs.config'].sudo()._get().enabled:
             return
         for rec in self:
             rec._generate_elevenlabs_file('prompt_message', 'prompt_message_file')
 
     @api.constrains('invalid_input_message')
     def _generate_elevenlabs_invalid_input_message(self):
-        if not self.env['connect.settings'].sudo().get_param('elevenlabs_enabled'):
+        if not self.env['connect.provider.elevenlabs.config'].sudo()._get().enabled:
             return
         for rec in self:
             rec._generate_elevenlabs_file('invalid_input_message', 'invalid_input_message_file')
 
     @api.constrains('voicemail_prompt')
     def _generate_elevenlabs_voicemail_prompt(self):
-        if not self.env['connect.settings'].sudo().get_param('elevenlabs_enabled'):
+        if not self.env['connect.provider.elevenlabs.config'].sudo()._get().enabled:
             return
         for rec in self:
             rec._generate_elevenlabs_file('voicemail_prompt', 'voicemail_prompt_file')
@@ -71,7 +71,7 @@ class ElevenLabsCallflow(models.Model):
     def get_prompt_message(self, gather):
         try:
             self = self.sudo()
-            if not self.env['connect.settings'].sudo().get_param('elevenlabs_enabled'):
+            if not self.env['connect.provider.elevenlabs.config'].sudo()._get().enabled:
                 return super().get_prompt_message(gather)
             if not self.prompt_message_file or not self.prompt_message_file.file:
                 self._generate_elevenlabs_prompt_message()
@@ -83,7 +83,7 @@ class ElevenLabsCallflow(models.Model):
     def get_gather_invalid_input_message(self, response):
         try:
             self = self.sudo()
-            if not self.env['connect.settings'].sudo().get_param('elevenlabs_enabled'):
+            if not self.env['connect.provider.elevenlabs.config'].sudo()._get().enabled:
                 return super().get_gather_invalid_input_message(response)
             if not self.invalid_input_message_file or not self.invalid_input_message_file.file:
                 self._generate_elevenlabs_invalid_input_message()
@@ -95,7 +95,7 @@ class ElevenLabsCallflow(models.Model):
     def get_voicemail_prompt_message(self, response):
         try:
             self = self.sudo()
-            if not self.env['connect.settings'].sudo().get_param('elevenlabs_enabled'):
+            if not self.env['connect.provider.elevenlabs.config'].sudo()._get().enabled:
                 return super().get_voicemail_prompt_message(response)
             if not self.voicemail_prompt_file or not self.voicemail_prompt_file.file:
                 self._generate_elevenlabs_voicemail_prompt()

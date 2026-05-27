@@ -5,8 +5,8 @@
       <field name="type">ir.actions.server</field>
       <field name="name">ElevenLabs</field>
       <field name="state">code</field>
-      <field name="model_id" ref="model_connect_settings"/>
-      <field name="code">action = model.open_elevenlabs_form()</field>
+      <field name="model_id" ref="model_connect_provider_elevenlabs_config"/>
+      <field name="code">action = model._get().action_open_form()</field>
   </record>
 
   <menuitem id="elevenlabs_menu" parent="connect.menu_connect_settings"
@@ -19,7 +19,7 @@
 
   <record id="connect_elevenlabs_settings_form" model="ir.ui.view">
     <field name="name">connect_elevenlabs_settings_form</field>
-    <field name="model">connect.settings</field>
+    <field name="model">connect.provider.elevenlabs.config</field>
     <field name="type">form</field>
     <field name="arch" type="xml">
       <form create="false" delete="false">
@@ -28,43 +28,43 @@
           <page name="elevenlabs_api" string="API">
             <group>
               <group>
-                <a invisible="display_elevenlabs_api_key" class="btn btn-info" role="button"
+                <a invisible="display_api_key" class="btn btn-info" role="button"
                   colspan="2" target="_new" href="https://try.elevenlabs.io/connect">OPEN A NEW ELEVENLABS ACCOUNT HERE</a>
-                <field name="elevenlabs_enabled"/>
-                <field name="display_elevenlabs_api_key" password="1" string="API Key"
-                       invisible="not elevenlabs_enabled"
-                       required="elevenlabs_enabled"/>
-                <field name="elevenlabs_voice"
-                       invisible="not elevenlabs_enabled"/>
+                <field name="enabled"/>
+                <field name="display_api_key" password="1" string="API Key"
+                       invisible="not enabled"
+                       required="enabled"/>
+                <field name="voice"
+                       invisible="not enabled"/>
                 <div class="d-flex flex-row" colspan="2">
-                  <button name="elevenlabs_sync" type="object" string="SYNC" class="btn btn-secondary me-1"
-                          invisible="not elevenlabs_enabled"/>
-                   <button name="elevenlabs_unbind_account" type="object" string="UNBIND ACCOUNT" class="btn btn-warning me-1"
-                           invisible="not elevenlabs_enabled"
+                  <button name="sync" type="object" string="SYNC" class="btn btn-secondary me-1"
+                          invisible="not enabled"/>
+                   <button name="unbind_account" type="object" string="UNBIND ACCOUNT" class="btn btn-warning me-1"
+                           invisible="not enabled"
                            confirm="Are you sure you want to unbind your ElevenLabs account? This will clear all agent and tool IDs."/>
-                  <button name="elevenlabs_regenerate_prompts" type="object" string="REGENERATE PROMPTS" class="btn btn-secondary me-1"
-                          invisible="not elevenlabs_enabled"/>
-                  <button name="elevenlabs_sync_tools" type="object" string="SYNC TOOLS" class="btn btn-secondary me-1"
-                          invisible="not elevenlabs_enabled"/>
+                  <button name="regenerate_prompts" type="object" string="REGENERATE PROMPTS" class="btn btn-secondary me-1"
+                          invisible="not enabled"/>
+                  <button name="sync_tools" type="object" string="SYNC TOOLS" class="btn btn-secondary me-1"
+                          invisible="not enabled"/>
                 </div>
-                <a invisible="not elevenlabs_enabled"
+                <a invisible="not enabled"
                   colspan="2" target="_new" href="https://elevenlabs.io/app/voice-library?">Add shared voices</a>
               </group>
             </group>
           </page>
           <page name="webhook" string="Webhooks"
-              invisible="not elevenlabs_enabled or not display_elevenlabs_api_key">
+              invisible="not enabled or not display_api_key">
             <group string="Post Call Webhook">
                 <div colspan="2">
                   <small>Add the Post Call Webhook URL in
                     <a href="https://elevenlabs.io/app/conversational-ai/settings" target="_blank">Elevenlabs Settings</a>.
                   </small>
                 </div>
-                <field name="elevenlabs_post_call_webhook_url" string="URL"/>
-                <field name="display_elevenlabs_post_call_webhook_secret" string="Secret" password="True"/>
+                <field name="post_call_webhook_url" string="URL"/>
+                <field name="display_post_call_webhook_secret" string="Secret" password="True"/>
             </group>
             <group string="Conversation Initiation Client Data Webhook">
-                <field name="elevenlabs_conversation_initiation_webhook_url"
+                <field name="conversation_initiation_webhook_url"
                        string="URL"
                        widget="CopyClipboardChar"/>
             </group>

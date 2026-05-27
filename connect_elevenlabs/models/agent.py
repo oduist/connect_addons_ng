@@ -350,7 +350,7 @@ class ElevenlabsAgent(models.Model):
         identifier = self.agent_uid
 
         try:
-            client = self.env['connect.settings'].get_elevenlabs_client()
+            client = self.env['connect.provider.elevenlabs.config']._get().get_client()
         except Exception as e:
             logger.warning("EL client unavailable for virtual number sync: %s", e)
             return
@@ -424,7 +424,7 @@ class ElevenlabsAgent(models.Model):
         if not self.el_virtual_number_uid:
             return
         try:
-            client = self.env['connect.settings'].get_elevenlabs_client()
+            client = self.env['connect.provider.elevenlabs.config']._get().get_client()
             client.conversational_ai.phone_numbers.delete(
                 self.el_virtual_number_uid)
             logger.info("EL virtual number deleted: %s",
@@ -566,7 +566,7 @@ class ElevenlabsAgent(models.Model):
         }
 
     def create_elevenlabs_agent(self):
-        client = self.env["connect.settings"].get_elevenlabs_client()
+        client = self.env['connect.provider.elevenlabs.config']._get().get_client()
         try:
             conversation_config = self._build_conversational_config()
             return client.conversational_ai.agents.create(
@@ -579,7 +579,7 @@ class ElevenlabsAgent(models.Model):
             raise
 
     def update_elevenlabs_agent(self):
-        client = self.env["connect.settings"].get_elevenlabs_client()
+        client = self.env['connect.provider.elevenlabs.config']._get().get_client()
         try:
             conversation_config = self._build_conversational_config()
             client.conversational_ai.agents.update(
@@ -601,7 +601,7 @@ class ElevenlabsAgent(models.Model):
             raise
 
     def delete_elevenlabs_agent(self):
-        client = self.env["connect.settings"].get_elevenlabs_client()
+        client = self.env['connect.provider.elevenlabs.config']._get().get_client()
         try:
             client.conversational_ai.agents.delete(agent_id=self.agent_uid)
         except Exception as e:
@@ -823,7 +823,7 @@ class ElevenlabsAgent(models.Model):
         return agent_tools
 
     def print_config(self):
-        client = self.env["connect.settings"].get_elevenlabs_client()
+        client = self.env['connect.provider.elevenlabs.config']._get().get_client()
         agents = client.conversational_ai.agents.list().agents
         for agent in agents:
             agent = client.conversational_ai.agents.get(agent_id=agent.agent_id)

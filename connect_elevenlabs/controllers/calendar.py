@@ -19,7 +19,7 @@ class CalendarController(http.Controller):
         if not token:
             logger.warning('Tool token check failed: no x-elevenlabs-agent-token header in request')
             return False
-        expected_token = http.request.env['connect.settings'].sudo().get_param('elevenlabs_agent_token')
+        expected_token = http.request.env['connect.provider.elevenlabs.config'].sudo()._get().agent_token
         if not expected_token:
             logger.warning('Tool token check failed: elevenlabs_agent_token is not configured in settings')
             return False

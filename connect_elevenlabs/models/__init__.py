@@ -8,6 +8,7 @@ from . import callflow
 from . import exten
 from . import file
 from . import number
+from . import provider_config
 from . import settings
 from . import user
 from . import voice

@@ -21,13 +21,13 @@ class ElevenLabsUser(models.Model):
             for rec in self:
                 rec.elevenlabs_enabled = False
             return
-        elevenlabs_enabled = self.env['connect.settings'].sudo().get_param('elevenlabs_enabled')
+        elevenlabs_enabled = self.env['connect.provider.elevenlabs.config'].sudo()._get().enabled
         for rec in self:
             rec.elevenlabs_enabled = elevenlabs_enabled
 
     @api.constrains('voicemail_prompt', 'voicemail_enabled')
     def _generate_elevenlabs_voicemail_prompt(self):
-        elevenlabs_enabled = self.env['connect.settings'].sudo().get_param('elevenlabs_enabled')
+        elevenlabs_enabled = self.env['connect.provider.elevenlabs.config'].sudo()._get().enabled
         for rec in self:
             if elevenlabs_enabled and rec.voicemail_enabled:
                 voicemail_prompt = rec.render_voicemail_prompt()
@@ -41,7 +41,7 @@ class ElevenLabsUser(models.Model):
             return super().get_voicemail_prompt(response)
         try:
             self = self.sudo()
-            if not self.env['connect.settings'].sudo().get_param('elevenlabs_enabled'):
+            if not self.env['connect.provider.elevenlabs.config'].sudo()._get().enabled:
                 return super().get_voicemail_prompt(response)
             if not self.voicemail_prompt_file or not self.voicemail_prompt_file.file:
                 self._generate_elevenlabs_voicemail_prompt()

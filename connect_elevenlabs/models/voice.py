@@ -43,7 +43,7 @@ class ElevenlabsVoice(models.Model):
 
     @api.model
     def get_voices(self):
-        client = self.env['connect.settings'].get_elevenlabs_client()
+        client = self.env['connect.provider.elevenlabs.config']._get().get_client()
         response = client.voices.get_all()
         elevenlabs_voice_ids = set([k.voice_id for k in response.voices])
         odoo_voice_ids = set(self.search([]).mapped('voice_id'))
@@ -65,10 +65,10 @@ class ElevenlabsVoice(models.Model):
         voices_to_remove = odoo_voice_ids - elevenlabs_voice_ids
         self.search([('voice_id', 'in', list(voices_to_remove))]).unlink()
         # Check if current voice was removed and set to another voice.
-        if not self.env['connect.settings'].sudo().get_param('elevenlabs_voice'):
+        config = self.env['connect.provider.elevenlabs.config'].sudo()._get()
+        if not config.voice:
             last = self.search([], order='id desc')[0]
-            self.env['connect.settings'].sudo().set_param(
-                'elevenlabs_voice', last)
+            config.voice = last
             logger.warning('Current elevellabs voice not set, setting to %s ID: %s',
                            last.name, last.voice_id)
 
