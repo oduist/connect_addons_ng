@@ -3,8 +3,7 @@
 import logging
 from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError
-if release.version_info[0] >= 19:
-    from odoo.models import Constraint
+from odoo.models import Constraint
 from elevenlabs import ElevenLabs
 
 logger = logging.getLogger(__name__)
@@ -27,11 +26,7 @@ class ElevenlabsVoice(models.Model):
         preview_audio = fields.Char(compute='_compute_preview_audio', string='Preview Audio')
     description = fields.Char()
 
-    # Use modern constraint syntax for Odoo 19, fallback to legacy for older versions
-    if release.version_info[0] >= 19:
-        _voice_id_unique = Constraint('UNIQUE(voice_id)', 'This Voice is already added!')
-    else:
-        _sql_constraints = [('voice_id_unique', 'UNIQUE(voice_id)', 'This Voice is already added!')]
+    _voice_id_unique = Constraint('UNIQUE(voice_id)', 'This Voice is already added!')
 
     @api.depends('preview_url')
     def _compute_preview_audio(self):

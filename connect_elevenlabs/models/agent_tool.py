@@ -4,14 +4,13 @@ import re
 import urllib.parse
 import logging
 
-from odoo import models, fields, api, release
+from odoo import models, fields, api
 from odoo.exceptions import ValidationError
+from odoo.models import Constraint
 from elevenlabs import ToolRequestModel
 from elevenlabs.core.api_error import ApiError
 
 logger = logging.getLogger(__name__)
-if release.version_info[0] >= 19:
-    from odoo.models import Constraint
 
 
 class ElevenlabsAgentTool(models.Model):
@@ -47,13 +46,7 @@ class ElevenlabsAgentTool(models.Model):
     use_out_of_band_dtmf = fields.Boolean(string='Out of Band DTMF', default=False,
                                           help='Use out-of-band DTMF tones instead of in-band audio tones')
 
-    # Use modern constraint syntax for Odoo 19, fallback to legacy for older versions
-    if release.version_info[0] >= 19:
-        _name_unique = Constraint('UNIQUE(name)', 'This name is already used!')
-    else:
-        _sql_constraints = [
-            ('name_unique', 'UNIQUE(name)', 'This name is already used!')
-        ]
+    _name_unique = Constraint('UNIQUE(name)', 'This name is already used!')
 
     def get_tool_url(self):
         api_url = self.env['ir.config_parameter'].sudo().get_param('connect.api_url')
