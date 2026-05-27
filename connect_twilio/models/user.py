@@ -6,10 +6,9 @@ import re
 import string
 from urllib.parse import urljoin
 
-from odoo import fields, models, api, release
+from odoo import fields, models, api
 from odoo.exceptions import ValidationError
-if release.version_info[0] >= 19:
-    from odoo.models import Constraint
+from odoo.models import Constraint
 from twilio.jwt.access_token import AccessToken
 from twilio.jwt.access_token.grants import VoiceGrant
 from twilio.twiml.voice_response import Client, Dial, VoiceResponse
@@ -37,12 +36,7 @@ class User(models.Model):
         'connect.outgoing_callerid', ondelete='set null',
         domain=['|', ('status', '=', 'validated'), ('callerid_type', '=', 'number')])
 
-    if release.version_info[0] >= 19:
-        _username_uniq = Constraint('UNIQUE(username)', 'This PBX username is already defined!')
-    else:
-        _sql_constraints = [
-            ('username_uniq', 'UNIQUE(username)', 'This PBX username is already defined!'),
-        ]
+    _username_uniq = Constraint('UNIQUE(username)', 'This PBX username is already defined!')
 
     @api.constrains('username')
     def _check_username(self):
