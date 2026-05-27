@@ -118,7 +118,7 @@ Beyond firewall, the module contains:
 | `connect.user` (`_inherit`) | adds WebRTC fields and dial-string generation |
 | `connect.endpoint` (`_inherit`) | SIP endpoint management |
 | `connect.exten` (`_inherit`) | extension number tooling |
-| `connect.callflow` (`_inherit`) | callflow extension for FreeSWITCH-specific destinations |
+| `connect.callflow` (`_inherit`) | callflow extension for FreeSWITCH-specific destinations; `_get_piper_language()` returns the BCP-47 code used as the Piper TTS model key (must match a `<model language="...">` entry in `piper_tts.conf.xml`) |
 | `connect.number` (`_inherit`) | DID assignment |
 | `connect.freeswitch.gateway` | SIP gateway records, rendered into pjsip_wizard XML |
 | `connect.freeswitch.outgoing_route` | outbound routing rules |
