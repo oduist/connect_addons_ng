@@ -94,6 +94,30 @@ class ConnectProvider(models.Model):
         except ValueError:
             return self.env['res.users']
 
+    def _phone_adapter_module(self):
+        """Return the asset path of the JS module that registers this
+        provider's PhoneAdapter into the `connect.phone_adapters`
+        client-side registry (ODU-8 / ADR-023 Pillar 5).
+
+        Returns False when the provider has no UI phone widget.
+        Today's two-systray world is the legacy; the eventual single
+        core PhoneSystray will load adapters via this resolution path.
+        """
+        return False
+
+    def _active_calls_tray_module(self):
+        """Asset path of the JS module that contributes this provider's
+        rows to the unified active-calls tray (ODU-9). Returns False
+        when there is no contribution."""
+        return False
+
+    def _message_action_modules(self):
+        """Return a list of asset paths for the JS modules that
+        register this provider's mail-message actions
+        (SMS/WhatsApp/etc. reply buttons) into the unified
+        `connect.message_actions` registry (ODU-9)."""
+        return []
+
     def _get_webrtc_config(self, user=None):
         """Return WebRTC bootstrap config for the given (or current)
         user. Each provider implements its own native shape (FS Verto,

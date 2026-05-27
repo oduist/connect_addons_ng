@@ -22,6 +22,11 @@ class FreeSwitchProvider(models.Model):
             number=number, res_model=res_model, res_id=res_id,
         )
 
+    def _phone_adapter_module(self):
+        if self.code != 'freeswitch':
+            return super()._phone_adapter_module()
+        return 'connect_freeswitch/static/src/js/phone_service.js'
+
     def _get_webrtc_config(self, user=None):
         if self.code != 'freeswitch':
             return super()._get_webrtc_config(user=user)

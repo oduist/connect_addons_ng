@@ -24,6 +24,21 @@ class TwilioProvider(models.Model):
             number=number, res_model=res_model, res_id=res_id, user=user, **kwargs
         )
 
+    def _phone_adapter_module(self):
+        if self.code != 'twilio':
+            return super()._phone_adapter_module()
+        return 'connect_twilio/static/src/js/main.js'
+
+    def _active_calls_tray_module(self):
+        if self.code != 'twilio':
+            return super()._active_calls_tray_module()
+        return 'connect_twilio/static/src/services/active_calls/active_calls_main.js'
+
+    def _message_action_modules(self):
+        if self.code != 'twilio':
+            return super()._message_action_modules()
+        return ['connect_twilio/static/src/services/mail/message_actions.js']
+
     def _verify_webhook(self, request, data=None):
         if self.code != 'twilio':
             return super()._verify_webhook(request, data=data)
