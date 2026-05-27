@@ -8,7 +8,7 @@
 # Apply by creating a service in oduflow with these values.
 
 name: firewall
-image: oduist/freeswitch-firewall:1.1.0
+image: oduist/freeswitch-firewall:1.1.2
 network_mode: host
 cap_add:
   - NET_ADMIN
@@ -29,7 +29,11 @@ environment:
   # --- FreeSWITCH ESL ----------------------------------------------------
   FS_ESL_HOST: 127.0.0.1
   FS_ESL_PORT: 8021
-  FS_ESL_PASSWORD: ${FS_ESL_PASSWORD}             # match the value in the fs container (default ConnectNGESLPassword)
+  # REQUIRED. Generate a per-installation secret (e.g. `openssl rand
+  # -hex 32`) and use the same value here and in the FreeSWITCH
+  # container's FS_ESL_PASSWORD env var. The service refuses to start
+  # without it.
+  FS_ESL_PASSWORD: ${FS_ESL_PASSWORD}
 
   # --- HTTP / dashboard --------------------------------------------------
   HTTP_BIND_HOST: 127.0.0.1                       # exposed via Traefik

@@ -96,7 +96,7 @@ The service container must:
 | `AGENT_TOKEN` | shared Bearer token. Must match **Firewall Service Token** in Odoo settings. Used in both directions (this service → Odoo and Odoo → `/firewall/sync` on this service). The service refuses to start without it. |
 | `FS_ESL_HOST` | usually `127.0.0.1` |
 | `FS_ESL_PORT` | usually `8021` |
-| `FS_ESL_PASSWORD` | password of FreeSWITCH `mod_event_socket`. The shipped FS image bakes in `ConnectNGESLPassword`; set `FS_ESL_PASSWORD` on both containers if you want a different value. |
+| `FS_ESL_PASSWORD` | **Required.** Password of FreeSWITCH `mod_event_socket`. Generate a per-installation secret (e.g. `openssl rand -hex 32`) and set the same value on both this container **and** the paired FreeSWITCH container — both refuse to start without it. |
 | `HTTP_BIND_HOST`, `HTTP_BIND_PORT` | where the service listens (default `0.0.0.0:8081`) |
 | `DASHBOARD_USER`, `DASHBOARD_PASSWORD` | basic-auth credentials for the dashboard / JSON API |
 
@@ -107,18 +107,35 @@ Optionally:
 | `LOG_LEVEL` | `INFO` (default) or `DEBUG` |
 | `CONFIG_CACHE_PATH` | local JSON cache (default `/var/lib/connect-firewall/config.json`) |
 
+### Pairing the ESL password
+
+Both the FreeSWITCH container and the firewall service container read
+the ESL password from the **`FS_ESL_PASSWORD`** env var, and both refuse
+to start if it is unset. Generate one per-installation secret and pass
+the **same** value to both:
+
+```bash
+export FS_ESL_PASSWORD=$(openssl rand -hex 32)
+```
+
+Then plug `$FS_ESL_PASSWORD` into the env of the `freeswitch` service
+(see `connect_freeswitch/deploy/README.md`) and into the env of the
+firewall service (see below). The value never travels through Odoo —
+it stays between the two containers that talk over the local ESL
+socket.
+
 ### Docker Compose example
 
 ```yaml
 firewall:
-  image: oduist/freeswitch-firewall:1.1.0
+  image: oduist/freeswitch-firewall:1.1.2
   network_mode: host
   cap_add: [NET_ADMIN]
   environment:
     ODOO_URL: https://pbx.example.com
     AGENT_TOKEN: <copy from Firewall Service Token in Odoo settings>
     FS_ESL_HOST: 127.0.0.1
-    FS_ESL_PASSWORD: ConnectNGESLPassword
+    FS_ESL_PASSWORD: <same value as on the FreeSWITCH container — see below>
     DASHBOARD_USER: admin
     DASHBOARD_PASSWORD: <pick a strong password>
   volumes:
