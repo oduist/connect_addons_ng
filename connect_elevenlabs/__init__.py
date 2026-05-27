@@ -35,7 +35,21 @@ def post_init_hook(*args):
 
 
 def uninstall_hook(env):
+    """ODU-18: deactivate the EL provider record and NULL out
+    `connect.exten.dst` references that would orphan once EL models
+    are dropped by Odoo on uninstall.
+    """
     try:
         env['connect.provider'].sudo()._deactivate('elevenlabs')
+        el_models = (
+            'connect.elevenlabs_agent',
+            'connect.elevenlabs_voice',
+            'connect.elevenlabs_file',
+        )
+        env.cr.execute(
+            "UPDATE connect_exten SET model = NULL, res_id = NULL "
+            "WHERE model = ANY(%s)",
+            (list(el_models),),
+        )
     except Exception as e:
         _logger.error('Error in uninstall_hook: %s', str(e))

@@ -42,16 +42,32 @@ def uninstall_hook(env):
     XML data so a fresh re-install (or a switch to a Twilio-only deploy)
     starts from a clean slate.
 
-    - firewall_service_token: shared secret used by firewall API; if left
-      behind a future reinstall would reuse a token the operator may no
-      longer know about. Drop it.
+    - firewall_service_token: shared secret used by firewall API; if
+      left behind a future reinstall would reuse a token the operator
+      may no longer know about. Drop it.
     - connect.provider 'freeswitch' is deactivated (not deleted) so any
       connect.call.provider_id still referencing it keeps resolving.
+    - connect.exten.dst Reference cleanup (ODU-18): refs pointing at
+      FS-owned models would dangle once those models are dropped on
+      uninstall. NULL them here.
     """
     try:
         env['ir.config_parameter'].sudo().search(
             [('key', '=', 'firewall_service_token')]
         ).unlink()
         env['connect.provider'].sudo()._deactivate('freeswitch')
+        fs_models = (
+            'connect.fs_fifo',
+            'connect.endpoint',  # FS-only standalone endpoints
+            'connect.freeswitch.parking.slot',
+            'connect.freeswitch.gateway',
+            'connect.freeswitch.outgoing_route',
+            'connect.freeswitch.template',
+        )
+        env.cr.execute(
+            "UPDATE connect_exten SET model = NULL, res_id = NULL "
+            "WHERE model = ANY(%s)",
+            (list(fs_models),),
+        )
     except Exception as e:
         _logger.error('Error in uninstall_hook: %s', str(e))

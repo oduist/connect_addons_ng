@@ -26,7 +26,26 @@ def post_init_hook(env):
 
 
 def uninstall_hook(env):
+    """Deactivate the Twilio provider record and clear references that
+    would orphan after the module's models are dropped.
+
+    ODU-18: connect.exten.dst is a Reference field that may point at
+    `connect.twiml` (Twilio-only). When the module's models are dropped
+    by Odoo on uninstall, these refs become dangling. We NULL them here
+    before the drop.
+
+    Idempotent — empty queries are no-ops.
+    """
     try:
         env['connect.provider'].sudo()._deactivate('twilio')
+        # exten.dst Reference cleanup (Twilio-owned models the ref may
+        # point at). connect.exten stores model name in 'model' + id in
+        # 'res_id', so NULL the model+res_id pair.
+        twilio_models = ('connect.twiml',)
+        env.cr.execute(
+            "UPDATE connect_exten SET model = NULL, res_id = NULL "
+            "WHERE model = ANY(%s)",
+            (list(twilio_models),),
+        )
     except Exception as e:
         _logger.error('Error in uninstall_hook: %s', str(e))
