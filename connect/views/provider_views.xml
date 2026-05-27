@@ -29,6 +29,8 @@
                         <group>
                             <field name="sequence"/>
                             <field name="config_model"/>
+                            <field name="webhook_user_id"
+                                   options="{'no_create': True}"/>
                             <field name="active" invisible="1"/>
                         </group>
                     </group>

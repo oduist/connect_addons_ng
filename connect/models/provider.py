@@ -17,6 +17,14 @@ class ConnectProvider(models.Model):
         help='Technical name of the per-provider config model, e.g. '
              'connect.provider.twilio.config.',
     )
+    webhook_user_id = fields.Many2one(
+        'res.users', string='Webhook User', ondelete='restrict',
+        help='Technical user that executes incoming webhook requests for '
+             'this provider. Falls back to connect.user_connect_webhook '
+             'when empty (the historical shared webhook user). Set a '
+             'per-provider user when fine-grained access control or '
+             'audit separation is required (ODU-16 / ADR-023 Phase 7).',
+    )
 
     _code_uniq = Constraint('UNIQUE(code)', 'Provider code must be unique.')
 
@@ -72,6 +80,19 @@ class ConnectProvider(models.Model):
         raise NotImplementedError(
             f'Provider {self.code!r} does not implement _originate_call'
         )
+
+    def _webhook_user(self):
+        """Resolve the technical user that should execute webhook
+        requests for this provider. Falls back to the shared
+        connect.user_connect_webhook record when no per-provider user
+        is set."""
+        self.ensure_one()
+        if self.webhook_user_id:
+            return self.webhook_user_id
+        try:
+            return self.env.ref('connect.user_connect_webhook')
+        except ValueError:
+            return self.env['res.users']
 
     def _verify_webhook(self, request, data=None):
         """Unified webhook authentication (ADR-023 Phase 7 / ODU-15).
