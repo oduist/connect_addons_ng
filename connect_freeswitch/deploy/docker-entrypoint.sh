@@ -132,28 +132,35 @@ PY
 }
 
 apply_esl_password() {
-    # Replace the ClueCon default in event_socket.conf.xml with whatever
-    # the operator put in FS_ESL_PASSWORD. Leave the file alone if the
-    # var is not set so behaviour stays backwards-compatible.
+    # Substitute the placeholder in event_socket.conf.xml with the
+    # per-installation password from FS_ESL_PASSWORD. The variable is
+    # mandatory — we refuse to start with the placeholder still in
+    # place so a misconfigured deployment fails loudly instead of
+    # silently exposing a known password on the ESL socket.
+    CONF=/usr/local/freeswitch/etc/freeswitch/autoload_configs/event_socket.conf.xml
     if [ -z "$FS_ESL_PASSWORD" ]; then
-        return
+        echo "FS_ESL_PASSWORD is not set. Generate a per-installation secret (e.g. 'openssl rand -hex 32') and pass it in the container environment. Refusing to start." >&2
+        exit 1
     fi
     case "$FS_ESL_PASSWORD" in
         *\<*|*\>*|*\"*|*\&*)
-            echo "Refusing to apply FS_ESL_PASSWORD: contains XML metacharacter." >&2
-            return
+            echo "FS_ESL_PASSWORD contains an XML metacharacter (<>\"&). Refusing to start." >&2
+            exit 1
             ;;
     esac
-    CONF=/usr/local/freeswitch/etc/freeswitch/autoload_configs/event_socket.conf.xml
     if [ ! -f "$CONF" ]; then
-        echo "Cannot find $CONF; skipping ESL password substitution." >&2
-        return
+        echo "Cannot find $CONF. Refusing to start." >&2
+        exit 1
     fi
     if ! grep -q 'name="password"' "$CONF"; then
-        echo "No password param in $CONF; skipping ESL password substitution." >&2
-        return
+        echo "No password param in $CONF. Refusing to start." >&2
+        exit 1
     fi
     sed -i 's|<param name="password" value="[^"]*"/>|<param name="password" value="'"$FS_ESL_PASSWORD"'"/>|' "$CONF"
+    if grep -q '__SET_FS_ESL_PASSWORD__' "$CONF"; then
+        echo "sed substitution failed: placeholder still present in $CONF. Refusing to start." >&2
+        exit 1
+    fi
     echo "Applied FS_ESL_PASSWORD to event_socket.conf.xml"
 }
 

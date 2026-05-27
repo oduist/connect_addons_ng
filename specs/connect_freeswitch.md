@@ -197,10 +197,11 @@ event cleanup keeps the audit log within `firewall_event_retention_days`.
 `oduist/freeswitch` is built from source (`v1.10.12`) with a curated
 module list (sofia, fifo, verto, http_cache, piper_tts, …). Config
 lives under `deploy/freeswitch/conf/`. `docker-entrypoint.sh` runs
-sound-file download, TLS extraction from Traefik ACME, and now also
-substitutes `FS_ESL_PASSWORD` into `event_socket.conf.xml`. The
-baked-in ESL password is `ConnectNGESLPassword` (project-specific,
-not the FreeSWITCH default `ClueCon`).
+sound-file download, TLS extraction from Traefik ACME, and
+substitutes `FS_ESL_PASSWORD` into `event_socket.conf.xml` (the file
+ships with the placeholder `__SET_FS_ESL_PASSWORD__`). `FS_ESL_PASSWORD`
+is **required** — the entrypoint exits non-zero before starting
+FreeSWITCH if it is unset. See ADR-019 for the rationale.
 
 ### Firewall service image (`deploy/firewall/`)
 

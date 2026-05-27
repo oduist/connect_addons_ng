@@ -1,6 +1,4 @@
 <include>
-  <X-PRE-PROCESS cmd="set" data="default_password=CHANGE_ME"/>
-
   <!-- Odoo integration: read from OS environment variables -->
   <X-PRE-PROCESS cmd="env-set" data="odoo_url=$ODOO_URL"/>
   <!--

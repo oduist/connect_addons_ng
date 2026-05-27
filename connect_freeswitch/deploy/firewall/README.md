@@ -10,10 +10,10 @@ for the current auth model.
 ```
 docker buildx build --platform linux/amd64,linux/arm64 \
     --provenance=false --sbom=false \
-    -t oduist/freeswitch-firewall:1.1.0 \
+    -t oduist/freeswitch-firewall:1.1.2 \
     -t oduist/freeswitch-firewall:latest \
     .
-docker push oduist/freeswitch-firewall:1.1.0
+docker push oduist/freeswitch-firewall:1.1.2
 docker push oduist/freeswitch-firewall:latest
 ```
 
@@ -25,7 +25,7 @@ docker push oduist/freeswitch-firewall:latest
 | `AGENT_TOKEN` | **Required.** Shared secret. Must match `connect.settings.firewall_service_token` in Odoo. Used as `Authorization: Bearer …` in both directions (this service → Odoo and Odoo → `/firewall/sync` on this service). The service exits at boot if unset. |
 | `FS_ESL_HOST` | FreeSWITCH ESL host (default `127.0.0.1`). |
 | `FS_ESL_PORT` | FreeSWITCH ESL port (default `8021`). |
-| `FS_ESL_PASSWORD` | FreeSWITCH ESL password (default `ClueCon`). |
+| `FS_ESL_PASSWORD` | **Required.** FreeSWITCH ESL password. Must match the `FS_ESL_PASSWORD` set on the paired FreeSWITCH container. Generate a per-installation secret (e.g. `openssl rand -hex 32`). The service exits at boot if unset. |
 | `DASHBOARD_USER` | Basic auth user for the dashboard / `/firewall/sync` endpoint. |
 | `DASHBOARD_PASSWORD` | Plaintext password (or set `DASHBOARD_PASSWORD_HASH` later). |
 

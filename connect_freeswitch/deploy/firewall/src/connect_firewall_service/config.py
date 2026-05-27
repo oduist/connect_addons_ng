@@ -36,7 +36,10 @@ class ServiceSettings(BaseSettings):
     # --- FreeSWITCH ESL -----------------------------------------------
     fs_esl_host: str = "127.0.0.1"
     fs_esl_port: int = 8021
-    fs_esl_password: str = "ConnectNGESLPassword"
+    # Required. Must match the password configured in the paired
+    # FreeSWITCH container (event_socket.conf.xml, populated from
+    # FS_ESL_PASSWORD). The service fails fast at boot if unset.
+    fs_esl_password: str
 
     # --- Local HTTP server --------------------------------------------
     http_bind_host: str = "127.0.0.1"
