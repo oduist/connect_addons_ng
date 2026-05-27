@@ -1,0 +1,45 @@
+<configuration name="local_stream.conf" description="Stream music-on-hold files from disk">
+  <!--
+    The entrypoint downloads `freeswitch-sounds-music-<rate>-*.tar.gz` into
+    $${sounds_dir}/music/<rate>/ (SOUND_TYPES=music, SOUND_RATES=8000:16000
+    by default — see Dockerfile). mod_local_stream picks the closest matching
+    rate at runtime; if a rate folder is empty the stream stays silent and
+    the call still goes through.
+  -->
+  <directory name="moh/8000" path="$${sounds_dir}/music/8000">
+    <param name="rate" value="8000"/>
+    <param name="shuffle" value="true"/>
+    <param name="channels" value="1"/>
+    <param name="interval" value="20"/>
+    <param name="timer-name" value="soft"/>
+    <param name="chime-time" value="0"/>
+    <param name="chime-max" value="0"/>
+  </directory>
+  <directory name="moh/16000" path="$${sounds_dir}/music/16000">
+    <param name="rate" value="16000"/>
+    <param name="shuffle" value="true"/>
+    <param name="channels" value="1"/>
+    <param name="interval" value="20"/>
+    <param name="timer-name" value="soft"/>
+    <param name="chime-time" value="0"/>
+    <param name="chime-max" value="0"/>
+  </directory>
+  <directory name="moh/32000" path="$${sounds_dir}/music/32000">
+    <param name="rate" value="32000"/>
+    <param name="shuffle" value="true"/>
+    <param name="channels" value="1"/>
+    <param name="interval" value="20"/>
+    <param name="timer-name" value="soft"/>
+    <param name="chime-time" value="0"/>
+    <param name="chime-max" value="0"/>
+  </directory>
+  <directory name="moh/48000" path="$${sounds_dir}/music/48000">
+    <param name="rate" value="48000"/>
+    <param name="shuffle" value="true"/>
+    <param name="channels" value="1"/>
+    <param name="interval" value="20"/>
+    <param name="timer-name" value="soft"/>
+    <param name="chime-time" value="0"/>
+    <param name="chime-max" value="0"/>
+  </directory>
+</configuration>
