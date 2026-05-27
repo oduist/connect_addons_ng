@@ -220,7 +220,7 @@ class FreeSwitchParkingSlot(models.Model):
             raise UserError("You don't have a Connect user configured.")
 
         settings = self.env['connect.settings']
-        domain = settings.get_param('freeswitch_domain')
+        domain = self.env['connect.provider.freeswitch.config'].sudo()._get().domain
         if not domain:
             raise UserError("FreeSWITCH domain is not configured.")
 

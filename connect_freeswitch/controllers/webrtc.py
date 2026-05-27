@@ -30,8 +30,8 @@ class WebRTCController(http.Controller):
         if not connect_user:
             return {'enabled': False, 'reason': 'no_webrtc_user'}
 
-        socket_url = request.env['connect.settings'].get_param('freeswitch_socket_url')
-        domain = request.env['connect.settings'].get_param('freeswitch_domain')
+        socket_url = request.env['connect.provider.freeswitch.config'].sudo()._get().socket_url
+        domain = request.env['connect.provider.freeswitch.config'].sudo()._get().domain
 
         if not socket_url:
             return {'enabled': False, 'reason': 'no_socket_url'}

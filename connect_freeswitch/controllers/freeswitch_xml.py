@@ -83,7 +83,7 @@ class FreeSwitchXMLController(http.Controller):
         Endpoint = request.env['connect.endpoint'].sudo()
         ConnectUser = request.env['connect.user'].sudo()
 
-        fs_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain')
+        fs_domain = request.env['connect.provider.freeswitch.config'].sudo()._get().domain
         actual_domain = fs_domain or domain or params.get('sip_auth_realm', '')
 
         # 1. Search by auth_user (SIP endpoint registration)
@@ -242,7 +242,7 @@ class FreeSwitchXMLController(http.Controller):
         Endpoint = request.env['connect.endpoint'].sudo()
         ConnectUser = request.env['connect.user'].sudo()
 
-        actual_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain') or domain
+        actual_domain = request.env['connect.provider.freeswitch.config'].sudo()._get().domain or domain
 
         ep_data = []
 
@@ -445,8 +445,8 @@ class FreeSwitchXMLController(http.Controller):
         # Render each gateway individually (empty string if none).
         gateways_xml = '\n'.join(gw.generate_sofia_gateway_xml() for gw in gateways)
 
-        sofia_log_level = request.env['connect.settings'].sudo().get_param('freeswitch_sofia_log_level') or '0'
-        fs_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain')
+        sofia_log_level = request.env['connect.provider.freeswitch.config'].sudo()._get().sofia_log_level or '0'
+        fs_domain = request.env['connect.provider.freeswitch.config'].sudo()._get().domain
 
         Template = request.env['connect.freeswitch.template'].sudo()
         config_xml = Template.render('config_sofia', {
@@ -480,13 +480,13 @@ class FreeSwitchXMLController(http.Controller):
     def _get_xml_rpc_config(self, params):
         """Serve xml_rpc.conf with credentials from Odoo settings."""
         settings = request.env['connect.settings'].sudo()
-        user = settings.get_param('freeswitch_xmlrpc_user')
-        password = settings.get_param('freeswitch_xmlrpc_password')
+        user = self.env['connect.provider.freeswitch.config'].sudo()._get().xmlrpc_user
+        password = self.env['connect.provider.freeswitch.config'].sudo()._get().xmlrpc_password
 
         if not user or not password:
             return self._not_found()
 
-        port = str(settings.get_param('freeswitch_xmlrpc_port') or 8080)
+        port = str(self.env['connect.provider.freeswitch.config'].sudo()._get().xmlrpc_port or 8080)
 
         Template = request.env['connect.freeswitch.template'].sudo()
         config_xml = Template.render('config_xml_rpc', {

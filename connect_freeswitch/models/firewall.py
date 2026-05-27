@@ -269,10 +269,10 @@ class FirewallAgent(models.Model):
         POST: postcommit callbacks dedupe by (function, args).
         """
         settings = self.env["connect.settings"].sudo()
-        if not settings.get_param("firewall_enabled"):
+        if not self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_enabled:
             return
-        url = settings.get_param("firewall_service_url")
-        token = settings.get_param("firewall_service_token")
+        url = self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_service_url
+        token = self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_service_token
         if not url or not token:
             return
         sync_url = url.rstrip("/") + "/firewall/sync"
@@ -303,10 +303,10 @@ class FirewallAgent(models.Model):
         """Return (url, token) for a path on the firewall service, or
         (None, None) if firewall is disabled / not configured."""
         settings = self.env["connect.settings"].sudo()
-        if not settings.get_param("firewall_enabled"):
+        if not self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_enabled:
             return None, None
-        base = settings.get_param("firewall_service_url")
-        token = settings.get_param("firewall_service_token")
+        base = self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_service_url
+        token = self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_service_token
         if not base or not token:
             return None, None
         return base.rstrip("/") + path, token

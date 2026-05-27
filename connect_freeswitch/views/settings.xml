@@ -1,86 +1,106 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <record id="connect_settings_form_freeswitch" model="ir.ui.view">
-        <field name="name">connect.settings.form.freeswitch</field>
-        <field name="model">connect.settings</field>
-        <field name="inherit_id" ref="connect.connect_settings_form"/>
+    <!-- ODU-23: Standalone FreeSWITCH config form. Replaces the previous
+         notebook pages that extended connect.settings; opens via the
+         dedicated FreeSWITCH root menu (see views/menu.xml) → Settings. -->
+    <record id="connect_provider_freeswitch_config_form" model="ir.ui.view">
+        <field name="name">connect.provider.freeswitch.config.form</field>
+        <field name="model">connect.provider.freeswitch.config</field>
         <field name="arch" type="xml">
-            <page name="general" position="after">
-                <page name="freeswitch" string="FreeSWITCH">
-                    <group>
-                        <group string="Status">
-                            <field name="freeswitch_status"/>
-                            <field name="freeswitch_uptime"/>
-                            <field name="freeswitch_calls"/>
-                            <field name="freeswitch_registrations"/>
-                            <button name="check_freeswitch_status" type="object"
-                                    string="CHECK STATUS" class="btn btn-info"
-                                    colspan="2"/>
-                        </group>
-                        <group string="Gateway Status">
-                            <field name="freeswitch_gateway_statuses"
-                                   nolabel="1" colspan="2"/>
-                        </group>
-                    </group>
-                    <group>
-                        <group string="Connection">
-                            <field name="freeswitch_socket_url"
-                                   placeholder="wss://your-fs-domain:8082"/>
-                            <field name="freeswitch_domain"
-                                   placeholder="fs.example.com"/>
-                            <field name="freeswitch_ice_servers"
-                                   placeholder="stun:stun.l.google.com:19302"/>
-                        </group>
-                        <group string="XML-RPC">
-                            <field name="freeswitch_xmlrpc_host"
-                                   placeholder="fs.example.com"/>
-                            <field name="freeswitch_xmlrpc_port"/>
-                            <field name="freeswitch_xmlrpc_user"
-                                   placeholder="freeswitch"/>
-                            <field name="freeswitch_xmlrpc_password"
-                                   password="True"/>
-                        </group>
-                    </group>
-                    <group>
-                        <group string="Log Levels">
-                            <field name="freeswitch_log_level"/>
-                            <field name="freeswitch_sofia_log_level"/>
-                        </group>
-                    </group>
-                </page>
-                <page name="firewall" string="Firewall">
-                    <group>
-                        <group string="Service">
-                            <field name="firewall_enabled" widget="boolean_toggle"/>
-                            <field name="firewall_service_url"
-                                   placeholder="http://host.docker.internal:8081"/>
-                            <field name="display_firewall_service_token"
-                                   password="True"
-                                   placeholder="**** (min 24 chars, [A-Za-z0-9_-])"/>
-                        </group>
-                        <group string="Heartbeat &amp; Retention">
-                            <field name="firewall_heartbeat_interval"/>
-                            <field name="firewall_event_retention_days"/>
-                        </group>
-                    </group>
-                    <group>
-                        <group string="Protected Ports">
-                            <field name="firewall_tcp_ports"
-                                   placeholder="5060,5061,5080,5081"/>
-                            <field name="firewall_udp_ports"
-                                   placeholder="5060,5061,5080,5081"/>
-                        </group>
-                        <group string="Timeouts (seconds)">
-                            <field name="firewall_banned_timeout"/>
-                            <field name="firewall_authenticated_timeout"/>
-                            <field name="firewall_expire_short_timeout"/>
-                            <field name="firewall_expire_long_timeout"/>
-                        </group>
-                    </group>
-                </page>
-            </page>
+            <form create="false" delete="false">
+                <sheet>
+                    <notebook>
+                        <page name="server" string="Server">
+                            <group>
+                                <group string="Status">
+                                    <field name="status"/>
+                                    <field name="uptime"/>
+                                    <field name="active_calls"/>
+                                    <field name="registrations"/>
+                                    <button name="check_status" type="object"
+                                            string="CHECK STATUS" class="btn btn-info"
+                                            colspan="2"/>
+                                </group>
+                                <group string="Gateway Status">
+                                    <field name="gateway_statuses" nolabel="1" colspan="2"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Connection">
+                                    <field name="socket_url" placeholder="wss://your-fs-domain:8082"/>
+                                    <field name="domain" placeholder="fs.example.com"/>
+                                    <field name="ice_servers" placeholder="stun:stun.l.google.com:19302"/>
+                                </group>
+                                <group string="XML-RPC">
+                                    <field name="xmlrpc_host" placeholder="fs.example.com"/>
+                                    <field name="xmlrpc_port"/>
+                                    <field name="xmlrpc_user" placeholder="freeswitch"/>
+                                    <field name="xmlrpc_password" password="True"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Log Levels">
+                                    <field name="log_level"/>
+                                    <field name="sofia_log_level"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page name="firewall" string="Firewall">
+                            <group>
+                                <group string="Service">
+                                    <field name="firewall_enabled" widget="boolean_toggle"/>
+                                    <field name="firewall_service_url"
+                                           placeholder="http://host.docker.internal:8081"/>
+                                    <field name="display_firewall_service_token" password="True"
+                                           placeholder="**** (min 24 chars, [A-Za-z0-9_-])"/>
+                                </group>
+                                <group string="Heartbeat &amp; Retention">
+                                    <field name="firewall_heartbeat_interval"/>
+                                    <field name="firewall_event_retention_days"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Protected Ports">
+                                    <field name="firewall_tcp_ports" placeholder="5060,5061,5080,5081"/>
+                                    <field name="firewall_udp_ports" placeholder="5060,5061,5080,5081"/>
+                                </group>
+                                <group string="Timeouts (seconds)">
+                                    <field name="firewall_banned_timeout"/>
+                                    <field name="firewall_authenticated_timeout"/>
+                                    <field name="firewall_expire_short_timeout"/>
+                                    <field name="firewall_expire_long_timeout"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
         </field>
     </record>
+
+    <record id="action_freeswitch_config" model="ir.actions.server">
+        <field name="type">ir.actions.server</field>
+        <field name="name">FreeSWITCH Settings</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="model_connect_provider_freeswitch_config"/>
+        <field name="code">
+rec = model._get()
+action = {
+    'type': 'ir.actions.act_window',
+    'res_model': 'connect.provider.freeswitch.config',
+    'res_id': rec.id,
+    'name': 'FreeSWITCH',
+    'view_mode': 'form',
+    'view_id': env.ref('connect_freeswitch.connect_provider_freeswitch_config_form').id,
+    'target': 'current',
+}
+        </field>
+    </record>
+
+    <menuitem id="menu_freeswitch_settings"
+              parent="menu_connect_freeswitch"
+              groups="connect.group_admin"
+              action="action_freeswitch_config" name="Settings" sequence="100"/>
 
 </odoo>

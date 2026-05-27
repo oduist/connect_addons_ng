@@ -13,9 +13,9 @@ def setup_firewall(env):
     """Idempotent firewall bootstrap — called from post_init_hook and
     per-version post-migration scripts. Generates the shared service
     token if missing and ensures the agent singleton exists."""
-    settings = env['connect.settings'].sudo()
-    if not settings.get_param('firewall_service_token'):
-        settings.set_param('firewall_service_token', secrets.token_hex(32))
+    cfg = env['connect.provider.freeswitch.config'].sudo()._get()
+    if not cfg.firewall_service_token:
+        cfg.firewall_service_token = secrets.token_hex(32)
     env['connect.firewall.agent'].sudo()._get_singleton()
 
 
@@ -52,6 +52,9 @@ def uninstall_hook(env):
       uninstall. NULL them here.
     """
     try:
+        # firewall_service_token now lives on connect.provider.freeswitch.config —
+        # the ir.config_parameter cleanup from earlier versions was a no-op
+        # but harmless; keep it for backwards-compatibility on older DBs.
         env['ir.config_parameter'].sudo().search(
             [('key', '=', 'firewall_service_token')]
         ).unlink()
