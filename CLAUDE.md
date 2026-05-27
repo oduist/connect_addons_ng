@@ -65,6 +65,14 @@ differs. Concretely:
   Python migration script, both branches should call the same module
   function (e.g. `setup_firewall(env)`), with the per-series migration
   folder acting purely as the entry point Odoo can match.
+- **Clean up the backport branch as soon as the PR is open.** After
+  `gh pr create` returns the backport PR URL, automatically:
+  1. `git worktree remove <path>` if a worktree was used for the port;
+  2. `git branch -D <port-branch>` to drop the local ref;
+  3. leave the remote branch in place — it backs the PR and GitHub
+     deletes it on merge (repo has "Automatically delete head branches"
+     enabled).
+  Do this without asking; treat it as part of the backport workflow.
 
 ## Conventions
 
