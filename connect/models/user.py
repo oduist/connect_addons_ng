@@ -34,6 +34,17 @@ class User(models.Model):
     greeting_message = fields.Char()
     summary_prompt = fields.Char()
     active = fields.Boolean(default=True)
+    provider_binding_ids = fields.One2many(
+        'connect.user.provider.binding', 'user_id',
+        string='Provider Bindings',
+    )
+    provider_ids = fields.Many2many(
+        'connect.provider',
+        compute='_compute_provider_ids', store=True, readonly=True,
+        string='Providers',
+        help='Telephony providers this user is reachable on '
+             '(computed from provider_binding_ids).',
+    )
 
     if release.version_info[0] >= 19:
         _user_uniq = Constraint('UNIQUE("user")', 'This Odoo user account is already defined!')
@@ -45,6 +56,11 @@ class User(models.Model):
     def _compute_endpoint_count(self):
         for rec in self:
             rec.endpoint_count = len(rec.endpoint_ids)
+
+    @api.depends('provider_binding_ids.provider_id')
+    def _compute_provider_ids(self):
+        for rec in self:
+            rec.provider_ids = rec.provider_binding_ids.mapped('provider_id')
 
     @api.depends('user', 'user.name')
     def _get_name(self):

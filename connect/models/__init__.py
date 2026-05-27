@@ -20,3 +20,4 @@ from . import res_users
 from . import settings
 from . import user
 from . import user_callflow
+from . import user_provider_binding
