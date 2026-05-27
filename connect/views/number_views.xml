@@ -31,6 +31,10 @@
                             <field name="destination"/>
                             <field name="user" invisible="destination != 'user'"/>
                             <field name="callflow" invisible="destination != 'callflow'"/>
+                            <field name="destination_provider_id"
+                                   invisible="destination != 'provider'"
+                                   required="destination == 'provider'"
+                                   options="{'no_create': True, 'no_open': True}"/>
                             <field name="provider_id" readonly="1"/>
                         </group>
                     </group>

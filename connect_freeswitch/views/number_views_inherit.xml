@@ -8,8 +8,8 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='callflow']" position="after">
                 <field name="fs_fifo_id"
-                       invisible="destination != 'fs_fifo'"
-                       required="destination == 'fs_fifo'"/>
+                       invisible="destination_provider_id.code != 'freeswitch'"
+                       required="destination_provider_id.code == 'freeswitch'"/>
             </xpath>
         </field>
     </record>

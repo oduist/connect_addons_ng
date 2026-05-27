@@ -32,12 +32,10 @@ class Number(models.Model):
     message_fallback_url = fields.Char(
         compute='_get_twilio_urls', compute_sudo=True
     )
+    # ODU-12: 'twiml' is no longer a destination Selection value. Routes
+    # via destination='provider' + destination_provider_id == twilio.
     twiml = fields.Many2one(
-        'connect.twiml', string='TwiML', ondelete='set null'
-    )
-    destination = fields.Selection(
-        selection_add=[('twiml', 'TwiML')],
-        ondelete={'twiml': 'set null'},
+        'connect.twiml', string='TwiML', ondelete='set null',
     )
 
     def _get_twilio_urls(self):
@@ -192,16 +190,21 @@ class Number(models.Model):
                 message=user_message,
             )
 
+    def _is_twilio_destination(self):
+        return (self.destination == 'provider'
+                and self.destination_provider_id
+                and self.destination_provider_id.code == 'twilio')
+
     def render(self, request={}, params={}):
         self.ensure_one()
         if not self.env["oduist.license"].check_license('connect'):
             return '<Response><Say>Service unavailable.</Say></Response>'
-        if self.destination == 'twiml' and self.twiml:
-            return self.twiml.render(request)
-        elif self.destination == 'user' and self.user:
+        if self.destination == 'user' and self.user:
             return self.user.render(request)
         elif self.destination == 'callflow' and self.callflow:
             return self.callflow.render(request)
+        elif self._is_twilio_destination() and self.twiml:
+            return self.twiml.render(request)
         else:
             return '<Response><Say>Number not configured. Goodbye!</Say></Response>'
 

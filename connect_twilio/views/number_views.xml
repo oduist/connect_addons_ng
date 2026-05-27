@@ -22,8 +22,12 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='callflow']" position="after">
                 <field name="twiml"
-                       invisible="destination != 'twiml'"
-                       required="destination == 'twiml'"/>
+                       invisible="destination_provider_id.code != 'twilio'"
+                       required="destination_provider_id.code == 'twilio'"/>
+                <field name="destination_provider_id"
+                       invisible="destination != 'provider'"
+                       required="destination == 'provider'"
+                       options="{'no_create': True, 'no_open': True}"/>
             </xpath>
             <xpath expr="//field[@name='is_default']" position="before">
                 <field name="is_ignored"/>
