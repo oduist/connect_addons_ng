@@ -1,7 +1,6 @@
 import re
-from odoo import fields, models, api, release
-if release.version_info[0] >= 19:
-    from odoo.models import Constraint
+from odoo import fields, models, api
+from odoo.models import Constraint
 from odoo.exceptions import ValidationError
 
 
@@ -21,10 +20,7 @@ class OutgoingCallerID(models.Model):
         comodel_name='connect.user',
         inverse_name='outgoing_callerid', string='callerId Users')
 
-    if release.version_info[0] >= 19:
-        _number_uniq = Constraint('UNIQUE(number)', 'This number is already used!')
-    else:
-        _sql_constraints = [('number_uniq', 'UNIQUE(number)', 'This number is already used!')]
+    _number_uniq = Constraint('UNIQUE(number)', 'This number is already used!')
 
     def _get_name(self):
         for rec in self:

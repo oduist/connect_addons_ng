@@ -1,7 +1,5 @@
-from odoo import api, fields, models, release
-
-if release.version_info[0] >= 19:
-    from odoo.models import Constraint
+from odoo import api, fields, models
+from odoo.models import Constraint
 
 
 class ConnectProvider(models.Model):
@@ -18,12 +16,7 @@ class ConnectProvider(models.Model):
              'connect.provider.twilio.config.',
     )
 
-    if release.version_info[0] >= 19:
-        _code_uniq = Constraint('UNIQUE(code)', 'Provider code must be unique.')
-    else:
-        _sql_constraints = [
-            ('code_uniq', 'UNIQUE(code)', 'Provider code must be unique.'),
-        ]
+    _code_uniq = Constraint('UNIQUE(code)', 'Provider code must be unique.')
 
     @api.model
     def _register_code(self, code, name, sequence=10, config_model=None):

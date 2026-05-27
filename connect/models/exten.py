@@ -1,7 +1,6 @@
 import logging
-from odoo import fields, models, api, release
-if release.version_info[0] >= 19:
-    from odoo.models import Constraint
+from odoo import fields, models, api
+from odoo.models import Constraint
 
 logger = logging.getLogger(__name__)
 
@@ -31,12 +30,7 @@ class Exten(models.Model):
         compute='_get_dst', inverse='_set_dst')
     dst_name = fields.Char(compute='_get_dst')
 
-    if release.version_info[0] >= 19:
-        _number_uniq = Constraint('UNIQUE(number)', 'This extension number is already defined in the domain!')
-    else:
-        _sql_constraints = [
-            ('number_uniq', 'UNIQUE(number)', 'This extension number is already defined in the domain!')
-        ]
+    _number_uniq = Constraint('UNIQUE(number)', 'This extension number is already defined in the domain!')
 
     def _get_name(self):
         for rec in self:

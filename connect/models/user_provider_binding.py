@@ -1,7 +1,5 @@
-from odoo import fields, models, release
-
-if release.version_info[0] >= 19:
-    from odoo.models import Constraint
+from odoo import fields, models
+from odoo.models import Constraint
 
 
 class ConnectUserProviderBinding(models.Model):
@@ -20,13 +18,7 @@ class ConnectUserProviderBinding(models.Model):
              'Reserved for ADR-023 Phase 6 (per-provider settings).',
     )
 
-    if release.version_info[0] >= 19:
-        _user_provider_uniq = Constraint(
-            'UNIQUE(user_id, provider_id)',
-            'A user can only have one binding per provider.',
-        )
-    else:
-        _sql_constraints = [
-            ('user_provider_uniq', 'UNIQUE(user_id, provider_id)',
-             'A user can only have one binding per provider.'),
-        ]
+    _user_provider_uniq = Constraint(
+        'UNIQUE(user_id, provider_id)',
+        'A user can only have one binding per provider.',
+    )

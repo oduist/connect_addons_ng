@@ -1,8 +1,7 @@
 import logging
 from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError
-if release.version_info[0] >= 19:
-    from odoo.models import Constraint
+from odoo.models import Constraint
 from .settings import debug
 
 logger = logging.getLogger(__name__)
@@ -46,12 +45,7 @@ class User(models.Model):
              '(computed from provider_binding_ids).',
     )
 
-    if release.version_info[0] >= 19:
-        _user_uniq = Constraint('UNIQUE("user")', 'This Odoo user account is already defined!')
-    else:
-        _sql_constraints = [
-            ('user_uniq', 'UNIQUE("user")', 'This Odoo user account is already defined!'),
-        ]
+    _user_uniq = Constraint('UNIQUE("user")', 'This Odoo user account is already defined!')
 
     def _compute_endpoint_count(self):
         for rec in self:

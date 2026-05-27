@@ -2,8 +2,7 @@ import logging
 import random
 import uuid
 from odoo import models, fields, api, tools, release
-if release.version_info[0] >= 19:
-    from odoo.models import Constraint
+from odoo.models import Constraint
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +15,7 @@ class ResUser(models.Model):
     connect_user = fields.Many2one('connect.user', compute='_get_connect_user')
     pin_code = fields.Char(string='PIN code')
 
-    if release.version_info[0] >= 19:
-        _user_pin_code_unique = Constraint('UNIQUE(pin_code)', 'This PIN code is already used!')
-    else:
-        _sql_constraints = [
-            ('user_pin_code_unique', 'UNIQUE(pin_code)', 'This PIN code is already used!'),
-        ]
+    _user_pin_code_unique = Constraint('UNIQUE(pin_code)', 'This PIN code is already used!')
 
     @api.model_create_multi
     def create(self, vals_list):
