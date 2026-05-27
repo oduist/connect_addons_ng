@@ -21,7 +21,14 @@
   <X-PRE-PROCESS cmd="set" data="internal_ssl_enable=false"/>
   <X-PRE-PROCESS cmd="set" data="internal_auth_calls=true"/>
 
-  <X-PRE-PROCESS cmd="set" data="hold_music=silence_stream://-1"/>
+  <!--
+    Hold music feeds mod_fifo's queue MoH, the bridge-on-hold prompt, etc.
+    `local_stream://moh` streams the royalty-free music package downloaded by
+    the entrypoint (see SOUND_TYPES=music in the Dockerfile). Override here
+    or per-call (e.g. `set fifo_music=...`) when the operator wants a
+    different source.
+  -->
+  <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
   <X-PRE-PROCESS cmd="set" data="use_profile=internal"/>
   <!-- Log levels: read from Docker env vars (defaults in Dockerfile) -->
   <X-PRE-PROCESS cmd="env-set" data="core_loglevel=$FS_LOG_LEVEL"/>
