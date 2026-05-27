@@ -94,6 +94,19 @@ class ConnectProvider(models.Model):
         except ValueError:
             return self.env['res.users']
 
+    def _get_webrtc_config(self, user=None):
+        """Return WebRTC bootstrap config for the given (or current)
+        user. Each provider implements its own native shape (FS Verto,
+        Twilio Voice JS, …). The `/connect/webrtc/config` controller
+        resolves the user's active provider and dispatches via this
+        method (ODU-10 / ADR-023 Pillar 5).
+
+        Returns a JSON-serialisable dict. When no provider is willing
+        to provide WebRTC for this user (no enabled binding, missing
+        config, …), returns `{'enabled': False, 'reason': '...'}`.
+        """
+        return {'enabled': False, 'reason': 'no_provider_impl'}
+
     def _verify_webhook(self, request, data=None):
         """Unified webhook authentication (ADR-023 Phase 7 / ODU-15).
 

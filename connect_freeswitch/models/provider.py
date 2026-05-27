@@ -22,6 +22,11 @@ class FreeSwitchProvider(models.Model):
             number=number, res_model=res_model, res_id=res_id,
         )
 
+    def _get_webrtc_config(self, user=None):
+        if self.code != 'freeswitch':
+            return super()._get_webrtc_config(user=user)
+        return self.env['connect.provider.freeswitch.config'].sudo().get_webrtc_config()
+
     def _verify_webhook(self, request, data=None):
         """Bearer-token auth (ADR-015 / ODU-15). Used by the firewall
         service ↔ Odoo direction; the same token authenticates Odoo
