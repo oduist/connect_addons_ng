@@ -86,7 +86,7 @@ class TwiML(models.Model):
     def create(self, vals_list):
         if self.env.context.get('install_mode') == True:
             return super().create(vals_list)
-        client = self.env['connect.settings'].get_client()
+        client = self.env['connect.provider.twilio.config'].sudo().get_client()
         records = super().create(vals_list)
         for rec in records:
             rec.create_twilio_app(client)
@@ -94,9 +94,9 @@ class TwiML(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
-        if not self.env["connect.settings"].get_param("twilio_auto_sync"):
+        if not self.env['connect.provider.twilio.config'].sudo()._get().auto_sync:
             return res
-        client = self.env['connect.settings'].get_client()
+        client = self.env['connect.provider.twilio.config'].sudo().get_client()
         for rec in self:
             if rec.sid:
                 rec.update_twilio_app(client)
@@ -146,9 +146,9 @@ class TwiML(models.Model):
             return self.create_twilio_app(client)
 
     def unlink(self):
-        if not self.env["connect.settings"].get_param("twilio_auto_sync"):
+        if not self.env['connect.provider.twilio.config'].sudo()._get().auto_sync:
             return super().unlink()
-        client = self.env['connect.settings'].get_client()
+        client = self.env['connect.provider.twilio.config'].sudo().get_client()
         for rec in self:
             if rec.sid:
                 try:
@@ -162,14 +162,14 @@ class TwiML(models.Model):
 
     @api.model
     def sync(self):
-        client = self.env['connect.settings'].get_client()
+        client = self.env['connect.provider.twilio.config'].sudo().get_client()
         for rec in self.search([]):
             rec.update_twilio_app(client)
 
     def _get_twilio_urls(self):
         api_url = self.env['connect.settings'].get_param('api_url')
         fallback_url = self.env['connect.settings'].get_param('api_fallback_url')
-        edge = self.env['connect.settings'].get_param('twilio_edge')
+        edge = self.env['connect.provider.twilio.config'].sudo()._get().edge
         for rec in self:
             rec.voice_status_url = urljoin(api_url, 'twilio/webhook/callstatus#e={}'.format(edge))
             rec.voice_url = urljoin(api_url, 'twilio/webhook/twiml/{}#e={}'.format(rec.id, edge))
@@ -190,7 +190,7 @@ class TwiML(models.Model):
             return '<Response><Say>{}</Say></Response>'.format(api_url_check)
         self.ensure_one()
         api_url = self.env['connect.settings'].sudo().get_param('api_url')
-        edge = self.env['connect.settings'].sudo().get_param('twilio_edge')
+        edge = self.env['connect.provider.twilio.config'].sudo()._get().edge
         recording_voice_status_url = urljoin(api_url, 'app/connect/webhook/recordingstatus#e={}'.format(edge))
         call_voice_status_url = urljoin(api_url, 'app/connect/webhook/callstatus#e={}'.format(edge))
         params.update({

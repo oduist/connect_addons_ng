@@ -124,7 +124,7 @@ class User(models.Model):
     def _create_sip_account(self, username, password, client=None):
         self.ensure_one()
         try:
-            client = client or self.env['connect.settings'].get_client()
+            client = client or self.env['connect.provider.twilio.config'].sudo().get_client()
             credential = (
                 client.sip.credential_lists(
                     self.domain.cred_list_sid
@@ -160,7 +160,7 @@ class User(models.Model):
     def _import_existing_sip_credential(self, username, client=None):
         """Import existing SIP credential from Twilio by username."""
         self.ensure_one()
-        client = client or self.env['connect.settings'].get_client()
+        client = client or self.env['connect.provider.twilio.config'].sudo().get_client()
         try:
             credentials = (
                 client.sip.credential_lists(
@@ -216,7 +216,7 @@ class User(models.Model):
             )
             return
         try:
-            client = self.env['connect.settings'].get_client()
+            client = self.env['connect.provider.twilio.config'].sudo().get_client()
             client.sip.credential_lists(
                 self.domain.cred_list_sid
             ).credentials(self.sid).update(password=password)
@@ -249,7 +249,7 @@ class User(models.Model):
             )
             return
         try:
-            client = self.env['connect.settings'].get_client()
+            client = self.env['connect.provider.twilio.config'].sudo().get_client()
             client.sip.credential_lists(
                 self.domain.cred_list_sid
             ).credentials(self.sid).delete()
@@ -284,7 +284,7 @@ class User(models.Model):
 
     def _twilio_configured(self):
         return bool(
-            self.env['connect.settings'].sudo().get_param('account_sid')
+            self.env['connect.provider.twilio.config'].sudo()._get().account_sid
         )
 
     @api.model_create_multi
@@ -438,7 +438,7 @@ class User(models.Model):
             .sudo()
             .get_param('api_url')
         )
-        edge = self.env['connect.settings'].get_param('twilio_edge')
+        edge = self.env['connect.provider.twilio.config'].sudo()._get().edge
         dial_action_url = urljoin(
             api_url,
             'twilio/webhook/connect.user/call_action/{}#e={}'.format(

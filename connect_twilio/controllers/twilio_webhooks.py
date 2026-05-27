@@ -11,9 +11,9 @@ class ConnectTwilioController(Controller):
 
     @staticmethod
     def check_signature(data):
-        if not request.env['connect.settings'].sudo().get_param('twilio_verify_requests'):
+        if not request.env['connect.provider.twilio.config'].sudo()._get().verify_requests:
             return True
-        validator = RequestValidator(request.env['connect.settings'].sudo().get_param('auth_token'))
+        validator = RequestValidator(request.env['connect.provider.twilio.config'].sudo()._get().auth_token)
         url = request.httprequest.url.replace('http:', 'https:')
         signature = request.httprequest.headers.get('X-Twilio-Signature', '')
         request_valid = validator.validate(url, data, signature)

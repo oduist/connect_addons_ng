@@ -383,7 +383,7 @@ class ConnectMessage(models.Model):
         self, recipient, sender, body, whatsapp=False
     ):
         try:
-            client = self.env['connect.settings'].get_client()
+            client = self.env['connect.provider.twilio.config'].sudo().get_client()
             message = client.messages.create(
                 to=(
                     'whatsapp:{}'.format(recipient)

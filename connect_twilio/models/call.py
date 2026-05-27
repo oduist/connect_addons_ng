@@ -154,7 +154,7 @@ class Call(models.Model):
     def _fetch_call_price_from_api(self, call, call_sid):
         """Fetch call price from Twilio REST API"""
         try:
-            client = self.env['connect.settings'].get_client()
+            client = self.env['connect.provider.twilio.config'].sudo().get_client()
             twilio_call = client.calls(call_sid).fetch()
             debug(
                 self,
@@ -279,7 +279,7 @@ class Call(models.Model):
                 len(other_channel),
             )
             return
-        client = self.env['connect.settings'].get_client()
+        client = self.env['connect.provider.twilio.config'].sudo().get_client()
         conf_id = uuid.uuid4().hex
 
         def transfer_other():

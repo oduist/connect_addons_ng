@@ -1,57 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- Inherit core settings form to add Twilio-specific fields -->
-    <record id="connect_settings_form_twilio" model="ir.ui.view">
-        <field name="name">connect.settings.form.twilio</field>
-        <field name="model">connect.settings</field>
-        <field name="inherit_id" ref="connect.connect_settings_form"/>
+    <!-- ODU-22: Standalone Twilio config form. Replaces the previous
+         notebook pages that extended connect.settings; the dedicated
+         Twilio root menu (see views/menu.xml) opens this form. -->
+    <record id="connect_provider_twilio_config_form" model="ir.ui.view">
+        <field name="name">connect.provider.twilio.config.form</field>
+        <field name="model">connect.provider.twilio.config</field>
         <field name="arch" type="xml">
-            <!-- Add Balance group to General page -->
-            <xpath expr="//page[@name='general']//group[1]" position="after">
-                <group string="Balance">
-                    <field name="twilio_balance" string="Current Balance" readonly="1"/>
-                    <button class="btn btn-info" colspan="2" name="get_twilio_balance"
-                            type="object" string="GET TWILIO BALANCE"/>
-                </group>
-            </xpath>
-
-            <!-- Add fetch_call_prices to General page Call Settings group -->
-            <xpath expr="//field[@name='proxy_recordings']" position="after">
-                <field name="fetch_call_prices"/>
-            </xpath>
-
-            <!-- Add Twilio API Keys page after General -->
-            <xpath expr="//page[@name='general']" position="after">
-                <page name="twilio_api" string="Twilio API">
-                    <group>
-                        <group string="Twilio Credentials" name="twilio_api">
-                            <div colspan="2">
-                                <small><strong>You can find your Twilio API data in
-                                    <a href="https://console.twilio.com/" target="_blank">your Twilio Console</a>
-                                </strong></small>
-                            </div>
-                            <field name="twilio_auto_sync" groups="base.group_no_one"/>
-                            <field name="account_sid"/>
-                            <field name="display_auth_token" string="Auth Token" password="1"/>
-                            <field name="twilio_api_key" string="API Key SID"/>
-                            <field name="display_twilio_api_secret" string="API Key Secret" password="1"/>
-                            <field name="twilio_region" string="Region"/>
-                            <field name="twilio_edge" string="Edge"/>
-                            <button colspan="2" name="sync" type="object"
-                                    string="SYNC TWILIO ACCOUNT" class="btn btn-primary"/>
-                        </group>
-                    </group>
-                </page>
-                <page string="Development" groups="base.group_no_one" name="twilio_dev">
-                    <group>
-                        <group>
-                            <field name="twilio_verify_requests"/>
-                        </group>
-                    </group>
-                </page>
-            </xpath>
+            <form create="false" delete="false">
+                <sheet>
+                    <notebook>
+                        <page name="twilio_api" string="API">
+                            <group>
+                                <group string="Credentials" name="twilio_api">
+                                    <div colspan="2">
+                                        <small><strong>You can find your Twilio API data in
+                                            <a href="https://console.twilio.com/" target="_blank">your Twilio Console</a>
+                                        </strong></small>
+                                    </div>
+                                    <field name="auto_sync" groups="base.group_no_one"/>
+                                    <field name="account_sid"/>
+                                    <field name="display_auth_token" string="Auth Token" password="1"/>
+                                    <field name="api_key" string="API Key SID"/>
+                                    <field name="display_api_secret" string="API Key Secret" password="1"/>
+                                    <field name="region" string="Region"/>
+                                    <field name="edge" string="Edge"/>
+                                    <button colspan="2" name="sync" type="object"
+                                            string="SYNC TWILIO ACCOUNT" class="btn btn-primary"/>
+                                </group>
+                                <group string="Balance">
+                                    <field name="balance" string="Current Balance" readonly="1"/>
+                                    <button class="btn btn-info" colspan="2" name="get_balance"
+                                            type="object" string="GET TWILIO BALANCE"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page name="behavior" string="Behavior">
+                            <group>
+                                <field name="fetch_call_prices"/>
+                                <field name="verify_requests"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
         </field>
     </record>
+
+    <record id="action_twilio_config" model="ir.actions.server">
+        <field name="type">ir.actions.server</field>
+        <field name="name">Twilio Settings</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="model_connect_provider_twilio_config"/>
+        <field name="code">
+rec = model._get()
+action = {
+    'type': 'ir.actions.act_window',
+    'res_model': 'connect.provider.twilio.config',
+    'res_id': rec.id,
+    'name': 'Twilio',
+    'view_mode': 'form',
+    'view_id': env.ref('connect_twilio.connect_provider_twilio_config_form').id,
+    'target': 'current',
+}
+        </field>
+    </record>
+
+    <menuitem id="menu_twilio_settings"
+              parent="menu_connect_twilio"
+              groups="connect.group_admin"
+              action="action_twilio_config" name="Settings" sequence="100"/>
 
 </odoo>

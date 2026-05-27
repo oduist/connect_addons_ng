@@ -24,7 +24,7 @@ class OutgoingCallerID(models.Model):
                     raise ValidationError('Validate the number first!')
 
     def sync_outgoing_callerid(self, callerid_type):
-        client = self.env['connect.settings'].get_client()
+        client = self.env['connect.provider.twilio.config'].sudo().get_client()
         if callerid_type == 'outgoing_callerid':
             numbers = client.outgoing_caller_ids.list()
         elif callerid_type == 'number':
@@ -89,14 +89,14 @@ class OutgoingCallerID(models.Model):
 
     def validate(self):
         self.ensure_one()
-        if self.env['connect.settings'].sudo().get_param('twilio_region') != 'us1':
+        if self.env['connect.provider.twilio.config'].sudo()._get().region != 'us1':
             raise ValidationError('Outgoing CallerIds are supported in US1 region only!')
         if self.sid:
             raise ValidationError('Outgoing callerid is already validated!')
         api_url = self.env['connect.settings'].sudo().get_param('api_url')
-        edge = self.env['connect.settings'].get_param('twilio_edge')
+        edge = self.env['connect.provider.twilio.config'].sudo()._get().edge
         status_url = urljoin(api_url, 'twilio/webhook/outgoing_callerid#e={}'.format(edge))
-        client = self.env['connect.settings'].get_client()
+        client = self.env['connect.provider.twilio.config'].sudo().get_client()
         try:
             validation_request = client.validation_requests.create(
                 status_callback=status_url,
@@ -129,15 +129,15 @@ class OutgoingCallerID(models.Model):
     def _change_number_friendly_name(self):
         for rec in self:
             if rec.sid and rec.callerid_type == 'outgoing_callerid':
-                if self.env["connect.settings"].get_param("twilio_auto_sync"):
-                    client = self.env['connect.settings'].get_client()
+                if self.env['connect.provider.twilio.config'].sudo()._get().auto_sync:
+                    client = self.env['connect.provider.twilio.config'].sudo().get_client()
                     client.outgoing_caller_ids(rec.sid).update(friendly_name=self.friendly_name)
             elif rec.sid and rec.callerid_type == 'number':
                 number = self.env['connect.number'].search([('phone_number', '=', rec.number)])
                 number.friendly_name = rec.friendly_name
 
     def unlink(self):
-        if not self.env["connect.settings"].get_param("twilio_auto_sync"):
+        if not self.env['connect.provider.twilio.config'].sudo()._get().auto_sync:
             return super().unlink()
         sids = {}
         for rec in self:
@@ -146,7 +146,7 @@ class OutgoingCallerID(models.Model):
             if rec.sid and rec.callerid_type == 'outgoing_callerid':
                 sids[rec.sid] = rec.number
         res = super().unlink()
-        client = self.env['connect.settings'].get_client()
+        client = self.env['connect.provider.twilio.config'].sudo().get_client()
         for sid in sids.keys():
             try:
                 client.outgoing_caller_ids(sid).delete()

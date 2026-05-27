@@ -9,6 +9,6 @@ class TwilioProvider(models.Model):
             return super()._originate_call(
                 number=number, res_model=res_model, res_id=res_id, user=user, **kwargs
             )
-        return self.env['connect.settings']._twilio_originate_call(
+        return self.env['connect.provider.twilio.config'].sudo()._originate_call(
             number=number, res_model=res_model, res_id=res_id, user=user, **kwargs
         )

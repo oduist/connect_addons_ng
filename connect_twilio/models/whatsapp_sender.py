@@ -99,7 +99,7 @@ class ConnectWhatsappSender(models.Model):
 
     def _get_twilio_urls(self):
         api_url = self.env['connect.settings'].get_param('api_url')
-        edge = self.env['connect.settings'].get_param('twilio_edge')
+        edge = self.env['connect.provider.twilio.config'].sudo()._get().edge
         for rec in self:
             rec.callback_url = urljoin(api_url, f'twilio/webhook/message#e={edge}')
             rec.status_callback_url = urljoin(api_url, f'twilio/webhook/message_status#e={edge}')
@@ -259,7 +259,7 @@ class ConnectWhatsappSender(models.Model):
                     '24 hours contact window has been expired. '
                     'Please select a message template to initiate a new contact window.'
                 )
-        client = self.env['connect.settings'].get_client()
+        client = self.env['connect.provider.twilio.config'].sudo().get_client()
         try:
             create_kwargs = {
                 'to': f'whatsapp:{recipient}',
