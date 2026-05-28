@@ -114,32 +114,32 @@ class FreeSwitchCDRController(http.Controller):
             if effective_caller and not caller.isdigit():
                 caller = effective_caller
 
-            # Bridge linking — mod_xml_cdr stores the peer leg UUID under
-            # several standard FreeSWITCH channel variables. Check the
-            # custom one first (set by our dialplan, if any), then the
-            # event-style header, then the regular channel variables that
-            # are present on every bridged leg, regardless of direction.
+            # B-leg discriminator: mod_xml_cdr always sets `originator`
+            # (and `originating_leg_uuid`) on the originatee side; the
+            # originator does not have them. `bridge_uuid` / `signal_bond`
+            # are present on both legs and are NOT reliable for A/B
+            # detection.
+            originator_uuid = (
+                self._xml_text(variables, 'originator')
+                or self._xml_text(variables, 'originating_leg_uuid')
+            )
+
+            # `other_leg_uuid` drives parent-channel linking in
+            # `connect.channel.process_channel_event`. We populate it
+            # only on the B-leg (= originatee) so the A-leg has no
+            # parent. The A-leg picks up its B-leg via the reverse-orphan
+            # check in `connect.call.on_freeswitch_cdr` once the B-leg
+            # CDR arrives.
             other_leg_uuid = (
                 self._xml_text(variables, 'odoo_parent_uuid')
                 or self._xml_text(variables, 'Other-Leg-Unique-ID')
-                or self._xml_text(variables, 'signal_bond')
-                or self._xml_text(variables, 'bridge_uuid')
-                or self._xml_text(variables, 'last_bridge_to')
-            )
-
-            # `originator` / `originating_leg_uuid` are set on the
-            # originatee (B) leg only, so they're the reliable A/B
-            # discriminator. `bridge_uuid` alone is not — it's present
-            # on both legs.
-            is_b_leg = bool(
-                self._xml_text(variables, 'originator')
-                or self._xml_text(variables, 'originating_leg_uuid')
+                or originator_uuid
             )
 
             odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
             odoo_called_user = self._xml_text(
                 variables, 'odoo_called_user_id')
-            if is_b_leg:
+            if originator_uuid:
                 # B-leg: odoo_connect_user_id (if present) identifies the
                 # called connect.user.
                 if odoo_user:
