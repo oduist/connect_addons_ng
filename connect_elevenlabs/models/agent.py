@@ -214,6 +214,7 @@ class ElevenlabsAgent(models.Model):
     )
     el_inbound_allowed_ips = fields.Text(
         string="Inbound Allowed IPs",
+        default=lambda self: self._default_el_inbound_allowed_ips(),
         help="IP addresses or CIDR ranges (comma- or newline-separated) "
              "ElevenLabs will accept inbound SIP INVITEs from. Empty allows all.",
     )
@@ -230,6 +231,15 @@ class ElevenlabsAgent(models.Model):
         )
         for rec in self:
             rec.has_transfer_tool = transfer_tool in rec.tools if transfer_tool else False
+
+    @api.model
+    def _default_el_inbound_allowed_ips(self):
+        provider_id = self._context.get('default_provider_id') \
+            or self._default_provider_id()
+        if not provider_id:
+            return ''
+        provider = self.env['connect.provider'].sudo().browse(provider_id)
+        return provider._elevenlabs_default_inbound_ips()
 
     @api.model
     def _default_provider_id(self):
