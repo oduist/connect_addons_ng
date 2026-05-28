@@ -1,5 +1,6 @@
 import logging
 import re
+import urllib.parse
 from xml.etree import ElementTree as ET
 
 from odoo import http
@@ -124,8 +125,12 @@ class FreeSwitchCDRController(http.Controller):
             # to `connect.user.outgoing_callerid.number` (ADR-021), so
             # the call record naturally records what PSTN saw rather
             # than the originating extension.
-            effective_caller = self._xml_text(
-                variables, 'effective_caller_id_number')
+            #
+            # mod_xml_cdr URL-encodes channel variable values inside
+            # <variables> (e.g. `+` → `%2B`, `@` → `%40`), so we have
+            # to unquote them before using them as phone numbers.
+            effective_caller = urllib.parse.unquote(self._xml_text(
+                variables, 'effective_caller_id_number'))
             if effective_caller:
                 caller = effective_caller
 
