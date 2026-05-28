@@ -322,9 +322,17 @@ class Call(models.Model):
         # second one waits for the first to commit before proceeding.
         lock_key = cdr_data.get('other_leg_uuid') or cdr_data.get('uuid')
         if lock_key:
+            import time
             lock_id = zlib.crc32(lock_key.encode()) & 0x7FFFFFFF
+            t_before = time.monotonic()
             self.env.cr.execute(
                 'SELECT pg_advisory_xact_lock(%s)', (lock_id,))
+            self.env.cr.fetchall()
+            t_after = time.monotonic()
+            debug(self, 'advisory_lock id=%s wait=%.4fs uuid=%s other=%s' % (
+                lock_id, t_after - t_before,
+                cdr_data.get('uuid', '')[:8],
+                cdr_data.get('other_leg_uuid', '')[:8]))
 
         status = HANGUP_CAUSE_MAP.get(
             cdr_data.get('hangup_cause', ''), 'failed')
