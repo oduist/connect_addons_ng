@@ -216,10 +216,20 @@ class Call(models.Model):
                     "No outgoing route found for number: {}".format(number))
 
         # Build originate command
+        cid_name = (caller_name or caller_number).replace("'", "")
         variables = [
-            "origination_caller_id_name='{}'".format(
-                (caller_name or caller_number).replace("'", "")),
+            "origination_caller_id_name='{}'".format(cid_name),
             "origination_caller_id_number={}".format(caller_number),
+            # Override the directory-seeded effective caller-id so the
+            # originated channel — and the gateway B-leg it bridges to
+            # — present the right number on PSTN. `caller_number` is
+            # `exten_number` for internal-extension targets and
+            # `outgoing_callerid.number` for external PSTN targets
+            # (see the branch above), so this mirrors the dialplan
+            # logic used by UA-originated calls (ADR-021) and lets the
+            # CDR parser store the same value in connect.call.caller.
+            "effective_caller_id_name='{}'".format(cid_name),
+            "effective_caller_id_number={}".format(caller_number),
             "odoo_caller_pbx_user_id={}".format(connect_user.id),
             # `originate user/<login>@<domain>` makes the A-leg's
             # caller_profile.destination_number the resolved user URI
