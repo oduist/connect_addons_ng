@@ -427,11 +427,17 @@ Variables:
 Variables:
   route_id        - connect.freeswitch.outgoing_route record ID
   pattern         - Regex pattern for destination matching
-  bridge_data     - Bridge string (sofia/gateway/name/number)</field>
+  bridge_data     - Bridge string (sofia/gateway/name/number)
+  cid_name        - Caller ID name to present on PSTN (from connect.user.outgoing_callerid)
+  cid_num         - Caller ID number to present on PSTN (from connect.user.outgoing_callerid)</field>
         <field name="content"><![CDATA[<extension name="outgoing_{{ route_id }}">
   <condition field="destination_number" expression="{{ pattern }}">
     <action application="set" data="odoo_call_direction=outgoing"/>
     <action application="export" data="nolocal:absolute_codec_string=PCMU,PCMA"/>
+    {% if cid_num %}
+    <action application="set" data="effective_caller_id_number={{ cid_num }}"/>
+    <action application="set" data="effective_caller_id_name={{ cid_name }}"/>
+    {% endif %}
     <action application="bridge" data="{{ bridge_data }}"/>
   </condition>
 </extension>]]></field>
@@ -439,6 +445,10 @@ Variables:
   <condition field="destination_number" expression="{{ pattern }}">
     <action application="set" data="odoo_call_direction=outgoing"/>
     <action application="export" data="nolocal:absolute_codec_string=PCMU,PCMA"/>
+    {% if cid_num %}
+    <action application="set" data="effective_caller_id_number={{ cid_num }}"/>
+    <action application="set" data="effective_caller_id_name={{ cid_name }}"/>
+    {% endif %}
     <action application="bridge" data="{{ bridge_data }}"/>
   </condition>
 </extension>]]></field>
