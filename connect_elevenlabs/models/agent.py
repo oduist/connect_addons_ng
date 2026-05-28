@@ -279,6 +279,13 @@ class ElevenlabsAgent(models.Model):
 
     def write(self, vals):
         self.env['oduist.license'].check_license('connect_elevenlabs', silent=False)
+        if 'provider_id' in vals:
+            for rec in self:
+                if rec.el_virtual_number_uid or rec.exten:
+                    raise ValidationError(
+                        "Cannot change provider on an agent with an "
+                        "active extension. Remove the extension first."
+                    )
         if 'exten' in vals:
             # Exten lifecycle is the trigger for SIP-trunk provisioning
             # on the EL side (ADR-021). Skip the rest of the EL sync —
