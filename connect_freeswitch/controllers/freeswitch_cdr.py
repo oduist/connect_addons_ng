@@ -117,21 +117,25 @@ class FreeSwitchCDRController(http.Controller):
         odoo_number_id = None
 
         if variables is not None:
-            # Prefer `effective_caller_id_number` — it reflects the
-            # dialplan's final caller-id at hangup. For internal
-            # extension-to-extension calls no override fires, so it
-            # equals the extension number from the directory. For
-            # external PSTN calls our `dialplan_outgoing_route` SETs it
-            # to `connect.user.outgoing_callerid.number` (ADR-021), so
-            # the call record naturally records what PSTN saw rather
-            # than the originating extension.
+            # Click-to-call originates `user/<login>@<domain>` and the
+            # user directory rewrites the channel's effective caller-id
+            # back to the extension, silently overriding any globals
+            # `connect.call.originate` tried to set. The originate path
+            # therefore stashes the intended caller-id on the custom
+            # `odoo_caller_id_number` variable — prefer that. UA-
+            # originated calls don't set it; they get the right value
+            # from `effective_caller_id_number` (rewritten by the
+            # outgoing-route dialplan, ADR-021).
             #
             # mod_xml_cdr URL-encodes channel variable values inside
-            # <variables> (e.g. `+` → `%2B`, `@` → `%40`), so we have
-            # to unquote them before using them as phone numbers.
+            # <variables> (`+` → `%2B`, `@` → `%40`), so unquote first.
+            odoo_caller_id = urllib.parse.unquote(self._xml_text(
+                variables, 'odoo_caller_id_number'))
             effective_caller = urllib.parse.unquote(self._xml_text(
                 variables, 'effective_caller_id_number'))
-            if effective_caller:
+            if odoo_caller_id:
+                caller = odoo_caller_id
+            elif effective_caller:
                 caller = effective_caller
 
             # Click-to-call originates `user/<login>@<domain>`, so the
