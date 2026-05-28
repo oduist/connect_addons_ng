@@ -118,27 +118,35 @@ class FreeSwitchCDRController(http.Controller):
             # several standard FreeSWITCH channel variables. Check the
             # custom one first (set by our dialplan, if any), then the
             # event-style header, then the regular channel variables that
-            # are *always* present on a bridged leg.
+            # are present on every bridged leg, regardless of direction.
             other_leg_uuid = (
                 self._xml_text(variables, 'odoo_parent_uuid')
                 or self._xml_text(variables, 'Other-Leg-Unique-ID')
                 or self._xml_text(variables, 'signal_bond')
                 or self._xml_text(variables, 'bridge_uuid')
-                or self._xml_text(variables, 'originator')
-                or self._xml_text(variables, 'originating_leg_uuid')
                 or self._xml_text(variables, 'last_bridge_to')
+            )
+
+            # `originator` / `originating_leg_uuid` are set on the
+            # originatee (B) leg only, so they're the reliable A/B
+            # discriminator. `bridge_uuid` alone is not — it's present
+            # on both legs.
+            is_b_leg = bool(
+                self._xml_text(variables, 'originator')
+                or self._xml_text(variables, 'originating_leg_uuid')
             )
 
             odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
             odoo_called_user = self._xml_text(
                 variables, 'odoo_called_user_id')
-            if other_leg_uuid:
-                # B-leg: odoo_connect_user_id is the called user
+            if is_b_leg:
+                # B-leg: odoo_connect_user_id (if present) identifies the
+                # called connect.user.
                 if odoo_user:
                     called_pbx_user_id = int(odoo_user)
             else:
                 # A-leg: odoo_connect_user_id is the caller,
-                # odoo_called_user_id is the called user
+                # odoo_called_user_id is the called user.
                 if odoo_user:
                     caller_pbx_user_id = int(odoo_user)
                 if odoo_called_user:
