@@ -75,12 +75,21 @@ class FreeSwitchCDRController(http.Controller):
         caller_profile = root.find('.//caller_profile')
         caller = ''
         called = ''
-        direction = 'inbound'
 
         if caller_profile is not None:
             caller = self._xml_text(caller_profile, 'caller_id_number')
             called = self._xml_text(caller_profile, 'destination_number')
-            direction = self._xml_text(caller_profile, 'direction', 'inbound')
+
+        # FreeSWITCH stores the channel's direction in <channel_data>
+        # at the top of the CDR — `inbound` for the originator (UA → FS)
+        # leg, `outbound` for the gateway (FS → PSTN) leg. The previous
+        # XPath (`caller_profile/direction`) never matched in any FS
+        # version, so every CDR was parsed as `inbound`.
+        channel_data = root.find('./channel_data')
+        if channel_data is not None:
+            direction = self._xml_text(channel_data, 'direction', 'inbound')
+        else:
+            direction = 'inbound'
 
         # Hangup cause
         hangup_cause = self._xml_text(root, './/hangup_cause', 'NORMAL_CLEARING')
