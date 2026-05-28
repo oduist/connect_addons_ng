@@ -313,7 +313,7 @@ Order: `name`
 | `record_calls` | Boolean | Default: True |
 | `voicemail_enabled` | Boolean | |
 | `voicemail_prompt` | Text | Jinja2 template |
-| `outgoing_callerid` | Many2one | `connect.outgoing_callerid`, no domain in core (provider modules may restrict the picker via view-inheritance, e.g. Twilio adds `'|', ('status', '=', 'validated'), ('callerid_type', '=', 'number')`) |
+| `outgoing_callerid` | Many2one | `connect.outgoing_callerid`, no domain (provider modules may restrict the picker via view-inheritance) |
 | `missed_calls_notify` | Boolean | |
 | `greeting_message` | Char | |
 | `summary_prompt` | Char | Per-user override |
