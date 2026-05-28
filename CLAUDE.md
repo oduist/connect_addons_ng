@@ -74,6 +74,32 @@ differs. Concretely:
      enabled).
   Do this without asking; treat it as part of the backport workflow.
 
+### Bump the manifest version at most once per session / feature branch
+
+A `__manifest__.py` `version` bump represents one logical release unit
+of the module — the same unit that ships as one PR. **Bump it at most
+once per working session / feature branch, regardless of how many
+intermediate fix commits the branch contains.** Multiple bumps within
+one branch are wrong: they produce noisy history, force you to flatten
+versions before merge, and have no functional effect.
+
+Specifically:
+- Do **not** bump the version on every commit. Bug-fix commits in
+  controllers / models / data are picked up by `pull_and_apply` via
+  diff analysis (Python → restart, schema/field change → upgrade,
+  views/assets → hot-reload); none of these require the manifest to
+  change.
+- Do **not** create a standalone "chore: bump version" commit. If the
+  bump is needed for a release, fold it into the last functional
+  commit or a single cleanup commit at the end of the branch.
+- The version moves on **release boundaries**, not on commit
+  boundaries. Inside one session the bump should land once — typically
+  in the first commit that changes module behavior, or in a final
+  cleanup pass just before opening the PR.
+- If you realise mid-session that you already bumped the version,
+  leave it alone and keep working at that target version; do not bump
+  again.
+
 ## Conventions
 
 - Models follow `connect.<name>` naming (e.g., `connect.call`, `connect.recording`)

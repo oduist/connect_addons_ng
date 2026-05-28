@@ -33,6 +33,23 @@ class FreeSwitchOutgoingRoute(models.Model):
         destination = params.get('Caller-Destination-Number', '')
         routes = self.sudo().search([('active', '=', True)])
 
+        # Resolve the calling user's configured outgoing CallerID so the
+        # called party sees the right number on PSTN. The directory entry
+        # sets effective_caller_id_* to the extension; we override it here
+        # only for the outbound leg so internal calls still show the
+        # extension.
+        cid_name = ''
+        cid_num = ''
+        connect_user_id = params.get('variable_odoo_connect_user_id')
+        if connect_user_id:
+            try:
+                user = self.env['connect.user'].sudo().browse(int(connect_user_id))
+            except ValueError:
+                user = self.env['connect.user']
+            if user.exists() and user.outgoing_callerid:
+                cid_num = user.outgoing_callerid.number or ''
+                cid_name = user.outgoing_callerid.friendly_name or cid_num
+
         for route in routes:
             if not re.match(route.pattern, destination):
                 continue
@@ -45,6 +62,8 @@ class FreeSwitchOutgoingRoute(models.Model):
                 'route_id': route.id,
                 'pattern': route.pattern,
                 'bridge_data': bridge_data,
+                'cid_name': cid_name,
+                'cid_num': cid_num,
             })
 
         return ''
