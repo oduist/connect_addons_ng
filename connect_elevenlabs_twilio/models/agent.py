@@ -20,6 +20,8 @@ class ElevenlabsAgent(models.Model):
 
     def render(self, request, params=None):
         self.ensure_one()
+        if self.provider_id.code != 'twilio':
+            return super().render(request, params=params)
         if not self.env['oduist.license'].check_license('connect_elevenlabs'):
             return (
                 "<Response><Pause length='1'/>"
@@ -38,18 +40,20 @@ class ElevenlabsAgent(models.Model):
 
     @api.model
     def transfer(self, channel_sid=None, exten=None):
+        agent = self._resolve_transfer_agent(channel_sid)
+        if not agent or agent.provider_id.code != 'twilio':
+            return super().transfer(channel_sid=channel_sid, exten=exten)
         logger.info("Transfer request: exten=%s, channel_sid=%s", exten, channel_sid)
         if not channel_sid or not exten:
             return "Not all parameters passed. You must provide channel_sid and exten (only digits)"
-        exten_rec, err = self._resolve_transfer_target(exten)
+        exten_rec, err = agent._resolve_transfer_target(exten)
         if err:
             return err
-        self = self.sudo()
         client = self.env['connect.provider.twilio.config'].sudo().get_client()
         channel = self.env['connect.channel'].search([('sid', '=', channel_sid)])
         twiml = exten_rec.render(
             {"Caller": channel.caller, "Called": channel.called, "CallSid": channel.sid}
         )
-        debug(self, "Transfer to: {}".format(pretty_xml(twiml)))
+        debug(agent, "Transfer to: {}".format(pretty_xml(twiml)))
         client.calls(channel_sid).update(twiml=twiml)
         return "Transfer Successful"

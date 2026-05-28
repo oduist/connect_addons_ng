@@ -17,6 +17,8 @@ class ElevenlabsAgent(models.Model):
         record is involved. The user part is `el_virtual_number_uid`
         (EL's phone_number_id, provisioned when an extension is assigned)."""
         self.ensure_one()
+        if self.provider_id.code != 'freeswitch':
+            return super().generate_dialplan(params, exten=exten)
         if not exten:
             logger.warning(
                 "generate_dialplan called for agent %s without exten", self.id)
@@ -39,14 +41,16 @@ class ElevenlabsAgent(models.Model):
 
     @api.model
     def transfer(self, channel_sid=None, exten=None):
+        agent = self._resolve_transfer_agent(channel_sid)
+        if not agent or agent.provider_id.code != 'freeswitch':
+            return super().transfer(channel_sid=channel_sid, exten=exten)
         logger.info("FS transfer request: exten=%s, channel_sid=%s", exten, channel_sid)
         if not channel_sid or not exten:
             return ("Not all parameters passed. You must provide "
                     "channel_sid and exten (only digits)")
-        exten_rec, err = self._resolve_transfer_target(exten)
+        exten_rec, err = agent._resolve_transfer_target(exten)
         if err:
             return err
-        self = self.sudo()
         channel = self.env['connect.channel'].search(
             [('sid', '=', channel_sid)], limit=1)
         if not channel:

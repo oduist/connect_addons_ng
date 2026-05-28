@@ -506,6 +506,17 @@ class ElevenlabsAgent(models.Model):
             "connect.elevenlabs_agent.transfer: no provider bridge installed.")
         return "ElevenLabs transfer requires a provider bridge (Twilio/FreeSWITCH)."
 
+    @api.model
+    def _resolve_transfer_agent(self, channel_sid):
+        """Return the connect.elevenlabs_agent that owns the given
+        FS/Twilio channel SID, or empty recordset. Used by bridge
+        modules to gate `@api.model` transfer() by provider_id.code."""
+        if not channel_sid:
+            return self.browse()
+        channel = self.env['connect.channel'].sudo().search(
+            [('sid', '=', channel_sid)], limit=1)
+        return channel.call.elevenlabs_agent if channel and channel.call else self.browse()
+
     def _resolve_transfer_target(self, exten_str):
         """Resolve a transfer-tool 'exten' argument to a connect.exten record.
 
