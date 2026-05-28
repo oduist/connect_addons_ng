@@ -363,6 +363,22 @@ class Call(models.Model):
 
         channel = self.env['connect.channel'].process_channel_event(
             generic_params)
+
+        # Belt-and-suspenders: re-link parent_channel here, after
+        # process_channel_event returns and before process_call_event
+        # decides A-leg vs B-leg. The forward search inside
+        # process_channel_event can miss the parent under tight CDR
+        # arrival races even with the advisory lock — re-checking here
+        # under the same lock makes the link deterministic.
+        if (channel and channel.parent_sid
+                and not channel.parent_channel):
+            parent = self.env['connect.channel'].sudo().search(
+                [('sid', '=', channel.parent_sid)], limit=1)
+            debug(self, 'Reverse parent re-link: parent_sid=%s found=%s' % (
+                channel.parent_sid, parent.id if parent else None))
+            if parent:
+                channel.parent_channel = parent
+
         call = self.process_call_event(channel)
 
         if channel:
