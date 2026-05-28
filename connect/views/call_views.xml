@@ -13,7 +13,7 @@
                 <field name="duration_human" string="Duration"/>
                 <field name="recording_icon" string="Rec"/>
                 <field name="voicemail_icon" string="VM"/>
-                <field name="provider_id" optional="hide"/>
+                <field name="provider_id" optional="show"/>
                 <field name="create_date" string="Date"/>
             </list>
         </field>

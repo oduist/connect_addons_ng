@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="connect.view_connect_call_tree"/>
         <field name="arch" type="xml">
             <field name="partner" position="after">
-                <field name="elevenlabs_agent" optional="show"/>
+                <field name="elevenlabs_agent" optional="hide"/>
             </field>
         </field>
     </record>
