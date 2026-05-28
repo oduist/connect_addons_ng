@@ -1,6 +1,5 @@
 import logging
 import re
-import zlib
 from odoo import fields, models, api
 from odoo.exceptions import UserError
 from odoo.addons.connect.models.settings import debug
@@ -309,22 +308,6 @@ class Call(models.Model):
         self = self.sudo()
         debug(self, 'FreeSWITCH CDR: %s' % cdr_data)
 
-        # Serialize concurrent processing of the two legs of the same
-        # bridged call. mod_xml_cdr POSTs the A- and B-leg CDRs almost
-        # simultaneously; each worker thread runs in its own PostgreSQL
-        # transaction, so without coordination neither leg's
-        # parent-channel search sees the other's INSERT and the two end
-        # up as separate connect.call records.
-        #
-        # Lock on the originator (A-leg) uuid. The B-leg knows it via
-        # other_leg_uuid (set from `originator` by the CDR parser); the
-        # A-leg uses its own uuid. Both end up with the same key.
-        lock_key = cdr_data.get('other_leg_uuid') or cdr_data.get('uuid')
-        if lock_key:
-            lock_id = zlib.crc32(lock_key.encode()) & 0x7FFFFFFF
-            self.env.cr.execute(
-                'SELECT pg_advisory_xact_lock(%s)', (lock_id,))
-
         status = HANGUP_CAUSE_MAP.get(
             cdr_data.get('hangup_cause', ''), 'failed')
 
@@ -394,7 +377,13 @@ class Call(models.Model):
                 if orphan.call and channel.call and orphan.call != channel.call:
                     old_call = orphan.call
                     orphan.call = channel.call
-                    if not old_call.channels:
+                    # Use a fresh DB count instead of `old_call.channels`
+                    # because the One2many cache is not invalidated by
+                    # the inverse-side write above and still reports the
+                    # moved channel as belonging to old_call.
+                    remaining = self.env['connect.channel'].sudo().search_count(
+                        [('call', '=', old_call.id)])
+                    if not remaining:
                         old_call.unlink()
                 debug(self, 'Linked orphan channel %s to parent %s' % (
                     orphan.id, channel.id))
