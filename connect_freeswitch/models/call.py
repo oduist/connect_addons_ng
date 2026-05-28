@@ -1,6 +1,5 @@
 import logging
 import re
-import zlib
 from odoo import fields, models, api
 from odoo.exceptions import UserError
 from odoo.addons.connect.models.settings import debug
@@ -309,31 +308,6 @@ class Call(models.Model):
         self = self.sudo()
         debug(self, 'FreeSWITCH CDR: %s' % cdr_data)
 
-        # Serialize the two bridged-leg CDRs so the second one's
-        # parent/orphan search sees the first one's INSERT.
-        # mod_xml_cdr POSTs both legs almost simultaneously; with Odoo
-        # running multi-process (workers > 0), each leg runs in its own
-        # PostgreSQL session and would otherwise commit independently
-        # — neither leg's search would see the other.
-        #
-        # Lock key is the originator (A-leg) uuid: the B-leg knows it as
-        # other_leg_uuid (= `originator` from the CDR parser); the A-leg
-        # uses its own uuid. Both legs end up on the same key, so the
-        # second one waits for the first to commit before proceeding.
-        lock_key = cdr_data.get('other_leg_uuid') or cdr_data.get('uuid')
-        if lock_key:
-            import time
-            lock_id = zlib.crc32(lock_key.encode()) & 0x7FFFFFFF
-            t_before = time.monotonic()
-            self.env.cr.execute(
-                'SELECT pg_advisory_xact_lock(%s)', (lock_id,))
-            self.env.cr.fetchall()
-            t_after = time.monotonic()
-            debug(self, 'advisory_lock id=%s wait=%.4fs uuid=%s other=%s' % (
-                lock_id, t_after - t_before,
-                cdr_data.get('uuid', '')[:8],
-                cdr_data.get('other_leg_uuid', '')[:8]))
-
         status = HANGUP_CAUSE_MAP.get(
             cdr_data.get('hangup_cause', ''), 'failed')
 
@@ -372,22 +346,6 @@ class Call(models.Model):
 
         channel = self.env['connect.channel'].process_channel_event(
             generic_params)
-
-        # Belt-and-suspenders: re-link parent_channel here, after
-        # process_channel_event returns and before process_call_event
-        # decides A-leg vs B-leg. The forward search inside
-        # process_channel_event can miss the parent under tight CDR
-        # arrival races even with the advisory lock — re-checking here
-        # under the same lock makes the link deterministic.
-        if (channel and channel.parent_sid
-                and not channel.parent_channel):
-            parent = self.env['connect.channel'].sudo().search(
-                [('sid', '=', channel.parent_sid)], limit=1)
-            debug(self, 'Reverse parent re-link: parent_sid=%s found=%s' % (
-                channel.parent_sid, parent.id if parent else None))
-            if parent:
-                channel.parent_channel = parent
-
         call = self.process_call_event(channel)
 
         if channel:
