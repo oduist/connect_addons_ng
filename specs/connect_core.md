@@ -313,7 +313,7 @@ Order: `name`
 | `record_calls` | Boolean | Default: True |
 | `voicemail_enabled` | Boolean | |
 | `voicemail_prompt` | Text | Jinja2 template |
-| `outgoing_callerid` | Many2one | `connect.outgoing_callerid` |
+| `outgoing_callerid` | Many2one | `connect.outgoing_callerid`, domain `[('callerid_type', '=', 'number')]` (provider modules may further restrict via view-inheritance, e.g. Twilio adds the `status='validated'` filter) |
 | `missed_calls_notify` | Boolean | |
 | `greeting_message` | Char | |
 | `summary_prompt` | Char | Per-user override |
@@ -489,7 +489,7 @@ Order: `name`
 | `name` | Char | Required |
 | `exten` | Many2one | `connect.exten`, readonly |
 | `exten_number` | Char | Related |
-| `language` | Char | Default: `en-US` |
+| `language` | Selection | BCP-47, populated by `_get_language_selection()`; default `en-US` |
 | `voice` | Char | Default: `Woman` |
 | `gather_input` | Boolean | |
 | `gather_input_type` | Selection | `dtmf speech`, `dtmf`, `speech` |
@@ -509,6 +509,7 @@ Order: `name`
 | Method | Description |
 |--------|-------------|
 | `create_extension()` | Create associated `connect.exten` |
+| `_get_language_selection()` | Return list of `(code, label)` tuples for the `language` field. Override in an extension to extend/restrict the set. Default list = intersection of Twilio Polly and bundled Piper voices. |
 | `get_prompt_message()` | Abstract: return prompt for the caller |
 | `get_gather_invalid_input_message()` | Abstract: return invalid input message |
 | `get_voicemail_prompt_message()` | Abstract: return voicemail prompt |
