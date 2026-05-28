@@ -116,11 +116,17 @@ class FreeSwitchCDRController(http.Controller):
         odoo_number_id = None
 
         if variables is not None:
-            # Use effective_caller_id_number (set by Odoo directory) if
-            # caller_id_number is a SIP username rather than a number
+            # Prefer `effective_caller_id_number` — it reflects the
+            # dialplan's final caller-id at hangup. For internal
+            # extension-to-extension calls no override fires, so it
+            # equals the extension number from the directory. For
+            # external PSTN calls our `dialplan_outgoing_route` SETs it
+            # to `connect.user.outgoing_callerid.number` (ADR-021), so
+            # the call record naturally records what PSTN saw rather
+            # than the originating extension.
             effective_caller = self._xml_text(
                 variables, 'effective_caller_id_number')
-            if effective_caller and not caller.isdigit():
+            if effective_caller:
                 caller = effective_caller
 
             # B-leg discriminator: mod_xml_cdr always sets `originator`
