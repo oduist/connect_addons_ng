@@ -114,9 +114,19 @@ class FreeSwitchCDRController(http.Controller):
             if effective_caller and not caller.isdigit():
                 caller = effective_caller
 
+            # Bridge linking — mod_xml_cdr stores the peer leg UUID under
+            # several standard FreeSWITCH channel variables. Check the
+            # custom one first (set by our dialplan, if any), then the
+            # event-style header, then the regular channel variables that
+            # are *always* present on a bridged leg.
             other_leg_uuid = (
                 self._xml_text(variables, 'odoo_parent_uuid')
                 or self._xml_text(variables, 'Other-Leg-Unique-ID')
+                or self._xml_text(variables, 'signal_bond')
+                or self._xml_text(variables, 'bridge_uuid')
+                or self._xml_text(variables, 'originator')
+                or self._xml_text(variables, 'originating_leg_uuid')
+                or self._xml_text(variables, 'last_bridge_to')
             )
 
             odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
