@@ -314,16 +314,13 @@ class Call(models.Model):
         # simultaneously; each worker thread runs in its own PostgreSQL
         # transaction, so without coordination neither leg's
         # parent-channel search sees the other's INSERT and the two end
-        # up as separate connect.call records. Take an advisory lock
-        # keyed on the lesser of (own uuid, other_leg_uuid) — both legs
-        # compute the same key and the second one waits for the first
-        # to commit before running its orphan search.
-        pair_keys = [k for k in (
-            cdr_data.get('uuid'),
-            cdr_data.get('other_leg_uuid'),
-        ) if k]
-        if pair_keys:
-            lock_key = min(pair_keys)
+        # up as separate connect.call records.
+        #
+        # Lock on the originator (A-leg) uuid. The B-leg knows it via
+        # other_leg_uuid (set from `originator` by the CDR parser); the
+        # A-leg uses its own uuid. Both end up with the same key.
+        lock_key = cdr_data.get('other_leg_uuid') or cdr_data.get('uuid')
+        if lock_key:
             lock_id = zlib.crc32(lock_key.encode()) & 0x7FFFFFFF
             self.env.cr.execute(
                 'SELECT pg_advisory_xact_lock(%s)', (lock_id,))
