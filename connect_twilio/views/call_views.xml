@@ -6,7 +6,8 @@
         <field name="inherit_id" ref="connect.view_connect_call_form"/>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='channels']" position="after">
-                <page name="twilio" string="Twilio">
+                <page name="twilio" string="Twilio"
+                      invisible="provider_id and provider_id.code != 'twilio'">
                     <group>
                         <field name="call_sid"/>
                         <field name="price"/>
