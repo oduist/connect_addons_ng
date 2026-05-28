@@ -1,5 +1,6 @@
 import logging
 import re
+import zlib
 from odoo import fields, models, api
 from odoo.exceptions import UserError
 from odoo.addons.connect.models.settings import debug
@@ -307,6 +308,25 @@ class Call(models.Model):
         """
         self = self.sudo()
         debug(self, 'FreeSWITCH CDR: %s' % cdr_data)
+
+        # Serialize concurrent processing of the two legs of the same
+        # bridged call. mod_xml_cdr POSTs the A- and B-leg CDRs almost
+        # simultaneously; each worker thread runs in its own PostgreSQL
+        # transaction, so without coordination neither leg's
+        # parent-channel search sees the other's INSERT and the two end
+        # up as separate connect.call records. Take an advisory lock
+        # keyed on the lesser of (own uuid, other_leg_uuid) — both legs
+        # compute the same key and the second one waits for the first
+        # to commit before running its orphan search.
+        pair_keys = [k for k in (
+            cdr_data.get('uuid'),
+            cdr_data.get('other_leg_uuid'),
+        ) if k]
+        if pair_keys:
+            lock_key = min(pair_keys)
+            lock_id = zlib.crc32(lock_key.encode()) & 0x7FFFFFFF
+            self.env.cr.execute(
+                'SELECT pg_advisory_xact_lock(%s)', (lock_id,))
 
         status = HANGUP_CAUSE_MAP.get(
             cdr_data.get('hangup_cause', ''), 'failed')
