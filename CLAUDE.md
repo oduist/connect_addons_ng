@@ -82,16 +82,37 @@ differs. Concretely:
 - Twilio webhook routes are all under `/twilio/webhook/*` and validate `X-Twilio-Signature` when enabled
 - Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`
 
-## FreeSWITCH Docker Image
+## FreeSWITCH & Firewall Docker Images
 
-- Image: `oduist/freeswitch`
-- Dockerfile: `connect_freeswitch/deploy/Dockerfile`
-- Config files: `connect_freeswitch/deploy/freeswitch/conf/`
+- FreeSWITCH image: `oduist/freeswitch` — Dockerfile: `connect_freeswitch/deploy/Dockerfile`, config: `connect_freeswitch/deploy/freeswitch/conf/`
+- Firewall image: `oduist/freeswitch-firewall` — Dockerfile: `connect_freeswitch/deploy/firewall/Dockerfile`, sources: `connect_freeswitch/deploy/firewall/src/`
 
-**Workflow** when changing FreeSWITCH config or Dockerfile:
-1. Increment version in `connect_freeswitch/__manifest__.py` (e.g. `19.0.1.0.2` → `19.0.1.0.3`)
-2. Build image using the short version (strip Odoo prefix): `docker build --platform linux/amd64 --provenance=false --sbom=false -t oduist/freeswitch:1.0.3 -t oduist/freeswitch:latest connect_freeswitch/deploy/`
-3. Push both tags: `docker push oduist/freeswitch:1.0.3 && docker push oduist/freeswitch:latest`
+### Versioning policy
+
+The image tag is **decoupled** from both the upstream FreeSWITCH version and from the `connect_freeswitch` module version. Images are **not rebuilt on every manifest bump** — only when a release actually changes files under `connect_freeswitch/deploy/` (FreeSWITCH) or `connect_freeswitch/deploy/firewall/` (firewall service).
+
+As a result, the published image tags **lag behind** the module manifest version. That is expected. When a module release happens to coincide with a deploy-folder change, the new image tag will match the current short manifest version — and that match acts as a useful sync marker, not a contract.
+
+### Workflow when changing files under `connect_freeswitch/deploy/`
+
+1. Read the current version from `connect_freeswitch/__manifest__.py` (e.g. `19.0.1.10.4`).
+2. Strip the leading `19.0.` (Odoo series) prefix → short version (e.g. `1.10.4`).
+3. Build and push using that short version:
+   - FreeSWITCH (deploy folder changed):
+     ```
+     docker build --platform linux/amd64 --provenance=false --sbom=false \
+       -t oduist/freeswitch:<short> -t oduist/freeswitch:latest \
+       connect_freeswitch/deploy/
+     docker push oduist/freeswitch:<short> && docker push oduist/freeswitch:latest
+     ```
+   - Firewall (firewall folder changed):
+     ```
+     docker build --platform linux/amd64 --provenance=false --sbom=false \
+       -t oduist/freeswitch-firewall:<short> -t oduist/freeswitch-firewall:latest \
+       connect_freeswitch/deploy/firewall/
+     docker push oduist/freeswitch-firewall:<short> && docker push oduist/freeswitch-firewall:latest
+     ```
+4. The two images are independent — only rebuild the one whose source files actually changed in this release.
 
 ## Testing FreeSWITCH SIP Calls
 
