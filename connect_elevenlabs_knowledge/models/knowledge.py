@@ -127,7 +127,7 @@ class ElevenlabsKnowledge(models.Model):
         self.write({'state': 'creating', 'error_message': False})
 
         try:
-            client = self.env['connect.settings'].get_elevenlabs_client()
+            client = self.env['connect.provider.elevenlabs.config']._get().get_client()
             if self.document_type == 'url':
                 knowledge_base = client.conversational_ai.knowledge_base.documents.create_from_url(
                     name=self.name,
@@ -170,7 +170,7 @@ class ElevenlabsKnowledge(models.Model):
         """Delete knowledge base document with enhanced error handling and force option"""
         if self.knowledge_id:
             try:
-                client = self.env['connect.settings'].get_elevenlabs_client()
+                client = self.env['connect.provider.elevenlabs.config']._get().get_client()
                 client.conversational_ai.knowledge_base.documents.delete(
                     documentation_id=self.knowledge_id,
                     force=self.force_delete
@@ -192,7 +192,7 @@ class ElevenlabsKnowledge(models.Model):
             raise ValidationError('Cannot update document: not yet created in ElevenLabs')
 
         try:
-            client = self.env['connect.settings'].get_elevenlabs_client()
+            client = self.env['connect.provider.elevenlabs.config']._get().get_client()
             client.conversational_ai.knowledge_base.documents.update(
                 documentation_id=self.knowledge_id,
                 name=new_name
@@ -212,7 +212,7 @@ class ElevenlabsKnowledge(models.Model):
     def sync_with_elevenlabs(self, page_size=30, search_term=None):
         """Sync local records with ElevenLabs knowledge base using the list API"""
         try:
-            client = self.env['connect.settings'].get_elevenlabs_client()
+            client = self.env['connect.provider.elevenlabs.config']._get().get_client()
             response = client.conversational_ai.knowledge_base.list(
                 page_size=page_size,
                 search=search_term,

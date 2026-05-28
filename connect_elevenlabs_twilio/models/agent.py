@@ -64,7 +64,7 @@ class ElevenlabsAgent(models.Model):
         if err:
             return err
         self = self.sudo()
-        client = self.env['connect.settings'].get_client()
+        client = self.env['connect.provider.twilio.config'].sudo().get_client()
         channel = self.env['connect.channel'].search([('sid', '=', channel_sid)])
         twiml = exten_rec.render(
             {"Caller": channel.caller, "Called": channel.called, "CallSid": channel.sid}
