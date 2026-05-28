@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="connect_elevenlabs.connect_elevenlabs_agent_form"/>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='conversation']" position="after">
-                <page name="twilio" string="Twilio">
+                <page name="twilio" string="Twilio" invisible="provider_code != 'twilio'">
                     <group>
                         <field name="twilio_sip_host"/>
                     </group>

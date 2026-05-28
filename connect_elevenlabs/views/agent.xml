@@ -19,6 +19,7 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
+                <field name="provider_id" optional="show"/>
                 <field name="llm"/>
                 <field name="voice"/>
                 <field name="language" optional="show"/>
@@ -44,6 +45,12 @@
                             <label class="oe_edit_only" for="name"/>
                             <field name="name" placeholder="Agent name..."/>
                         </h1>
+                        <group>
+                            <field name="provider_id" widget="radio"
+                                   options="{'horizontal': true}"
+                                   readonly="exten or el_virtual_number_uid"/>
+                            <field name="provider_code" invisible="1"/>
+                        </group>
                     </div>
                     <notebook>
                         <page name="prompt" string="Prompt">
