@@ -68,3 +68,15 @@ The **Transcript Provider** setting (on the Transcription tab) now includes an *
 ## Licensing
 
 `connect_elevenlabs` requires a valid Oduist license. Check **Oduist → Licenses** to confirm entitlement; extensions (`_helpdesk`, `_knowledge`, `_sale`) are licensed separately.
+
+## Choosing a provider for an agent
+
+Each ElevenLabs agent must be bound to one telephony provider — the
+one that routes calls to it. Pick the provider in the agent form
+header. Twilio agents accept inbound SIP from Twilio's signaling
+range by default; FreeSWITCH agents allow all by default — restrict
+this in production via the *SIP Routing* tab.
+
+The provider is locked once you assign an extension to the agent.
+To switch provider on an existing agent, first remove the extension,
+change the provider, then re-assign an extension.
