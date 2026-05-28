@@ -334,7 +334,7 @@ class Call(models.Model):
 
         channel = self.env['connect.channel'].process_channel_event(
             generic_params)
-        call = self.process_call_event(channel)
+        call = self.process_call_event(channel, provider_code='freeswitch')
 
         if channel:
             # Reverse orphan check: find channels that arrived before this one

@@ -66,7 +66,8 @@ class Call(models.Model):
             }
 
         # Core call processing
-        call_id = self.process_call_event(channel, error_data)
+        call_id = self.process_call_event(
+            channel, error_data, provider_code='twilio')
 
         # Twilio-specific: Desktop notification for incoming SIP calls
         if (channel.call

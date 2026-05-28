@@ -135,7 +135,7 @@ class Call(models.Model):
         return super().write(vals)
 
     @api.model
-    def process_call_event(self, channel, error_data=None):
+    def process_call_event(self, channel, error_data=None, provider_code=None):
         """Process call event after channel has been created/updated.
 
         Provider modules call this after process_channel_event() to create
@@ -144,6 +144,9 @@ class Call(models.Model):
         Args:
             channel: connect.channel record
             error_data: optional dict with 'error_code', 'error_message'
+            provider_code: connect.provider.code of the calling provider;
+                stamped on freshly created calls so the UI/filter knows
+                which provider handled the call.
 
         Returns:
             call id or False
@@ -161,7 +164,7 @@ class Call(models.Model):
         if not channel.parent_channel and not channel.call:
             # First leg: create a new call
             direction = self._determine_direction(channel)
-            call = self.with_context(tracking_disable=True).create({
+            vals = {
                 'partner': channel.partner.id,
                 'called': channel.called_number,
                 'caller': channel.caller_number,
@@ -170,7 +173,13 @@ class Call(models.Model):
                 'caller_user': channel.caller_user.id,
                 'direction': direction,
                 'call_type': channel.call_type or 'phone',
-            })
+            }
+            if provider_code:
+                provider = self.env['connect.provider'].search(
+                    [('code', '=', provider_code)], limit=1)
+                if provider:
+                    vals['provider_id'] = provider.id
+            call = self.with_context(tracking_disable=True).create(vals)
             channel.call = call
         elif channel.parent_channel and channel.parent_channel.call:
             # Secondary leg: assign call from parent
