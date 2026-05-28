@@ -1,5 +1,6 @@
 import logging
 import re
+import zlib
 from odoo import fields, models, api
 from odoo.exceptions import UserError
 from odoo.addons.connect.models.settings import debug
@@ -307,6 +308,23 @@ class Call(models.Model):
         """
         self = self.sudo()
         debug(self, 'FreeSWITCH CDR: %s' % cdr_data)
+
+        # Serialize the two bridged-leg CDRs so the second one's
+        # parent/orphan search sees the first one's INSERT.
+        # mod_xml_cdr POSTs both legs almost simultaneously; with Odoo
+        # running multi-process (workers > 0), each leg runs in its own
+        # PostgreSQL session and would otherwise commit independently
+        # — neither leg's search would see the other.
+        #
+        # Lock key is the originator (A-leg) uuid: the B-leg knows it as
+        # other_leg_uuid (= `originator` from the CDR parser); the A-leg
+        # uses its own uuid. Both legs end up on the same key, so the
+        # second one waits for the first to commit before proceeding.
+        lock_key = cdr_data.get('other_leg_uuid') or cdr_data.get('uuid')
+        if lock_key:
+            lock_id = zlib.crc32(lock_key.encode()) & 0x7FFFFFFF
+            self.env.cr.execute(
+                'SELECT pg_advisory_xact_lock(%s)', (lock_id,))
 
         status = HANGUP_CAUSE_MAP.get(
             cdr_data.get('hangup_cause', ''), 'failed')
