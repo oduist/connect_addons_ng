@@ -73,3 +73,23 @@ class ElevenLabsProvider(models.Model):
                        hashlib.sha256)
         expected_sig = 'v0=' + mac.hexdigest()
         return hmac.compare_digest(expected_sig, sig_part.strip())
+
+    # ------------------------------------------------------------------
+    # ElevenLabs agent dispatch hooks (ADR-026)
+    # ------------------------------------------------------------------
+
+    def _elevenlabs_has_bridge(self):
+        """Return True if this provider has an installed EL bridge
+        (connect_elevenlabs_twilio / connect_elevenlabs_freeswitch / …).
+
+        Base implementation: False. Each bridge module overrides for
+        its own code via the usual `if self.code != 'xxx': return
+        super()._elevenlabs_has_bridge(); return True` pattern."""
+        return False
+
+    def _elevenlabs_default_inbound_ips(self):
+        """Default value for `connect.elevenlabs_agent.el_inbound_allowed_ips`
+        when this provider is selected. Base: empty string (allow-all).
+        Twilio bridge returns the Twilio SIP signaling range; FS bridge
+        returns ''."""
+        return ''
