@@ -102,6 +102,20 @@ class ElevenlabsAgent(models.Model):
     _name = "connect.elevenlabs_agent"
     _description = "Elevenlabs Agent"
 
+    provider_id = fields.Many2one(
+        'connect.provider',
+        string='Provider',
+        required=True,
+        ondelete='restrict',
+        default=lambda self: self._default_provider_id(),
+        domain=lambda self: self._provider_domain(),
+        help='Telephony provider that delivers calls to this '
+             'ElevenLabs agent (SIP bridge + transfer back-channel).',
+    )
+    provider_code = fields.Char(
+        related='provider_id.code', store=False, readonly=True,
+        string='Provider code',
+    )
     name = fields.Char(required=True)
     voice = fields.Many2one("connect.elevenlabs_voice", required=True)
     first_message = fields.Char(
@@ -216,6 +230,23 @@ class ElevenlabsAgent(models.Model):
         )
         for rec in self:
             rec.has_transfer_tool = transfer_tool in rec.tools if transfer_tool else False
+
+    @api.model
+    def _default_provider_id(self):
+        Provider = self.env['connect.provider'].sudo()
+        eligible = Provider.search([]).filtered(
+            lambda p: p._elevenlabs_has_bridge())
+        if not eligible:
+            return False
+        twilio = eligible.filtered(lambda p: p.code == 'twilio')
+        return twilio.id if twilio else eligible[0].id
+
+    @api.model
+    def _provider_domain(self):
+        Provider = self.env['connect.provider'].sudo()
+        eligible = Provider.search([]).filtered(
+            lambda p: p._elevenlabs_has_bridge())
+        return [('id', 'in', eligible.ids)]
 
     @api.onchange("active_prompt_version")
     def _onchange_active_prompt_version(self):
