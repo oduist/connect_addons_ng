@@ -134,6 +134,16 @@ class FreeSwitchCDRController(http.Controller):
             if effective_caller:
                 caller = effective_caller
 
+            # Click-to-call originates `user/<login>@<domain>`, so the
+            # A-leg's caller_profile.destination_number is the resolved
+            # user URI rather than the dialled number. The originate
+            # path stashes the real destination as a channel variable;
+            # use it when present.
+            odoo_destination = urllib.parse.unquote(self._xml_text(
+                variables, 'odoo_destination_number'))
+            if odoo_destination:
+                called = odoo_destination
+
             # B-leg discriminator: mod_xml_cdr always sets `originator`
             # (and `originating_leg_uuid`) on the originatee side; the
             # originator does not have them. `bridge_uuid` / `signal_bond`

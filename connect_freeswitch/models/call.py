@@ -221,6 +221,11 @@ class Call(models.Model):
                 (caller_name or caller_number).replace("'", "")),
             "origination_caller_id_number={}".format(caller_number),
             "odoo_caller_pbx_user_id={}".format(connect_user.id),
+            # `originate user/<login>@<domain>` makes the A-leg's
+            # caller_profile.destination_number the resolved user URI
+            # (e.g. "u:<verto-uuid>"), not the dialled number. Stash
+            # the real destination so the CDR parser can recover it.
+            "odoo_destination_number={}".format(number),
         ]
         if partner_id:
             variables.append("odoo_partner_id={}".format(partner_id))
