@@ -107,9 +107,7 @@ class Number(models.Model):
                 if field != vals['destination']:
                     vals.update({field: None})
         res = super().write(vals)
-        if not self.env["connect.settings"].get_param(
-            "twilio_auto_sync"
-        ):
+        if not self.env['connect.provider.twilio.config'].sudo()._get().auto_sync:
             return res
         client = self.env['connect.provider.twilio.config'].sudo().get_client()
         for rec in self:

@@ -107,8 +107,8 @@ class ConnectWhatsappSender(models.Model):
     @api.model
     def sync(self):
         settings = self.env['connect.settings']
-        account_sid = settings.get_param('account_sid')
-        auth_token = settings.get_param('auth_token')
+        account_sid = self.env['connect.provider.twilio.config'].sudo()._get().account_sid
+        auth_token = self.env['connect.provider.twilio.config'].sudo()._get().auth_token
         if not account_sid or not auth_token:
             raise ValidationError('Twilio credentials are not configured.')
         url = 'https://messaging.twilio.com/v2/Channels/Senders'

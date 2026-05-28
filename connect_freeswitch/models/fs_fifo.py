@@ -76,8 +76,7 @@ class FsFifo(models.Model):
         self.ensure_one()
         number = exten.number if exten else self.exten_number or str(self.id)
 
-        fs_domain = self.env['connect.settings'].sudo().get_param(
-            'freeswitch_domain') or '${domain}'
+        fs_domain = self.env['connect.provider.freeswitch.config'].sudo()._get().domain or '${domain}'
 
         base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''
         recording_url = ''

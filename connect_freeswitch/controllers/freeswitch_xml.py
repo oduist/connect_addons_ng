@@ -512,8 +512,7 @@ class FreeSwitchXMLController(http.Controller):
         FsFifo = request.env['connect.fs_fifo'].sudo()
         fifos = FsFifo.search([])
 
-        fs_domain = request.env['connect.settings'].sudo().get_param(
-            'freeswitch_domain') or '${domain}'
+        fs_domain = request.env['connect.provider.freeswitch.config'].sudo()._get().domain or '${domain}'
 
         fifo_data = []
         for fifo in fifos:

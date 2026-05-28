@@ -196,9 +196,7 @@ class FirewallEvent(models.Model):
     def _cron_cleanup(self):
         """Delete events older than firewall_event_retention_days. Called from ir.cron."""
         days = int(
-            self.env["connect.settings"].sudo().get_param(
-                "firewall_event_retention_days", 30
-            )
+            self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_event_retention_days or 30
         )
         cutoff = fields.Datetime.now() - timedelta(days=days)
         old = self.search([("ts", "<", cutoff)])
@@ -234,9 +232,7 @@ class FirewallAgent(models.Model):
     def _compute_status(self):
         now = fields.Datetime.now()
         heartbeat_interval = int(
-            self.env["connect.settings"].sudo().get_param(
-                "firewall_heartbeat_interval", 60
-            )
+            self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_heartbeat_interval or 60
         )
         for rec in self:
             if not rec.last_seen:
