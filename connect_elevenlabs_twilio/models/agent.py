@@ -14,8 +14,10 @@ class ElevenlabsAgent(models.Model):
 
     twilio_sip_host = fields.Char(
         string='ElevenLabs SIP Host',
-        default='sip.elevenlabs.io',
-        help="SIP host of the ElevenLabs inbound trunk.",
+        default='sip.rtc.elevenlabs.io',
+        help="SIP host of the ElevenLabs inbound trunk. EL terminates "
+             "inbound SIP on sip.rtc.elevenlabs.io (TLS:5061); the legacy "
+             "sip.elevenlabs.io does not resolve.",
     )
 
     def render(self, request, params=None):
@@ -30,10 +32,16 @@ class ElevenlabsAgent(models.Model):
                 "<Pause length='1'/></Response>"
             )
         channel_sid = request.get('CallSid')
-        host = self.twilio_sip_host or 'sip.elevenlabs.io'
+        host = self.twilio_sip_host or 'sip.rtc.elevenlabs.io'
         response = VoiceResponse()
         dial = Dial()
-        dial.sip(f"sip:{self.agent_uid}@{host}?X-Call-Sid={channel_sid}")
+        # EL accepts inbound SIP over TLS:5061 / TCP:5060 only — never UDP,
+        # which is Twilio's <Sip> default. Force TLS transport explicitly
+        # (Twilio routes `;transport=tls`; it ignores the `sips:` scheme).
+        dial.sip(
+            f"sip:{self.agent_uid}@{host}:5061;transport=tls"
+            f"?X-Call-Sid={channel_sid}"
+        )
         response.append(dial)
         debug(self, pretty_xml(response))
         return response
