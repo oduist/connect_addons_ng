@@ -214,9 +214,14 @@ class ElevenlabsAgent(models.Model):
     )
     el_inbound_allowed_ips = fields.Text(
         string="Inbound Allowed IPs",
-        default=lambda self: self._default_el_inbound_allowed_ips(),
+        compute="_compute_el_inbound_allowed_ips",
+        store=True,
+        readonly=False,
         help="IP addresses or CIDR ranges (comma- or newline-separated) "
-             "ElevenLabs will accept inbound SIP INVITEs from. Empty allows all.",
+             "ElevenLabs will accept inbound SIP INVITEs from. Empty allows all. "
+             "Defaults track the selected provider (Twilio → Twilio signaling "
+             "IPs; FreeSWITCH → empty/allow-all) and reset when the provider "
+             "changes; a manual edit is preserved until then.",
     )
     template = fields.Many2one("connect.elevenlabs_agent_template", ondelete="set null")
     transfer_to_agent = fields.One2many("connect.elevenlabs_agent_transfer", "agent")
@@ -232,14 +237,21 @@ class ElevenlabsAgent(models.Model):
         for rec in self:
             rec.has_transfer_tool = transfer_tool in rec.tools if transfer_tool else False
 
-    @api.model
-    def _default_el_inbound_allowed_ips(self):
-        provider_id = self._context.get('default_provider_id') \
-            or self._default_provider_id()
-        if not provider_id:
-            return ''
-        provider = self.env['connect.provider'].sudo().browse(provider_id)
-        return provider._elevenlabs_default_inbound_ips()
+    @api.depends("provider_id")
+    def _compute_el_inbound_allowed_ips(self):
+        """Track the agent's actual provider for the EL inbound allow-list.
+
+        Replaces the former create-time default (which resolved the
+        globally-preferred provider — Twilio — and never followed a
+        provider switch in the form, leaving FreeSWITCH agents with
+        Twilio's signaling IPs; see ADR-026 follow-up). store=True +
+        readonly=False keeps the value editable; it is only recomputed
+        when provider_id changes."""
+        for rec in self:
+            rec.el_inbound_allowed_ips = (
+                rec.provider_id._elevenlabs_default_inbound_ips()
+                if rec.provider_id else ''
+            )
 
     @api.model
     def _default_provider_id(self):
