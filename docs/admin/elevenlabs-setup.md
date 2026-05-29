@@ -80,3 +80,9 @@ this in production via the *SIP Routing* tab.
 The provider is locked once you assign an extension to the agent.
 To switch provider on an existing agent, first remove the extension,
 change the provider, then re-assign an extension.
+
+The *Inbound Allowed IPs* default follows the selected provider and is
+reset whenever you change the provider (a manual edit is kept until the
+next provider change). Twilio agents reach ElevenLabs over the
+`sip.rtc.elevenlabs.io` trunk (TLS:5061) — the legacy `sip.elevenlabs.io`
+host does not resolve and must not be used.

@@ -256,6 +256,47 @@ ship in the same commit:
 
 ---
 
+## Follow-up — ODU-25 (2026-05-29): two residual bugs found in live testing
+
+After the plan above shipped, neither EL agent extension routed a call
+(`freeswitch-19`). Two gaps remained:
+
+1. **FreeSWITCH agents kept Twilio's inbound IP allow-list.** §4's
+   `_default_el_inbound_allowed_ips` resolved via `_default_provider_id()`
+   (which prefers Twilio) at create-time, and **nothing recomputed the
+   field when the user switched `provider_id` to FreeSWITCH** in the
+   form. The Twilio IP list was then provisioned onto the agent's EL
+   `phone_number` inbound trunk, so EL rejected our FreeSWITCH source IP
+   and returned SIP `404 UNALLOCATED_NUMBER` for `444`. (Verified:
+   relaxing the EL entity to `0.0.0.0/0` made the call answer.)
+
+   **Fix:** `el_inbound_allowed_ips` becomes a **computed-stored**
+   (`@api.depends('provider_id')`, `readonly=False`) field — it tracks
+   the agent's actual provider on both UI switch and programmatic
+   create, resets on provider change, and preserves a manual edit until
+   then. `_default_el_inbound_allowed_ips` is removed.
+
+2. **Twilio bridge dialed a non-existent SIP host.** `twilio_sip_host`
+   defaulted to `sip.elevenlabs.io`, which is **NXDOMAIN**. EL only
+   terminates inbound SIP on `sip.rtc.elevenlabs.io` (TLS:5061 /
+   TCP:5060; UDP unavailable — and Twilio's `<Sip>` default is UDP).
+   `555` therefore never reached EL.
+
+   **Fix:** default `twilio_sip_host` → `sip.rtc.elevenlabs.io`, and
+   `render()` now emits `sip:{agent_uid}@{host}:5061;transport=tls?
+   X-Call-Sid=…` (Twilio routes `;transport=tls`; it ignores the
+   `sips:` scheme).
+
+Data fix for the two already-provisioned agents (clear FS agent's
+allow-list + re-sync; correct the Twilio agent's host). Versions:
+`connect_elevenlabs` `1.1.14`→`1.1.15`, `connect_elevenlabs_twilio`
+`1.1.3`→`1.1.4`. Tests added to
+`tests_suite/connect_elevenlabs/tests/test_agent_provider.py`. Both
+extensions verified end-to-end (444 via `fs_cli originate` → EL
+answers; 555 TwiML validated against the resolved host/transport).
+
+---
+
 # Implementation plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
