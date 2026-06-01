@@ -34,7 +34,7 @@ class ElevenlabsAgent(models.Model):
         channel_sid = request.get('CallSid')
         host = self.twilio_sip_host or 'sip.rtc.elevenlabs.io'
         response = VoiceResponse()
-        dial = Dial()
+        dial = Dial(callerId=self._resolve_caller_id(request))
         # EL accepts inbound SIP over TLS:5061 / TCP:5060 only — never UDP,
         # which is Twilio's <Sip> default. Force TLS transport explicitly
         # (Twilio routes `;transport=tls`; it ignores the `sips:` scheme).
@@ -45,6 +45,24 @@ class ElevenlabsAgent(models.Model):
         response.append(dial)
         debug(self, pretty_xml(response))
         return response
+
+    def _resolve_caller_id(self, request):
+        """Pick a Twilio-acceptable callerId for the Dial->Sip.
+
+        Twilio rejects non-E.164 chars on SIP Dial (error 13247), so a raw
+        WebRTC/SIP-client caller (`client:...`, `sip:...`) cannot be passed
+        through. Keep the caller only when it is a clean E.164 number,
+        otherwise fall back to the default DID, and finally to ``anonymous``.
+        """
+        self.ensure_one()
+        caller = (request or {}).get('Caller') or ''
+        if caller.startswith('+') and caller[1:].isdigit():
+            return caller
+        default = self.env['connect.outgoing_callerid'].sudo().search(
+            [('is_default', '=', True)], limit=1)
+        if default and default.number:
+            return default.number
+        return 'anonymous'
 
     @api.model
     def transfer(self, channel_sid=None, exten=None):
