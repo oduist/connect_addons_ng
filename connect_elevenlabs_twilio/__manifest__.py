@@ -2,7 +2,7 @@
 
 {
     'name': 'Connect ElevenLabs - Twilio Bridge',
-    'version': '1.1.5',
+    'version': '19.0.1.1.5',
     'author': 'Oduist',
     'maintainer': 'Oduist',
     'support': 'support@oduist.com',
