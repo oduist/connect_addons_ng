@@ -102,6 +102,10 @@ Specifically:
 
 ## Conventions
 
+- **Always write comments in English.** This applies to all source and
+  config files (Python, JS, XML, YAML, Dockerfiles, etc.). Do not leave
+  comments in Russian or any other language; translate existing
+  non-English comments to English when you touch the surrounding code.
 - Models follow `connect.<name>` naming (e.g., `connect.call`, `connect.recording`)
 - Protected settings fields (API keys, tokens) are masked with `****` for non-managers
 - Debug logging uses `connect.debug` model with daily cron cleanup
