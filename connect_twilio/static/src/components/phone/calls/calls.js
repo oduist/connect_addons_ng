@@ -119,7 +119,7 @@ export class Calls extends Component {
 
     async _getCalls() {
         this.state.calls = []
-        const domain = ["|", ["caller_user", "=", this.user], ["called_users", "=", this.user]]
+        const domain = [["provider_id.code", "=", "twilio"], "|", ["caller_user", "=", this.user], ["called_users", "=", this.user]]
         const records = await this.orm.call("connect.call", "get_widget_calls", [domain, 20])
         for (const item of records) {
             const call_number = item.called_users[0] === this.user ? item.caller : item.called
