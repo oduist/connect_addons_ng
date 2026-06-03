@@ -155,6 +155,14 @@ Routes determine how outbound calls are sent through SIP gateways.
 
 Routes are evaluated in priority order; the first matching pattern is used.
 
+**Caller ID presented on outbound calls.** For calls leaving through a
+gateway, only the **number** is sent to the PSTN — taken from the calling
+user's **Outgoing CallerID** (`Connect > Users`) when configured, otherwise
+the user's extension. The caller-id **name** is intentionally left blank so
+the internal caller's name is never disclosed to the outside world. Internal
+extension-to-extension calls are unaffected and still show the caller's
+extension/name.
+
 **Example routes:**
 
 | Name | Pattern | Gateway | Strip | Prefix |
