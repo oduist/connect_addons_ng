@@ -262,6 +262,28 @@ uv pip install "odoo-addon-connect-freeswitch @ git+https://github.com/oduist/co
 
 Replace `@19.0` with `@18.0` for the Odoo 18 series. Tests are not available in this mode.
 
+## Running tests in an oduflow environment
+
+`tests_suite` lives **only on the local workstation**. The oduflow Odoo
+environment has **no access** to the private submodule, and `pull_and_apply`
+will **not** carry the tests across: `pull_and_apply` syncs via `git push`,
+where `tests_suite` is just a gitlink whose contents are never pushed (and
+`.gitmodules` carries `update = none` anyway). So after `pull_and_apply` the
+environment still has an empty `tests/` loader and `run_odoo_tests` finds
+nothing.
+
+To run a specific test in an oduflow environment:
+
+1. Read the test locally from `tests_suite/<addon>/tests/test_<name>.py`.
+2. Copy it into the environment with the **`write_file_in_odoo`** MCP tool,
+   writing to the path the loader scans — `tests_suite/<addon>/tests/test_<name>.py`
+   (relative to the repo root inside the container).
+3. Run `run_odoo_tests <addon>`.
+
+Do **not** rely on `pull_and_apply` to deliver test files — it never will.
+Treat `write_file_in_odoo` as the only channel for getting a `test_*.py`
+into the environment.
+
 ## Self-driven verification of changes
 
 When a change can realistically be checked in the UI, verify it yourself — do not delegate the check to the user.
