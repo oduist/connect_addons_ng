@@ -146,12 +146,15 @@ twin) is bootstrapped on install / upgrade by `setup_firewall(env)` in
 
 See `security/access_rules.xml`.
 
+Firewall models are **admin-only** — `connect_user` has no access at all (the
+`Firewall` menu is also gated on `connect.group_admin`).
+
 | Model | `connect_admin` | `connect_user` |
 |---|---|---|
-| `connect.firewall.whitelist` | CRUD | read |
-| `connect.firewall.blacklist` | CRUD | read |
-| `connect.firewall.event` | read + unlink | read |
-| `connect.firewall.agent` | read + write | read |
+| `connect.firewall.whitelist` | CRUD | — |
+| `connect.firewall.blacklist` | CRUD | — |
+| `connect.firewall.event` | read + unlink | — |
+| `connect.firewall.agent` | read + write | — |
 
 Whitelist / blacklist edits are admin-only via the Odoo UI; the
 service has no model-level access at all because it goes through the
