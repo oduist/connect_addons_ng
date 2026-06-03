@@ -1,6 +1,6 @@
 """Backfill auth_password for endpoints created before passphrase generation.
 
-In 19.0.1.10.0 ``connect.endpoint.auth_password`` became an auto-generated,
+In 18.0.1.10.0 ``connect.endpoint.auth_password`` became an auto-generated,
 read-only passphrase. Endpoints that predate this change may have an empty
 password. This migration fills only those; endpoints with a password already
 set (including weak manual ones) are left untouched, per the non-destructive
