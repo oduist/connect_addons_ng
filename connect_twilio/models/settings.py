@@ -87,11 +87,8 @@ class Settings(models.Model):
     @api.model
     def get_client(self):
         try:
-            (
-                self.check_access_rule("read")
-                if release.version_info[0] < 18
-                else self.check_access("read")
-            )
+            # connect.settings is admin-only; credentials are read with sudo()
+            # below, so no caller-level model access check is needed here.
             account_sid = self.sudo().get_param("account_sid")
             auth_token = self.sudo().get_param("auth_token")
             client = Client(account_sid, auth_token)

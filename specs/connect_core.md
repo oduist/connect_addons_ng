@@ -738,16 +738,33 @@ All models get access rules for the three groups:
 | `connect.callflow_choice` | Read | Full | - |
 | `connect.user_callflow` | Read | Full | - |
 | `connect.user_callflow_call` | Read | Full | - |
-| `connect.debug` | Read | Full | Create |
-| `connect.settings` | Read | Full | - |
-| `connect.endpoint` | Read | Full | - |
-| `connect.message_configuration` | Read | Full | - |
+| `connect.debug` | - | Full | Create |
+| `connect.settings` | - | Full | - |
+| `connect.endpoint` | Read+Write | Full | - |
+| `connect.message_configuration` | - | Full | - |
 | `connect.favorite` | Read+Write | Full | - |
+
+`connect.settings`, `connect.debug` and `connect.message_configuration` are
+**admin-only** — `group_user` has no model access. End-user features still need
+configuration values, so `connect.settings.get_param()` sudo-finds the singleton
+and returns the value without requiring the caller to hold model access; it only
+blocks parameters whose field carries a `groups=` restriction (the secrets, e.g.
+`openai_api_key`, Twilio `auth_token`, `firewall_service_token`) for non-members,
+so a plain user cannot read secrets via `get_param` over RPC. `set_param` stays
+non-sudo (configuration writes remain manager-only). The `debug()` helper writes
+`connect.debug` via sudo, so logging from user-triggered code keeps working.
 
 ### Record Rules
 
 - Users see only their own `connect.user` records
 - Admins see all `connect.user` records
+- Users can read and edit only `connect.endpoint` records linked to their own
+  `connect.user` (`connect_user_id.user = user`); admins see all
+  (`rule_connect_endpoint_user` / `rule_connect_endpoint_admin`). The record rule
+  applies to write as well, so a user can self-manage their own SIP device
+  (Regenerate password, set Originate Ring / auto-answer header) but never touch
+  another user's endpoint — and one user's `auth_password` stays out of another's
+  reach. `group_user` has read+write but not create/unlink on the model.
 - Users see calls/messages/recordings associated with their `connect.user` or where they
   are the `caller_user`/`answered_user`/`sender_user`
 
