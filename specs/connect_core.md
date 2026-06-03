@@ -740,7 +740,7 @@ All models get access rules for the three groups:
 | `connect.user_callflow_call` | Read | Full | - |
 | `connect.debug` | Read | Full | Create |
 | `connect.settings` | Read | Full | - |
-| `connect.endpoint` | Read | Full | - |
+| `connect.endpoint` | Read+Write | Full | - |
 | `connect.message_configuration` | Read | Full | - |
 | `connect.favorite` | Read+Write | Full | - |
 
@@ -748,10 +748,13 @@ All models get access rules for the three groups:
 
 - Users see only their own `connect.user` records
 - Admins see all `connect.user` records
-- Users see only `connect.endpoint` records linked to their own `connect.user`
-  (`connect_user_id.user = user`); admins see all (`rule_connect_endpoint_user` /
-  `rule_connect_endpoint_admin`). This keeps the FreeSWITCH `auth_password` of one
-  user's SIP device out of other users' reach.
+- Users can read and edit only `connect.endpoint` records linked to their own
+  `connect.user` (`connect_user_id.user = user`); admins see all
+  (`rule_connect_endpoint_user` / `rule_connect_endpoint_admin`). The record rule
+  applies to write as well, so a user can self-manage their own SIP device
+  (Regenerate password, set Originate Ring / auto-answer header) but never touch
+  another user's endpoint — and one user's `auth_password` stays out of another's
+  reach. `group_user` has read+write but not create/unlink on the model.
 - Users see calls/messages/recordings associated with their `connect.user` or where they
   are the `caller_user`/`answered_user`/`sender_user`
 

@@ -74,18 +74,23 @@ Prior art in the codebase:
 Storing a strong password is pointless if every user can read it. Two
 row/menu-level fixes ship in the same change:
 
-1. **Endpoints are private to their owner.** `connect.endpoint` had an
-   `ir.model.access` granting `group_user` read but **no record rule**,
-   so any Connect user could list every endpoint — and now every SIP
-   password. Added `rule_connect_endpoint_user`
+1. **Endpoints are private to their owner — and self-manageable.**
+   `connect.endpoint` had an `ir.model.access` granting `group_user` read
+   but **no record rule**, so any Connect user could list every endpoint —
+   and now every SIP password. Added `rule_connect_endpoint_user`
    (`[('connect_user_id.user', '=', user.id)]`) and the paired
    `rule_connect_endpoint_admin` (`[(1, '=', 1)]`) in core
    `connect/security/record_rules.xml`, mirroring the existing
    `connect.user` / `connect.call` rules. Rules live in **core** because
    the model and `connect_user_id` are core; `group_admin` implies
    `group_user`, so the admin rule is required for admins to keep full
-   visibility. The FreeSWITCH directory/dialplan controllers read
-   endpoints via `sudo()`, so XML generation is unaffected.
+   visibility. The record rule covers **write**, and `group_user` is
+   granted `perm_write` (but not create/unlink) on the model, so a user can
+   self-manage their own device — Regenerate the password, toggle Originate
+   Ring, set the auto-answer header — yet can never touch another user's
+   endpoint (a write that would move `connect_user_id` away from the owner
+   is rejected by the rule). The FreeSWITCH directory/dialplan controllers
+   read endpoints via `sudo()`, so XML generation is unaffected.
 
 2. **Firewall is admin-only.** `group_user` previously had read access to
    `connect.firewall.{whitelist,blacklist,event,agent}`. Those four
