@@ -32,7 +32,7 @@
                 <t t-set="avatar" t-value="'/web/image?model=res.partner&amp;field=avatar_128&amp;id=' + state.call.partner[0]"/>
             </t>
             <t t-else="">
-                <t t-set="avatar" t-value="'/connect/static/src/images/default_contact.jpg'"/>
+                <t t-set="avatar" t-value="'/connect_twilio/static/src/images/default_contact.jpg'"/>
                 <t t-if="state.call.called_users[0] === user">
                     <t t-if="state.call.caller_user" t-set="avatar" t-value="'/web/image?model=res.users&amp;field=avatar_128&amp;id=' + state.call.caller_user[0]"/>
                 </t>
@@ -88,7 +88,7 @@
                                t-value="'/web/image?model=res.partner&amp;field=avatar_128&amp;id=' + call.partner[0]"/>
                         </t>
                         <t t-else="">
-                            <t t-set="avatar" t-value="'/connect/static/src/images/default_contact.jpg'"/>
+                            <t t-set="avatar" t-value="'/connect_twilio/static/src/images/default_contact.jpg'"/>
                             <t t-if="call.called_users[0] === user">
                                 <t t-if="call.caller_user" t-set="avatar" t-value="'/web/image?model=res.users&amp;field=avatar_128&amp;id=' + call.caller_user[0]"/>
                             </t>

@@ -18,7 +18,7 @@
                             <t t-set="caller_id" t-value="favorite.user[1]"/>
                         </t>
                         <t t-else="">
-                            <t t-set="avatar" t-value="'/connect/static/src/images/default_contact.jpg'"/>
+                            <t t-set="avatar" t-value="'/connect_twilio/static/src/images/default_contact.jpg'"/>
                             <t t-set="caller_id" t-value="favorite.name"/>
                         </t>
                         <tr class="d-flex" t-on-click="() => this._onClickContactCall(favorite.phone_number)" t-attf-title="Call to {{favorite.phone_number}}">

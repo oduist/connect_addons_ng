@@ -52,7 +52,7 @@ export class PhoneSysTray extends Component {
         onWillStart(async () => {
             if (this.permissionsChecked) return
             this.testPlayer = new Audio()
-            this.testPlayer.src = "/connect/static/src/sounds/mute.mp3"
+            this.testPlayer.src = "/connect_twilio/static/src/sounds/mute.mp3"
             this.testPlayer.volume = 0.5
             const self = this
             // Check microphone permission for Chrome
