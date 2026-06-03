@@ -69,11 +69,37 @@ Prior art in the codebase:
   password an operator already programmed into a live device would break
   that device's registration on upgrade.
 
+## Related security hardening
+
+Storing a strong password is pointless if every user can read it. Two
+row/menu-level fixes ship in the same change:
+
+1. **Endpoints are private to their owner.** `connect.endpoint` had an
+   `ir.model.access` granting `group_user` read but **no record rule**,
+   so any Connect user could list every endpoint — and now every SIP
+   password. Added `rule_connect_endpoint_user`
+   (`[('connect_user_id.user', '=', user.id)]`) and the paired
+   `rule_connect_endpoint_admin` (`[(1, '=', 1)]`) in core
+   `connect/security/record_rules.xml`, mirroring the existing
+   `connect.user` / `connect.call` rules. Rules live in **core** because
+   the model and `connect_user_id` are core; `group_admin` implies
+   `group_user`, so the admin rule is required for admins to keep full
+   visibility. The FreeSWITCH directory/dialplan controllers read
+   endpoints via `sudo()`, so XML generation is unaffected.
+
+2. **Firewall is admin-only.** `group_user` previously had read access to
+   `connect.firewall.{whitelist,blacklist,event,agent}`. Those four
+   `*_user` `ir.model.access` records were removed (Odoo drops the stale
+   rows on upgrade) and `menu_firewall_root` is gated on
+   `connect.group_admin`. Firewall is an infrastructure concern with no
+   end-user use case.
+
 ## Cross-branch backport
 
 Per `CLAUDE.md` versioning rules, port to the `18.0` branch with the
-aligned tail version `18.0.1.10.0`, reusing the same
-`generate_passphrase()` / `backfill_endpoint_passwords()` helpers, with
+aligned tail versions `18.0.1.10.0` (`connect_freeswitch`) and
+`18.0.3.1.5` (`connect`), reusing the same `generate_passphrase()` /
+`backfill_endpoint_passwords()` helpers and the same security rules, with
 the per-series entry point `migrations/18.0.1.10.0/post-migrate.py`.
 Ships as a separate PR after this one merges.
 
