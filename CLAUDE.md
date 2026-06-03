@@ -32,6 +32,15 @@ Twilio: _inherit = 'connect.foo'  → implements abstract methods, adds provider
 
 **Security groups:** `connect.group_user` (read), `connect.group_admin` (full CRUD), `connect.group_webhook` (webhook record creation)
 
+> **New models — confirm Connect User access first.** When you add a new model,
+> do **not** assume the `connect.group_user` access level. Stop and ask the user
+> what access (none / read / read+write / own-records-only via a record rule)
+> the **Connect User** group should have on it, then write the `ir.model.access`
+> rows (and any `ir.rule`) accordingly. `connect.group_admin` defaults to full
+> CRUD. Admin-only infrastructure/config models (e.g. `connect.settings`,
+> `connect.debug`, `connect.message_configuration`, the firewall models) must
+> grant the user group **no** access.
+
 ## Key Files
 
 - `specs/architecture.md` — Authoritative design specification (boundaries, extension pattern, data flow)

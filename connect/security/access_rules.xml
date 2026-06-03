@@ -167,17 +167,8 @@
         <field name="perm_unlink" eval="True"/>
     </record>
 
-    <!-- connect.settings access -->
-    <record id="access_connect_settings_user" model="ir.model.access">
-        <field name="name">connect.settings user</field>
-        <field name="model_id" ref="model_connect_settings"/>
-        <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
-    </record>
-
+    <!-- connect.settings access (admin-only; non-managers reach non-secret
+         config only through the sudo-safe get_param method) -->
     <record id="access_connect_settings_admin" model="ir.model.access">
         <field name="name">connect.settings admin</field>
         <field name="model_id" ref="model_connect_settings"/>
@@ -335,17 +326,7 @@
         <field name="perm_unlink" eval="True"/>
     </record>
 
-    <!-- connect.debug access -->
-    <record id="access_debug_user" model="ir.model.access">
-        <field name="name">connect.debug user</field>
-        <field name="model_id" ref="model_connect_debug"/>
-        <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
-    </record>
-
+    <!-- connect.debug access (admin-only; the debug() helper writes via sudo) -->
     <record id="access_debug_admin" model="ir.model.access">
         <field name="name">connect.debug admin</field>
         <field name="model_id" ref="model_connect_debug"/>
@@ -366,17 +347,7 @@
         <field name="perm_unlink" eval="False"/>
     </record>
 
-    <!-- connect.message_configuration access -->
-    <record id="access_message_configuration_user" model="ir.model.access">
-        <field name="name">connect.message_configuration user</field>
-        <field name="model_id" ref="model_connect_message_configuration"/>
-        <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
-    </record>
-
+    <!-- connect.message_configuration access (admin-only) -->
     <record id="access_message_configuration_admin" model="ir.model.access">
         <field name="name">connect.message_configuration admin</field>
         <field name="model_id" ref="model_connect_message_configuration"/>

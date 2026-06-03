@@ -738,11 +738,21 @@ All models get access rules for the three groups:
 | `connect.callflow_choice` | Read | Full | - |
 | `connect.user_callflow` | Read | Full | - |
 | `connect.user_callflow_call` | Read | Full | - |
-| `connect.debug` | Read | Full | Create |
-| `connect.settings` | Read | Full | - |
+| `connect.debug` | - | Full | Create |
+| `connect.settings` | - | Full | - |
 | `connect.endpoint` | Read+Write | Full | - |
-| `connect.message_configuration` | Read | Full | - |
+| `connect.message_configuration` | - | Full | - |
 | `connect.favorite` | Read+Write | Full | - |
+
+`connect.settings`, `connect.debug` and `connect.message_configuration` are
+**admin-only** — `group_user` has no model access. End-user features still need
+configuration values, so `connect.settings.get_param()` sudo-finds the singleton
+and returns the value without requiring the caller to hold model access; it only
+blocks parameters whose field carries a `groups=` restriction (the secrets, e.g.
+`openai_api_key`, Twilio `auth_token`, `firewall_service_token`) for non-members,
+so a plain user cannot read secrets via `get_param` over RPC. `set_param` stays
+non-sudo (configuration writes remain manager-only). The `debug()` helper writes
+`connect.debug` via sudo, so logging from user-triggered code keeps working.
 
 ### Record Rules
 
