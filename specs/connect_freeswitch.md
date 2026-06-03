@@ -116,7 +116,7 @@ Beyond firewall, the module contains:
 | Model | Purpose |
 |---|---|
 | `connect.user` (`_inherit`) | adds WebRTC fields and dial-string generation |
-| `connect.endpoint` (`_inherit`) | SIP endpoint management |
+| `connect.endpoint` (`_inherit`) | SIP endpoint management. `auth_password` is auto-generated as a typeable passphrase (`models/passphrase.py`, `secrets`-based), `readonly` + `copy=False`, defaulted on create; `action_regenerate_auth_password()` issues a new one. Empty passwords on existing endpoints are backfilled non-destructively by `backfill_endpoint_passwords(env)` (post-migration). UI uses the `endpoint_password` OWL widget (mask + Show/Hide + Copy) — see ADR-022 |
 | `connect.exten` (`_inherit`) | extension number tooling |
 | `connect.callflow` (`_inherit`) | callflow extension for FreeSWITCH-specific destinations; `_get_piper_language()` returns the BCP-47 code used as the Piper TTS model key (must match a `<model language="...">` entry in `piper_tts.conf.xml`) |
 | `connect.number` (`_inherit`) | DID assignment |

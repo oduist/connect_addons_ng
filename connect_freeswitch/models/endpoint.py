@@ -2,6 +2,8 @@ import re
 from odoo import fields, models, api
 from odoo.exceptions import ValidationError
 
+from .passphrase import generate_passphrase
+
 
 AUTO_ANSWER_HEADERS = [
     ('Alert-Info:answer-after=0', 'Alert-Info:answer-after=0'),
@@ -22,7 +24,13 @@ class ConnectEndpoint(models.Model):
     _inherit = 'connect.endpoint'
 
     auth_user = fields.Char(string='Auth User')
-    auth_password = fields.Char(string='Auth Password')
+    auth_password = fields.Char(
+        string='Auth Password',
+        readonly=True, copy=False,
+        default=lambda self: generate_passphrase(),
+        help='SIP credential. Auto-generated as a typeable passphrase '
+             '(five word+digit groups). Read-only and auto-managed — use the '
+             'Regenerate button to issue a new one.')
     originate_ring = fields.Boolean(string='Originate Ring', default=True,
         help='Include this endpoint when originating click-to-call calls.')
     auto_answer_header = fields.Selection(
@@ -46,6 +54,12 @@ class ConnectEndpoint(models.Model):
             'recording_url': '',
             'fs_domain': fs_domain,
         })
+
+    def action_regenerate_auth_password(self):
+        """Issue a fresh auto-generated passphrase for the SIP credential."""
+        for record in self:
+            record.auth_password = generate_passphrase()
+        return True
 
     @api.constrains('auth_user')
     def _check_auth_user(self):
