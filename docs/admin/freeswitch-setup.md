@@ -363,6 +363,19 @@ If a SIP phone can make outgoing calls but does not ring for incoming calls:
     fs_cli -x "sofia profile external restart reloadxml"
     ```
 
+### Inbound call dropped with 404 (DID format mismatch)
+
+Inbound DID matching tolerates an optional leading `+`: a number stored as
+`+41215121140` matches a trunk that delivers `41215121140`, and vice-versa.
+You do **not** need to match the trunk's exact E.164/national format when
+entering the DID under **Connect > PBX > Numbers**.
+
+If an inbound call still drops with a 404, the delivered digits themselves do
+not match. Check the `destination_number` the trunk actually sends (Odoo debug
+log, or `fs_cli` console at debug level) and make sure the stored DID's digits
+match it — differences beyond a leading `+` (e.g. an extra national prefix) are
+not normalized and require the stored number to match the delivered digits.
+
 ## Troubleshooting
 
 ### No audio on calls
