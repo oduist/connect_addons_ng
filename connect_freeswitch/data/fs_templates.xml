@@ -390,12 +390,14 @@ Variables:
         <field name="description">Inbound DID routing from PSTN trunks.
 
 Variables:
-  phone_number    - DID phone number
+  number_regex    - destination_number regex (bare digits, optional leading '+')
+  did_label       - DID digits without '+' (used for the extension name)
+  phone_number    - DID phone number as stored (kept for custom templates)
   number_id       - connect.number record ID
   destination     - Destination type: 'user' or 'callflow'
   transfer_target - Extension/number to transfer to (or empty if no destination)</field>
-        <field name="content"><![CDATA[<extension name="did_{{ phone_number }}">
-  <condition field="destination_number" expression="^{{ phone_number }}$">
+        <field name="content"><![CDATA[<extension name="did_{{ did_label }}">
+  <condition field="destination_number" expression="^{{ number_regex }}$">
     <action application="set" data="odoo_call_direction=inbound"/>
     <action application="set" data="odoo_number_id={{ number_id }}"/>
     {% if transfer_target %}
@@ -405,8 +407,8 @@ Variables:
     {% endif %}
   </condition>
 </extension>]]></field>
-        <field name="default_content"><![CDATA[<extension name="did_{{ phone_number }}">
-  <condition field="destination_number" expression="^{{ phone_number }}$">
+        <field name="default_content"><![CDATA[<extension name="did_{{ did_label }}">
+  <condition field="destination_number" expression="^{{ number_regex }}$">
     <action application="set" data="odoo_call_direction=inbound"/>
     <action application="set" data="odoo_number_id={{ number_id }}"/>
     {% if transfer_target %}
