@@ -350,16 +350,9 @@ class FreeSwitchXMLController(http.Controller):
         """Route inbound calls from PSTN trunks via connect.number."""
         Number = request.env['connect.number'].sudo()
 
-        # Try exact match on phone number
-        number = Number.search([
-            ('phone_number', '=', destination),
-        ], limit=1)
-
-        # Try with + prefix if not found
-        if not number and not destination.startswith('+'):
-            number = Number.search([
-                ('phone_number', '=', '+' + destination),
-            ], limit=1)
+        # Match tolerating an optional leading '+' between the trunk format and
+        # the stored DID (see connect.number._find_by_did).
+        number = Number._find_by_did(destination)
 
         if number:
             return number.generate_dialplan(params)
