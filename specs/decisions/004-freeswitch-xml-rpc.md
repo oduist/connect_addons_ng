@@ -25,5 +25,5 @@ Use **mod_xml_rpc** (option 1).
 ## Implementation
 
 - New settings fields: `freeswitch_xmlrpc_host`, `freeswitch_xmlrpc_port`, `freeswitch_xmlrpc_user`, `freeswitch_xmlrpc_password` on `connect.settings`.
-- New method `freeswitch_api(command, args)` on `connect.settings` — catches all exceptions and logs errors without raising, so gateway CRUD is never blocked by FS connectivity issues.
+- New method `freeswitch_api(command, args)` on `connect.settings` — catches all exceptions and logs errors without raising, so gateway CRUD is never blocked by FS connectivity issues. (ADR-022 later split the connection logic into a `_freeswitch_rpc()` helper returning a `(result, error)` tuple so the Server Status field can distinguish the failure mode; `freeswitch_api()` keeps the same `response | False` contract.)
 - Gateway model (`connect.freeswitch.gateway`) overrides `create`, `write`, `unlink` to call `sofia profile external restart reloadxml` after each operation.
