@@ -32,6 +32,15 @@ Twilio: _inherit = 'connect.foo'  → implements abstract methods, adds provider
 
 **Security groups:** `connect.group_user` (read), `connect.group_admin` (full CRUD), `connect.group_webhook` (webhook record creation)
 
+> **New models — confirm Connect User access first.** When you add a new model,
+> do **not** assume the `connect.group_user` access level. Stop and ask the user
+> what access (none / read / read+write / own-records-only via a record rule)
+> the **Connect User** group should have on it, then write the `ir.model.access`
+> rows (and any `ir.rule`) accordingly. `connect.group_admin` defaults to full
+> CRUD. Admin-only infrastructure/config models (e.g. `connect.settings`,
+> `connect.debug`, `connect.message_configuration`, the firewall models) must
+> grant the user group **no** access.
+
 ## Key Files
 
 - `specs/architecture.md` — Authoritative design specification (boundaries, extension pattern, data flow)
@@ -102,6 +111,10 @@ Specifically:
 
 ## Conventions
 
+- **Always write comments in English.** This applies to all source and
+  config files (Python, JS, XML, YAML, Dockerfiles, etc.). Do not leave
+  comments in Russian or any other language; translate existing
+  non-English comments to English when you touch the surrounding code.
 - Models follow `connect.<name>` naming (e.g., `connect.call`, `connect.recording`)
 - Protected settings fields (API keys, tokens) are masked with `****` for non-managers
 - Debug logging uses `connect.debug` model with daily cron cleanup
@@ -261,6 +274,28 @@ uv pip install "odoo-addon-connect-freeswitch @ git+https://github.com/oduist/co
 ```
 
 Replace `@19.0` with `@18.0` for the Odoo 18 series. Tests are not available in this mode.
+
+## Running tests in an oduflow environment
+
+`tests_suite` lives **only on the local workstation**. The oduflow Odoo
+environment has **no access** to the private submodule, and `pull_and_apply`
+will **not** carry the tests across: `pull_and_apply` syncs via `git push`,
+where `tests_suite` is just a gitlink whose contents are never pushed (and
+`.gitmodules` carries `update = none` anyway). So after `pull_and_apply` the
+environment still has an empty `tests/` loader and `run_odoo_tests` finds
+nothing.
+
+To run a specific test in an oduflow environment:
+
+1. Read the test locally from `tests_suite/<addon>/tests/test_<name>.py`.
+2. Copy it into the environment with the **`write_file_in_odoo`** MCP tool,
+   writing to the path the loader scans — `tests_suite/<addon>/tests/test_<name>.py`
+   (relative to the repo root inside the container).
+3. Run `run_odoo_tests <addon>`.
+
+Do **not** rely on `pull_and_apply` to deliver test files — it never will.
+Treat `write_file_in_odoo` as the only channel for getting a `test_*.py`
+into the environment.
 
 ## Self-driven verification of changes
 

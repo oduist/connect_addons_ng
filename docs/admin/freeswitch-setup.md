@@ -129,7 +129,7 @@ Each PBX user needs at least one endpoint to make and receive calls.
 | **Connect User** | The PBX user this endpoint belongs to. |
 | **SIP Domain** | FreeSWITCH server IP or hostname. |
 | **Auth User** | SIP/Verto username (typically the extension number). |
-| **Auth Password** | SIP/Verto password. |
+| **Auth Password** | SIP/Verto password. **Auto-generated** on creation as a typeable passphrase (e.g. `flour3-tower9-rome1-watching2-hello8`) and read-only. Masked by default — use the eye toggle to reveal it for manual entry on a device, the clipboard button to copy it, or **Regenerate** to issue a new one. |
 | **SIP Enabled** | Enable SIP phone registration for this endpoint. |
 | **WebRTC Enabled** | Enable browser-based Verto calling. |
 
@@ -377,6 +377,19 @@ If a SIP phone can make outgoing calls but does not ring for incoming calls:
     ```bash
     fs_cli -x "sofia profile external restart reloadxml"
     ```
+
+### Inbound call dropped with 404 (DID format mismatch)
+
+Inbound DID matching tolerates an optional leading `+`: a number stored as
+`+41215121140` matches a trunk that delivers `41215121140`, and vice-versa.
+You do **not** need to match the trunk's exact E.164/national format when
+entering the DID under **Connect > PBX > Numbers**.
+
+If an inbound call still drops with a 404, the delivered digits themselves do
+not match. Check the `destination_number` the trunk actually sends (Odoo debug
+log, or `fs_cli` console at debug level) and make sure the stored DID's digits
+match it — differences beyond a leading `+` (e.g. an extra national prefix) are
+not normalized and require the stored number to match the delivered digits.
 
 ## Troubleshooting
 

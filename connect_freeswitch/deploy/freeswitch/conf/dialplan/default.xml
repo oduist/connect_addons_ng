@@ -1,7 +1,7 @@
 <include>
   <context name="default">
     
-    <!-- Локальные звонки между пользователями -->
+    <!-- Local calls between users -->
     <extension name="local_extension">
       <condition field="destination_number" expression="^(\d+)$">
         <action application="set" data="call_timeout=30"/>
@@ -29,7 +29,7 @@
 
   </context>
   
-  <!-- Public context для входящих неавторизованных -->
+  <!-- Public context for unauthenticated inbound calls -->
   <context name="public">
     <extension name="unloop">
       <condition field="destination_number" expression="^(.*)$">
