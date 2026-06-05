@@ -566,7 +566,7 @@ Order: `id desc`
 | Method | Description |
 |--------|-------------|
 | `create_record_from_message()` | Create partner from incoming message data |
-| `get_partner_by_number()` | Search partner by phone number (uses number_search_operation setting) |
+| `get_partner_by_number()` | Search partner by phone number via `phone_mobile_search`. Falls back to an E.164-normalized lookup (country from the main company) if the literal search returns nothing, so caller IDs delivered in local format still match partners stored in E.164 and vice versa. |
 | `_get_connect_calls_count()` | Compute call count |
 | `_get_connect_messages_count()` | Compute message count |
 | `_normalize_phone()` | Normalize phone number format |
