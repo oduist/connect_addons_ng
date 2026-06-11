@@ -79,29 +79,11 @@ class Partner(models.Model):
                 call.partner = res[0]
         except Exception as e:
             logger.exception(e)
-        if res and not self.env.context.get('no_clear_cache'):
-            if release.version_info[0] >= 17:
-                self.env.registry.clear_cache()
-            else:
-                self.clear_caches()
-        return res
-
-    def write(self, values):
-        res = super().write(values)
-        if res and not self.env.context.get('no_clear_cache'):
-            if release.version_info[0] >= 17:
-                self.env.registry.clear_cache()
-            else:
-                self.clear_caches()
-        return res
-
-    def unlink(self):
-        res = super().unlink()
-        if res and not self.env.context.get('no_clear_cache'):
-            if release.version_info[0] >= 17:
-                self.env.registry.clear_cache()
-            else:
-                self.clear_caches()
+        # NB: no registry.clear_cache() here. There is no ormcache keyed on
+        # partner data in this addon (connect_*_count are non-stored computes,
+        # get_partner_by_number does a live search), so clearing the whole
+        # ORM cache on every partner create/write/unlink was pure overhead
+        # on a hot path. Removed; the ORM invalidates its own field caches.
         return res
 
     def _normalize_phone(self, number):
