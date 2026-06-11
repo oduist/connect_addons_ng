@@ -4,6 +4,8 @@ import logging
 import re
 from urllib.parse import urljoin
 from odoo import fields, models, api, release
+if release.version_info[0] >= 19:
+    from odoo.models import Constraint
 from odoo.exceptions import ValidationError
 from twilio.twiml.voice_response import Client, Dial, VoiceResponse
 from odoo.addons.connect.models.settings import debug
@@ -35,9 +37,16 @@ class Domain(models.Model):
     sip_registration = fields.Boolean("SIP Registration", readonly=True, default=True)
     delete_protection = fields.Boolean(default=True)
 
-    _sql_constrains = [
-        ("uniq_subdomain", "UNIQUE(subdomain)", "This subdomain is already used!")
-    ]
+    # NB: this was misspelled `_sql_constrains` (no 't'), so the UNIQUE
+    # constraint was never registered and duplicate subdomains slipped
+    # through. Use the same version-conditional form as the other models.
+    if release.version_info[0] >= 19:
+        _uniq_subdomain = Constraint(
+            'UNIQUE(subdomain)', 'This subdomain is already used!')
+    else:
+        _sql_constraints = [
+            ("uniq_subdomain", "UNIQUE(subdomain)", "This subdomain is already used!")
+        ]
 
     def _get_domain_name(self):
         edge = self.env['connect.settings'].sudo().get_param('twilio_edge')
