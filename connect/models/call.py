@@ -258,7 +258,11 @@ class Call(models.Model):
             if channel.call.called_users:
                 message.append('dialed users: {}, '.format(', '.join(k.name for k in channel.call.called_users)))
                 for user in channel.call.called_users:
-                    if user.connect_user[0].missed_calls_notify:
+                    # A dialed res.users may have no linked connect.user;
+                    # slice to [:1] so an empty recordset reads as False
+                    # instead of raising IndexError and aborting the whole
+                    # chatter + missed-call notification block.
+                    if user.connect_user[:1].missed_calls_notify:
                         notify_users.append(user)
             if channel.call.partner:
                 message.insert(3, 'partner: {}, '.format(channel.call.partner.name))
@@ -280,8 +284,11 @@ class Call(models.Model):
                     body=final_message,
                     partner_ids=[k.partner_id.id for k in notify_users]
                 )
-        except Exception as e:
-            logger.exception('Register call error:', e)
+        except Exception:
+            # logger.exception already attaches the traceback; passing the
+            # exception as a % arg to a placeholder-free string raised a
+            # logging error and hid the real one.
+            logger.exception('Register call error')
 
     def register_call_post_message(self, obj, **kwargs):
         try:
