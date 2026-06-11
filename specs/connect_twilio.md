@@ -38,7 +38,7 @@ Extends core settings with Twilio API credentials, client management, and sync.
 | Field | Type | Notes |
 |-------|------|-------|
 | `account_sid` | Char | Twilio Account SID |
-| `auth_token` | Char | Groups: `base.group_erp_manager` |
+| `auth_token` | Char | Groups: `base.group_erp_manager` — never grant `connect.group_webhook` (the public-webhook identity); signature validation reads it via `sudo()` (ADR-025) |
 | `display_auth_token` | Char | Masked display |
 | `twilio_api_key` | Char | |
 | `twilio_api_secret` | Char | Groups: `base.group_erp_manager` |

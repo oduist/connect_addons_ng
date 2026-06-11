@@ -58,9 +58,11 @@ class Settings(models.Model):
     _inherit = "connect.settings"
 
     account_sid = fields.Char(string="Account SID")
-    auth_token = fields.Char(
-        groups="base.group_erp_manager,connect.group_webhook"
-    )
+    # Never grant this to connect.group_webhook: the webhook user is the
+    # identity of all public webhook controllers, and get_param() returns
+    # groups-restricted fields to group members. Signature validation in
+    # the controllers reads the token via sudo() and is not affected.
+    auth_token = fields.Char(groups="base.group_erp_manager")
     display_auth_token = fields.Char()
     twilio_api_key = fields.Char()
     twilio_api_secret = fields.Char(groups="base.group_erp_manager")
