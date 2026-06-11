@@ -17,7 +17,14 @@ class User(models.Model):
         string='Phone Display',
         default='dropdown',
     )
-    webrtc_password = fields.Char(string='WebRTC Password', readonly=True)
+    # Field-level groups keep the webhook identity (which has model read
+    # on connect.user for the FS directory render) from pulling WebRTC
+    # secrets over plain ORM; the directory render and get_webrtc_config
+    # reach it via sudo / the own-record rule. The owning user still reads
+    # their own credential for the softphone.
+    webrtc_password = fields.Char(
+        string='WebRTC Password', readonly=True,
+        groups="connect.group_admin,connect.group_user")
 
     @api.model_create_multi
     def create(self, vals_list):

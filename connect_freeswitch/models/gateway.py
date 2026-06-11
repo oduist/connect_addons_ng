@@ -17,7 +17,11 @@ class FreeSwitchGateway(models.Model):
     name = fields.Char(required=True)
     proxy = fields.Char(required=True, help='SIP proxy address (e.g. sip.provider.com)')
     username = fields.Char()
-    password = fields.Char()
+    # Upstream SIP trunk secret. Admin-only at the field level so the
+    # Connect User group and the public-webhook identity (both have model
+    # read on gateways) cannot pull it over RPC — a toll-fraud vector.
+    # The sofia config render reads it via sudo() (freeswitch_xml.py).
+    password = fields.Char(groups="connect.group_admin")
     register = fields.Boolean(default=True)
     realm = fields.Char()
     from_domain = fields.Char()
