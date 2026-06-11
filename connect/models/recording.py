@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import requests
+from markupsafe import escape
 from tempfile import NamedTemporaryFile
 from odoo import fields, models, api, release, SUPERUSER_ID
 from odoo.exceptions import ValidationError
@@ -172,10 +173,13 @@ class Recording(models.Model):
             else:
                 rec.recording_widget = ''
                 continue
+            # media_url may be a raw, webhook-supplied URL when
+            # proxy_recordings is off; escape it before it lands in the
+            # sanitize=False Html field to prevent stored XSS.
             rec.recording_widget = '<audio id="sound_file" preload="auto" ' \
                 'controls="controls"> ' \
                 '<source src="{}"/>' \
-                '</audio>'.format(media_url)
+                '</audio>'.format(escape(media_url))
 
     def _get_list_view_summary(self):
         for rec in self:

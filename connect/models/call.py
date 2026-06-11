@@ -1,4 +1,5 @@
 import logging
+from markupsafe import escape
 from odoo import fields, models, api, release, SUPERUSER_ID
 from .settings import debug
 
@@ -99,10 +100,12 @@ class Call(models.Model):
                     media_url = '/connect/voicemail/{}'.format(rec.id)
                 else:
                     media_url = rec.voicemail_url
+                # voicemail_url is webhook-supplied; escape it before it
+                # lands in the sanitize=False Html field (stored XSS).
                 rec.voicemail_widget = '<audio id="sound_file" preload="auto" ' \
                     'controls="controls"> ' \
                     '<source src="{}"/>' \
-                    '</audio>'.format(media_url)
+                    '</audio>'.format(escape(media_url))
             else:
                 rec.voicemail_widget = ''
 

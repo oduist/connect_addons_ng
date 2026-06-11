@@ -2,7 +2,7 @@ import ast
 import logging
 
 import phonenumbers
-from markupsafe import Markup
+from markupsafe import Markup, escape
 from phonenumbers import parse, format_number, PhoneNumberFormat
 
 from odoo import models, fields, api, SUPERUSER_ID, release
@@ -58,15 +58,19 @@ class ConnectMessage(models.Model):
     def _get_media_widget(self):
         for rec in self:
             html = ''
-            url = rec.media_url or ''
+            # media_url / media_content_type come from inbound webhook
+            # params (MediaUrl0, MediaContentType0); escape both before
+            # they land in this sanitize=False Html field (stored XSS).
+            raw_url = rec.media_url or ''
             ctype = (rec.media_content_type or '').lower()
-            if url:
+            url = escape(raw_url)
+            if raw_url:
                 if ctype.startswith('image/'):
                     html = '<img src="{}" style="max-width:50%;height:auto;"/>'.format(url)
                 elif ctype.startswith('audio/'):
-                    html = '<audio preload="auto" controls="controls"><source src="{}" type="{}"/></audio>'.format(url, ctype or 'audio/mpeg')
+                    html = '<audio preload="auto" controls="controls"><source src="{}" type="{}"/></audio>'.format(url, escape(ctype or 'audio/mpeg'))
                 elif ctype.startswith('video/'):
-                    html = '<video controls style="max-width:50%"><source src="{}" type="{}"/></video>'.format(url, ctype or 'video/mp4')
+                    html = '<video controls style="max-width:50%"><source src="{}" type="{}"/></video>'.format(url, escape(ctype or 'video/mp4'))
                 else:
                     html = '<a href="{}" target="_blank" rel="noopener">Download media</a>'.format(url)
             rec.media_widget = html
