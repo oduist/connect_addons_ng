@@ -99,6 +99,13 @@ class Call(models.Model):
         number = re.sub(r'[\s()\-]', '', number or '')
         if not number:
             raise UserError("No phone number provided.")
+        # The number is interpolated into the FreeSWITCH originate
+        # dialstring (channel variables and bridge data) via str.format,
+        # so it must not carry originate metacharacters ({}[]<>,&'|" etc.).
+        # Restrict to an optional leading '+' followed by digits and the
+        # DTMF feature-code characters '*'/'#' (ADR-026).
+        if not re.fullmatch(r'\+?[0-9*#]{1,20}', number):
+            raise UserError("Invalid phone number: {}".format(number))
 
         domain = settings.get_param('freeswitch_domain')
         if not domain:
