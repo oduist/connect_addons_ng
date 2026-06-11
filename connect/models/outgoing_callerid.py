@@ -33,20 +33,25 @@ class OutgoingCallerID(models.Model):
 
     @api.constrains('number')
     def _check_number(self):
-        if self.number and not self.number.startswith('+'):
-            raise ValidationError('Number must start with +')
-        if self.number and not re.search(r'^\+[0-9]+$', self.number):
-            raise ValidationError('Number must contain only digits!')
+        # Iterate: a constraint receives a (possibly multi-record)
+        # recordset, so self.number would raise "Expected singleton" on a
+        # batch create. The single regex also covers the +-prefix check.
+        for rec in self:
+            if rec.number and not re.match(r'^\+[0-9]+$', rec.number):
+                raise ValidationError(
+                    'Number must be in E.164 form: a + followed by digits only.')
 
     @api.constrains('is_default')
     def _reset_default(self):
+        if self.env.context.get('skip_reset_default'):
+            return
+        # Only clear the other records when this one is BECOMING the
+        # default. The previous version reset every record (including the
+        # current default) on any is_default write, so setting a record's
+        # is_default to False wiped the default flag everywhere and left no
+        # default at all.
         for rec in self:
-            if not self.env.context.get('skip_reset_default'):
-                context = {
-                    'skip_reset_default': True,
-                }
-                default = rec.is_default
-                self.with_context(context).search(
-                    []).write({'is_default': False})
-                rec.with_context(context).is_default = default
+            if rec.is_default:
+                self.with_context(skip_reset_default=True).search(
+                    [('id', '!=', rec.id)]).write({'is_default': False})
 
