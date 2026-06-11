@@ -183,7 +183,12 @@ class TwiML(models.Model):
         if self.code_type == 'python' and self.twipy:
             self.render()
 
-    def render(self, request={}, params={}):
+    def render(self, request=None, params=None):
+        # Copy into fresh dicts: the previous {} defaults were shared
+        # module-level objects that these methods mutated in place
+        # (params.update / request.update), bleeding state across requests.
+        request = dict(request or {})
+        params = dict(params or {})
         self = self.sudo()
         api_url_check = self.env['connect.settings'].check_api_url()
         if api_url_check:
@@ -206,15 +211,19 @@ class TwiML(models.Model):
         debug(self, 'TwiML render result: %s' % pretty_xml(res))
         return res
 
-    def render_twiml(self, request={}, params={}):
+    def render_twiml(self, request=None, params=None):
         environment = jinja2.Environment()
         template = environment.from_string(self.twiml)
-        request.update(params)
-        res = template.render(**request)
+        # Merge into a local dict instead of mutating the caller's request.
+        ctx = dict(request or {})
+        ctx.update(params or {})
+        res = template.render(**ctx)
         return res
 
-    def render_python(self, request={}, params={}):
+    def render_python(self, request=None, params=None):
         import twilio
+        request = dict(request or {})
+        params = dict(params or {})
         try:
             exec(self.twipy, {}, {
                 'logger': logger,
