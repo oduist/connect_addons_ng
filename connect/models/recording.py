@@ -49,9 +49,12 @@ class Recording(models.Model):
 
     def transcribe_recording(self, openai_api_key, summary_prompt):
         result = {}
+        temp_file_path = None
         try:
             client = self.env['connect.settings'].get_openai_client()
-            response = requests.get(self.media_url, stream=True)
+            # Bounded download: media_url points at the provider's recording
+            # store; without a timeout a hung endpoint pins the worker.
+            response = requests.get(self.media_url, stream=True, timeout=30)
             response.raise_for_status()
             with NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
                 for chunk in response.iter_content(chunk_size=8192):
@@ -74,6 +77,13 @@ class Recording(models.Model):
             logger.exception(f'Transcribe error: {e}')
             result['transcription_error'] = str(e)
         finally:
+            # NamedTemporaryFile(delete=False) is not auto-removed; drop the
+            # downloaded audio so /tmp does not grow without bound.
+            if temp_file_path and os.path.exists(temp_file_path):
+                try:
+                    os.unlink(temp_file_path)
+                except OSError:
+                    logger.warning('Could not remove temp file %s', temp_file_path)
             self.write(result)
 
     def make_summary(self, client, summary_prompt, transcript):
@@ -95,7 +105,9 @@ class Recording(models.Model):
                 max_tokens=int(os.environ.get('OPENAI_COMPLETION_MAX_TOKENS', 4096)),
                 top_p=float(os.environ.get('OPENAI_COMPLETION_TOP_P', 1.0)),
                 frequency_penalty=float(os.environ.get('OPENAI_COMPLETION_FREQUENCY_PENALTY', 0.0)),
-                presence_penalty=float(os.environ.get('OPENAI_COMPLETION_PRESENSE_PENALTY', 0.0)),
+                presence_penalty=float(os.environ.get(
+                    'OPENAI_COMPLETION_PRESENCE_PENALTY',
+                    os.environ.get('OPENAI_COMPLETION_PRESENSE_PENALTY', 0.0))),
             )
             logger.info('%s', response.usage)
             return {'summary': response.choices[0].message.content.strip('\n\n')}
