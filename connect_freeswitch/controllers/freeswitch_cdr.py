@@ -6,6 +6,8 @@ from xml.etree import ElementTree as ET
 from odoo import http
 from odoo.http import request, Response
 
+from .token_auth import check_fs_webhook_auth, unauthorized_response
+
 logger = logging.getLogger(__name__)
 
 
@@ -23,8 +25,11 @@ class FreeSwitchCDRController(http.Controller):
         """Receive CDR from FreeSWITCH mod_xml_cdr.
 
         mod_xml_cdr sends URL-encoded POST with 'cdr' parameter
-        containing XML CDR data.
+        containing XML CDR data. Authenticated with the shared webhook
+        token via mod_xml_cdr's cred/auth-scheme params (ADR-025).
         """
+        if not check_fs_webhook_auth():
+            return unauthorized_response()
         cdr_xml = kwargs.get('cdr', '')
         if not cdr_xml:
             # Try raw body (if encode=false in mod_xml_cdr config)

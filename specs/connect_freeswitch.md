@@ -56,12 +56,18 @@ firewall-related fields:
 | `firewall_authenticated_timeout` | Integer | trust TTL after a successful registration (7 days, sliding) |
 | `firewall_expire_short_timeout` | Integer | challenge-response window (30 s) |
 | `firewall_expire_long_timeout` | Integer | default-deny TTL after a challenge is sent but not answered (24 h) |
+| `freeswitch_webhook_token` / `display_freeswitch_webhook_token` | Char | shared secret authenticating every FreeSWITCH → Odoo HTTP call (`/freeswitch/xml`, `/freeswitch/webhook/*`). Masked; admin-only; auto-generated (`secrets.token_urlsafe(32)`) by the field default, `post_init_hook` and the 19.0.1.10.2 migration (`ensure_webhook_token`). Paired with the container via the `FS_WEBHOOK_TOKEN` env var. See ADR-025 |
 
 `write()` is extended to:
-* validate the Firewall Service Token (length + character set) when an
-  admin edits it in the UI;
+* validate the Firewall Service Token and the FreeSWITCH Webhook Token
+  (length + character set) when an admin edits them in the UI;
 * schedule a `/firewall/sync` POST via `cr.postcommit` whenever any
   `firewall_*` field changes.
+
+`get_recording_webhook_url()` builds the recording upload URL
+(`<web.base.url>/freeswitch/webhook/recording/<token>`) used by the
+dialplan generators; it returns `''` (recording disabled) when the base
+URL or the token is missing.
 
 ### firewall.py — firewall models
 
@@ -141,6 +147,26 @@ The token (`connect.settings.firewall_service_token` / its display
 twin) is bootstrapped on install / upgrade by `setup_firewall(env)` in
 `connect_freeswitch/__init__.py` and validated on admin edits
 (≥24 chars, `[A-Za-z0-9_-]` only).
+
+### FreeSWITCH → Odoo endpoint authentication (ADR-025)
+
+All HTTP endpoints FreeSWITCH calls on Odoo are `auth='none'` routes
+guarded by `controllers/token_auth.py::check_fs_webhook_auth()`, which
+compares the shared `freeswitch_webhook_token` with
+`secrets.compare_digest` and **fails closed** (empty token ⇒ 401):
+
+| Route | Caller | Token transport |
+|---|---|---|
+| `POST /freeswitch/xml` | mod_xml_curl | Basic auth (`gateway-credentials`) |
+| `POST /freeswitch/webhook/cdr` | mod_xml_cdr | Basic auth (`cred`) |
+| `GET/POST /freeswitch/webhook/parking` | dialplan `curl` app | `token` query param (Odoo renders the URL) |
+| `PUT/POST /freeswitch/webhook/recording/<token>/<filename>` | `record_session` | path segment (a query string after `.wav` would break format detection) |
+
+Recording uploads are additionally capped at 256 MB.
+
+The FreeSWITCH container receives the token via the `FS_WEBHOOK_TOKEN`
+env var (`vars.xml` → `$${webhook_token}` in `xml_curl.conf.xml` /
+`xml_cdr.conf.xml`); the entrypoint warns loudly when it is unset.
 
 ### Access rules
 

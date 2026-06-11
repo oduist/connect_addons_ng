@@ -78,12 +78,10 @@ class User(models.Model):
         number = exten.number if exten else self.exten_number
         if not number:
             return ''
-        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''
 
         recording_url = ''
-        if self.record_calls and base_url:
-            recording_url = '{}freeswitch/webhook/recording'.format(
-                base_url if base_url.endswith('/') else base_url + '/')
+        if self.record_calls:
+            recording_url = self.env['connect.settings'].get_recording_webhook_url()
 
         fs_domain = self.env['connect.settings'].sudo().get_param('freeswitch_domain') or '${domain}'
 

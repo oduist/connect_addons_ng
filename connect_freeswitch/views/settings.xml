@@ -31,6 +31,9 @@
                                    placeholder="fs.example.com"/>
                             <field name="freeswitch_ice_servers"
                                    placeholder="stun:stun.l.google.com:19302"/>
+                            <field name="display_freeswitch_webhook_token"
+                                   password="True"
+                                   placeholder="**** (min 24 chars, [A-Za-z0-9_-])"/>
                         </group>
                         <group string="XML-RPC">
                             <field name="freeswitch_xmlrpc_host"
