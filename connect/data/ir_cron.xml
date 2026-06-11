@@ -9,5 +9,13 @@
             <field name="code">model.vacuum(hours=24)</field>
             <field name="state">code</field>
         </record>
+        <record id="cron_transcribe_recordings" model="ir.cron">
+            <field name="name">Connect: transcribe pending recordings</field>
+            <field name="interval_number">2</field>
+            <field name="interval_type">minutes</field>
+            <field name="model_id" ref="model_connect_recording"/>
+            <field name="code">model._cron_transcribe_recordings()</field>
+            <field name="state">code</field>
+        </record>
     </data>
 </odoo>

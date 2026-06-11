@@ -270,6 +270,7 @@ Order: `id desc`
 | `transcription_token` | Char | |
 | `transcription_error` | Char | |
 | `transcription_price` | Char | |
+| `transcription_pending` | Boolean | Work-queue flag; set on create when `transcript_calls` is on, cleared by the transcription cron |
 | `summary` | Html | |
 | `list_view_summary` | Html | Computed truncated version |
 
@@ -285,6 +286,13 @@ Order: `id desc`
 | `transcribe_recording()` | Call OpenAI Whisper API for speech-to-text |
 | `make_summary()` | Call OpenAI GPT-4o for call summary generation |
 | `update_transcript()` | Async callback handler for transcript updates |
+| `_cron_transcribe_recordings()` | Cron: transcribe `transcription_pending` recordings out of the request path (replaces the old inline transcription + `cr.commit()` in `create()`) |
+
+**Crons:** `cron_transcribe_recordings` (every 2 min) runs
+`_cron_transcribe_recordings()`. Transcription is asynchronous: `create()`
+only flags the recording (`transcription_pending`) so the provider webhook
+that created it returns immediately and the request transaction stays
+atomic.
 
 **Notes:**
 - Transcription and summary methods use OpenAI directly (not Twilio), so they belong

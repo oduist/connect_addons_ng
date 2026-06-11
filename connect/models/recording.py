@@ -43,6 +43,10 @@ class Recording(models.Model):
     transcript = fields.Text()
     transcription_token = fields.Char()
     transcription_error = fields.Char()
+    # Work-queue flag for the transcription cron. Set on create() when
+    # transcript_calls is enabled; the cron picks these up out of the
+    # request path (see _cron_transcribe_recordings).
+    transcription_pending = fields.Boolean(default=False, copy=False)
     transcription_price = fields.Char()
     summary = fields.Html()
     list_view_summary = fields.Html(compute='_get_list_view_summary')
@@ -184,14 +188,37 @@ class Recording(models.Model):
         transcript_calls = self.env['connect.settings'].sudo().get_param('transcript_calls')
         recs = super(Recording, self.with_context(
             mail_create_nosubscribe=True, mail_create_nolog=True)).create(vals_list)
-        self.env.cr.commit()
         if transcript_calls:
-            for rec in recs:
-                try:
-                    rec.get_transcript(fail_silently=True)
-                except Exception as e:
-                    logger.exception('Transcript error: %s', e)
+            # Defer transcription to _cron_transcribe_recordings. Running
+            # the Whisper + GPT round trip inline blocked the provider
+            # webhook that created the recording (timeout -> retry ->
+            # duplicate processing) and was only survivable via a
+            # mid-create cr.commit() that broke the caller transaction's
+            # atomicity. The flag is the cron's work queue instead.
+            recs.filtered(lambda r: not r.transcript).transcription_pending = True
         return recs
+
+    @api.model
+    def _cron_transcribe_recordings(self, limit=20):
+        """Transcribe recordings queued by create() (transcription_pending).
+
+        Runs out of the request path so a slow OpenAI round trip never
+        blocks a provider webhook. Each recording is committed
+        independently so one failure does not roll back the batch.
+        """
+        pending = self.search([('transcription_pending', '=', True)], limit=limit)
+        for rec in pending:
+            try:
+                rec.get_transcript(fail_silently=True)
+            except Exception:
+                logger.exception('Cron transcript error for recording %s', rec.id)
+            # Clear the flag whether or not it succeeded: transcribe_recording
+            # records the transcript or the error, and a single attempt
+            # matches the previous inline behaviour while avoiding an
+            # unbounded retry loop. The commit is safe here — the cron owns
+            # its own transaction, unlike create().
+            rec.transcription_pending = False
+            self.env.cr.commit()
 
     @api.depends('duration')
     def _get_duration_human(self):
