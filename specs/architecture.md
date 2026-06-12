@@ -6,8 +6,8 @@
    integration, and defines abstract interfaces. It never imports `twilio`, never references
    Twilio-specific concepts (SIDs, TwiML, etc.), and never imports FreeSWITCH-specific code.
 
-2. **Integration modules extend core via `_inherit`.** Modules like `connect_twilio` and
-   `connect_freeswitch` add provider-specific fields, methods, and webhook handlers to
+2. **Integration modules extend core via `_inherit`.** Modules like `connect_twilio`,
+   `connect_freeswitch` and `connect_asterisk` add provider-specific fields, methods, and webhook handlers to
    the core models. They never redefine core models.
 
 3. **OpenAI transcription is in core (not Twilio-specific).** Recording transcription via
@@ -112,25 +112,26 @@ Integration model (connect_twilio/models/foo.py):
 | UI views | All base views, menu structure |
 | Settings | Registration, usage tracking, OpenAI config |
 
-### What lives in Integration Modules (`connect_twilio`, `connect_freeswitch`)
+### What lives in Integration Modules (`connect_twilio`, `connect_freeswitch`, `connect_asterisk`)
 
 | Category | Examples |
 |----------|---------|
-| API client | get_client() for Twilio REST / freeswitch_api() for FreeSWITCH XML-RPC |
-| Webhook handlers | on_call_status(), receive(), on_recording_status() |
-| Protocol rendering | TwiML generation, FreeSWITCH XML dialplan |
+| API client | get_client() for Twilio REST / freeswitch_api() for FreeSWITCH XML-RPC / asterisk_ami_action() via the sidecar agent |
+| Webhook handlers | on_call_status(), receive(), on_recording_status(), on_ami_* adapters |
+| Protocol rendering | TwiML generation, FreeSWITCH XML dialplan, Asterisk pjsip/manager.conf snippets |
 | Provider sync | sync() methods for numbers, callerIDs, domains |
 | Credential management | SIP accounts, API keys, JWT tokens |
-| Provider-specific models | connect.twiml, connect.domain, connect.whatsapp_sender, connect.firewall.{whitelist,blacklist,event,agent} |
-| Frontend SDK | Twilio Voice SDK phone widget, Verto WebRTC client |
-| Auxiliary services | `connect_freeswitch` ships a paired SIP-firewall service (own Docker image, talks ESL + iptables on the host kernel, see ADR-014). The service authenticates to Odoo via dedicated `/freeswitch/firewall/api/*` HTTP controllers carrying the shared `firewall_service_token` as `Authorization: Bearer …` — no dedicated Odoo user (ADR-015). |
+| Provider-specific models | connect.twiml, connect.domain, connect.whatsapp_sender, connect.firewall.{whitelist,blacklist,event,agent}, connect.asterisk.template |
+| Frontend SDK | Twilio Voice SDK phone widget, Verto WebRTC client, JsSIP web phone |
+| Auxiliary services | `connect_freeswitch` ships a paired SIP-firewall service (own Docker image, talks ESL + iptables on the host kernel, see ADR-014). The service authenticates to Odoo via dedicated `/freeswitch/firewall/api/*` HTTP controllers carrying the shared `firewall_service_token` as `Authorization: Bearer …` — no dedicated Odoo user (ADR-015). `connect_asterisk` ships a thin sidecar agent (`oduist/asterisk-agent`) holding the persistent AMI connection to the customer's existing Asterisk; events flow to `/asterisk/webhook/*` and actions flow back over the agent HTTP API, both directions carrying the shared `asterisk_agent_token` as Bearer (ADR-025). |
 | Message sending | send() implementation via provider API |
 | Provider-specific fields | SIDs, webhook URLs, provider-specific status codes |
 
 ### Explicit Boundary Rules
 
 1. **Core NEVER imports `twilio`** or any Twilio-specific Python package.
-2. **Core NEVER imports FreeSWITCH-specific** code or ESL libraries.
+2. **Core NEVER imports FreeSWITCH- or Asterisk-specific** code (ESL libraries,
+   AMI clients, agent HTTP protocols).
 3. **Message send/receive** is split: core stores messages + provides composer UI;
    integration modules implement `send()` and `receive()` webhook handlers.
 4. **Webhook handlers** for calls, recordings, and messages are 100% in integration modules.

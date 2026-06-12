@@ -11,8 +11,9 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect`** — Technology-agnostic core. Stores calls, messages, recordings, users, callflows, extensions. Handles OpenAI transcription/summarization, SMS composer UI, partner integration. **Never imports provider-specific code.**
 - **`connect_twilio`** — Twilio integration. Extends core models via `_inherit`. Adds TwiML apps, SIP domains, WhatsApp, webhook handlers, Twilio Voice JS SDK phone widget.
 - **`connect_freeswitch`** — FreeSWITCH integration. Adds Verto WebRTC client, XML dialplan generation, endpoint management.
+- **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). See ADR-025.
 
-Dependencies: `connect_twilio` and `connect_freeswitch` both depend on `connect` but are independent of each other.
+Dependencies: `connect_twilio`, `connect_freeswitch` and `connect_asterisk` all depend on `connect` but are independent of each other.
 
 ## Architecture
 
@@ -46,6 +47,7 @@ Twilio: _inherit = 'connect.foo'  → implements abstract methods, adds provider
 - `specs/architecture.md` — Authoritative design specification (boundaries, extension pattern, data flow)
 - `specs/connect_core.md` — Core module spec (models, fields, methods, security, views)
 - `specs/connect_twilio.md` — Twilio module spec (models, webhooks, controllers, frontend)
+- `specs/connect_asterisk.md` — Asterisk module spec (models, agent contract, controllers, frontend)
 - `docs/` — User and admin documentation (MkDocs Material), see `docs/mkdocs.yml` for structure
 
 ## Development Commands
@@ -119,12 +121,14 @@ Specifically:
 - Protected settings fields (API keys, tokens) are masked with `****` for non-managers
 - Debug logging uses `connect.debug` model with daily cron cleanup
 - Twilio webhook routes are all under `/twilio/webhook/*` and validate `X-Twilio-Signature` when enabled
-- Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`
+- Asterisk webhook/API routes are under `/asterisk/webhook/*` and `/asterisk/api/*` and require `Authorization: Bearer <asterisk_agent_token>`
+- Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`
 
 ## FreeSWITCH & Firewall Docker Images
 
 - FreeSWITCH image: `oduist/freeswitch` — Dockerfile: `connect_freeswitch/deploy/Dockerfile`, config: `connect_freeswitch/deploy/freeswitch/conf/`
 - Firewall image: `oduist/freeswitch-firewall` — Dockerfile: `connect_freeswitch/deploy/firewall/Dockerfile`, sources: `connect_freeswitch/deploy/firewall/src/`
+- Asterisk agent image: `oduist/asterisk-agent` — Dockerfile: `connect_asterisk/deploy/agent/Dockerfile`, sources: `connect_asterisk/deploy/agent/src/`. Same versioning policy: rebuilt only when a release changes files under `connect_asterisk/deploy/agent/`; tag = short `connect_asterisk` manifest version; build multi-arch (`linux/amd64,linux/arm64`) — the agent runs on customer hardware.
 
 ### Versioning policy
 
@@ -202,10 +206,13 @@ connect_addons_ng/              ← Main repo (public)
 │   └── tests/__init__.py       ← conditional loader (tracked)
 ├── connect_freeswitch/
 │   └── tests/__init__.py       ← conditional loader (tracked)
+├── connect_asterisk/
+│   └── tests/__init__.py       ← conditional loader (tracked)
 └── tests_suite/                ← Private submodule (oduist/connect_addons_tests)
     ├── connect/tests/test_*.py
     ├── connect_twilio/tests/test_*.py
-    └── connect_freeswitch/tests/test_*.py
+    ├── connect_freeswitch/tests/test_*.py
+    └── connect_asterisk/tests/test_*.py
 ```
 
 The loader checks `os.path.isdir("../../tests_suite/<addon>/tests")`. When present, it dynamically loads each `test_*.py` via `importlib.util.spec_from_file_location` and registers it as a submodule of `<addon>.tests`. When absent, the loader is a no-op — the addon installs cleanly with no tests.
@@ -261,6 +268,7 @@ git -c submodule.tests_suite.update=checkout submodule update --init tests_suite
 oduflow run_odoo_tests connect
 oduflow run_odoo_tests connect_twilio
 oduflow run_odoo_tests connect_freeswitch
+oduflow run_odoo_tests connect_asterisk
 ```
 
 ## Installing as a uv dependency (external consumers)

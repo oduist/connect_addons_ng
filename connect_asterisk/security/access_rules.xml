@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- connect.asterisk.template access rules.
+
+         Admin-only infrastructure/config model: Connect User and the
+         webhook group get NO access. The token-authenticated controllers
+         render templates via sudo(). -->
+    <record id="access_asterisk_template_admin" model="ir.model.access">
+        <field name="name">connect.asterisk.template admin</field>
+        <field name="model_id" ref="model_connect_asterisk_template"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+</odoo>

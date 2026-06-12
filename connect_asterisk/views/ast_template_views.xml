@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_asterisk_template_tree" model="ir.ui.view">
+        <field name="name">connect.asterisk.template.tree</field>
+        <field name="model">connect.asterisk.template</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="key"/>
+                <field name="name"/>
+                <field name="is_customized"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_asterisk_template_form" model="ir.ui.view">
+        <field name="name">connect.asterisk.template.form</field>
+        <field name="model">connect.asterisk.template</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="reset_to_default" type="object"
+                            string="Reset to Default"
+                            class="btn-secondary"
+                            confirm="This will overwrite your customizations. Continue?"
+                            invisible="not is_customized"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="key"/>
+                            <field name="is_customized"/>
+                        </group>
+                    </group>
+                    <separator string="Available Variables"/>
+                    <field name="description" nolabel="1"/>
+                    <notebook>
+                        <page string="Template" name="template">
+                            <field name="content" widget="code"/>
+                        </page>
+                        <page string="Default Template" name="default">
+                            <field name="default_content" widget="code"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_asterisk_template" model="ir.actions.act_window">
+        <field name="name">Asterisk Templates</field>
+        <field name="res_model">connect.asterisk.template</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_asterisk_template"
+              name="Asterisk Templates"
+              parent="connect.menu_connect_pbx"
+              action="action_asterisk_template"
+              sequence="81"
+              groups="connect.group_admin"/>
+
+</odoo>
