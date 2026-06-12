@@ -73,7 +73,8 @@ class AsteriskWebhooksController(http.Controller):
         return json.loads(raw)
 
     @http.route('/asterisk/webhook/events',
-                type='http', auth='none', methods=['POST'], csrf=False)
+                type='http', auth='none', methods=['POST'], csrf=False,
+                readonly=False)
     def events(self, **_):
         """Batch of AMI events from the agent: JSON array of event dicts
         with original AMI field names (Event, Uniqueid, Linkedid, ...)."""
@@ -105,7 +106,8 @@ class AsteriskWebhooksController(http.Controller):
         return self._json({'ok': True, 'processed': processed})
 
     @http.route('/asterisk/webhook/recording/<string:filename>',
-                type='http', auth='none', methods=['PUT', 'POST'], csrf=False)
+                type='http', auth='none', methods=['PUT', 'POST'], csrf=False,
+                readonly=False)
     def recording(self, filename, **_):
         """Receive a recording file from the agent.
 
@@ -164,7 +166,8 @@ class AsteriskWebhooksController(http.Controller):
         return Response('OK', status=200)
 
     @http.route('/asterisk/webhook/heartbeat',
-                type='http', auth='none', methods=['POST'], csrf=False)
+                type='http', auth='none', methods=['POST'], csrf=False,
+                readonly=False)
     def heartbeat(self, **_):
         if not self._check_token():
             return self._unauthorized()

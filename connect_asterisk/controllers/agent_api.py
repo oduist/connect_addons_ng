@@ -75,7 +75,8 @@ class AsteriskAgentAPIController(http.Controller):
         )
 
     @http.route('/asterisk/api/get_caller_name',
-                type='http', auth='none', methods=['GET'], csrf=False)
+                type='http', auth='none', methods=['GET'], csrf=False,
+                readonly=False)
     def get_caller_name(self, number=None, **_):
         if not self._check_token():
             return self._unauthorized()
@@ -87,7 +88,8 @@ class AsteriskAgentAPIController(http.Controller):
         return self._text(partner.name if partner else '')
 
     @http.route('/asterisk/api/get_partner_manager',
-                type='http', auth='none', methods=['GET'], csrf=False)
+                type='http', auth='none', methods=['GET'], csrf=False,
+                readonly=False)
     def get_partner_manager(self, number=None, exten=None, **_):
         """Return the dialstring (or extension) of the partner's salesperson
         so the dialplan can route the caller to their manager."""
@@ -112,7 +114,8 @@ class AsteriskAgentAPIController(http.Controller):
         return self._text('&'.join(channels))
 
     @http.route('/asterisk/api/get_user_data_by_did',
-                type='http', auth='none', methods=['GET'], csrf=False)
+                type='http', auth='none', methods=['GET'], csrf=False,
+                readonly=False)
     def get_user_data_by_did(self, did=None, **_):
         """Resolve a DID to the user's dialstring for dialplan routing."""
         if not self._check_token():
