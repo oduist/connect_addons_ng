@@ -16,10 +16,12 @@
                     <field name="endpoint_count" widget="statinfo" string="Endpoints"/>
                 </button>
             </div>
+            <!-- ADR-029: all FreeSWITCH-specific fields fenced into a
+                 single named FreeSWITCH tab. -->
             <notebook position="inside">
-                <page name="webrtc" string="WebRTC" invisible="not is_freeswitch_enabled">
+                <page name="freeswitch" string="FreeSWITCH" invisible="not is_freeswitch_enabled">
                     <group>
-                        <group>
+                        <group string="WebRTC">
                             <field name="webrtc_enabled" widget="boolean_toggle"/>
                             <field name="originate_ring" widget="boolean_toggle"
                                    invisible="not webrtc_enabled"/>
@@ -27,8 +29,7 @@
                                    invisible="not webrtc_enabled"/>
                         </group>
                     </group>
-                </page>
-                <page name="endpoints" string="Endpoints" invisible="not is_freeswitch_enabled">
+                    <separator string="Endpoints"/>
                     <field name="endpoint_ids">
                         <list editable="bottom">
                             <field name="name"/>
