@@ -39,10 +39,12 @@ class User(models.Model):
     )
     provider_ids = fields.Many2many(
         'connect.provider',
-        compute='_compute_provider_ids', store=True, readonly=True,
+        compute='_compute_provider_ids', inverse='_inverse_provider_ids',
+        store=True, readonly=False,
         string='Providers',
-        help='Telephony providers this user is reachable on '
-             '(computed from provider_binding_ids).',
+        help='Telephony providers this user is reachable on. Editing this '
+             'set creates/removes connect.user.provider.binding rows '
+             '(the canonical store).',
     )
 
     _user_uniq = Constraint('UNIQUE("user")', 'This Odoo user account is already defined!')
@@ -55,6 +57,23 @@ class User(models.Model):
     def _compute_provider_ids(self):
         for rec in self:
             rec.provider_ids = rec.provider_binding_ids.mapped('provider_id')
+
+    def _inverse_provider_ids(self):
+        """Sync the binding rows to match the edited provider_ids set.
+
+        provider_ids is the convenient tag-widget surface; the binding
+        model stays the canonical store (ADR-024 / ADR-028).
+        """
+        Binding = self.env['connect.user.provider.binding']
+        for rec in self:
+            current = rec.provider_binding_ids.mapped('provider_id')
+            target = rec.provider_ids
+            for provider in target - current:
+                Binding.create({'user_id': rec.id, 'provider_id': provider.id})
+            stale = rec.provider_binding_ids.filtered(
+                lambda b: b.provider_id in (current - target))
+            if stale:
+                stale.unlink()
 
     @api.depends('user', 'user.name')
     def _get_name(self):

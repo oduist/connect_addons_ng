@@ -38,6 +38,8 @@
                             <field name="voicemail_enabled"/>
                             <field name="missed_calls_notify"/>
                             <field name="greeting_message"/>
+                            <field name="provider_ids" widget="many2many_tags"
+                                   options="{'no_create': True}"/>
                         </group>
                     </group>
                     <notebook>
@@ -48,13 +50,6 @@
                             <group string="Summary Prompt">
                                 <field name="summary_prompt" nolabel="1" colspan="2"/>
                             </group>
-                        </page>
-                        <page name="providers" string="Providers">
-                            <field name="provider_binding_ids">
-                                <list editable="bottom">
-                                    <field name="provider_id"/>
-                                </list>
-                            </field>
                         </page>
                     </notebook>
                 </sheet>
