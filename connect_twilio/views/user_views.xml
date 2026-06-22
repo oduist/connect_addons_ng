@@ -25,28 +25,28 @@
         <field name="model">connect.user</field>
         <field name="inherit_id" ref="connect.view_connect_user_form"/>
         <field name="arch" type="xml">
-            <!-- Add username and domain to User Info group. Anchor on
-                 provider_ids so the Providers selector stays immediately
-                 below Odoo User, ahead of Twilio-specific fields. -->
+            <!-- Visibility flag kept in an agnostic spot (after the
+                 provider tags), outside the conditionally-hidden tab. -->
             <xpath expr="//field[@name='provider_ids']" position="after">
                 <field name="is_twilio_enabled" invisible="1"/>
-                <field name="username" invisible="not is_twilio_enabled"/>
-            </xpath>
-            <xpath expr="//field[@name='active']" position="after">
-                <field name="domain" invisible="not is_twilio_enabled"/>
-                <field name="twilio_edge" invisible="not is_twilio_enabled"
-                       help="Choose the closest Twilio Edge or use Global Low-latency routing."/>
             </xpath>
 
-            <!-- Add whatsapp_sender_id and application to Call Settings group -->
-            <xpath expr="//field[@name='missed_calls_notify']" position="after">
-                <field name="whatsapp_sender_id" invisible="not is_twilio_enabled"/>
-                <field name="application" invisible="not is_twilio_enabled"/>
-            </xpath>
-
-            <!-- Add Phone tab with SIP/Client settings to notebook -->
+            <!-- ADR-029: all Twilio-specific fields fenced into a single
+                 named Twilio tab, shown only when the user is on Twilio. -->
             <xpath expr="//page[@name='organization']" position="before">
-                <page name="phone" string="Phone" invisible="not is_twilio_enabled">
+                <page name="twilio" string="Twilio" invisible="not is_twilio_enabled">
+                    <group>
+                        <group string="Account">
+                            <field name="username"/>
+                            <field name="domain"/>
+                            <field name="twilio_edge"
+                                   help="Choose the closest Twilio Edge or use Global Low-latency routing."/>
+                        </group>
+                        <group string="Messaging">
+                            <field name="whatsapp_sender_id"/>
+                            <field name="application"/>
+                        </group>
+                    </group>
                     <group>
                         <group string="SIP Phone">
                             <field name="sip_enabled" string="Enabled"/>
