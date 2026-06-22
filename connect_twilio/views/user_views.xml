@@ -32,8 +32,9 @@
             </xpath>
 
             <!-- ADR-029: all Twilio-specific fields fenced into a single
-                 named Twilio tab, shown only when the user is on Twilio. -->
-            <xpath expr="//page[@name='organization']" position="before">
+                 named Twilio tab, shown only when the user is on Twilio.
+                 Placed after Organization so the general tab leads. -->
+            <xpath expr="//page[@name='organization']" position="after">
                 <page name="twilio" string="Twilio" invisible="not is_twilio_enabled">
                     <group>
                         <group string="Account">

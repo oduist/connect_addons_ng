@@ -33,7 +33,8 @@ provider**, shown only when the user is bound to it (reusing the
 `is_twilio_enabled` / `is_freeswitch_enabled` computes from ADR-028).
 Shared groups keep only provider-agnostic fields.
 
-Resulting tabs: `[Twilio] [Organization] [FreeSWITCH]`.
+Resulting tabs: `[Organization] [Twilio] [FreeSWITCH]` — the general
+Organization tab leads, provider tabs follow.
 
 **`connect_twilio`** — *Twilio* tab:
 - Account: `username`, `domain`, `twilio_edge`
@@ -41,8 +42,9 @@ Resulting tabs: `[Twilio] [Organization] [FreeSWITCH]`.
 - SIP Phone / Web Phone groups (the former standalone *Phone* tab)
 
 Removes the xpath insertions into *User Info* / *Call Settings* and the
-separate *Phone* page. `is_twilio_enabled` stays as a hidden field
-anchored after `provider_ids` (outside the conditionally-hidden tab, so
+separate *Phone* page; the tab is inserted after the *Organization*
+page. `is_twilio_enabled` stays as a hidden field anchored after
+`provider_ids` (outside the conditionally-hidden tab, so
 the tab's `invisible` modifier can read it). Per-field `invisible` flags
 collapse into the single page `invisible`; only intra-field modifiers
 (`password` hidden when `sip_enabled == False`, etc.) remain.
