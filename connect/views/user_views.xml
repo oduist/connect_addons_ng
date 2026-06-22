@@ -38,7 +38,6 @@
                             <field name="voicemail_enabled"/>
                             <field name="missed_calls_notify"/>
                             <field name="greeting_message"/>
-                            <field name="provider_ids" widget="many2many_tags" readonly="1"/>
                         </group>
                     </group>
                     <notebook>
@@ -54,7 +53,6 @@
                             <field name="provider_binding_ids">
                                 <list editable="bottom">
                                     <field name="provider_id"/>
-                                    <field name="config" optional="hide"/>
                                 </list>
                             </field>
                         </page>
