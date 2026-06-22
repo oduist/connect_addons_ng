@@ -5,15 +5,19 @@
         <field name="model">connect.user</field>
         <field name="inherit_id" ref="connect.view_connect_user_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//field[@name='record_calls']" position="after">
+                <field name="is_freeswitch_enabled" invisible="1"/>
+            </xpath>
             <div class="oe_button_box" position="inside">
                 <button name="%(connect.action_connect_endpoint)d" type="action"
                         class="oe_stat_button" icon="fa-headphones"
+                        invisible="not is_freeswitch_enabled"
                         context="{'default_connect_user_id': id, 'search_default_connect_user_id': id}">
                     <field name="endpoint_count" widget="statinfo" string="Endpoints"/>
                 </button>
             </div>
             <notebook position="inside">
-                <page name="webrtc" string="WebRTC">
+                <page name="webrtc" string="WebRTC" invisible="not is_freeswitch_enabled">
                     <group>
                         <group>
                             <field name="webrtc_enabled" widget="boolean_toggle"/>
@@ -24,7 +28,7 @@
                         </group>
                     </group>
                 </page>
-                <page name="endpoints" string="Endpoints">
+                <page name="endpoints" string="Endpoints" invisible="not is_freeswitch_enabled">
                     <field name="endpoint_ids">
                         <list editable="bottom">
                             <field name="name"/>

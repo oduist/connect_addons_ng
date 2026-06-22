@@ -19,6 +19,18 @@ class User(models.Model):
     )
     webrtc_password = fields.Char(string='WebRTC Password', readonly=True)
 
+    is_freeswitch_enabled = fields.Boolean(
+        compute='_compute_is_freeswitch_enabled',
+        help='Technical flag: True when this user is bound to the '
+             'FreeSWITCH provider. Drives visibility of FS-specific form '
+             'fields (ADR-028).',
+    )
+
+    @api.depends('provider_ids.code')
+    def _compute_is_freeswitch_enabled(self):
+        for rec in self:
+            rec.is_freeswitch_enabled = 'freeswitch' in rec.provider_ids.mapped('code')
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
