@@ -25,8 +25,10 @@
         <field name="model">connect.user</field>
         <field name="inherit_id" ref="connect.view_connect_user_form"/>
         <field name="arch" type="xml">
-            <!-- Add username and domain to User Info group -->
-            <xpath expr="//field[@name='user']" position="after">
+            <!-- Add username and domain to User Info group. Anchor on
+                 provider_ids so the Providers selector stays immediately
+                 below Odoo User, ahead of Twilio-specific fields. -->
+            <xpath expr="//field[@name='provider_ids']" position="after">
                 <field name="is_twilio_enabled" invisible="1"/>
                 <field name="username" invisible="not is_twilio_enabled"/>
             </xpath>
