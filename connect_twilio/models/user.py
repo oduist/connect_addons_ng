@@ -28,6 +28,13 @@ class User(models.Model):
 
     username = fields.Char()
 
+    is_twilio_enabled = fields.Boolean(
+        compute='_compute_is_twilio_enabled',
+        help='Technical flag: True when this user is bound to the Twilio '
+             'provider. Drives visibility of Twilio-specific form fields '
+             '(ADR-028).',
+    )
+
     # Re-declare the core field with the Twilio-validation domain. The
     # `status` field on connect.outgoing_callerid is added by this module,
     # so the filter only makes sense (and only resolves) when Twilio is
@@ -37,6 +44,11 @@ class User(models.Model):
         domain=['|', ('status', '=', 'validated'), ('callerid_type', '=', 'number')])
 
     _username_uniq = Constraint('UNIQUE(username)', 'This PBX username is already defined!')
+
+    @api.depends('provider_ids.code')
+    def _compute_is_twilio_enabled(self):
+        for rec in self:
+            rec.is_twilio_enabled = 'twilio' in rec.provider_ids.mapped('code')
 
     @api.constrains('username')
     def _check_username(self):
