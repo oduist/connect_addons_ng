@@ -38,8 +38,8 @@
                 <page name="twilio" string="Twilio" invisible="not is_twilio_enabled">
                     <group>
                         <group string="Account">
-                            <field name="username"/>
-                            <field name="domain"/>
+                            <field name="username" required="is_twilio_enabled"/>
+                            <field name="domain" required="is_twilio_enabled"/>
                             <field name="twilio_edge"
                                    help="Choose the closest Twilio Edge or use Global Low-latency routing."/>
                         </group>
