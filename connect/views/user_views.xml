@@ -29,6 +29,8 @@
                     <group>
                         <group string="User Info">
                             <field name="user"/>
+                            <field name="provider_ids" widget="many2many_tags"
+                                   options="{'no_create': True}"/>
                             <field name="exten" readonly="1"/>
                             <field name="outgoing_callerid"/>
                             <field name="active"/>
@@ -38,8 +40,6 @@
                             <field name="voicemail_enabled"/>
                             <field name="missed_calls_notify"/>
                             <field name="greeting_message"/>
-                            <field name="provider_ids" widget="many2many_tags"
-                                   options="{'no_create': True}"/>
                         </group>
                     </group>
                     <notebook>
