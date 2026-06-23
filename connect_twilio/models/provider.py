@@ -29,11 +29,6 @@ class TwilioProvider(models.Model):
             return super()._phone_adapter_module()
         return 'connect_twilio/static/src/js/main.js'
 
-    def _active_calls_tray_module(self):
-        if self.code != 'twilio':
-            return super()._active_calls_tray_module()
-        return 'connect_twilio/static/src/services/active_calls/active_calls_main.js'
-
     def _message_action_modules(self):
         if self.code != 'twilio':
             return super()._message_action_modules()

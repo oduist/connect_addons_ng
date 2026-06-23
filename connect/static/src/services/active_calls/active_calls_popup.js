@@ -1,10 +1,10 @@
 /** @odoo-module **/
-import {useService} from "@web/core/utils/hooks"
+import { useService } from "@web/core/utils/hooks"
 
-import {Component, useState} from "@odoo/owl"
+import { Component, useState } from "@odoo/owl"
 
 export class ConnectActiveCallsPopup extends Component {
-    static template = 'connect_twilio.active_calls_popup'
+    static template = 'connect.active_calls_popup'
     static props = {
         bus: Object,
     }
@@ -37,9 +37,9 @@ export class ConnectActiveCallsPopup extends Component {
 
     setTimer(seconds) {
         const self = this
-        self.hideTimer = setTimeout(() => {
-            self.state.isDisplay = false
-        }, seconds)
+        // self.hideTimer = setTimeout(() => {
+        //     self.state.isDisplay = false
+        // }, seconds)
     }
 
     async toggleDisplay() {

@@ -2,7 +2,7 @@
 import {Component} from "@odoo/owl"
 
 export class ConnectActiveCallsTray extends Component {
-    static template = 'connect_twilio.active_calls_tray'
+    static template = 'connect.active_calls_tray'
     static props = {
         bus: Object,
     }

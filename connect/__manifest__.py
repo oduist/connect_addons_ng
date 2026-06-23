@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect',
-    'version': '19.0.3.1.20',
+    'version': '19.0.3.1.21',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Communication platform for Odoo',
@@ -44,6 +44,7 @@
     'assets': {
         'web.assets_backend': [
             '/connect/static/src/components/license_banner/*',
+            '/connect/static/src/services/active_calls/*',
         ],
     },
     'post_init_hook': 'post_init_hook',
