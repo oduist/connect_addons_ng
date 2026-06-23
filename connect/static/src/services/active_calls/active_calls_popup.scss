@@ -11,8 +11,8 @@
   border-radius: 5px;
   // The form control panel is sticky at z-index 10; match-or-below would let
   // it paint over this overlay (popup appeared "below" the form). Sit at the
-  // Bootstrap dropdown level so the popup overlays the form but stays under modals.
-  z-index: 1000;
+  // Bootstrap modal level so the popup always overlays the form chrome.
+  z-index: 1050;
 
   .row {
     margin-right: 0;
