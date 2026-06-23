@@ -1,0 +1,8 @@
+<configuration name="fifo.conf" description="Call Center">
+  <settings>
+    <param name="outbound-strategy" value="ringall"/>
+  </settings>
+  <fifos>
+    <!-- Queues are created dynamically via the "fifo" application. -->
+  </fifos>
+</configuration>

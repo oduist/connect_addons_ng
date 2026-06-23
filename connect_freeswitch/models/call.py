@@ -159,9 +159,13 @@ class Call(models.Model):
             a_leg_parts.append(
                 '[{}]user/{}@{}'.format(','.join(leg_vars), ep.auth_user, domain))
 
-        # WebRTC (Verto) leg from user
-        if connect_user.webrtc_enabled and connect_user.originate_ring:
-            verto_login = connect_user.user.login
+        # WebRTC (Verto) leg from user.
+        # The Verto contact is addressed by the user's Verto login
+        # (<login-local><res.users.id>), matching the FS XML directory. See
+        # specs/decisions/016-verto-login-uses-user-id.md.
+        if connect_user.webrtc_enabled and connect_user.originate_ring \
+                and connect_user.user:
+            verto_login = connect_user._get_verto_login()
             a_leg_parts.append(
                 "[leg_timeout=30,origination_caller_id_name='{name}'"
                 ",origination_caller_id_number={num}"
@@ -176,13 +180,21 @@ class Call(models.Model):
 
         a_leg = ','.join(a_leg_parts)
 
-        # Caller ID for b-leg (what the called party sees)
-        first_ep = endpoints[:1]
-        caller_number = connect_user.exten_number or (first_ep.auth_user if first_ep else '')
-
         # Check if target is an internal extension
         exten = self.env['connect.exten'].search(
             [('number', '=', number)], limit=1)
+
+        # Caller ID for b-leg (what the called party sees)
+        first_ep = endpoints[:1]
+        if exten:
+            caller_number = connect_user.exten_number or (first_ep.auth_user if first_ep else '')
+        else:
+            caller_number = (
+                connect_user.outgoing_callerid.number
+                or connect_user.exten_number
+                or (first_ep.auth_user if first_ep else '')
+            )
+
         if exten:
             # Internal call — bridge to extension's destination
             b_leg = self._build_internal_b_leg(exten, domain)
@@ -204,19 +216,43 @@ class Call(models.Model):
                     "No outgoing route found for number: {}".format(number))
 
         # Build originate command
+        cid_name = (caller_name or caller_number).replace("'", "")
         variables = [
-            "origination_caller_id_name='{}'".format(
-                (caller_name or caller_number).replace("'", "")),
+            "origination_caller_id_name='{}'".format(cid_name),
             "origination_caller_id_number={}".format(caller_number),
             "odoo_caller_pbx_user_id={}".format(connect_user.id),
+            # `originate user/<login>@<domain>` makes the A-leg's
+            # caller_profile.destination_number the resolved user URI
+            # (e.g. "u:<verto-uuid>"), not the dialled number. Stash
+            # the real destination so the CDR parser can recover it.
+            "odoo_destination_number={}".format(number),
+            # The A-leg goes through the user directory, which seeds
+            # effective_caller_id_* from the user's extension and
+            # silently overrides any globals we try to set. Stash the
+            # intended caller-id on a custom variable that the CDR
+            # parser can pick up — symmetric with the dialplan SET
+            # that UA-originated calls do via ADR-021.
+            "odoo_caller_id_name='{}'".format(cid_name),
+            "odoo_caller_id_number={}".format(caller_number),
         ]
         if partner_id:
             variables.append("odoo_partner_id={}".format(partner_id))
 
+        # B-leg caller-id: the bridge subchannel that actually reaches
+        # the PSTN gateway (or the called user for internal calls)
+        # inherits its caller-id from the A-leg by default, which is
+        # the directory-seeded extension. Override on the B-leg itself
+        # so the called party sees `caller_number` (extension for
+        # internal, outgoing_callerid for external).
+        b_leg_vars = [
+            "origination_caller_id_name='{}'".format(cid_name),
+            "origination_caller_id_number={}".format(caller_number),
+        ]
         # For external calls via gateway, force standard codecs on b-leg
         # since a-leg may be WebRTC (Opus) which gateways don't support
         if not exten:
-            b_leg = '[absolute_codec_string=PCMU,PCMA]{}'.format(b_leg)
+            b_leg_vars.append("absolute_codec_string=PCMU,PCMA")
+        b_leg = '[{}]{}'.format(','.join(b_leg_vars), b_leg)
 
         cmd = '{{{}}}{} &bridge({})'.format(
             ','.join(variables), a_leg, b_leg)
@@ -260,10 +296,12 @@ class Call(models.Model):
         for ep in target_endpoints:
             b_parts.append('user/{}@{}'.format(ep.auth_user, domain))
 
-        # WebRTC
-        if target_user.webrtc_enabled:
+        # WebRTC: address the Verto contact by the user's Verto login
+        # (<login-local><res.users.id>), matching the FS XML directory.
+        # See specs/decisions/016-verto-login-uses-user-id.md.
+        if target_user.webrtc_enabled and target_user.user:
             b_parts.append('user/{}@{}'.format(
-                target_user.user.login, domain))
+                target_user._get_verto_login(), domain))
 
         if b_parts:
             return ','.join(b_parts)
@@ -376,7 +414,13 @@ class Call(models.Model):
                 if orphan.call and channel.call and orphan.call != channel.call:
                     old_call = orphan.call
                     orphan.call = channel.call
-                    if not old_call.channels:
+                    # Use a fresh DB count instead of `old_call.channels`
+                    # because the One2many cache is not invalidated by
+                    # the inverse-side write above and still reports the
+                    # moved channel as belonging to old_call.
+                    remaining = self.env['connect.channel'].sudo().search_count(
+                        [('call', '=', old_call.id)])
+                    if not remaining:
                         old_call.unlink()
                 debug(self, 'Linked orphan channel %s to parent %s' % (
                     orphan.id, channel.id))

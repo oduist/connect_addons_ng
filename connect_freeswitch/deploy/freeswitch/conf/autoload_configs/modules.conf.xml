@@ -3,7 +3,7 @@
     <!-- Loggers (stdout via mod_logfile → /dev/stdout) -->
     <load module="mod_logfile"/>
 
-    <!-- XML Interfaces - для получения конфига из Odoo -->
+    <!-- XML Interfaces - to fetch config from Odoo -->
     <load module="mod_xml_curl"/>
     <load module="mod_xml_cdr"/>
     <load module="mod_xml_rpc"/>
@@ -23,7 +23,9 @@
     <load module="mod_dptools"/>
     <load module="mod_http_cache"/>
     <load module="mod_dialplan_xml"/>
+    <load module="mod_fifo"/>
     <load module="mod_valet_parking"/>
+    <load module="mod_local_stream"/>
 
     <!-- Codecs -->
     <load module="mod_opus"/>

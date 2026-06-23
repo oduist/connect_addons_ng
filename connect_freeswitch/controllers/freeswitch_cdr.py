@@ -1,5 +1,6 @@
 import logging
 import re
+import urllib.parse
 from xml.etree import ElementTree as ET
 
 from odoo import http
@@ -75,12 +76,21 @@ class FreeSwitchCDRController(http.Controller):
         caller_profile = root.find('.//caller_profile')
         caller = ''
         called = ''
-        direction = 'inbound'
 
         if caller_profile is not None:
             caller = self._xml_text(caller_profile, 'caller_id_number')
             called = self._xml_text(caller_profile, 'destination_number')
-            direction = self._xml_text(caller_profile, 'direction', 'inbound')
+
+        # FreeSWITCH stores the channel's direction in <channel_data>
+        # at the top of the CDR — `inbound` for the originator (UA → FS)
+        # leg, `outbound` for the gateway (FS → PSTN) leg. The previous
+        # XPath (`caller_profile/direction`) never matched in any FS
+        # version, so every CDR was parsed as `inbound`.
+        channel_data = root.find('./channel_data')
+        if channel_data is not None:
+            direction = self._xml_text(channel_data, 'direction', 'inbound')
+        else:
+            direction = 'inbound'
 
         # Hangup cause
         hangup_cause = self._xml_text(root, './/hangup_cause', 'NORMAL_CLEARING')
@@ -108,29 +118,71 @@ class FreeSwitchCDRController(http.Controller):
         odoo_number_id = None
 
         if variables is not None:
-            # Use effective_caller_id_number (set by Odoo directory) if
-            # caller_id_number is a SIP username rather than a number
-            effective_caller = self._xml_text(
-                variables, 'effective_caller_id_number')
-            if effective_caller and not caller.isdigit():
+            # Click-to-call originates `user/<login>@<domain>` and the
+            # user directory rewrites the channel's effective caller-id
+            # back to the extension, silently overriding any globals
+            # `connect.call.originate` tried to set. The originate path
+            # therefore stashes the intended caller-id on the custom
+            # `odoo_caller_id_number` variable — prefer that. UA-
+            # originated calls don't set it; they get the right value
+            # from `effective_caller_id_number` (rewritten by the
+            # outgoing-route dialplan, ADR-021).
+            #
+            # mod_xml_cdr URL-encodes channel variable values inside
+            # <variables> (`+` → `%2B`, `@` → `%40`), so unquote first.
+            odoo_caller_id = urllib.parse.unquote(self._xml_text(
+                variables, 'odoo_caller_id_number'))
+            effective_caller = urllib.parse.unquote(self._xml_text(
+                variables, 'effective_caller_id_number'))
+            if odoo_caller_id:
+                caller = odoo_caller_id
+            elif effective_caller:
                 caller = effective_caller
 
+            # Click-to-call originates `user/<login>@<domain>`, so the
+            # A-leg's caller_profile.destination_number is the resolved
+            # user URI rather than the dialled number. The originate
+            # path stashes the real destination as a channel variable;
+            # use it when present.
+            odoo_destination = urllib.parse.unquote(self._xml_text(
+                variables, 'odoo_destination_number'))
+            if odoo_destination:
+                called = odoo_destination
+
+            # B-leg discriminator: mod_xml_cdr always sets `originator`
+            # (and `originating_leg_uuid`) on the originatee side; the
+            # originator does not have them. `bridge_uuid` / `signal_bond`
+            # are present on both legs and are NOT reliable for A/B
+            # detection.
+            originator_uuid = (
+                self._xml_text(variables, 'originator')
+                or self._xml_text(variables, 'originating_leg_uuid')
+            )
+
+            # `other_leg_uuid` drives parent-channel linking in
+            # `connect.channel.process_channel_event`. We populate it
+            # only on the B-leg (= originatee) so the A-leg has no
+            # parent. The A-leg picks up its B-leg via the reverse-orphan
+            # check in `connect.call.on_freeswitch_cdr` once the B-leg
+            # CDR arrives.
             other_leg_uuid = (
                 self._xml_text(variables, 'odoo_parent_uuid')
                 or self._xml_text(variables, 'Other-Leg-Unique-ID')
+                or originator_uuid
             )
             chain_id = self._xml_text(variables, 'odoo_chain_id')
 
             odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
             odoo_called_user = self._xml_text(
                 variables, 'odoo_called_user_id')
-            if other_leg_uuid:
-                # B-leg: odoo_connect_user_id is the called user
+            if originator_uuid:
+                # B-leg: odoo_connect_user_id (if present) identifies the
+                # called connect.user.
                 if odoo_user:
                     called_pbx_user_id = int(odoo_user)
             else:
                 # A-leg: odoo_connect_user_id is the caller,
-                # odoo_called_user_id is the called user
+                # odoo_called_user_id is the called user.
                 if odoo_user:
                     caller_pbx_user_id = int(odoo_user)
                 if odoo_called_user:

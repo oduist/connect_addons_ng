@@ -101,14 +101,20 @@ class FreeSwitchXMLController(http.Controller):
                     endpoint.connect_user_id, user, actual_domain)
             return self._directory_for_endpoint(endpoint, user, actual_domain)
 
-        # 2. Search by res.users login (Verto WebRTC registration)
-        connect_user = ConnectUser.search([
-            ('user.login', '=', user),
-            ('webrtc_enabled', '=', True),
-            ('active', '=', True),
-        ], limit=1)
-        if connect_user:
-            return self._directory_for_webrtc_user(connect_user, user, actual_domain)
+        # 2. Search by Verto WebRTC login (format: <login-local><res.users.id>).
+        # The login is built without '@' because mod_verto splits the JSON-RPC
+        # login on '@' to derive the SIP realm; see
+        # specs/decisions/016-verto-login-uses-user-id.md.
+        res_user = ConnectUser._resolve_verto_login(user)
+        if res_user:
+            connect_user = ConnectUser.search([
+                ('user', '=', res_user.id),
+                ('webrtc_enabled', '=', True),
+                ('active', '=', True),
+            ], limit=1)
+            if connect_user:
+                return self._directory_for_webrtc_user(
+                    connect_user, user, actual_domain)
 
         # 3. Search by exten_number (bridge to user)
         connect_user = ConnectUser.search([
@@ -154,12 +160,19 @@ class FreeSwitchXMLController(http.Controller):
         )
 
     def _directory_for_webrtc_user(self, connect_user, xml_user_id, domain):
-        """Directory entry for a WebRTC/Verto user registration."""
+        """Directory entry for a WebRTC/Verto user registration.
+
+        xml_user_id is the Verto login string sent by mod_verto:
+        ``<login-local-part><res.users.id>`` (e.g. ``litnimax42``). See
+        specs/decisions/016-verto-login-uses-user-id.md.
+        """
         dial_string = "${{verto_contact({user_id}@{domain})}}".format(
             user_id=xml_user_id, domain=domain)
 
         cid_name = connect_user.name
-        cid_num = connect_user.exten_number or xml_user_id
+        # Avoid surfacing the internal user.id as caller-id-number; fall back
+        # to the user's name so the called party sees something meaningful.
+        cid_num = connect_user.exten_number or connect_user.name or xml_user_id
 
         return self._render_directory_user(
             xml_user_id=xml_user_id,
@@ -187,9 +200,11 @@ class FreeSwitchXMLController(http.Controller):
             dial_parts.append("${{sofia_contact(*/{auth_user}@{domain})}}".format(
                 auth_user=ep.auth_user, domain=domain))
 
-        # WebRTC contact
-        if connect_user.webrtc_enabled:
-            verto_login = connect_user.user.login
+        # WebRTC contact: address by the same Verto login string the JS
+        # softphone uses to register (<login-local><res.users.id>). See
+        # specs/decisions/016-verto-login-uses-user-id.md.
+        if connect_user.webrtc_enabled and connect_user.user:
+            verto_login = connect_user._get_verto_login()
             dial_parts.append("${{verto_contact({user_id}@{domain})}}".format(
                 user_id=verto_login, domain=domain))
 
@@ -264,21 +279,27 @@ class FreeSwitchXMLController(http.Controller):
                 'odoo_user_id': str(connect_user.user.id) if connect_user and connect_user.user else '',
             })
 
-        # All active WebRTC users
+        # All active WebRTC users.
+        # Verto users are keyed by the same login the JS softphone sends:
+        # <login-local><res.users.id>. See
+        # specs/decisions/016-verto-login-uses-user-id.md.
         webrtc_users = ConnectUser.search([
             ('webrtc_enabled', '=', True),
             ('webrtc_password', '!=', False),
             ('active', '=', True),
         ])
         for wu in webrtc_users:
+            if not wu.user:
+                continue
+            verto_login = wu._get_verto_login()
             ep_data.append({
-                'auth_user': wu.user.login,
+                'auth_user': verto_login,
                 'password': wu.webrtc_password,
                 'cid_name': wu.name,
-                'cid_num': wu.exten_number or wu.user.login,
+                'cid_num': wu.exten_number or wu.name or verto_login,
                 'connect_user_id': str(wu.id),
                 'endpoint_id': '',
-                'odoo_user_id': str(wu.user.id) if wu.user else '',
+                'odoo_user_id': str(wu.user.id),
             })
 
         if not ep_data:
@@ -302,8 +323,13 @@ class FreeSwitchXMLController(http.Controller):
         - public context: inbound DID routing via connect.number
         - default context: extension lookup, then outgoing routes, then fallback
         """
-        context = params.get('Caller-Context', params.get('Hunt-Context', 'default'))
-        destination = params.get('Caller-Destination-Number', '')
+        # Hunt-* reflects the CURRENT routing lookup (e.g. after
+        # execute_extension/transfer to a new destination), while Caller-* is
+        # the original A-leg destination. Prefer Hunt when present so that
+        # in-call hops (like the IVR's cf_call_<id>_<digit> landing extension)
+        # are routed correctly.
+        context = params.get('Hunt-Context') or params.get('Caller-Context') or 'default'
+        destination = params.get('Hunt-Destination-Number') or params.get('Caller-Destination-Number', '')
 
         debug(request.env['connect.settings'].sudo(), "Dialplan request: context=%s, destination=%s" % (context, destination))
 
@@ -324,16 +350,9 @@ class FreeSwitchXMLController(http.Controller):
         """Route inbound calls from PSTN trunks via connect.number."""
         Number = request.env['connect.number'].sudo()
 
-        # Try exact match on phone number
-        number = Number.search([
-            ('phone_number', '=', destination),
-        ], limit=1)
-
-        # Try with + prefix if not found
-        if not number and not destination.startswith('+'):
-            number = Number.search([
-                ('phone_number', '=', '+' + destination),
-            ], limit=1)
+        # Match tolerating an optional leading '+' between the trunk format and
+        # the stored DID (see connect.number._find_by_did).
+        number = Number._find_by_did(destination)
 
         if number:
             return number.generate_dialplan(params)
@@ -367,6 +386,28 @@ class FreeSwitchXMLController(http.Controller):
                 'webhook_url': webhook_url,
             }))
             return ''.join(parts)
+
+        # IVR user-choice landing extension: bind_digit_action in dialplan_ivr
+        # transfers here when a user-typed choice is picked. Sets per-call
+        # variables and bridges to the user.
+        ivr_choice = re.match(r'^cf_call_(\d+)_(.+)$', destination)
+        if ivr_choice:
+            cf = request.env['connect.callflow'].sudo().browse(int(ivr_choice.group(1)))
+            if cf.exists():
+                choice_xml = cf._generate_ivr_choice_dialplan(ivr_choice.group(2))
+                if choice_xml:
+                    parts.append(choice_xml)
+                    return ''.join(parts)
+
+        # IVR catch-all (invalid DTMF) extension.
+        ivr_invalid = re.match(r'^cf_invalid_(\d+)$', destination)
+        if ivr_invalid:
+            cf = request.env['connect.callflow'].sudo().browse(int(ivr_invalid.group(1)))
+            if cf.exists():
+                invalid_xml = cf._generate_ivr_invalid_dialplan()
+                if invalid_xml:
+                    parts.append(invalid_xml)
+                    return ''.join(parts)
 
         # Try exact extension match
         exten = Exten.search([('number', '=', destination)], limit=1)
@@ -425,6 +466,8 @@ class FreeSwitchXMLController(http.Controller):
             return self._get_acl_config(params)
         elif key_value == 'xml_rpc.conf':
             return self._get_xml_rpc_config(params)
+        elif key_value == 'fifo.conf':
+            return self._get_fifo_config(params)
 
         return self._not_found()
 
@@ -488,6 +531,48 @@ class FreeSwitchXMLController(http.Controller):
             'user': user,
             'password': password,
         })
+
+        xml_str = ('<document type="freeswitch/xml">'
+                   '<section name="configuration">'
+                   '{body}'
+                   '</section></document>').format(body=config_xml)
+        return self._xml_response_str(xml_str)
+
+    def _get_fifo_config(self, params):
+        """Serve fifo.conf.xml with static outbound consumers for every FS Queue.
+
+        Dialplan does `fifo <name> in` to enqueue the caller. Thanks to
+        `outbound-strategy=ringall` and the static `<member>` list, mod_fifo
+        originates all member dial-strings in parallel; the first to answer
+        takes the caller from the queue.
+        """
+        FsFifo = request.env['connect.fs_fifo'].sudo()
+        fifos = FsFifo.search([])
+
+        fs_domain = request.env['connect.settings'].sudo().get_param(
+            'freeswitch_domain') or '${domain}'
+
+        fifo_data = []
+        for fifo in fifos:
+            members = []
+            for user in fifo.member_user_ids:
+                ds = fifo._member_dial_string(fs_domain, user=user)
+                if ds:
+                    members.append(ds)
+            for endpoint in fifo.member_endpoint_ids:
+                ds = fifo._member_dial_string(fs_domain, endpoint=endpoint)
+                if ds:
+                    members.append(ds)
+            if not members:
+                continue
+            fifo_data.append({
+                'name': 'fs_fifo_{}'.format(fifo.id),
+                'member_dial_strings': members,
+                'max_wait': fifo.max_wait_time or 60,
+            })
+
+        Template = request.env['connect.freeswitch.template'].sudo()
+        config_xml = Template.render('config_fifo', {'fifos': fifo_data})
 
         xml_str = ('<document type="freeswitch/xml">'
                    '<section name="configuration">'

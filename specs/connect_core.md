@@ -313,7 +313,7 @@ Order: `name`
 | `record_calls` | Boolean | Default: True |
 | `voicemail_enabled` | Boolean | |
 | `voicemail_prompt` | Text | Jinja2 template |
-| `outgoing_callerid` | Many2one | `connect.outgoing_callerid` |
+| `outgoing_callerid` | Many2one | `connect.outgoing_callerid`, no domain (provider modules may restrict the picker via view-inheritance) |
 | `missed_calls_notify` | Boolean | |
 | `greeting_message` | Char | |
 | `summary_prompt` | Char | Per-user override |
@@ -489,7 +489,7 @@ Order: `name`
 | `name` | Char | Required |
 | `exten` | Many2one | `connect.exten`, readonly |
 | `exten_number` | Char | Related |
-| `language` | Char | Default: `en-US` |
+| `language` | Selection | BCP-47, populated by `_get_language_selection()`; default `en-US` |
 | `voice` | Char | Default: `Woman` |
 | `gather_input` | Boolean | |
 | `gather_input_type` | Selection | `dtmf speech`, `dtmf`, `speech` |
@@ -509,6 +509,7 @@ Order: `name`
 | Method | Description |
 |--------|-------------|
 | `create_extension()` | Create associated `connect.exten` |
+| `_get_language_selection()` | Return list of `(code, label)` tuples for the `language` field. Override in an extension to extend/restrict the set. Default list = intersection of Twilio Polly and bundled Piper voices. |
 | `get_prompt_message()` | Abstract: return prompt for the caller |
 | `get_gather_invalid_input_message()` | Abstract: return invalid input message |
 | `get_voicemail_prompt_message()` | Abstract: return voicemail prompt |
@@ -565,7 +566,7 @@ Order: `id desc`
 | Method | Description |
 |--------|-------------|
 | `create_record_from_message()` | Create partner from incoming message data |
-| `get_partner_by_number()` | Search partner by phone number (uses number_search_operation setting) |
+| `get_partner_by_number()` | Search partner by phone number via `phone_mobile_search`. Falls back to an E.164-normalized lookup (country from the main company) if the literal search returns nothing, so caller IDs delivered in local format still match partners stored in E.164 and vice versa. |
 | `_get_connect_calls_count()` | Compute call count |
 | `_get_connect_messages_count()` | Compute message count |
 | `_normalize_phone()` | Normalize phone number format |
@@ -737,16 +738,33 @@ All models get access rules for the three groups:
 | `connect.callflow_choice` | Read | Full | - |
 | `connect.user_callflow` | Read | Full | - |
 | `connect.user_callflow_call` | Read | Full | - |
-| `connect.debug` | Read | Full | Create |
-| `connect.settings` | Read | Full | - |
-| `connect.endpoint` | Read | Full | - |
-| `connect.message_configuration` | Read | Full | - |
+| `connect.debug` | - | Full | Create |
+| `connect.settings` | - | Full | - |
+| `connect.endpoint` | Read+Write | Full | - |
+| `connect.message_configuration` | - | Full | - |
 | `connect.favorite` | Read+Write | Full | - |
+
+`connect.settings`, `connect.debug` and `connect.message_configuration` are
+**admin-only** — `group_user` has no model access. End-user features still need
+configuration values, so `connect.settings.get_param()` sudo-finds the singleton
+and returns the value without requiring the caller to hold model access; it only
+blocks parameters whose field carries a `groups=` restriction (the secrets, e.g.
+`openai_api_key`, Twilio `auth_token`, `firewall_service_token`) for non-members,
+so a plain user cannot read secrets via `get_param` over RPC. `set_param` stays
+non-sudo (configuration writes remain manager-only). The `debug()` helper writes
+`connect.debug` via sudo, so logging from user-triggered code keeps working.
 
 ### Record Rules
 
 - Users see only their own `connect.user` records
 - Admins see all `connect.user` records
+- Users can read and edit only `connect.endpoint` records linked to their own
+  `connect.user` (`connect_user_id.user = user`); admins see all
+  (`rule_connect_endpoint_user` / `rule_connect_endpoint_admin`). The record rule
+  applies to write as well, so a user can self-manage their own SIP device
+  (Regenerate password, set Originate Ring / auto-answer header) but never touch
+  another user's endpoint — and one user's `auth_password` stays out of another's
+  reach. `group_user` has read+write but not create/unlink on the model.
 - Users see calls/messages/recordings associated with their `connect.user` or where they
   are the `caller_user`/`answered_user`/`sender_user`
 

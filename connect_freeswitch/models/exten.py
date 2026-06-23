@@ -9,7 +9,10 @@ class Exten(models.Model):
     _inherit = 'connect.exten'
 
     dst = fields.Reference(
-        selection_add=[('connect.endpoint', 'Endpoint')],
+        selection_add=[
+            ('connect.endpoint', 'Endpoint'),
+            ('connect.fs_fifo', 'FS Queue'),
+        ],
     )
 
     def generate_dialplan(self, params):

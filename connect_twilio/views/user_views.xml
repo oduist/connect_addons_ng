@@ -29,6 +29,7 @@
             <xpath expr="//field[@name='user']" position="after">
                 <field name="username"/>
             </xpath>
+
             <xpath expr="//field[@name='active']" position="after">
                 <field name="domain"/>
                 <field name="twilio_edge"
