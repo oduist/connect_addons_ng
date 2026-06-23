@@ -337,22 +337,11 @@ class Call(models.Model):
         call = self.process_call_event(channel, provider_code='freeswitch')
 
         if channel:
-            # Reverse orphan check: find channels that arrived before this one
-            # and reference it as parent but couldn't link at the time
-            orphan_channels = self.env['connect.channel'].search([
-                ('parent_sid', '=', cdr_data['uuid']),
-                ('parent_channel', '=', False),
-                ('id', '!=', channel.id),
-            ])
-            for orphan in orphan_channels:
-                orphan.parent_channel = channel
-                if orphan.call and channel.call and orphan.call != channel.call:
-                    old_call = orphan.call
-                    orphan.call = channel.call
-                    if not old_call.channels:
-                        old_call.unlink()
-                debug(self, 'Linked orphan channel %s to parent %s' % (
-                    orphan.id, channel.id))
+            # Bridge sibling linking + duplicate-call collapse happens in the
+            # post-commit `reconcile_bridge_link` convergence (called from the
+            # CDR controller). Doing it here too is pointless — this runs in
+            # the racy REPEATABLE-READ snapshot that can't see sibling legs —
+            # and carried the same link-gated flaw (see ADR-030).
 
             # Link any recording that arrived before the CDR created the channel
             orphan_recordings = self.env['connect.recording'].search([
