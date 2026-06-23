@@ -179,63 +179,93 @@ class Channel(models.Model):
 
     @api.model
     def reconcile_bridge_link(self, sid):
-        """Link `sid`'s channel to its bridge sibling (and merge calls).
+        """Collapse the whole bridge `sid` belongs to into one call.
 
-        Callers run this in a fresh transaction (typically after committing
-        the CDR webhook handler) to recover from snapshot races: when two
-        bridged-leg CDRs arrive concurrently, Odoo's REPEATABLE READ
-        isolation can leave the second worker unable to see the first
-        worker's freshly-created sibling row, so `process_channel_event`
-        creates an unlinked channel and `process_call_event` mints a
-        duplicate `connect.call`. With a fresh snapshot both legs are
-        visible; this helper performs the parent_channel link and merges
-        the orphan call into the parent's call.
+        A bridged call is N legs, not two: FreeSWITCH forks the b-leg to
+        every callee contact (the winner answers, the losers tear down) and
+        posts a CDR per leg, so one logical call spans an a-leg plus M
+        b-legs — all sharing the a-leg as their `signal_bond` parent (stored
+        in `parent_sid`). Callers run this post-commit (see the FreeSWITCH
+        CDR controller) so a fresh snapshot sees every committed leg.
 
-        Idempotent — repeated invocations short-circuit cleanly.
+        Walk the bridge component (the `parent_sid` <-> `sid` closure),
+        set each channel's `parent_channel` where the parent is resolvable,
+        then converge every distinct `call` in the component into one.
+        Unlike the per-leg merge it replaces, convergence is driven by call
+        inequality inside the component — not by whether `parent_channel`
+        was just established — so a leg that ended up linked but on its own
+        duplicate call (the concurrent-CDR race) is still collapsed.
+
+        Idempotent: a component already on one call is a no-op. Order-
+        independent: whichever leg's reconcile runs last sees the full
+        component; an out-of-order late leg converges on its own pass.
         """
         ch = self.search([('sid', '=', sid)], limit=1)
         if not ch:
             return
-        # Forward link — we know our parent_sid but didn't see the row.
-        if not ch.parent_channel and ch.parent_sid:
-            parent = self.search([('sid', '=', ch.parent_sid)], limit=1)
-            if parent:
-                ch.parent_channel = parent.id
-                self._merge_calls(ch, parent)
-        # Reverse link — another leg arrived first referencing us as parent.
-        orphans = self.search([
-            ('parent_sid', '=', sid),
-            ('parent_channel', '=', False),
-            ('id', '!=', ch.id),
-        ])
-        for orphan in orphans:
-            orphan.parent_channel = ch.id
-            self._merge_calls(orphan, ch)
+        component = self._bridge_component(ch)
+        # Keep parent_channel links current (used by the UI and the
+        # connect_twilio recording lookup) wherever the parent is present.
+        for c in component:
+            if not c.parent_channel and c.parent_sid:
+                parent = component.filtered(lambda x: x.sid == c.parent_sid)
+                if parent:
+                    c.parent_channel = parent[0].id
+        self._converge_calls(component)
 
     @api.model
-    def _merge_calls(self, child, parent):
-        """Move `child` onto `parent.call`; drop child's old call if empty.
+    def _bridge_component(self, channel):
+        """All channels bridged to `channel`, gathered by bounded BFS over
+        the symmetric signal_bond relation (`parent_sid` <-> `sid`)."""
+        component = channel
+        frontier = channel
+        while frontier:
+            sids = [c.sid for c in frontier if c.sid]
+            parent_sids = [c.parent_sid for c in frontier if c.parent_sid]
+            neighbours = self.search([
+                '|',
+                ('parent_sid', 'in', sids),
+                ('sid', 'in', parent_sids),
+            ])
+            frontier = neighbours - component
+            component |= frontier
+        return component
 
-        Before unlinking the orphan call, rescue caller/called/partner
-        into the surviving call if survivor's slots are empty: under the
-        bridge-pair CDR race the orphan may carry the dialed digits while
-        the survivor was minted from the opaque-token leg (see ADR-022).
+    @api.model
+    def _converge_calls(self, channels):
+        """Move every channel in `channels` onto one canonical call.
+
+        Canonical = the oldest call (min id); each other call is backfilled
+        into it (so caller/called/partner survive — see ADR-022) and dropped
+        once empty. Channels reassign before the unlink, so the cascade on
+        `connect.channel.call` never deletes a real leg.
         """
-        if not child.call or not parent.call or child.call == parent.call:
+        calls = channels.mapped('call')
+        if len(calls) <= 1:
             return
-        old_call = child.call
-        child.call = parent.call.id
+        canonical = min(calls, key=lambda c: c.id)
+        for channel in channels:
+            old_call = channel.call
+            if not old_call or old_call == canonical:
+                continue
+            channel.call = canonical.id
+            self._backfill_call(canonical, old_call)
+            if not old_call.channels:
+                old_call.unlink()
+
+    @api.model
+    def _backfill_call(self, survivor, orphan):
+        """Copy the orphan call's caller/called/partner into `survivor`
+        wherever the survivor's slot is still empty (ADR-022)."""
         backfill = {}
-        if not parent.call.called and old_call.called:
-            backfill['called'] = old_call.called
-        if not parent.call.caller and old_call.caller:
-            backfill['caller'] = old_call.caller
-        if not parent.call.partner and old_call.partner:
-            backfill['partner'] = old_call.partner.id
+        if not survivor.called and orphan.called:
+            backfill['called'] = orphan.called
+        if not survivor.caller and orphan.caller:
+            backfill['caller'] = orphan.caller
+        if not survivor.partner and orphan.partner:
+            backfill['partner'] = orphan.partner.id
         if backfill:
-            parent.call.write(backfill)
-        if not old_call.channels:
-            old_call.unlink()
+            survivor.write(backfill)
 
     def _find_partner(self, caller_pbx_user, called_pbx_user, caller, called, direction):
         """Determine which number is external and find the partner."""
