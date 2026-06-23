@@ -1,6 +1,6 @@
 ---
 name: oduflow-log-usecase
-description: "Log an Oduflow MCP session into the repo's `.oduflow/use-cases/` directory for future reference and statistics. Use this skill when the user asks to record/log/save an Oduflow interaction — phrases like «запиши oduflow», «залогируй oduflow use-case», «сохрани вызов oduflow», «log oduflow», «record oduflow usage». Accepts a slug argument (e.g. `fix-shipment-search`) and creates/updates `YYYY-MM-DD-<slug>.md` with the full task description, every Oduflow MCP call (tool name, arguments, result) and final outcome. Used to build a corpus of real Oduflow usage in this repo."
+description: "Log an Oduflow MCP session into the repo's `.oduflow/use-cases/` directory for future reference and statistics. Use this skill when the user asks to record/log/save an Oduflow interaction — phrases like \"record this oduflow\", \"log oduflow use-case\", \"save oduflow call\", \"record oduflow usage\". Accepts a slug argument (e.g. `fix-shipment-search`) and creates/updates `YYYY-MM-DD-<slug>.md` with the full task description, every Oduflow MCP call (tool name, arguments, result) and final outcome. Used to build a corpus of real Oduflow usage in this repo."
 ---
 
 # oduflow-log-usecase — Oduflow MCP usage log in the repository
@@ -13,12 +13,11 @@ This is NOT a replacement for `.memory/` (task context). This is specifically a 
 
 The user explicitly asks to record oduflow call(s). Typical phrases:
 
-- «запиши этот oduflow»
-- «залогируй oduflow use-case»
-- «сохрани вызов oduflow»
-- «log oduflow»
-- «record oduflow usage»
-- «добавь в .oduflow»
+- "record this oduflow"
+- "log oduflow use-case"
+- "save oduflow call"
+- "record oduflow usage"
+- "add to .oduflow"
 
 Do not run automatically after every MCP call. Only on explicit user request.
 

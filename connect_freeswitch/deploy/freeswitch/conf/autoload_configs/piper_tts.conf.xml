@@ -9,8 +9,39 @@
         <param name="voice-name-as-language" value="true" />
     </settings>
 
+    <!--
+        Model keys use full BCP-47 codes so that the language value coming
+        from connect.callflow (e.g. 'pt-BR', 'pt-PT') maps to a distinct
+        voice without ambiguity. Keep this list in sync with
+        connect.callflow._get_language_selection() and with the model
+        downloads in deploy/Dockerfile.
+    -->
     <models>
-        <model language="en" path="/opt/piper/models/en_US-lessac-medium.onnx" />
-        <model language="ru" path="/opt/piper/models/ru_RU-irina-medium.onnx" />
+        <model language="ca-ES" path="/opt/piper/models/ca_ES-upc_ona-medium.onnx" />
+        <model language="cs-CZ" path="/opt/piper/models/cs_CZ-jirka-medium.onnx" />
+        <model language="da-DK" path="/opt/piper/models/da_DK-talesyntese-medium.onnx" />
+        <model language="de-DE" path="/opt/piper/models/de_DE-thorsten-medium.onnx" />
+        <model language="en-GB" path="/opt/piper/models/en_GB-alba-medium.onnx" />
+        <model language="en-US" path="/opt/piper/models/en_US-lessac-medium.onnx" />
+        <model language="es-ES" path="/opt/piper/models/es_ES-davefx-medium.onnx" />
+        <model language="es-MX" path="/opt/piper/models/es_MX-claude-high.onnx" />
+        <model language="fi-FI" path="/opt/piper/models/fi_FI-harri-medium.onnx" />
+        <model language="fr-FR" path="/opt/piper/models/fr_FR-siwis-medium.onnx" />
+        <model language="hu-HU" path="/opt/piper/models/hu_HU-anna-medium.onnx" />
+        <model language="is-IS" path="/opt/piper/models/is_IS-salka-medium.onnx" />
+        <model language="it-IT" path="/opt/piper/models/it_IT-paola-medium.onnx" />
+        <model language="nl-BE" path="/opt/piper/models/nl_BE-nathalie-medium.onnx" />
+        <model language="nl-NL" path="/opt/piper/models/nl_NL-mls-medium.onnx" />
+        <model language="pl-PL" path="/opt/piper/models/pl_PL-gosia-medium.onnx" />
+        <model language="pt-BR" path="/opt/piper/models/pt_BR-faber-medium.onnx" />
+        <model language="pt-PT" path="/opt/piper/models/pt_PT-tugao-medium.onnx" />
+        <model language="ro-RO" path="/opt/piper/models/ro_RO-mihai-medium.onnx" />
+        <model language="ru-RU" path="/opt/piper/models/ru_RU-irina-medium.onnx" />
+        <model language="sk-SK" path="/opt/piper/models/sk_SK-lili-medium.onnx" />
+        <model language="sv-SE" path="/opt/piper/models/sv_SE-nst-medium.onnx" />
+        <model language="tr-TR" path="/opt/piper/models/tr_TR-dfki-medium.onnx" />
+        <model language="uk-UA" path="/opt/piper/models/uk_UA-ukrainian_tts-medium.onnx" />
+        <model language="vi-VN" path="/opt/piper/models/vi_VN-vais1000-medium.onnx" />
+        <model language="zh-CN" path="/opt/piper/models/zh_CN-huayan-medium.onnx" />
     </models>
 </configuration>

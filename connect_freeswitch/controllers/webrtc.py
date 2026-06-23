@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 import logging
-from odoo import http
+from odoo import http, release
 from odoo.http import request
 
 _logger = logging.getLogger(__name__)
+
+# Odoo 19 introduced the 'jsonrpc' route type; on 18.0 the equivalent is 'json'.
+_JSON_ROUTE = 'jsonrpc' if release.version_info[0] >= 19 else 'json'
 
 
 class WebRTCController(http.Controller):
     """Controller for WebRTC/Verto client configuration."""
 
-    @http.route('/connect/webrtc/config', type='jsonrpc', auth='user', methods=['POST'])
+    @http.route('/connect/webrtc/config', type=_JSON_ROUTE, auth='user', methods=['POST'])
     def get_webrtc_config(self):
         """
         Get WebRTC configuration for the current user.
@@ -33,11 +36,15 @@ class WebRTCController(http.Controller):
         if not socket_url:
             return {'enabled': False, 'reason': 'no_socket_url'}
 
+        # Verto login = <login-local-part><res.users.id> (e.g. "litnimax42").
+        # Strips '@' (mod_verto splits on '@' to derive the realm) and stays
+        # unique across users that share an email local part. See
+        # specs/decisions/016-verto-login-uses-user-id.md.
         return {
             'enabled': True,
             'socketUrl': socket_url,
             'domain': domain,
-            'login': user.login,
+            'login': connect_user._get_verto_login(),
             'password': connect_user.webrtc_password,
             'callerName': connect_user.name,
             'callerNumber': connect_user.exten_number or user.login,

@@ -73,6 +73,7 @@ applications/mod_dptools
 applications/mod_http_cache
 applications/mod_fifo
 applications/mod_valet_parking
+formats/mod_local_stream
 dialplans/mod_dialplan_xml
 codecs/mod_opus
 formats/mod_sndfile
@@ -114,16 +115,56 @@ RUN curl -fSL \
     && tar -xzf /tmp/piper.tar.gz -C /opt/piper --strip-components=1 \
     && rm /tmp/piper.tar.gz
 
-# ── Download voice models (English + Russian) ───────────────────────────────
+# ── Download voice models ───────────────────────────────────────────────────
+# Each entry: <short>:<full>:<voice>:<quality>[:<dest-suffix>]
+# Resolves to https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/<short>/<full>/<voice>/<quality>/<full>-<voice>-<quality>.onnx[.json]
+# Optional <dest-suffix> overrides the local filename slug (e.g. ASCII-only)
+# when the upstream voice name contains non-ASCII characters.
+# Keep this list in sync with piper_tts.conf.xml and the language Selection
+# in connect.callflow._get_language_selection().
 RUN mkdir -p /opt/piper/models \
-    && curl -fSL "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx" \
-       -o /opt/piper/models/en_US-lessac-medium.onnx \
-    && curl -fSL "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json" \
-       -o /opt/piper/models/en_US-lessac-medium.onnx.json \
-    && curl -fSL "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx" \
-       -o /opt/piper/models/ru_RU-irina-medium.onnx \
-    && curl -fSL "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/ru/ru_RU/irina/medium/ru_RU-irina-medium.onnx.json" \
-       -o /opt/piper/models/ru_RU-irina-medium.onnx.json
+    && set -eu \
+    && models="\
+ca:ca_ES:upc_ona:medium \
+cs:cs_CZ:jirka:medium \
+da:da_DK:talesyntese:medium \
+de:de_DE:thorsten:medium \
+en:en_GB:alba:medium \
+en:en_US:lessac:medium \
+es:es_ES:davefx:medium \
+es:es_MX:claude:high \
+fi:fi_FI:harri:medium \
+fr:fr_FR:siwis:medium \
+hu:hu_HU:anna:medium \
+is:is_IS:salka:medium \
+it:it_IT:paola:medium \
+nl:nl_BE:nathalie:medium \
+nl:nl_NL:mls:medium \
+pl:pl_PL:gosia:medium \
+pt:pt_BR:faber:medium \
+pt:pt_PT:tug%C3%A3o:medium:tugao \
+ro:ro_RO:mihai:medium \
+ru:ru_RU:irina:medium \
+sk:sk_SK:lili:medium \
+sv:sv_SE:nst:medium \
+tr:tr_TR:dfki:medium \
+uk:uk_UA:ukrainian_tts:medium \
+vi:vi_VN:vais1000:medium \
+zh:zh_CN:huayan:medium" \
+    && base="https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0" \
+    && for spec in $models; do \
+         short=$(echo "$spec" | cut -d: -f1); \
+         full=$(echo "$spec"  | cut -d: -f2); \
+         voice=$(echo "$spec" | cut -d: -f3); \
+         quality=$(echo "$spec" | cut -d: -f4); \
+         alias=$(echo "$spec" | cut -d: -f5); \
+         dest_voice=${alias:-$voice}; \
+         dest="/opt/piper/models/${full}-${dest_voice}-${quality}"; \
+         url="${base}/${short}/${full}/${voice}/${quality}/${full}-${voice}-${quality}"; \
+         echo "==> ${full}-${dest_voice}-${quality}"; \
+         curl -fSL "${url}.onnx"      -o "${dest}.onnx"; \
+         curl -fSL "${url}.onnx.json" -o "${dest}.onnx.json"; \
+       done
 
 ###############################################################################
 # Stage 2: Minimal runtime image
@@ -147,10 +188,15 @@ COPY --from=builder /opt/piper /opt/piper
 
 RUN ldconfig
 
-# Required runtime directories
+# Required runtime directories. The entrypoint downloads sound tarballs into
+# /usr/share/freeswitch/sounds (mounted as a volume), but mod_local_stream
+# resolves $${sounds_dir} which points inside the FreeSWITCH prefix, so we
+# expose the same path under both locations via a symlink.
 RUN mkdir -p /usr/local/freeswitch/var/run/freeswitch \
              /usr/local/freeswitch/var/log/freeswitch \
-             /usr/share/freeswitch/sounds
+             /usr/share/freeswitch/sounds \
+    && rm -rf /usr/local/freeswitch/share/freeswitch/sounds \
+    && ln -s /usr/share/freeswitch/sounds /usr/local/freeswitch/share/freeswitch/sounds
 
 # Convenience symlinks
 RUN ln -sf /usr/local/freeswitch/bin/freeswitch /usr/bin/freeswitch \
@@ -165,7 +211,7 @@ COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 ENV ODOO_URL=http://localhost:8069 \
-    SOUND_RATES=8000:16000 \
+    SOUND_RATES=8000:16000:32000:48000 \
     SOUND_TYPES=music:en-us-callie \
     EPMD=false \
     DUMPCAP=false \

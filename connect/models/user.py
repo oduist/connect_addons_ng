@@ -25,8 +25,7 @@ class User(models.Model):
     voicemail_enabled = fields.Boolean()
     voicemail_prompt = fields.Text(
         default="Hello, this is {{user.name}}. I'm unable to take your call right now. Please leave a message after the tone.")
-    outgoing_callerid = fields.Many2one('connect.outgoing_callerid', ondelete='set null',
-        domain=['|', ('status', '=', 'validated'), ('callerid_type', '=', 'number')])
+    outgoing_callerid = fields.Many2one('connect.outgoing_callerid', ondelete='set null')
     missed_calls_notify = fields.Boolean(default=False, help='Notify user on missed calls.')
     greeting_message = fields.Char()
     summary_prompt = fields.Char()

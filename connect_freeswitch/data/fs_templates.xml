@@ -188,78 +188,125 @@ Variables:
         <field name="key">dialplan_ivr</field>
         <field name="name">Dialplan - IVR</field>
         <field name="section">dialplan</field>
-        <field name="description">Interactive Voice Response using speak (Piper TTS) + read for digit collection, with inline choice conditions.
+        <field name="description">Interactive Voice Response. Uses bind_digit_action so a DTMF press during the
+Piper TTS prompt instantly interrupts speak and triggers the matching choice.
+User choices route through a dedicated extension (cf_call_&lt;id&gt;_&lt;digit&gt;) that
+sets per-call variables and bridges to the user; other destinations transfer
+directly to the chosen target.
 
 Variables:
   callflow_id     - connect.callflow record ID
   number          - Extension number (escaped for regex)
   lang            - Piper TTS language code (e.g. 'en')
   prompt          - TTS prompt text (plain text with spaces)
-  min_digits      - Minimum digits to collect
-  max_digits      - Maximum digits to collect
-  timeout         - Digit collection timeout in milliseconds
-  var_name        - Channel variable name for collected digits
+  timeout         - Post-prompt wait window in milliseconds (gather_timeout * 1000)
   choices         - List of dicts, each with:
-    digits_escaped  - Choice digits (escaped for regex)
+    digits          - Choice digits (raw, used as bind_digit_action pattern)
     dst_type        - Destination type: 'user' or 'other'
     user_id         - connect.user ID (if dst_type == 'user')
     user_number     - User extension number (if dst_type == 'user')
     transfer_target - Transfer destination (if dst_type == 'other')
-  fs_domain       - FreeSWITCH SIP domain
-  fifo_number     - FS Queue extension number for IVR default branch (optional)</field>
+  fs_domain       - FreeSWITCH SIP domain (unused in this template; kept for symmetry)
+  ring_bridge     - Comma-separated bridge string for ring_users fallback after timeout (optional)
+  fifo_number     - FS Queue extension number for IVR default branch (optional)
+  invalid_regex   - Pre-built `~^[unused-digits]$` pattern for the catch-all bind (optional)
+  dmachine_timeout - bind_digit_digit_timeout in ms (100 for single-digit menus, 1500 for multi-digit)</field>
         <field name="content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
     <action application="answer"/>
     <action application="sleep" data="500"/>
-    <action application="speak" data="piper|{{ lang }}|{{ prompt }}"/>
-    <action application="read" data="{{ min_digits }} {{ max_digits }} silence_stream://250 {{ var_name }} {{ timeout }} #"/>
-  </condition>
-  {% for choice in choices %}
-  <condition field="${ {{- var_name -}} }" expression="^{{ choice.digits_escaped }}$" break="on-true">
+    <action application="set" data="bind_digit_digit_timeout={{ dmachine_timeout }}"/>
+    {% for choice in choices %}
     {% if choice.dst_type == 'user' %}
-    <action application="set" data="odoo_called_user_id={{ choice.user_id }}"/>
-    <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:execute_extension,cf_call_{{ callflow_id }}_{{ choice.digits }} XML default"/>
+    {% else %}
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:transfer,{{ choice.transfer_target }} XML default"/>
+    {% endif %}
+    {% endfor %}
+    {% if invalid_regex %}
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ invalid_regex }},exec:execute_extension,cf_invalid_{{ callflow_id }} XML default"/>
+    {% endif %}
+    <action application="digit_action_set_realm" data="cf_{{ callflow_id }}"/>
+    <action application="speak" data="piper|{{ lang }}|{{ prompt }}"/>
+    <action application="sleep" data="{{ timeout }}"/>
+    <action application="clear_digit_action" data="cf_{{ callflow_id }}"/>
+    {% if ring_bridge %}
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
-    <action application="bridge" data="user/{{ choice.user_number }}@{{ fs_domain }}"/>
-    {% else %}
-    <action application="transfer" data="{{ choice.transfer_target }} XML default"/>
+    <action application="bridge" data="{{ ring_bridge }}"/>
+    {% endif %}
+    {% if fifo_number %}
+    <action application="transfer" data="{{ fifo_number }} XML default"/>
     {% endif %}
   </condition>
-  {% endfor %}
-  {% if fifo_number %}
-  <condition field="${ {{- var_name -}} }" expression=".*" break="on-true">
-    <action application="transfer" data="{{ fifo_number }} XML default"/>
-  </condition>
-  {% endif %}
 </extension>]]></field>
         <field name="default_content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
   <condition field="destination_number" expression="^{{ number }}$" break="on-false">
     <action application="answer"/>
     <action application="sleep" data="500"/>
-    <action application="speak" data="piper|{{ lang }}|{{ prompt }}"/>
-    <action application="read" data="{{ min_digits }} {{ max_digits }} silence_stream://250 {{ var_name }} {{ timeout }} #"/>
-  </condition>
-  {% for choice in choices %}
-  <condition field="${ {{- var_name -}} }" expression="^{{ choice.digits_escaped }}$" break="on-true">
+    <action application="set" data="bind_digit_digit_timeout={{ dmachine_timeout }}"/>
+    {% for choice in choices %}
     {% if choice.dst_type == 'user' %}
-    <action application="set" data="odoo_called_user_id={{ choice.user_id }}"/>
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:execute_extension,cf_call_{{ callflow_id }}_{{ choice.digits }} XML default"/>
+    {% else %}
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ choice.digits }},exec:transfer,{{ choice.transfer_target }} XML default"/>
+    {% endif %}
+    {% endfor %}
+    {% if invalid_regex %}
+    <action application="bind_digit_action" data="cf_{{ callflow_id }},{{ invalid_regex }},exec:execute_extension,cf_invalid_{{ callflow_id }} XML default"/>
+    {% endif %}
+    <action application="digit_action_set_realm" data="cf_{{ callflow_id }}"/>
+    <action application="speak" data="piper|{{ lang }}|{{ prompt }}"/>
+    <action application="sleep" data="{{ timeout }}"/>
+    <action application="clear_digit_action" data="cf_{{ callflow_id }}"/>
+    {% if ring_bridge %}
+    <action application="set" data="call_timeout=30"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="bridge" data="{{ ring_bridge }}"/>
+    {% endif %}
+    {% if fifo_number %}
+    <action application="transfer" data="{{ fifo_number }} XML default"/>
+    {% endif %}
+  </condition>
+</extension>]]></field>
+    </record>
+
+    <record id="fs_template_dialplan_ivr_choice" model="connect.freeswitch.template">
+        <field name="key">dialplan_ivr_choice</field>
+        <field name="name">Dialplan - IVR User Choice</field>
+        <field name="section">dialplan</field>
+        <field name="description">Landing extension used by dialplan_ivr when a user-typed IVR choice
+fires. Sets per-call variables (so Odoo's event handler attributes the
+call to the right user) and bridges to the user's SIP endpoint.
+
+Variables:
+  callflow_id     - connect.callflow record ID
+  digits          - The chosen DTMF sequence (raw)
+  digits_escaped  - The chosen DTMF sequence (regex-escaped)
+  user_id         - connect.user ID
+  user_number     - User extension number
+  fs_domain       - FreeSWITCH SIP domain</field>
+        <field name="content"><![CDATA[<extension name="cf_call_{{ callflow_id }}_{{ digits }}">
+  <condition field="destination_number" expression="^cf_call_{{ callflow_id }}_{{ digits_escaped }}$" break="on-false">
+    <action application="set" data="odoo_called_user_id={{ user_id }}"/>
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
-    <action application="bridge" data="user/{{ choice.user_number }}@{{ fs_domain }}"/>
-    {% else %}
-    <action application="transfer" data="{{ choice.transfer_target }} XML default"/>
-    {% endif %}
+    <action application="bridge" data="user/{{ user_number }}@{{ fs_domain }}"/>
   </condition>
-  {% endfor %}
-  {% if fifo_number %}
-  <condition field="${ {{- var_name -}} }" expression=".*" break="on-true">
-    <action application="transfer" data="{{ fifo_number }} XML default"/>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="cf_call_{{ callflow_id }}_{{ digits }}">
+  <condition field="destination_number" expression="^cf_call_{{ callflow_id }}_{{ digits_escaped }}$" break="on-false">
+    <action application="set" data="odoo_called_user_id={{ user_id }}"/>
+    <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="set" data="call_timeout=30"/>
+    <action application="set" data="hangup_after_bridge=true"/>
+    <action application="set" data="continue_on_fail=true"/>
+    <action application="bridge" data="user/{{ user_number }}@{{ fs_domain }}"/>
   </condition>
-  {% endif %}
 </extension>]]></field>
     </record>
 
@@ -343,12 +390,14 @@ Variables:
         <field name="description">Inbound DID routing from PSTN trunks.
 
 Variables:
-  phone_number    - DID phone number
+  number_regex    - destination_number regex (bare digits, optional leading '+')
+  did_label       - DID digits without '+' (used for the extension name)
+  phone_number    - DID phone number as stored (kept for custom templates)
   number_id       - connect.number record ID
   destination     - Destination type: 'user' or 'callflow'
   transfer_target - Extension/number to transfer to (or empty if no destination)</field>
-        <field name="content"><![CDATA[<extension name="did_{{ phone_number }}">
-  <condition field="destination_number" expression="^{{ phone_number }}$">
+        <field name="content"><![CDATA[<extension name="did_{{ did_label }}">
+  <condition field="destination_number" expression="^{{ number_regex }}$">
     <action application="set" data="odoo_call_direction=inbound"/>
     <action application="set" data="odoo_number_id={{ number_id }}"/>
     {% if transfer_target %}
@@ -358,8 +407,8 @@ Variables:
     {% endif %}
   </condition>
 </extension>]]></field>
-        <field name="default_content"><![CDATA[<extension name="did_{{ phone_number }}">
-  <condition field="destination_number" expression="^{{ phone_number }}$">
+        <field name="default_content"><![CDATA[<extension name="did_{{ did_label }}">
+  <condition field="destination_number" expression="^{{ number_regex }}$">
     <action application="set" data="odoo_call_direction=inbound"/>
     <action application="set" data="odoo_number_id={{ number_id }}"/>
     {% if transfer_target %}
@@ -380,11 +429,17 @@ Variables:
 Variables:
   route_id        - connect.freeswitch.outgoing_route record ID
   pattern         - Regex pattern for destination matching
-  bridge_data     - Bridge string (sofia/gateway/name/number)</field>
+  bridge_data     - Bridge string (sofia/gateway/name/number)
+  cid_name        - Caller ID name to present on PSTN (from connect.user.outgoing_callerid)
+  cid_num         - Caller ID number to present on PSTN (from connect.user.outgoing_callerid)</field>
         <field name="content"><![CDATA[<extension name="outgoing_{{ route_id }}">
   <condition field="destination_number" expression="{{ pattern }}">
     <action application="set" data="odoo_call_direction=outgoing"/>
     <action application="export" data="nolocal:absolute_codec_string=PCMU,PCMA"/>
+    {% if cid_num %}
+    <action application="set" data="effective_caller_id_number={{ cid_num }}"/>
+    <action application="set" data="effective_caller_id_name={{ cid_name }}"/>
+    {% endif %}
     <action application="bridge" data="{{ bridge_data }}"/>
   </condition>
 </extension>]]></field>
@@ -392,6 +447,10 @@ Variables:
   <condition field="destination_number" expression="{{ pattern }}">
     <action application="set" data="odoo_call_direction=outgoing"/>
     <action application="export" data="nolocal:absolute_codec_string=PCMU,PCMA"/>
+    {% if cid_num %}
+    <action application="set" data="effective_caller_id_number={{ cid_num }}"/>
+    <action application="set" data="effective_caller_id_name={{ cid_name }}"/>
+    {% endif %}
     <action application="bridge" data="{{ bridge_data }}"/>
   </condition>
 </extension>]]></field>
@@ -415,9 +474,8 @@ Variables:
   fifo_name          - FIFO queue name (e.g. fs_fifo_42)
   number             - Extension number (escaped for regex)
   exten_id           - connect.exten record ID (may be empty)
-  max_wait           - Seconds to wait in the queue
-  moh                - Music-on-Hold source
-  announce_position  - Boolean, announce caller position
+  max_wait           - Seconds to wait in the queue (enforced via fifo_orbit_exten)
+  moh                - Music-on-Hold source (fed as fifo's `music_file` arg)
   record_calls       - Boolean, record the call leg
   recording_url      - URL for recording webhook (if record_calls)
   members            - List of dicts with 'dial_string' for each agent
@@ -438,13 +496,15 @@ Variables:
     <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
     {% endif %}
     <action application="set" data="fifo_music={{ moh }}"/>
-    {% if announce_position %}
-    <action application="set" data="fifo_orbit_announce_position=true"/>
-    {% endif %}
+    <!-- mod_fifo's max-wait is expressed as an orbit-exten with timeout in
+         the form "exten:seconds". Leaving the exten empty makes the caller
+         simply leave the fifo after <max_wait> seconds and fall through to
+         the next dialplan action (timeout_action below). -->
+    <action application="set" data="fifo_orbit_exten=:{{ max_wait }}"/>
     <action application="set" data="fifo_caller_exit_key=#"/>
     <action application="set" data="continue_on_fail=true"/>
     <action application="set" data="hangup_after_bridge=true"/>
-    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }} {{ max_wait }}"/>
+    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }}"/>
     {% if timeout_action == 'voicemail' and voicemail_user %}
     <action application="sleep" data="500"/>
     <action application="voicemail" data="default ${domain_name} {{ voicemail_user }}"/>
@@ -469,13 +529,15 @@ Variables:
     <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
     {% endif %}
     <action application="set" data="fifo_music={{ moh }}"/>
-    {% if announce_position %}
-    <action application="set" data="fifo_orbit_announce_position=true"/>
-    {% endif %}
+    <!-- mod_fifo's max-wait is expressed as an orbit-exten with timeout in
+         the form "exten:seconds". Leaving the exten empty makes the caller
+         simply leave the fifo after <max_wait> seconds and fall through to
+         the next dialplan action (timeout_action below). -->
+    <action application="set" data="fifo_orbit_exten=:{{ max_wait }}"/>
     <action application="set" data="fifo_caller_exit_key=#"/>
     <action application="set" data="continue_on_fail=true"/>
     <action application="set" data="hangup_after_bridge=true"/>
-    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }} {{ max_wait }}"/>
+    <action application="fifo" data="{{ fifo_name }} in undef {{ moh }}"/>
     {% if timeout_action == 'voicemail' and voicemail_user %}
     <action application="sleep" data="500"/>
     <action application="voicemail" data="default ${domain_name} {{ voicemail_user }}"/>
@@ -784,6 +846,33 @@ Variables:
     {% endfor %}
   </fifos>
 </configuration>]]></field>
+    </record>
+
+    <record id="fs_template_dialplan_ivr_invalid" model="connect.freeswitch.template">
+        <field name="key">dialplan_ivr_invalid</field>
+        <field name="name">Dialplan - IVR Invalid Input</field>
+        <field name="section">dialplan</field>
+        <field name="description">Catch-all extension played when the caller dials a digit that does not
+match any IVR choice. Speaks invalid_input_message via Piper TTS and
+transfers the caller back into the IVR so they can try again.
+
+Variables:
+  callflow_id     - connect.callflow record ID
+  number          - The IVR's own extension number (target of the re-entry transfer)
+  lang            - Piper TTS language code
+  invalid_msg     - Text spoken to the caller before re-entry</field>
+        <field name="content"><![CDATA[<extension name="cf_invalid_{{ callflow_id }}">
+  <condition field="destination_number" expression="^cf_invalid_{{ callflow_id }}$" break="on-false">
+    <action application="speak" data="piper|{{ lang }}|{{ invalid_msg }}"/>
+    <action application="transfer" data="{{ number }} XML default"/>
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="cf_invalid_{{ callflow_id }}">
+  <condition field="destination_number" expression="^cf_invalid_{{ callflow_id }}$" break="on-false">
+    <action application="speak" data="piper|{{ lang }}|{{ invalid_msg }}"/>
+    <action application="transfer" data="{{ number }} XML default"/>
+  </condition>
+</extension>]]></field>
     </record>
 
 </odoo>
