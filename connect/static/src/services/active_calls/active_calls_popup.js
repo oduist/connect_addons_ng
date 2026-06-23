@@ -37,9 +37,9 @@ export class ConnectActiveCallsPopup extends Component {
 
     setTimer(seconds) {
         const self = this
-        // self.hideTimer = setTimeout(() => {
-        //     self.state.isDisplay = false
-        // }, seconds)
+        self.hideTimer = setTimeout(() => {
+            self.state.isDisplay = false
+        }, seconds)
     }
 
     async toggleDisplay() {
