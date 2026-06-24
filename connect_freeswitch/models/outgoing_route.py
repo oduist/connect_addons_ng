@@ -38,7 +38,10 @@ class FreeSwitchOutgoingRoute(models.Model):
         # sets effective_caller_id_* to the extension; we override it here
         # only for the outbound leg so internal calls still show the
         # extension.
-        cid_name = ''
+        #
+        # We deliberately push only the NUMBER outwards. The display name is
+        # always blanked on the trunk leg (see the template) so the outside
+        # world never learns the internal caller's name. See ADR-026.
         cid_num = ''
         connect_user_id = params.get('variable_odoo_connect_user_id')
         if connect_user_id:
@@ -48,7 +51,6 @@ class FreeSwitchOutgoingRoute(models.Model):
                 user = self.env['connect.user']
             if user.exists() and user.outgoing_callerid:
                 cid_num = user.outgoing_callerid.number or ''
-                cid_name = user.outgoing_callerid.friendly_name or cid_num
 
         for route in routes:
             if not re.match(route.pattern, destination):
@@ -62,7 +64,6 @@ class FreeSwitchOutgoingRoute(models.Model):
                 'route_id': route.id,
                 'pattern': route.pattern,
                 'bridge_data': bridge_data,
-                'cid_name': cid_name,
                 'cid_num': cid_num,
             })
 
