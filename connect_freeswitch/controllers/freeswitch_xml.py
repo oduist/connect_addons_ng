@@ -409,6 +409,16 @@ class FreeSwitchXMLController(http.Controller):
                     parts.append(invalid_xml)
                     return ''.join(parts)
 
+        # FS Queue by internal handle: a callflow / IVR fallback transfers to
+        # fs_fifo_<id> when the queue has no user-facing extension (ADR-026).
+        fifo_handle = re.match(r'^fs_fifo_(\d+)$', destination)
+        if fifo_handle:
+            fifo = request.env['connect.fs_fifo'].sudo().browse(
+                int(fifo_handle.group(1)))
+            if fifo.exists():
+                parts.append(fifo.generate_dialplan(params))
+                return ''.join(parts)
+
         # Try exact extension match
         exten = Exten.search([('number', '=', destination)], limit=1)
         if exten:

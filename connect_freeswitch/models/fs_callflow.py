@@ -70,9 +70,10 @@ class CallFlow(models.Model):
 
         fs_domain = self.env['connect.settings'].sudo().get_param('freeswitch_domain') or '${domain}'
 
-        fifo_number = ''
-        if self.fs_fifo_id and self.fs_fifo_id.exten_number:
-            fifo_number = self.fs_fifo_id.exten_number
+        # Always route via the queue's dialplan target (its extension if
+        # assigned, else the internal fs_fifo_<id> handle) so the fallback
+        # transfer is never silently dropped when the queue has no extension.
+        fifo_number = self.fs_fifo_id._dialplan_target() if self.fs_fifo_id else ''
 
         ring_parts = []
         for user in self.ring_users:
@@ -173,9 +174,10 @@ class CallFlow(models.Model):
                 continue
             bridge_parts.append('user/{}@{}'.format(user_number, fs_domain))
 
-        fifo_number = ''
-        if self.fs_fifo_id and self.fs_fifo_id.exten_number:
-            fifo_number = self.fs_fifo_id.exten_number
+        # Always route via the queue's dialplan target (its extension if
+        # assigned, else the internal fs_fifo_<id> handle) so the fallback
+        # transfer is never silently dropped when the queue has no extension.
+        fifo_number = self.fs_fifo_id._dialplan_target() if self.fs_fifo_id else ''
 
         voicemail_user_number = ''
         if self.voicemail_enabled:
@@ -197,7 +199,7 @@ class CallFlow(models.Model):
 
     def _generate_fifo_fallback_dialplan(self, number):
         """Callflow with only fs_fifo_id: act as a thin transfer-to-queue wrapper."""
-        fifo_number = self.fs_fifo_id.exten_number or str(self.fs_fifo_id.id)
+        fifo_number = self.fs_fifo_id._dialplan_target()
         return (
             '<extension name="callflow_fifo_{id}">'
             '<condition field="destination_number" expression="^{number}$">'
