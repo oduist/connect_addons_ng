@@ -1,7 +1,7 @@
 """Conditional test loader.
 
 When the private tests_suite submodule is initialised, dynamically loads
-test_*.py modules from tests_suite/connect_twilio/tests/ and exposes them
+test_*.py modules from tests_suite/connect_helpdesk/tests/ and exposes them
 as submodules so Odoo's test discovery (inspect.getmembers + ismodule)
 picks them up.
 
@@ -19,7 +19,7 @@ import sys
 
 _SUITE = os.path.normpath(
     os.path.join(os.path.dirname(__file__), "..", "..",
-                 "tests_suite", "connect_twilio", "tests")
+                 "tests_suite", "connect_helpdesk", "tests")
 )
 
 def _load(_fn):
