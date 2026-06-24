@@ -126,6 +126,25 @@ Beyond firewall, the module contains:
 | `connect.fs_fifo` | mod_fifo queue records (ADR-013) |
 | `connect.freeswitch.parking.slot` | call parking (ADR-012) |
 
+### Outbound Caller ID resolution
+
+The number presented to the called party on an outbound PSTN call is
+resolved from `connect.outgoing_callerid` in a fixed order:
+
+**per-user `connect.user.outgoing_callerid` → system default (`is_default=True`) → extension**
+
+Two origination paths apply it independently:
+
+| Path | Where | Mechanism |
+|---|---|---|
+| Click-to-call from Odoo | `models/call.py` → `originate_call()` | b-leg `origination_caller_id_number` (ADR-024) |
+| Desk phone / Verto → PSTN | `models/outgoing_route.py` → `generate_dialplan()` | `effective_caller_id_number` override in the `dialplan_outgoing_route` template, keyed off the `odoo_connect_user_id` channel variable (ADR-021, ADR-024) |
+
+The override lives only on the outbound leg, so internal
+extension-to-extension calls keep showing the extension. When neither a
+per-user nor a default CallerID is configured, the extension number is
+used. This mirrors the Twilio integration (`connect_twilio/models/domain.py`).
+
 ---
 
 ## Security

@@ -189,8 +189,14 @@ class Call(models.Model):
         if exten:
             caller_number = connect_user.exten_number or (first_ep.auth_user if first_ep else '')
         else:
+            # Per-user outgoing CallerID, else the system-wide default DID
+            # (is_default), else the extension — symmetric with the Twilio
+            # path and the UA-originated dialplan override (ADR-024).
+            default_cid = self.env['connect.outgoing_callerid'].sudo().search(
+                [('is_default', '=', True)], limit=1)
             caller_number = (
                 connect_user.outgoing_callerid.number
+                or default_cid.number
                 or connect_user.exten_number
                 or (first_ep.auth_user if first_ep else '')
             )

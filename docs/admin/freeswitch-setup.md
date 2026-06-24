@@ -163,6 +163,27 @@ Routes are evaluated in priority order; the first matching pattern is used.
 | Local | `^0\d{9}$` | main-trunk | 1 | +380 |
 | Emergency | `^(112\|911)$` | main-trunk | 0 | |
 
+### Outbound Caller ID (DID)
+
+The number the called party sees on an outbound PSTN call is resolved in
+this order:
+
+1. The caller's **Outgoing Caller ID** (per-user, set on the Connect User
+   form).
+2. The **system-wide default** Caller ID — the entry under
+   **Connect > PBX > Caller IDs** flagged **Default** — used when the user
+   has no per-user number assigned.
+3. The user's **extension number**, when neither of the above is configured.
+
+This applies to both click-to-call from Odoo and calls dialed directly from
+a registered desk phone or the WebRTC (Verto) softphone. Internal
+extension-to-extension calls are unaffected — they always present the
+extension number.
+
+> The legacy gateway-level **Caller ID in From** toggle only controls
+> whether the resolved number is copied into the SIP `From:` header; it does
+> not select the number itself.
+
 ## Text-to-Speech (Piper TTS)
 
 The FreeSWITCH Docker image includes [Piper](https://github.com/rhasspy/piper) — a fast, local neural TTS engine — via the [mod_piper_tts](https://github.com/aks-devs/mod_piper_tts) module. No cloud TTS service is required.
