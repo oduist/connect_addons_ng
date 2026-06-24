@@ -175,10 +175,14 @@ this order:
    has no per-user number assigned.
 3. The user's **extension number**, when neither of the above is configured.
 
+Only the **number** is sent to the PSTN — the caller-id **name** is
+intentionally left blank so the internal caller's name is never disclosed to
+the outside world.
+
 This applies to both click-to-call from Odoo and calls dialed directly from
 a registered desk phone or the WebRTC (Verto) softphone. Internal
 extension-to-extension calls are unaffected — they always present the
-extension number.
+extension number and the caller's name.
 
 > The legacy gateway-level **Caller ID in From** toggle only controls
 > whether the resolved number is copied into the SIP `From:` header; it does

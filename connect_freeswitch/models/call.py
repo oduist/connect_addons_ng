@@ -191,7 +191,7 @@ class Call(models.Model):
         else:
             # Per-user outgoing CallerID, else the system-wide default DID
             # (is_default), else the extension — symmetric with the Twilio
-            # path and the UA-originated dialplan override (ADR-024).
+            # path and the UA-originated dialplan override (ADR-027, #96).
             default_cid = self.env['connect.outgoing_callerid'].sudo().search(
                 [('is_default', '=', True)], limit=1)
             caller_number = (
@@ -250,8 +250,14 @@ class Call(models.Model):
         # the directory-seeded extension. Override on the B-leg itself
         # so the called party sees `caller_number` (extension for
         # internal, outgoing_callerid for external).
+        #
+        # For external (PSTN) calls the display NAME is blanked so the
+        # internal caller's name is never disclosed to the outside world;
+        # only the number is sent. Internal calls keep the name so the
+        # colleague sees who is ringing. See ADR-026.
+        b_leg_name = cid_name if exten else ''
         b_leg_vars = [
-            "origination_caller_id_name='{}'".format(cid_name),
+            "origination_caller_id_name='{}'".format(b_leg_name),
             "origination_caller_id_number={}".format(caller_number),
         ]
         # For external calls via gateway, force standard codecs on b-leg

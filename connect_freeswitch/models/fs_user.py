@@ -34,6 +34,37 @@ class User(models.Model):
                     break
         return super().write(vals)
 
+    def _rotate_webrtc_password(self):
+        """Generate, store and broadcast a fresh WebRTC/Verto password.
+
+        Called at credential-issuance time (``get_webrtc_config``) so the
+        delivered value equals the value FreeSWITCH checks via ``/freeswitch/xml``
+        equals the value the JS client sends. A previously leaked password is
+        invalidated the next time the softphone fetches its config. FreeSWITCH
+        re-authenticates every Verto registration live against the DB value, so
+        no FS reload is needed (see issue #36, ADR-026).
+
+        ``sudo()``: ``webrtc_password`` is readonly and ``group_user`` has
+        ``perm_write=False`` on ``connect.user``; ``get_webrtc_config`` runs as
+        the logged-in (non-admin) user.
+
+        Broadcasts the new credentials to the user's *private* bus channel so
+        other open tabs of the same user update their Verto client password in
+        place (no forced re-register; active calls survive).
+        """
+        self.ensure_one()
+        new_password = secrets.token_urlsafe(16)
+        self.sudo().write({'webrtc_password': new_password})
+        if self.user:
+            # Private per-user target — NOT the shared 'connect_actions' string
+            # channel, which is global and would leak the secret to other users.
+            self.env['bus.bus']._sendone(
+                self.user.partner_id,
+                'connect_freeswitch.verto_credentials',
+                {'login': self._get_verto_login(), 'password': new_password},
+            )
+        return new_password
+
     def _get_verto_login(self):
         """Return the Verto JSON-RPC login for this user's res.users.
 

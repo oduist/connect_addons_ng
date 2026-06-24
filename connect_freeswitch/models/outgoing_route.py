@@ -37,10 +37,15 @@ class FreeSwitchOutgoingRoute(models.Model):
         # called party sees the right number on PSTN. The directory entry
         # sets effective_caller_id_* to the extension; we override it here
         # only for the outbound leg so internal calls still show the
-        # extension. Resolution order: per-user CallerID, else the
-        # system-wide default DID (is_default), else nothing — in which
-        # case the directory's extension stands (ADR-024).
-        cid_name = ''
+        # extension.
+        #
+        # We deliberately push only the NUMBER outwards. The display name is
+        # always blanked on the trunk leg (see the template) so the outside
+        # world never learns the internal caller's name. See ADR-026.
+        #
+        # Number resolution order: the user's own outgoing_callerid, else the
+        # system-wide default DID (is_default), else nothing — in which case
+        # the directory's extension stands (ADR-027, issue #96).
         cid_num = ''
         callerid = self.env['connect.outgoing_callerid']
         connect_user_id = params.get('variable_odoo_connect_user_id')
@@ -56,7 +61,6 @@ class FreeSwitchOutgoingRoute(models.Model):
                 [('is_default', '=', True)], limit=1)
         if callerid:
             cid_num = callerid.number or ''
-            cid_name = callerid.friendly_name or cid_num
 
         for route in routes:
             if not re.match(route.pattern, destination):
@@ -70,7 +74,6 @@ class FreeSwitchOutgoingRoute(models.Model):
                 'route_id': route.id,
                 'pattern': route.pattern,
                 'bridge_data': bridge_data,
-                'cid_name': cid_name,
                 'cid_num': cid_num,
             })
 

@@ -364,12 +364,18 @@ class Settings(models.Model):
         # makes the login globally unique even when two res.users share the
         # same email local part across domains. See
         # specs/decisions/016-verto-login-uses-user-id.md.
+        #
+        # Rotate the WebRTC password on every config issuance so a leaked
+        # password self-invalidates on the next softphone boot. The returned
+        # value (not a re-read of the field) is delivered to the client, which
+        # immediately registers with it against FreeSWITCH. See ADR-026.
+        password = connect_user._rotate_webrtc_password()
         return {
             'enabled': True,
             'socketUrl': socket_url,
             'domain': domain,
             'login': connect_user._get_verto_login(),
-            'password': connect_user.webrtc_password,
+            'password': password,
             'callerName': connect_user.name,
             'callerNumber': connect_user.exten_number or user.login,
             'displayMode': connect_user.phone_display_mode or 'dropdown',
