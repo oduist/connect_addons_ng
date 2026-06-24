@@ -1,4 +1,4 @@
-# ADR-025: FreeSWITCH Server Status distinguishes failure modes
+# ADR-026: FreeSWITCH Server Status distinguishes failure modes
 
 **Status:** Accepted
 **Date:** 2026-06-02

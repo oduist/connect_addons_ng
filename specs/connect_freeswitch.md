@@ -63,7 +63,7 @@ firewall-related fields:
 * schedule a `/firewall/sync` POST via `cr.postcommit` whenever any
   `firewall_*` field changes.
 
-XML-RPC connectivity to FreeSWITCH (ADR-004, ADR-025):
+XML-RPC connectivity to FreeSWITCH (ADR-004, ADR-026):
 * `_freeswitch_rpc(command, args)` — low-level `mod_xml_rpc` call
   returning a `(result, error)` tuple. `error` is `None` on success or
   one of `NOT CONFIGURED` / `UNREACHABLE` / `AUTH FAILED` /
