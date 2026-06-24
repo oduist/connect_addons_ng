@@ -32,6 +32,15 @@ Twilio: _inherit = 'connect.foo'  → implements abstract methods, adds provider
 
 **Security groups:** `connect.group_user` (read), `connect.group_admin` (full CRUD), `connect.group_webhook` (webhook record creation)
 
+> **New models — confirm Connect User access first.** When you add a new model,
+> do **not** assume the `connect.group_user` access level. Stop and ask the user
+> what access (none / read / read+write / own-records-only via a record rule)
+> the **Connect User** group should have on it, then write the `ir.model.access`
+> rows (and any `ir.rule`) accordingly. `connect.group_admin` defaults to full
+> CRUD. Admin-only infrastructure/config models (e.g. `connect.settings`,
+> `connect.debug`, `connect.message_configuration`, the firewall models) must
+> grant the user group **no** access.
+
 ## Key Files
 
 - `specs/architecture.md` — Authoritative design specification (boundaries, extension pattern, data flow)
@@ -65,25 +74,84 @@ differs. Concretely:
   Python migration script, both branches should call the same module
   function (e.g. `setup_firewall(env)`), with the per-series migration
   folder acting purely as the entry point Odoo can match.
+- **Clean up the backport branch as soon as the PR is open.** After
+  `gh pr create` returns the backport PR URL, automatically:
+  1. `git worktree remove <path>` if a worktree was used for the port;
+  2. `git branch -D <port-branch>` to drop the local ref;
+  3. leave the remote branch in place — it backs the PR and GitHub
+     deletes it on merge (repo has "Automatically delete head branches"
+     enabled).
+  Do this without asking; treat it as part of the backport workflow.
+
+### Bump the manifest version at most once per session / feature branch
+
+A `__manifest__.py` `version` bump represents one logical release unit
+of the module — the same unit that ships as one PR. **Bump it at most
+once per working session / feature branch, regardless of how many
+intermediate fix commits the branch contains.** Multiple bumps within
+one branch are wrong: they produce noisy history, force you to flatten
+versions before merge, and have no functional effect.
+
+Specifically:
+- Do **not** bump the version on every commit. Bug-fix commits in
+  controllers / models / data are picked up by `pull_and_apply` via
+  diff analysis (Python → restart, schema/field change → upgrade,
+  views/assets → hot-reload); none of these require the manifest to
+  change.
+- Do **not** create a standalone "chore: bump version" commit. If the
+  bump is needed for a release, fold it into the last functional
+  commit or a single cleanup commit at the end of the branch.
+- The version moves on **release boundaries**, not on commit
+  boundaries. Inside one session the bump should land once — typically
+  in the first commit that changes module behavior, or in a final
+  cleanup pass just before opening the PR.
+- If you realise mid-session that you already bumped the version,
+  leave it alone and keep working at that target version; do not bump
+  again.
 
 ## Conventions
 
+- **Always write comments in English.** This applies to all source and
+  config files (Python, JS, XML, YAML, Dockerfiles, etc.). Do not leave
+  comments in Russian or any other language; translate existing
+  non-English comments to English when you touch the surrounding code.
 - Models follow `connect.<name>` naming (e.g., `connect.call`, `connect.recording`)
 - Protected settings fields (API keys, tokens) are masked with `****` for non-managers
 - Debug logging uses `connect.debug` model with daily cron cleanup
 - Twilio webhook routes are all under `/twilio/webhook/*` and validate `X-Twilio-Signature` when enabled
 - Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`
 
-## FreeSWITCH Docker Image
+## FreeSWITCH & Firewall Docker Images
 
-- Image: `oduist/freeswitch`
-- Dockerfile: `connect_freeswitch/deploy/Dockerfile`
-- Config files: `connect_freeswitch/deploy/freeswitch/conf/`
+- FreeSWITCH image: `oduist/freeswitch` — Dockerfile: `connect_freeswitch/deploy/Dockerfile`, config: `connect_freeswitch/deploy/freeswitch/conf/`
+- Firewall image: `oduist/freeswitch-firewall` — Dockerfile: `connect_freeswitch/deploy/firewall/Dockerfile`, sources: `connect_freeswitch/deploy/firewall/src/`
 
-**Workflow** when changing FreeSWITCH config or Dockerfile:
-1. Increment version in `connect_freeswitch/__manifest__.py` (e.g. `19.0.1.0.2` → `19.0.1.0.3`)
-2. Build image using the short version (strip Odoo prefix): `docker build --platform linux/amd64 --provenance=false --sbom=false -t oduist/freeswitch:1.0.3 -t oduist/freeswitch:latest connect_freeswitch/deploy/`
-3. Push both tags: `docker push oduist/freeswitch:1.0.3 && docker push oduist/freeswitch:latest`
+### Versioning policy
+
+The image tag is **decoupled** from both the upstream FreeSWITCH version and from the `connect_freeswitch` module version. Images are **not rebuilt on every manifest bump** — only when a release actually changes files under `connect_freeswitch/deploy/` (FreeSWITCH) or `connect_freeswitch/deploy/firewall/` (firewall service).
+
+As a result, the published image tags **lag behind** the module manifest version. That is expected. When a module release happens to coincide with a deploy-folder change, the new image tag will match the current short manifest version — and that match acts as a useful sync marker, not a contract.
+
+### Workflow when changing files under `connect_freeswitch/deploy/`
+
+1. Read the current version from `connect_freeswitch/__manifest__.py` (e.g. `19.0.1.10.4`).
+2. Strip the leading `19.0.` (Odoo series) prefix → short version (e.g. `1.10.4`).
+3. Build and push using that short version:
+   - FreeSWITCH (deploy folder changed):
+     ```
+     docker build --platform linux/amd64 --provenance=false --sbom=false \
+       -t oduist/freeswitch:<short> -t oduist/freeswitch:latest \
+       connect_freeswitch/deploy/
+     docker push oduist/freeswitch:<short> && docker push oduist/freeswitch:latest
+     ```
+   - Firewall (firewall folder changed):
+     ```
+     docker build --platform linux/amd64 --provenance=false --sbom=false \
+       -t oduist/freeswitch-firewall:<short> -t oduist/freeswitch-firewall:latest \
+       connect_freeswitch/deploy/firewall/
+     docker push oduist/freeswitch-firewall:<short> && docker push oduist/freeswitch-firewall:latest
+     ```
+4. The two images are independent — only rebuild the one whose source files actually changed in this release.
 
 ## Testing FreeSWITCH SIP Calls
 
@@ -206,6 +274,28 @@ uv pip install "odoo-addon-connect-freeswitch @ git+https://github.com/oduist/co
 ```
 
 Replace `@19.0` with `@18.0` for the Odoo 18 series. Tests are not available in this mode.
+
+## Running tests in an oduflow environment
+
+`tests_suite` lives **only on the local workstation**. The oduflow Odoo
+environment has **no access** to the private submodule, and `pull_and_apply`
+will **not** carry the tests across: `pull_and_apply` syncs via `git push`,
+where `tests_suite` is just a gitlink whose contents are never pushed (and
+`.gitmodules` carries `update = none` anyway). So after `pull_and_apply` the
+environment still has an empty `tests/` loader and `run_odoo_tests` finds
+nothing.
+
+To run a specific test in an oduflow environment:
+
+1. Read the test locally from `tests_suite/<addon>/tests/test_<name>.py`.
+2. Copy it into the environment with the **`write_file_in_odoo`** MCP tool,
+   writing to the path the loader scans — `tests_suite/<addon>/tests/test_<name>.py`
+   (relative to the repo root inside the container).
+3. Run `run_odoo_tests <addon>`.
+
+Do **not** rely on `pull_and_apply` to deliver test files — it never will.
+Treat `write_file_in_odoo` as the only channel for getting a `test_*.py`
+into the environment.
 
 ## Self-driven verification of changes
 

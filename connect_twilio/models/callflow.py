@@ -12,6 +12,17 @@ logger = logging.getLogger(__name__)
 class CallFlow(models.Model):
     _inherit = 'connect.callflow'
 
+    # Twilio's Gather verb supports speech recognition in addition to DTMF.
+    # When this module is uninstalled, callflows that used a speech option
+    # fall back to DTMF.
+    gather_input_type = fields.Selection(
+        selection_add=[
+            ('speech', 'Speech'),
+            ('dtmf speech', 'DTMF + speech'),
+        ],
+        ondelete={'speech': 'set default', 'dtmf speech': 'set default'},
+    )
+
     gather_action_url = fields.Char(compute='_get_gather_action_url')
 
     def _get_gather_action_url(self):

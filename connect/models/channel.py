@@ -272,20 +272,16 @@ class Channel(models.Model):
         Partner = self.env['res.partner']
 
         if caller_pbx_user and called:
-            if (called or '').startswith('+'):
-                debug(self, 'Setting partner by called number (caller is PBX user).')
-                return Partner.get_partner_by_number(called)
+            debug(self, 'Setting partner by called number (caller is PBX user).')
+            return Partner.get_partner_by_number(called)
         elif called_pbx_user and caller:
-            if (caller or '').startswith('+'):
-                debug(self, 'Setting partner by caller number (called is PBX user).')
-                return Partner.get_partner_by_number(caller)
+            debug(self, 'Setting partner by caller number (called is PBX user).')
+            return Partner.get_partner_by_number(caller)
         elif direction == 'outbound-dial' and called:
             debug(self, 'Setting partner for outbound dial by called.')
             return Partner.get_partner_by_number(called)
-        elif (direction == 'inbound'
-              and (called or '').startswith('+')
-              and (caller or '').startswith('+')):
-            debug(self, 'Incoming DID call. Get the partner from caller number.')
+        elif direction == 'inbound' and caller:
+            debug(self, 'Incoming call. Get the partner from caller number.')
             return Partner.get_partner_by_number(caller)
         else:
             debug(self, 'Not setting channel partner without channel users.')

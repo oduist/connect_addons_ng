@@ -8,6 +8,7 @@ class OutgoingCallerID(models.Model):
     _name = 'connect.outgoing_callerid'
     _description = 'Outgoing CallerId'
     _order = 'number'
+    _rec_names_search = ['number', 'friendly_name']
 
     name = fields.Char(compute='_get_name')
     friendly_name = fields.Char(required=True)

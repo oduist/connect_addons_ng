@@ -33,7 +33,13 @@
             <div class="oe_title" position="after">
                 <group string="Authentication">
                     <field name="auth_user"/>
-                    <field name="auth_password" password="True"/>
+                    <label for="auth_password"/>
+                    <div class="d-flex align-items-center">
+                        <field name="auth_password" widget="endpoint_password" nolabel="1"/>
+                        <button name="action_regenerate_auth_password" type="object"
+                                string="Regenerate" class="btn-link ms-2"
+                                icon="fa-refresh" invisible="not id"/>
+                    </div>
                 </group>
                 <group string="Click-to-Call" invisible="not connect_user_id">
                     <field name="originate_ring" widget="boolean_toggle"/>

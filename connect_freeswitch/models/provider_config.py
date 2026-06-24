@@ -260,11 +260,16 @@ class ConnectProviderFreeSwitchConfig(models.Model):
             url = line.strip()
             if url:
                 ice_servers.append({'urls': url})
+        # Verto login = <login-local-part><res.users.id> (e.g. "litnimax42"),
+        # matching the FS XML directory. The '@'-stripping keeps mod_verto
+        # happy (it splits the JSON-RPC login on '@' to derive the realm) and
+        # the trailing id keeps it unique across users sharing an email local
+        # part. See specs/decisions/016-verto-login-uses-user-id.md.
         return {
             'enabled': True,
             'socketUrl': cfg.socket_url,
             'domain': cfg.domain,
-            'login': user.login,
+            'login': connect_user._get_verto_login(),
             'password': connect_user.webrtc_password,
             'callerName': connect_user.name,
             'callerNumber': connect_user.exten_number or user.login,

@@ -249,6 +249,7 @@ action = {
     <menuitem id="menu_firewall_root"
               name="Firewall"
               parent="connect_freeswitch.menu_connect_freeswitch"
+              groups="connect.group_admin"
               sequence="80"/>
 
     <menuitem id="menu_firewall_agent"

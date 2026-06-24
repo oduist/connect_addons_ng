@@ -9,6 +9,20 @@ from odoo import fields
 _logger = logging.getLogger(__name__)
 
 
+def backfill_endpoint_passwords(env):
+    """Generate a passphrase for any endpoint missing an auth_password.
+
+    Non-destructive: endpoints with a password already set are left untouched.
+    Shared helper called from the per-series post-migration entry point.
+    """
+    from .models.passphrase import generate_passphrase
+    endpoints = env['connect.endpoint'].sudo().with_context(active_test=False).search([
+        '|', ('auth_password', '=', False), ('auth_password', '=', ''),
+    ])
+    for endpoint in endpoints:
+        endpoint.auth_password = generate_passphrase()
+
+
 def setup_firewall(env):
     """Idempotent firewall bootstrap — called from post_init_hook and
     per-version post-migration scripts. Generates the shared service

@@ -30,6 +30,7 @@ from .constants import (
     IPSET_BLACKLIST,
     IPSET_WHITELIST,
 )
+from .esl import ESLClient
 from .event_bus import EventBus
 from .odoo_client import OdooClient
 from .reconciler import Reconciler
@@ -71,6 +72,7 @@ def build_app(
     settings: ServiceSettings,
     reconciler: Reconciler,
     odoo: OdooClient,
+    esl: ESLClient,
     event_bus: EventBus,
     started_at: float,
 ) -> FastAPI:
@@ -120,16 +122,33 @@ def build_app(
     # Health / heartbeat / JSON API
     # ------------------------------------------------------------------
 
+    # /healthz is the liveness-only fallback (always 200 while the process
+    # is up) — Kubernetes / Traefik / nestled proxies rely on that contract.
+    # /firewall/healthz is the dependency-aware readiness check: 503 when
+    # Odoo or ESL are down, so external monitoring (Uptime Kuma, blackbox
+    # exporter, etc.) can alert on it directly without authentication.
     @app.get("/healthz")
-    @app.get("/firewall/healthz")
-    async def healthz():
+    async def healthz_liveness():
         return {"status": "ok"}
+
+    @app.get("/firewall/healthz")
+    async def firewall_healthz():
+        odoo_ok = odoo.last_call_ok
+        esl_ok = esl.is_connected
+        body = {
+            "status": "ok" if (odoo_ok and esl_ok) else "error",
+            "odoo": odoo_ok,
+            "esl": esl_ok,
+        }
+        if odoo_ok and esl_ok:
+            return body
+        return JSONResponse(body, status_code=503)
 
     @app.get("/firewall/api/heartbeat")
     async def api_heartbeat():
         return {
             "version": getattr(settings, "version", None),
-            "esl_connected": True,  # populated by ESL loop in v2
+            "esl_connected": esl.is_connected,
             "odoo_connected": odoo.last_call_ok,
             "uptime_seconds": int(time.time() - started_at),
             "last_sync_at": reconciler.last_sync_at,

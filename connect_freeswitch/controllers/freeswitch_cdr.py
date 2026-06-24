@@ -1,5 +1,6 @@
 import logging
 import re
+import urllib.parse
 from xml.etree import ElementTree as ET
 
 from odoo import http
@@ -16,7 +17,7 @@ class FreeSwitchCDRController(http.Controller):
 
     @http.route(
         '/freeswitch/webhook/cdr',
-        type='http', auth='none', methods=['POST'], csrf=False,
+        type='http', auth='public', methods=['POST'], csrf=False,
     )
     def cdr_webhook(self, **kwargs):
         """Receive CDR from FreeSWITCH mod_xml_cdr.
@@ -90,12 +91,21 @@ class FreeSwitchCDRController(http.Controller):
         caller_profile = root.find('.//caller_profile')
         caller = ''
         called = ''
-        direction = 'inbound'
 
         if caller_profile is not None:
             caller = self._xml_text(caller_profile, 'caller_id_number')
             called = self._xml_text(caller_profile, 'destination_number')
-            direction = self._xml_text(caller_profile, 'direction', 'inbound')
+
+        # FreeSWITCH stores the channel's direction in <channel_data>
+        # at the top of the CDR — `inbound` for the originator (UA → FS)
+        # leg, `outbound` for the gateway (FS → PSTN) leg. The previous
+        # XPath (`caller_profile/direction`) never matched in any FS
+        # version, so every CDR was parsed as `inbound`.
+        channel_data = root.find('./channel_data')
+        if channel_data is not None:
+            direction = self._xml_text(channel_data, 'direction', 'inbound')
+        else:
+            direction = 'inbound'
 
         # Hangup cause
         hangup_cause = self._xml_text(root, './/hangup_cause', 'NORMAL_CLEARING')
@@ -122,36 +132,74 @@ class FreeSwitchCDRController(http.Controller):
         odoo_number_id = None
 
         if variables is not None:
-            # Use effective_caller_id_number (set by Odoo directory) if
-            # caller_id_number is a SIP username rather than a number
-            effective_caller = self._xml_text(
-                variables, 'effective_caller_id_number')
-            if effective_caller and not caller.isdigit():
+            # Click-to-call originates `user/<login>@<domain>` and the
+            # user directory rewrites the channel's effective caller-id
+            # back to the extension, silently overriding any globals
+            # `connect.call.originate` tried to set. The originate path
+            # therefore stashes the intended caller-id on the custom
+            # `odoo_caller_id_number` variable — prefer that. UA-
+            # originated calls don't set it; they get the right value
+            # from `effective_caller_id_number` (rewritten by the
+            # outgoing-route dialplan, ADR-021).
+            #
+            # mod_xml_cdr URL-encodes channel variable values inside
+            # <variables> (`+` → `%2B`, `@` → `%40`), so unquote first.
+            odoo_caller_id = urllib.parse.unquote(self._xml_text(
+                variables, 'odoo_caller_id_number'))
+            effective_caller = urllib.parse.unquote(self._xml_text(
+                variables, 'effective_caller_id_number'))
+            if odoo_caller_id:
+                caller = odoo_caller_id
+            elif effective_caller:
                 caller = effective_caller
 
-            # `Other-Leg-Unique-ID` is an event header — present on live
-            # channels but NOT serialized by mod_xml_cdr (mod_xml_cdr only
-            # emits channel variables under <variables>). For bridged legs
-            # FreeSWITCH stores the peer leg's UUID as `signal_bond`, with
-            # `bridge_uuid` / `last_bridge_to` as historical fallbacks.
+            # Click-to-call originates `user/<login>@<domain>`, so the
+            # A-leg's caller_profile.destination_number is the resolved
+            # user URI rather than the dialled number. The originate
+            # path stashes the real destination as a channel variable;
+            # use it when present.
+            odoo_destination = urllib.parse.unquote(self._xml_text(
+                variables, 'odoo_destination_number'))
+            if odoo_destination:
+                called = odoo_destination
+
+            # B-leg discriminator for user attribution: mod_xml_cdr sets
+            # `originator` (and `originating_leg_uuid`) only on the
+            # originatee side. `bridge_uuid` / `signal_bond` are present
+            # on BOTH legs, so they are NOT reliable for A/B detection —
+            # they are used only for parent linking, below.
+            originator_uuid = (
+                self._xml_text(variables, 'originator')
+                or self._xml_text(variables, 'originating_leg_uuid')
+            )
+
+            # Parent link for bridge convergence (ADR-030): every bridged
+            # leg records its peer UUID so `reconcile_bridge_link` can
+            # collapse the N legs into one connect.call. `signal_bond`
+            # carries the peer UUID on each leg; `bridge_uuid` /
+            # `last_bridge_to` are historical fallbacks, and
+            # `Other-Leg-Unique-ID` (a live-event header not serialized
+            # by mod_xml_cdr) / `originator` are last resorts.
             other_leg_uuid = (
                 self._xml_text(variables, 'odoo_parent_uuid')
                 or self._xml_text(variables, 'signal_bond')
                 or self._xml_text(variables, 'bridge_uuid')
                 or self._xml_text(variables, 'last_bridge_to')
                 or self._xml_text(variables, 'Other-Leg-Unique-ID')
+                or originator_uuid
             )
 
             odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
             odoo_called_user = self._xml_text(
                 variables, 'odoo_called_user_id')
-            if other_leg_uuid:
-                # B-leg: odoo_connect_user_id is the called user
+            if originator_uuid:
+                # B-leg: odoo_connect_user_id (if present) identifies the
+                # called connect.user.
                 if odoo_user:
                     called_pbx_user_id = int(odoo_user)
             else:
                 # A-leg: odoo_connect_user_id is the caller,
-                # odoo_called_user_id is the called user
+                # odoo_called_user_id is the called user.
                 if odoo_user:
                     caller_pbx_user_id = int(odoo_user)
                 if odoo_called_user:

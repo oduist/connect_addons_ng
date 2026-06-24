@@ -205,11 +205,25 @@ class Settings(models.Model):
 
     @api.model
     def get_param(self, param, default=False):
-        data = self.search([])
+        # Sudo-find the singleton so config reads do not require the caller to
+        # hold connect.settings model access (the model is admin-only). Secret
+        # parameters stay protected: a field carrying a ``groups=`` restriction
+        # is only returned to a member of those groups (or to a sudo/internal
+        # caller), never to a plain user reaching get_param over RPC.
+        data = self.sudo().search([])
         if not data:
             data = self.sudo().with_context(no_constrains=True).create({})
         else:
             data = data[0]
+        field = self._fields.get(param)
+        if field is not None and field.groups and not self.env.su:
+            allowed = any(
+                self.env.user.has_group(group.strip())
+                for group in field.groups.split(',')
+                if group.strip() and not group.strip().startswith('!')
+            )
+            if not allowed:
+                return default
         return getattr(data, param, default)
 
     @api.model
