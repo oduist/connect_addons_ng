@@ -41,7 +41,7 @@ class FreeSwitchOutgoingRoute(models.Model):
         #
         # We deliberately push only the NUMBER outwards. The display name is
         # always blanked on the trunk leg (see the template) so the outside
-        # world never learns the internal caller's name. See ADR-022.
+        # world never learns the internal caller's name. See ADR-026.
         cid_num = ''
         connect_user_id = params.get('variable_odoo_connect_user_id')
         if connect_user_id:

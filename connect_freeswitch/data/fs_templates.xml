@@ -158,6 +158,7 @@ Variables:
     <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
     {% endif %}
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="export" data="odoo_chain_id=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
@@ -176,6 +177,7 @@ Variables:
     <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
     {% endif %}
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="export" data="odoo_chain_id=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
@@ -292,6 +294,7 @@ Variables:
   <condition field="destination_number" expression="^cf_call_{{ callflow_id }}_{{ digits_escaped }}$" break="on-false">
     <action application="set" data="odoo_called_user_id={{ user_id }}"/>
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="export" data="odoo_chain_id=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
@@ -302,6 +305,7 @@ Variables:
   <condition field="destination_number" expression="^cf_call_{{ callflow_id }}_{{ digits_escaped }}$" break="on-false">
     <action application="set" data="odoo_called_user_id={{ user_id }}"/>
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="export" data="odoo_chain_id=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
@@ -340,6 +344,7 @@ Variables:
     <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
     {% endif %}
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="export" data="odoo_chain_id=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
@@ -366,6 +371,7 @@ Variables:
     <action application="set" data="execute_on_answer=record_session {{ recording_url }}/${uuid}.wav"/>
     {% endif %}
     <action application="export" data="nolocal:odoo_parent_uuid=${uuid}"/>
+    <action application="export" data="odoo_chain_id=${uuid}"/>
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
@@ -390,12 +396,14 @@ Variables:
         <field name="description">Inbound DID routing from PSTN trunks.
 
 Variables:
-  phone_number    - DID phone number
+  number_regex    - destination_number regex (bare digits, optional leading '+')
+  did_label       - DID digits without '+' (used for the extension name)
+  phone_number    - DID phone number as stored (kept for custom templates)
   number_id       - connect.number record ID
   destination     - Destination type: 'user' or 'callflow'
   transfer_target - Extension/number to transfer to (or empty if no destination)</field>
-        <field name="content"><![CDATA[<extension name="did_{{ phone_number }}">
-  <condition field="destination_number" expression="^{{ phone_number }}$">
+        <field name="content"><![CDATA[<extension name="did_{{ did_label }}">
+  <condition field="destination_number" expression="^{{ number_regex }}$">
     <action application="set" data="odoo_call_direction=inbound"/>
     <action application="set" data="odoo_number_id={{ number_id }}"/>
     {% if transfer_target %}
@@ -405,8 +413,8 @@ Variables:
     {% endif %}
   </condition>
 </extension>]]></field>
-        <field name="default_content"><![CDATA[<extension name="did_{{ phone_number }}">
-  <condition field="destination_number" expression="^{{ phone_number }}$">
+        <field name="default_content"><![CDATA[<extension name="did_{{ did_label }}">
+  <condition field="destination_number" expression="^{{ number_regex }}$">
     <action application="set" data="odoo_call_direction=inbound"/>
     <action application="set" data="odoo_number_id={{ number_id }}"/>
     {% if transfer_target %}
@@ -426,7 +434,7 @@ Variables:
 
 The caller-id NUMBER is set from connect.user.outgoing_callerid (when
 configured); the caller-id NAME is always blanked so the internal caller's
-name is never disclosed to the PSTN / called party. See ADR-022.
+name is never disclosed to the PSTN / called party. See ADR-026.
 
 Variables:
   route_id        - connect.freeswitch.outgoing_route record ID

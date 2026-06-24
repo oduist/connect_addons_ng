@@ -123,6 +123,15 @@ class Partner(models.Model):
     @api.model
     def get_partner_by_number(self, number):
         found = self.sudo().search([('phone_mobile_search', '=', number)])
+        if not found:
+            country = self.env['res.company'].sudo().browse(1).country_id.code
+            normalized = format_number(self, number, country)
+            if normalized and normalized != number:
+                found = self.sudo().search(
+                    [('phone_mobile_search', '=', normalized)])
+                debug(self, '{} normalized to {} for partner lookup'.format(
+                    number, normalized
+                ))
         debug(self, '{} belongs to partners: {}'.format(
             number, found.mapped('id')
         ))
