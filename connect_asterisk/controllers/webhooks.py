@@ -9,7 +9,7 @@ Unlike the firewall controllers (bare ``sudo()``), event and recording
 processing dispatches under the core webhook user
 (``connect.user_connect_webhook``): the target models already carry
 webhook-group ACLs in core, which bounds the blast radius of a leaked
-token. See specs/decisions/025-asterisk-sidecar-agent.md.
+token. See specs/decisions/026-asterisk-sidecar-agent.md.
 """
 import base64
 import json

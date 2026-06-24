@@ -27,7 +27,7 @@ It ships **two deliverables**:
    `connect_asterisk/`.
 2. A thin sidecar agent Docker image (`oduist/asterisk-agent`) under
    `deploy/agent/` that bridges AMI to the Odoo webhooks. See
-   `specs/decisions/025-asterisk-sidecar-agent.md`.
+   `specs/decisions/026-asterisk-sidecar-agent.md`.
 
 Major features:
 - AMI event pipeline: agent → `/asterisk/webhook/events` →
@@ -217,7 +217,7 @@ aligned with the `connect_twilio` phone widget (already core-wired):
 | `connect.number.route_call` | ✘ inbound routing stays in the customer's dialplan; DID-assist lookup provided instead |
 
 Deferred: voicemail (MiniVM), spy/whisper/barge, retention crons,
-multi-server, job-poll command channel for NATed agents (ADR-025 §6).
+multi-server, job-poll command channel for NATed agents (ADR-026 §6).
 
 ## Sidecar agent (`deploy/agent/`)
 

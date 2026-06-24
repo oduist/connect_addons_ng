@@ -11,7 +11,7 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect`** — Technology-agnostic core. Stores calls, messages, recordings, users, callflows, extensions. Handles OpenAI transcription/summarization, SMS composer UI, partner integration. **Never imports provider-specific code.**
 - **`connect_twilio`** — Twilio integration. Extends core models via `_inherit`. Adds TwiML apps, SIP domains, WhatsApp, webhook handlers, Twilio Voice JS SDK phone widget.
 - **`connect_freeswitch`** — FreeSWITCH integration. Adds Verto WebRTC client, XML dialplan generation, endpoint management.
-- **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). See ADR-025.
+- **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). See ADR-026.
 
 Dependencies: `connect_twilio`, `connect_freeswitch` and `connect_asterisk` all depend on `connect` but are independent of each other.
 

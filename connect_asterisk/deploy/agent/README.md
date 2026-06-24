@@ -2,7 +2,7 @@
 
 Thin sidecar that bridges a customer's existing Asterisk PBX (FreePBX,
 Issabel, plain Asterisk 13–21) to the `connect_asterisk` Odoo module.
-See `specs/decisions/025-asterisk-sidecar-agent.md` in the repo root for
+See `specs/decisions/026-asterisk-sidecar-agent.md` in the repo root for
 the architecture decision record.
 
 What it does — and all it does:

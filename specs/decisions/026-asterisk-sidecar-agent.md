@@ -1,4 +1,4 @@
-# 025 — Asterisk provider via a thin sidecar agent (`connect_asterisk`)
+# 026 — Asterisk provider via a thin sidecar agent (`connect_asterisk`)
 
 ## Status
 
