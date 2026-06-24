@@ -29,7 +29,7 @@ It ships **three deliverables**:
 Major features:
 - WebRTC via FreeSWITCH `mod_verto` with a phone widget in the Odoo UI;
 - XML-curl directory + dialplan generation driven by Odoo records;
-- mod_fifo-backed call queues with static dialplan consumers (ADR-013);
+- mod_fifo-backed call queues with static dialplan consumers (ADR-013), reachable as a callflow/IVR fallback without a dedicated extension via the `fs_fifo_<id>` handle (ADR-026) and auto-refreshed in FreeSWITCH on change (ADR-027);
 - call parking with BLF subscriptions (ADR-012);
 - gateway / outgoing route management;
 - piper TTS module embedded in the image;
@@ -134,7 +134,7 @@ Beyond firewall, the module contains:
 | `connect.freeswitch.gateway` | SIP gateway records, rendered into pjsip_wizard XML |
 | `connect.freeswitch.outgoing_route` | outbound routing rules |
 | `connect.freeswitch.template` | Jinja2 templates for dialplan / directory XML |
-| `connect.fs_fifo` | mod_fifo queue records (ADR-013) |
+| `connect.fs_fifo` | mod_fifo queue records (ADR-013). `_dialplan_target()` = the queue's extension or, when none, the internal `fs_fifo_<id>` handle that `_route_internal` resolves back to the queue dialplan — so a queue is a routable callflow/IVR fallback without a user-facing extension (ADR-026). `create`/`write(members, max_wait_time)`/`unlink` schedule one post-commit `reload mod_fifo` (`freeswitch_api`) so FreeSWITCH re-reads its consumers (ADR-027) |
 | `connect.freeswitch.parking.slot` | call parking (ADR-012) |
 
 ### Outbound Caller ID resolution

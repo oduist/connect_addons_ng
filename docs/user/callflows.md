@@ -61,12 +61,14 @@ The voicemail greeting can be customized per call flow.
 
 When the `connect_freeswitch` module is installed, call flows can route calls into an **FS Queue** — a hold area where the caller hears Music-on-Hold while agents are being rung. The first agent to answer takes the call.
 
-A queue can be used three ways:
+A queue can be used in several ways:
 
-- **Directly as an extension destination** — dial the queue's extension and you enter the queue.
+- **Directly as an extension destination** — give the queue an extension number, then dialing it enters the queue. *(The extension is optional and only needed for direct dialing.)*
 - **As an IVR choice** — any IVR menu option can point to a queue.
 - **As the "no choice" default of an IVR** — if the caller doesn't press anything, the call is transferred into the queue.
 - **As a fallback for a ring group** — if nobody in the ring group answers, the call is moved into the queue before voicemail.
+
+Used as an IVR or ring-group destination, a queue needs **no extension of its own** — it is reached automatically.
 
 ### What the caller experiences
 
@@ -84,3 +86,5 @@ FS Queues are configured under **PBX → FS Queues**. Each queue defines:
 - Music-on-Hold source,
 - whether to announce the caller's position,
 - what to do on timeout (hangup, voicemail, transfer).
+
+Changes to a queue's agents or wait time take effect on the **next call automatically** — no restart or manual step.
