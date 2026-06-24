@@ -19,7 +19,7 @@ class FreeSwitchCDRController(http.Controller):
 
     @http.route(
         '/freeswitch/webhook/cdr',
-        type='http', auth='none', methods=['POST'], csrf=False,
+        type='http', auth='public', methods=['POST'], csrf=False,
     )
     def cdr_webhook(self, **kwargs):
         """Receive CDR from FreeSWITCH mod_xml_cdr.
@@ -119,6 +119,7 @@ class FreeSwitchCDRController(http.Controller):
         caller_pbx_user_id = None
         called_pbx_user_id = None
         other_leg_uuid = None
+        chain_id = None
         odoo_number_id = None
 
         if variables is not None:
@@ -174,6 +175,7 @@ class FreeSwitchCDRController(http.Controller):
                 or self._xml_text(variables, 'Other-Leg-Unique-ID')
                 or originator_uuid
             )
+            chain_id = self._xml_text(variables, 'odoo_chain_id')
 
             odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
             odoo_called_user = self._xml_text(
@@ -203,6 +205,7 @@ class FreeSwitchCDRController(http.Controller):
             'caller_pbx_user_id': caller_pbx_user_id,
             'called_pbx_user_id': called_pbx_user_id,
             'other_leg_uuid': other_leg_uuid,
+            'chain_id': chain_id,
             'odoo_number_id': int(odoo_number_id) if odoo_number_id else None,
         }
 

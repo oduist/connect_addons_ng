@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_connect_call_tree_crm" model="ir.ui.view">
+        <field name="name">connect.call.tree.crm</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.view_connect_call_tree"/>
+        <field name="arch" type="xml">
+            <field name="partner" position="after">
+                <field name="lead" optional="show"/>
+            </field>
+            <field name="status" position="after">
+                <field name="source" optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_connect_call_form_crm" model="ir.ui.view">
+        <field name="name">connect.call.form.crm</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.view_connect_call_form"/>
+        <field name="arch" type="xml">
+            <button name="create_partner_button" position="after">
+                <button string="Lead" name="create_lead_button" type="object"
+                        class="oe_stat_button" icon="fa-money"/>
+            </button>
+            <notebook position="inside">
+                <page name="crm" string="CRM">
+                    <group>
+                        <group>
+                            <field name="lead"/>
+                            <field name="source"/>
+                        </group>
+                        <group>
+                            <button name="unlink_crm_lead" type="object" string="Unlink"
+                                    invisible="not lead"/>
+                        </group>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+</odoo>
