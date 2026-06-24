@@ -190,6 +190,22 @@ class FreeSwitchCDRController(http.Controller):
 
             odoo_number_id = self._xml_text(variables, 'odoo_number_id')
 
+            # Authoritative direction: the dialplan tags every routed leg
+            # with `odoo_call_direction` (inbound DID → 'inbound',
+            # outgoing route → 'outgoing'). Honour it when present — for
+            # `originate`-launched (synthesised) calls the FS-level
+            # <channel_data><direction> is unreliable and the leg would
+            # otherwise be mis-parsed as inbound, producing a wrong
+            # `incoming` call direction (issue #43). Falls back to the
+            # <channel_data><direction> inference above when the variable
+            # is absent (e.g. internal extension-to-extension calls).
+            odoo_call_direction = self._xml_text(
+                variables, 'odoo_call_direction')
+            if odoo_call_direction == 'outgoing':
+                direction = 'outbound'
+            elif odoo_call_direction == 'inbound':
+                direction = 'inbound'
+
         return {
             'uuid': uuid,
             'caller': caller,
