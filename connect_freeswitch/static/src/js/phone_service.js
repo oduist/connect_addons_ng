@@ -154,6 +154,16 @@ export const phoneService = {
             bus.trigger("parkingStateChanged", payload);
         });
 
+        // The server rotates this user's WebRTC password on every config
+        // issuance and pushes the new credentials to the user's private bus
+        // channel. Update the live Verto client in place so this tab keeps a
+        // valid password after another tab rotated it (see ADR-022).
+        bus_service.subscribe("connect_freeswitch.verto_credentials", (payload) => {
+            if (vertoClient && payload) {
+                vertoClient.updateCredentials(payload);
+            }
+        });
+
         // Connect immediately
         connect();
 

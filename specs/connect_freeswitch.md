@@ -157,6 +157,29 @@ Whitelist / blacklist edits are admin-only via the Odoo UI; the
 service has no model-level access at all because it goes through the
 sudoed controller.
 
+### WebRTC password lifecycle (ADR-022)
+
+Each WebRTC-enabled `connect.user` holds a `webrtc_password` used to
+authenticate the Verto softphone against `mod_verto`. It is **rotated on
+every credential issuance**: `connect.user._rotate_webrtc_password()`
+(`models/fs_user.py`) generates a fresh `secrets.token_urlsafe(16)`,
+stores it, and returns it. The rotation fires inside
+`connect.settings.get_webrtc_config` (and the legacy duplicate route
+`/connect/webrtc/config`), i.e. roughly once per softphone boot / page
+load. A leaked password therefore self-invalidates the next time the
+user's softphone fetches its config.
+
+FreeSWITCH re-authenticates every Verto registration live against the DB
+value through the `/freeswitch/xml` directory binding, so a rotation
+takes effect immediately — no FS reload or `xml_locate` flush.
+
+To keep multiple browser tabs of the same user in sync, the helper also
+pushes the new `{login, password}` to the user's **private** bus channel
+(`self.user.partner_id`, notification type
+`connect_freeswitch.verto_credentials`); `phone_service.js` updates the
+live `VertoClient` password in place (`updateCredentials`). Active calls
+are not interrupted. The password is never surfaced in any view.
+
 ---
 
 ## Crons (`data/ir_cron.xml`)

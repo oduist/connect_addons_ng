@@ -50,7 +50,23 @@ export class VertoClient {
             ? options.iceServers
             : [{ urls: 'stun:stun.l.google.com:19302' }];
     }
-    
+
+    /**
+     * Update the Verto credentials in place (server-pushed via the bus when the
+     * WebRTC password is rotated for this user — see ADR-022). The current
+     * registration/call is left untouched; the next reconnect/re-login uses the
+     * fresh password, so other tabs of the same user stay valid after another
+     * tab rotated the password.
+     */
+    updateCredentials({ login, password }) {
+        if (login) {
+            this.login = login;
+        }
+        if (password) {
+            this.password = password;
+        }
+    }
+
     _loadOrCreateSessionId() {
         const storageKey = 'verto_session_id';
         let sessionId = null;
