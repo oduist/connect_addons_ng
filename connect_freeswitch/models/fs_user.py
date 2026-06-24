@@ -42,7 +42,7 @@ class User(models.Model):
         equals the value the JS client sends. A previously leaked password is
         invalidated the next time the softphone fetches its config. FreeSWITCH
         re-authenticates every Verto registration live against the DB value, so
-        no FS reload is needed (see issue #36, ADR-022).
+        no FS reload is needed (see issue #36, ADR-026).
 
         ``sudo()``: ``webrtc_password`` is readonly and ``group_user`` has
         ``perm_write=False`` on ``connect.user``; ``get_webrtc_config`` runs as

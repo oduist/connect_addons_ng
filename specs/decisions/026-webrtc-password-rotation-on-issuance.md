@@ -1,4 +1,4 @@
-# ADR-022: Rotate the WebRTC/Verto password on every credential issuance
+# ADR-026: Rotate the WebRTC/Verto password on every credential issuance
 
 **Status:** Accepted
 **Date:** 2026-06-02

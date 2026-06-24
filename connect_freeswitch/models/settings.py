@@ -368,7 +368,7 @@ class Settings(models.Model):
         # Rotate the WebRTC password on every config issuance so a leaked
         # password self-invalidates on the next softphone boot. The returned
         # value (not a re-read of the field) is delivered to the client, which
-        # immediately registers with it against FreeSWITCH. See ADR-022.
+        # immediately registers with it against FreeSWITCH. See ADR-026.
         password = connect_user._rotate_webrtc_password()
         return {
             'enabled': True,

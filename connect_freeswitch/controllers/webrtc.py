@@ -44,7 +44,7 @@ class WebRTCController(http.Controller):
         # Rotate the WebRTC password on issuance, same as
         # connect.settings.get_webrtc_config (the path the current JS uses), so
         # this parallel route never hands out a stale, non-rotating password.
-        # See ADR-022.
+        # See ADR-026.
         password = connect_user._rotate_webrtc_password()
         return {
             'enabled': True,

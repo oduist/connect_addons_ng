@@ -22,18 +22,31 @@ _SUITE = os.path.normpath(
                  "tests_suite", "connect_twilio", "tests")
 )
 
+def _load(_fn):
+    """Import one tests_suite file as a submodule of this package."""
+    _name = _fn[:-3]
+    _full = f"{__name__}.{_name}"
+    try:
+        _spec = importlib.util.spec_from_file_location(
+            _full, os.path.join(_SUITE, _fn))
+        _mod = importlib.util.module_from_spec(_spec)
+        sys.modules[_full] = _mod
+        _spec.loader.exec_module(_mod)
+        globals()[_name] = _mod
+    except Exception:
+        pass
+
+
 if os.path.isdir(_SUITE):
-    for _fn in sorted(os.listdir(_SUITE)):
-        if not (_fn.startswith("test_") and _fn.endswith(".py")):
-            continue
-        _name = _fn[:-3]
-        _full = f"{__name__}.{_name}"
-        try:
-            _spec = importlib.util.spec_from_file_location(
-                _full, os.path.join(_SUITE, _fn))
-            _mod = importlib.util.module_from_spec(_spec)
-            sys.modules[_full] = _mod
-            _spec.loader.exec_module(_mod)
-            globals()[_name] = _mod
-        except Exception:
-            pass
+    _files = sorted(os.listdir(_SUITE))
+    # pass 0: helper modules (common.py, …) registered first so that
+    # test_*.py can `from .common import <Base>` — the relative import
+    # resolves through sys.modules.
+    for _fn in _files:
+        if (_fn.endswith(".py") and not _fn.startswith("test_")
+                and _fn != "__init__.py"):
+            _load(_fn)
+    # pass 1: the actual test_*.py modules.
+    for _fn in _files:
+        if _fn.startswith("test_") and _fn.endswith(".py"):
+            _load(_fn)

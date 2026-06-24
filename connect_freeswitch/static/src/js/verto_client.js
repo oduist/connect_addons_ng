@@ -53,7 +53,7 @@ export class VertoClient {
 
     /**
      * Update the Verto credentials in place (server-pushed via the bus when the
-     * WebRTC password is rotated for this user — see ADR-022). The current
+     * WebRTC password is rotated for this user — see ADR-026). The current
      * registration/call is left untouched; the next reconnect/re-login uses the
      * fresh password, so other tabs of the same user stay valid after another
      * tab rotated the password.

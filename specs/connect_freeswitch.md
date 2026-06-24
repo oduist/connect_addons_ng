@@ -116,7 +116,7 @@ Beyond firewall, the module contains:
 | Model | Purpose |
 |---|---|
 | `connect.user` (`_inherit`) | adds WebRTC fields and dial-string generation |
-| `connect.endpoint` (`_inherit`) | SIP endpoint management |
+| `connect.endpoint` (`_inherit`) | SIP endpoint management. `auth_password` is auto-generated as a typeable passphrase (`models/passphrase.py`, `secrets`-based), `readonly` + `copy=False`, defaulted on create; `action_regenerate_auth_password()` issues a new one. Empty passwords on existing endpoints are backfilled non-destructively by `backfill_endpoint_passwords(env)` (post-migration). UI uses the `endpoint_password` OWL widget (mask + Show/Hide + Copy) — see ADR-022 |
 | `connect.exten` (`_inherit`) | extension number tooling |
 | `connect.callflow` (`_inherit`) | callflow extension for FreeSWITCH-specific destinations; `_get_piper_language()` returns the BCP-47 code used as the Piper TTS model key (must match a `<model language="...">` entry in `piper_tts.conf.xml`) |
 | `connect.number` (`_inherit`) | DID assignment |
@@ -146,18 +146,21 @@ twin) is bootstrapped on install / upgrade by `setup_firewall(env)` in
 
 See `security/access_rules.xml`.
 
+Firewall models are **admin-only** — `connect_user` has no access at all (the
+`Firewall` menu is also gated on `connect.group_admin`).
+
 | Model | `connect_admin` | `connect_user` |
 |---|---|---|
-| `connect.firewall.whitelist` | CRUD | read |
-| `connect.firewall.blacklist` | CRUD | read |
-| `connect.firewall.event` | read + unlink | read |
-| `connect.firewall.agent` | read + write | read |
+| `connect.firewall.whitelist` | CRUD | — |
+| `connect.firewall.blacklist` | CRUD | — |
+| `connect.firewall.event` | read + unlink | — |
+| `connect.firewall.agent` | read + write | — |
 
 Whitelist / blacklist edits are admin-only via the Odoo UI; the
 service has no model-level access at all because it goes through the
 sudoed controller.
 
-### WebRTC password lifecycle (ADR-022)
+### WebRTC password lifecycle (ADR-026)
 
 Each WebRTC-enabled `connect.user` holds a `webrtc_password` used to
 authenticate the Verto softphone against `mod_verto`. It is **rotated on
