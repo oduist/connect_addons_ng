@@ -113,7 +113,7 @@ class User(models.Model):
 
     @api.depends('username', 'domain', 'twilio_edge')
     def _get_sip_uri(self):
-        default_edge = self.env['connect.provider.twilio.config'].sudo()._get().edge or 'roaming'
+        default_edge = self.env['connect.settings'].sudo()._get().twilio_edge or 'roaming'
         for rec in self:
             if not rec.username or not rec.domain:
                 rec.uri = False
@@ -135,7 +135,7 @@ class User(models.Model):
     def _create_sip_account(self, username, password, client=None):
         self.ensure_one()
         try:
-            client = client or self.env['connect.provider.twilio.config'].sudo().get_client()
+            client = client or self.env['connect.settings'].sudo().get_client()
             credential = (
                 client.sip.credential_lists(
                     self.domain.cred_list_sid
@@ -171,7 +171,7 @@ class User(models.Model):
     def _import_existing_sip_credential(self, username, client=None):
         """Import existing SIP credential from Twilio by username."""
         self.ensure_one()
-        client = client or self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = client or self.env['connect.settings'].sudo().get_client()
         try:
             credentials = (
                 client.sip.credential_lists(
@@ -227,7 +227,7 @@ class User(models.Model):
             )
             return
         try:
-            client = self.env['connect.provider.twilio.config'].sudo().get_client()
+            client = self.env['connect.settings'].sudo().get_client()
             client.sip.credential_lists(
                 self.domain.cred_list_sid
             ).credentials(self.sid).update(password=password)
@@ -260,7 +260,7 @@ class User(models.Model):
             )
             return
         try:
-            client = self.env['connect.provider.twilio.config'].sudo().get_client()
+            client = self.env['connect.settings'].sudo().get_client()
             client.sip.credential_lists(
                 self.domain.cred_list_sid
             ).credentials(self.sid).delete()
@@ -295,7 +295,7 @@ class User(models.Model):
 
     def _twilio_configured(self):
         return bool(
-            self.env['connect.provider.twilio.config'].sudo()._get().account_sid
+            self.env['connect.settings'].sudo()._get().account_sid
         )
 
     @api.model_create_multi
@@ -346,7 +346,7 @@ class User(models.Model):
         for rec in self:
             if not vals.get('password'):
                 continue
-            if not self.env['connect.provider.twilio.config'].sudo()._get().auto_sync:
+            if not self.env['connect.settings'].sudo()._get().twilio_auto_sync:
                 vals['password'] = '*' * len(vals['password'])
             else:
                 if rec.sid:
@@ -359,7 +359,7 @@ class User(models.Model):
         return super().write(vals)
 
     def unlink(self):
-        if self._twilio_configured() and self.env['connect.provider.twilio.config'].sudo()._get().auto_sync:
+        if self._twilio_configured() and self.env['connect.settings'].sudo()._get().twilio_auto_sync:
             for rec in self:
                 if rec.sid:
                     rec.delete_sip_account()
@@ -374,7 +374,7 @@ class User(models.Model):
             .get_param('api_url')
         )
         edge = (
-            self.env['connect.provider.twilio.config'].sudo()._get().edge
+            self.env['connect.settings'].sudo()._get().twilio_edge
         )
         record_status_url = urljoin(
             api_url,
@@ -443,7 +443,7 @@ class User(models.Model):
             .sudo()
             .get_param('api_url')
         )
-        edge = self.env['connect.provider.twilio.config'].sudo()._get().edge
+        edge = self.env['connect.settings'].sudo()._get().twilio_edge
         dial_action_url = urljoin(
             api_url,
             'twilio/webhook/connect.user/call_action/{}#e={}'.format(
@@ -503,7 +503,7 @@ class User(models.Model):
             .get_param('api_url')
         )
         edge = (
-            self.env['connect.provider.twilio.config'].sudo()._get().edge
+            self.env['connect.settings'].sudo()._get().twilio_edge
         )
         voicemail_record_status_url = urljoin(
             api_url,
@@ -610,13 +610,13 @@ class User(models.Model):
                 )
                 return {'token': False}
             account_sid = (
-                self.env['connect.provider.twilio.config'].sudo()._get().account_sid
+                self.env['connect.settings'].sudo()._get().account_sid
             )
             api_key = (
-                self.env['connect.provider.twilio.config'].sudo()._get().api_key
+                self.env['connect.settings'].sudo()._get().twilio_api_key
             )
             api_secret = (
-                self.env['connect.provider.twilio.config'].sudo()._get().api_secret
+                self.env['connect.settings'].sudo()._get().twilio_api_secret
             )
             identity = user.get_client_identity()
             token = AccessToken(
@@ -625,7 +625,7 @@ class User(models.Model):
                 api_secret,
                 identity=identity,
                 ttl=3600,
-                region=self.env['connect.provider.twilio.config'].sudo()._get().region,
+                region=self.env['connect.settings'].sudo()._get().twilio_region,
             )
             voice_grant = VoiceGrant(
                 outgoing_application_sid=(
@@ -640,7 +640,7 @@ class User(models.Model):
                 'token': token.to_jwt(),
                 'edge': (
                     user.twilio_edge
-                    or self.env['connect.provider.twilio.config'].sudo()._get().edge
+                    or self.env['connect.settings'].sudo()._get().twilio_edge
                 ),
             }
         except Exception as e:

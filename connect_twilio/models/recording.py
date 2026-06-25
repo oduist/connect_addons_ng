@@ -37,7 +37,7 @@ class Recording(models.Model):
         return data
 
     def sync(self):
-        client = self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = self.env['connect.settings'].sudo().get_client()
         for rec in self:
             if not rec.media_url:
                 continue
@@ -81,7 +81,7 @@ class Recording(models.Model):
             data['caller_number'] = call.caller
             data['called_number'] = call.called
         # Fetch recording
-        client = self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = self.env['connect.settings'].sudo().get_client()
         try:
             recording = client.recordings(data['sid']).fetch()
             data.update(self.prepare_data(recording))

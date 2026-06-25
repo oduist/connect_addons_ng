@@ -54,7 +54,7 @@ class Channel(models.Model):
 
     def transfer(self, to=None):
         self.ensure_one()
-        client = self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = self.env['connect.settings'].sudo().get_client()
         call = client.calls(self.sid).update(
             twiml="<Response><Say>Ahoy there</Say></Response>"
         )

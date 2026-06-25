@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- ADR-031 / ODU-46: Twilio root nested under PBX (was a sibling of
+         the Connect app root). Child menus follow by reference. -->
     <menuitem id="menu_connect_twilio"
               name="Twilio"
-              parent="connect.menu_connect_root"
+              parent="connect.menu_connect_pbx"
               sequence="60"/>
 </odoo>

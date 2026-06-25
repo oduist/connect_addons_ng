@@ -20,7 +20,7 @@ class TwilioProvider(models.Model):
             return super()._originate_call(
                 number=number, res_model=res_model, res_id=res_id, user=user, **kwargs
             )
-        return self.env['connect.provider.twilio.config'].sudo()._originate_call(
+        return self.env['connect.settings'].sudo()._originate_call(
             number=number, res_model=res_model, res_id=res_id, user=user, **kwargs
         )
 
@@ -37,8 +37,8 @@ class TwilioProvider(models.Model):
     def _verify_webhook(self, request, data=None):
         if self.code != 'twilio':
             return super()._verify_webhook(request, data=data)
-        cfg = self.env['connect.provider.twilio.config'].sudo()._get()
-        if not cfg.verify_requests:
+        cfg = self.env['connect.settings'].sudo()._get()
+        if not cfg.twilio_verify_requests:
             return True
         validator = RequestValidator(cfg.auth_token)
         url = request.httprequest.url.replace('http:', 'https:')

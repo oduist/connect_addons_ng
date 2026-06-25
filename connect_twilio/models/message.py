@@ -44,7 +44,7 @@ class ConnectMessage(models.Model):
         if not self.env['oduist.license'].check_license('connect', silent=True):
             return str(MessagingResponse())
         try:
-            if params.get('AccountSid') != self.env['connect.provider.twilio.config'].sudo()._get().account_sid:
+            if params.get('AccountSid') != self.env['connect.settings'].sudo()._get().account_sid:
                 logger.warning(
                     "Received Twilio SMS webhook with incorrect AccountSid"
                 )
@@ -381,7 +381,7 @@ class ConnectMessage(models.Model):
         self, recipient, sender, body, whatsapp=False
     ):
         try:
-            client = self.env['connect.provider.twilio.config'].sudo().get_client()
+            client = self.env['connect.settings'].sudo().get_client()
             message = client.messages.create(
                 to=(
                     'whatsapp:{}'.format(recipient)

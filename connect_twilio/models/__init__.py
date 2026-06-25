@@ -1,5 +1,4 @@
 from . import settings
-from . import provider_config
 from . import provider
 from . import twiml
 from . import call

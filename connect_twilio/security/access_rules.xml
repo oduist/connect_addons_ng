@@ -136,15 +136,4 @@
         <field name="perm_unlink" eval="True"/>
     </record>
 
-    <!-- ODU-22: per-provider config singleton -->
-    <record id="access_connect_provider_twilio_config_admin" model="ir.model.access">
-        <field name="name">connect.provider.twilio.config admin</field>
-        <field name="model_id" ref="model_connect_provider_twilio_config"/>
-        <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="False"/>
-    </record>
-
 </odoo>

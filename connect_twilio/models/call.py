@@ -78,7 +78,7 @@ class Call(models.Model):
 
         # Twilio-specific: Price fetching on call end
         if params.get('CallStatus') in CALL_END_STATUSES:
-            if self.env['connect.provider.twilio.config'].sudo()._get().fetch_call_prices:
+            if self.env['connect.settings'].sudo()._get().fetch_call_prices:
                 self.save_call_price(channel.call, params)
 
         # Twilio-specific: Error notification to caller
@@ -153,7 +153,7 @@ class Call(models.Model):
     def _fetch_call_price_from_api(self, call, call_sid):
         """Fetch call price from Twilio REST API"""
         try:
-            client = self.env['connect.provider.twilio.config'].sudo().get_client()
+            client = self.env['connect.settings'].sudo().get_client()
             twilio_call = client.calls(call_sid).fetch()
             debug(
                 self,
@@ -201,7 +201,7 @@ class Call(models.Model):
     @api.model
     def fetch_call_prices_batch(self):
         """Cron job method to fetch prices for calls that don't have them yet"""
-        if not self.env['connect.provider.twilio.config'].sudo()._get().fetch_call_prices:
+        if not self.env['connect.settings'].sudo()._get().fetch_call_prices:
             debug(self, 'Call price fetching is disabled in settings')
             return
         # Find calls that need price fetching
@@ -276,7 +276,7 @@ class Call(models.Model):
                 len(other_channel),
             )
             return
-        client = self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = self.env['connect.settings'].sudo().get_client()
         conf_id = uuid.uuid4().hex
 
         def transfer_other():

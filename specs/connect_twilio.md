@@ -56,11 +56,12 @@ Extends core settings with Twilio API credentials, client management, and sync.
 |--------|-------------|
 | `get_client()` | Create and return Twilio REST client instance |
 | `sync()` | Full sync of all Twilio resources (numbers, callerIDs, domains, etc.) |
-| `originate_call()` | Click-to-call: initiate outbound call via Twilio API |
+| `_originate_call()` | Click-to-call: initiate outbound call via Twilio API (dispatched from the `connect.provider` façade) |
+| `compute_sip_uri()` | Resolve the SIP URI for the current user |
 | `get_external_call_route()` | Return TwiML route for external calls |
-| `get_twilio_balance()` | Fetch account balance from Twilio API |
-| `_reset_twilio_edge()` | Onchange: reset edge when region changes |
-| `write()` | Override: handle protected field masking for auth_token and api_secret |
+| `get_balance()` | Fetch account balance from Twilio API |
+| `_reset_edge()` | Onchange: reset `twilio_edge` when `twilio_region` changes |
+| `write()` | Override: handle protected field masking for `display_auth_token` and `display_twilio_api_secret` |
 
 ---
 

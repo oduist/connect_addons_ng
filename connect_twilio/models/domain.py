@@ -40,7 +40,7 @@ class Domain(models.Model):
     ]
 
     def _get_domain_name(self):
-        edge = self.env['connect.provider.twilio.config'].sudo()._get().edge
+        edge = self.env['connect.settings'].sudo()._get().twilio_edge
         edges = [v[0] for v in TWILIO_EDGES if v[0] != 'roaming']
         for rec in self:
             if rec.subdomain:
@@ -76,7 +76,7 @@ class Domain(models.Model):
 
     def create_twilio_sip_domain(self, client):
         self.ensure_one()
-        region = self.env['connect.provider.twilio.config'].sudo()._get().region
+        region = self.env['connect.settings'].sudo()._get().twilio_region
         domain = client.sip.domains.create(
             friendly_name=self.friendly_name,
             domain_name=self.domain_name,
@@ -120,7 +120,7 @@ class Domain(models.Model):
             debug(self, "Cannot create user credentials: domain not properly created in Twilio")
             return
 
-        client = client or self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = client or self.env['connect.settings'].sudo().get_client()
 
         # Find all users related to this domain that have SIP enabled
         domain_users = self.env['connect.user'].search([
@@ -162,7 +162,7 @@ class Domain(models.Model):
         typically when moving between regions or accounts.
         """
         self.ensure_one()
-        client = client or self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = client or self.env['connect.settings'].sudo().get_client()
 
         try:
             # Get all domains from user's Twilio account
@@ -360,7 +360,7 @@ class Domain(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         rec = super().create(vals_list)
-        client = self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = self.env['connect.settings'].sudo().get_client()
         if not self.env.context.get("no_twilio_create"):
             rec.create_domain(client)
         return rec
@@ -370,10 +370,10 @@ class Domain(models.Model):
             if rec.delete_protection and not self.env.context.get('force_delete'):
                 raise ValidationError("Remove delete protection to delete the domain!")
         # Check if twilio_auto_sync is disabled
-        if not self.env['connect.provider.twilio.config'].sudo()._get().auto_sync:
+        if not self.env['connect.settings'].sudo()._get().twilio_auto_sync:
             return super().unlink()
 
-        client = self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = self.env['connect.settings'].sudo().get_client()
         for rec in self:
             try:
                 # Remove creds
@@ -399,7 +399,7 @@ class Domain(models.Model):
 
     def update_twilio_domain(self, client):
         self.ensure_one()
-        region = self.env['connect.provider.twilio.config'].sudo()._get().region
+        region = self.env['connect.settings'].sudo()._get().twilio_region
         try:
             domain = client.sip.domains(self.sid)
             domain.update(
@@ -424,10 +424,10 @@ class Domain(models.Model):
 
     def write(self, vals):
         # Check if twilio_auto_sync is disabled
-        if not self.env['connect.provider.twilio.config'].sudo()._get().auto_sync:
+        if not self.env['connect.settings'].sudo()._get().twilio_auto_sync:
             return super().write(vals)
 
-        client = self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = self.env['connect.settings'].sudo().get_client()
         # Update only Twilio fields.
         if not (
             set(["friendly_name", "domain_name", "subdomain", "app"]) & set(vals.keys())
@@ -451,7 +451,7 @@ class Domain(models.Model):
         2. Create in Twilio what exists only in Odoo (handles account migration)
         3. Update what exists in both
         """
-        client = self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = self.env['connect.settings'].sudo().get_client()
         # Twilio records
         twilio_records = client.sip.domains.list()
         twilio_sids = set([k.sid for k in twilio_records])
@@ -575,7 +575,7 @@ class Domain(models.Model):
             return "<Response><Say>You must select a default number for caller ID!</Say></Response>"
         response = VoiceResponse()
         api_url = self.env["connect.settings"].get_param("api_url")
-        edge = self.env['connect.provider.twilio.config'].sudo()._get().edge
+        edge = self.env['connect.settings'].sudo()._get().twilio_edge
         status_url = urljoin(api_url, "twilio/webhook/callstatus#e={}".format(edge))
         record_status_url = urljoin(api_url, "twilio/webhook/recordingstatus#e={}".format(edge))
         call_duration_limit = int(self.env['connect.settings'].sudo().get_param('call_duration_limit'))
@@ -611,7 +611,7 @@ class Domain(models.Model):
             return "<Response><Say>You must configure a WhatsApp sender!</Say></Response>"
         response = VoiceResponse()
         api_url = self.env["connect.settings"].get_param("api_url")
-        edge = self.env['connect.provider.twilio.config'].sudo()._get().edge
+        edge = self.env['connect.settings'].sudo()._get().twilio_edge
         status_url = urljoin(api_url, "twilio/webhook/callstatus#e={}".format(edge))
         record_status_url = urljoin(api_url, "twilio/webhook/recordingstatus#e={}".format(edge))
         call_duration_limit = int(self.env['connect.settings'].sudo().get_param('call_duration_limit'))

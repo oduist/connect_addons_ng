@@ -125,8 +125,8 @@ class ConnectMessageContentTemplate(models.Model):
 
     def create_in_twilio(self):
         self.ensure_one()
-        account_sid = self.env['connect.provider.twilio.config'].sudo()._get().account_sid
-        auth_token = self.env['connect.provider.twilio.config'].sudo()._get().auth_token
+        account_sid = self.env['connect.settings'].sudo()._get().account_sid
+        auth_token = self.env['connect.settings'].sudo()._get().auth_token
         self.ensure_one()
         # Block posting if already approved (shouldn't happen on create, but safe)
         if not account_sid or not auth_token:
@@ -215,8 +215,8 @@ class ConnectMessageContentTemplate(models.Model):
         self.ensure_one()
         if not self.sid:
             raise ValidationError('Content SID is missing. Save the template first.')
-        account_sid = self.env['connect.provider.twilio.config'].sudo()._get().account_sid
-        auth_token = self.env['connect.provider.twilio.config'].sudo()._get().auth_token
+        account_sid = self.env['connect.settings'].sudo()._get().account_sid
+        auth_token = self.env['connect.settings'].sudo()._get().auth_token
         if not account_sid or not auth_token:
             raise ValidationError('Twilio credentials are not configured.')
         # sanitize name and compute category
@@ -277,8 +277,8 @@ class ConnectMessageContentTemplate(models.Model):
 
     def delete_in_twilio(self):
         """Delete content objects from Twilio Content API (best-effort)."""
-        account_sid = self.env['connect.provider.twilio.config'].sudo()._get().account_sid
-        auth_token = self.env['connect.provider.twilio.config'].sudo()._get().auth_token
+        account_sid = self.env['connect.settings'].sudo()._get().account_sid
+        auth_token = self.env['connect.settings'].sudo()._get().auth_token
         for rec in self:
             try:
                 if rec.sid and account_sid and auth_token:
@@ -325,8 +325,8 @@ class ConnectMessageContentTemplate(models.Model):
         - Updates status/links/dates on existing records (does not overwrite content fields).
         """
         settings = self.env['connect.settings']
-        account_sid = self.env['connect.provider.twilio.config'].sudo()._get().account_sid
-        auth_token = self.env['connect.provider.twilio.config'].sudo()._get().auth_token
+        account_sid = self.env['connect.settings'].sudo()._get().account_sid
+        auth_token = self.env['connect.settings'].sudo()._get().auth_token
         if not account_sid or not auth_token:
             raise ValidationError('Twilio credentials are not configured.')
         base = 'https://content.twilio.com'
@@ -471,8 +471,8 @@ class ConnectMessageContentTemplate(models.Model):
             link = rec.approval_fetch
             if not link:
                 raise ValidationError('Approval fetch link is not set for this template.')
-            account_sid = self.env['connect.provider.twilio.config'].sudo()._get().account_sid
-            auth_token = self.env['connect.provider.twilio.config'].sudo()._get().auth_token
+            account_sid = self.env['connect.settings'].sudo()._get().account_sid
+            auth_token = self.env['connect.settings'].sudo()._get().auth_token
             if not account_sid or not auth_token:
                 raise ValidationError('Twilio credentials are not configured.')
             try:

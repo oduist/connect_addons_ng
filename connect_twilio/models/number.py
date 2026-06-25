@@ -43,7 +43,7 @@ class Number(models.Model):
         fallback_url = self.env['connect.settings'].get_param(
             'api_fallback_url'
         )
-        edge = self.env['connect.provider.twilio.config'].sudo()._get().edge
+        edge = self.env['connect.settings'].sudo()._get().twilio_edge
         for rec in self:
             rec.voice_status_url = urljoin(
                 api_url,
@@ -53,7 +53,7 @@ class Number(models.Model):
                 api_url, 'twilio/webhook/number#e={}'.format(edge)
             )
             if (
-                self.env['connect.provider.twilio.config'].sudo()._get().region
+                self.env['connect.settings'].sudo()._get().twilio_region
                 == 'us1'
             ):
                 rec.message_url = urljoin(
@@ -107,9 +107,9 @@ class Number(models.Model):
                 if field != vals['destination']:
                     vals.update({field: None})
         res = super().write(vals)
-        if not self.env['connect.provider.twilio.config'].sudo()._get().auto_sync:
+        if not self.env['connect.settings'].sudo()._get().twilio_auto_sync:
             return res
-        client = self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = self.env['connect.settings'].sudo().get_client()
         for rec in self:
             if not self.env.context.get('skip_twilio_sync'):
                 rec.update_twilio_number(client)
@@ -117,8 +117,8 @@ class Number(models.Model):
 
     @api.model
     def sync(self):
-        client = self.env['connect.provider.twilio.config'].sudo().get_client()
-        region = self.env['connect.provider.twilio.config'].sudo()._get().region
+        client = self.env['connect.settings'].sudo().get_client()
+        region = self.env['connect.settings'].sudo()._get().twilio_region
         numbers = client.incoming_phone_numbers.list()
         for number in numbers:
             rec = self.search([('sid', '=', number.sid)])
