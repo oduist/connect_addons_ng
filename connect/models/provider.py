@@ -15,7 +15,8 @@ class ConnectProvider(models.Model):
     active = fields.Boolean(default=True)
     config_model = fields.Char(
         help='Technical name of the per-provider config model, e.g. '
-             'connect.provider.twilio.config.',
+             'connect.provider.elevenlabs.config. Twilio and FreeSWITCH '
+             'keep their settings on connect.settings (ADR-031).',
     )
     webhook_user_id = fields.Many2one(
         'res.users', string='Webhook User', ondelete='restrict',

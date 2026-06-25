@@ -204,6 +204,19 @@ class Settings(models.Model):
         }
 
     @api.model
+    def _get(self):
+        """Singleton accessor for `connect.settings`.
+
+        Returns the sudo-bound singleton, creating it on first use. Provider
+        modules (`connect_twilio`, `connect_freeswitch`) read their fields via
+        `env['connect.settings'].sudo()._get().<attr>` after their settings
+        were merged back onto this model (ADR-031 / ODU-46)."""
+        rec = self.sudo().search([], limit=1)
+        if not rec:
+            rec = self.sudo().with_context(no_constrains=True).create({})
+        return rec
+
+    @api.model
     def get_param(self, param, default=False):
         # Sudo-find the singleton so config reads do not require the caller to
         # hold connect.settings model access (the model is admin-only). Secret
