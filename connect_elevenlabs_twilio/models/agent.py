@@ -75,7 +75,7 @@ class ElevenlabsAgent(models.Model):
         exten_rec, err = agent._resolve_transfer_target(exten)
         if err:
             return err
-        client = self.env['connect.provider.twilio.config'].sudo().get_client()
+        client = self.env['connect.settings'].sudo().get_client()
         channel = self.env['connect.channel'].search(
             [('sid', '=', channel_sid)], limit=1)
         twiml = exten_rec.render(
