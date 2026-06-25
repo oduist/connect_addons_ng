@@ -102,6 +102,21 @@ XML-RPC settings enable Odoo to push commands to FreeSWITCH (e.g., reload gatewa
 
 When configured, Odoo automatically sends `sofia profile external restart reloadxml` to FreeSWITCH whenever SIP gateways are created, modified, or deleted. This ensures FreeSWITCH picks up gateway changes immediately without manual intervention.
 
+#### Checking server status
+
+The **CHECK STATUS** button on the FreeSWITCH settings tab probes the
+server over XML-RPC and writes the result to the **Server Status**
+field. When the probe fails, the field shows the specific reason so you
+know which side to fix:
+
+| Server Status | Meaning | What to do |
+|---------------|---------|------------|
+| `UP — <version>` | FreeSWITCH reachable and answering. | Nothing — healthy. |
+| `NOT CONFIGURED` | No XML-RPC host set in Odoo; no connection is attempted. | Fill in the XML-RPC Host (and port/user/password) above. |
+| `UNREACHABLE` | Host set but the TCP connection failed (firewall, closed port, wrong host/IP, DNS). | Check the host/port, that `mod_xml_rpc` is listening, and that the port is open between Odoo and FreeSWITCH. |
+| `AUTH FAILED` | Host reachable but `mod_xml_rpc` rejected the credentials (HTTP 401). | Fix the XML-RPC User / Password to match the FreeSWITCH side. |
+| `INVALID RESPONSE` | Server answered but the payload could not be parsed. | Check the FreeSWITCH logs and the `mod_xml_rpc` configuration. |
+
 ### Endpoints
 
 Navigate to **Connect > PBX > Endpoints** to configure user devices.
@@ -162,6 +177,31 @@ Routes are evaluated in priority order; the first matching pattern is used.
 | International | `^\+\d{7,}$` | main-trunk | 0 | |
 | Local | `^0\d{9}$` | main-trunk | 1 | +380 |
 | Emergency | `^(112\|911)$` | main-trunk | 0 | |
+
+### Outbound Caller ID (DID)
+
+The number the called party sees on an outbound PSTN call is resolved in
+this order:
+
+1. The caller's **Outgoing Caller ID** (per-user, set on the Connect User
+   form).
+2. The **system-wide default** Caller ID — the entry under
+   **Connect > PBX > Caller IDs** flagged **Default** — used when the user
+   has no per-user number assigned.
+3. The user's **extension number**, when neither of the above is configured.
+
+Only the **number** is sent to the PSTN — the caller-id **name** is
+intentionally left blank so the internal caller's name is never disclosed to
+the outside world.
+
+This applies to both click-to-call from Odoo and calls dialed directly from
+a registered desk phone or the WebRTC (Verto) softphone. Internal
+extension-to-extension calls are unaffected — they always present the
+extension number and the caller's name.
+
+> The legacy gateway-level **Caller ID in From** toggle only controls
+> whether the resolved number is copied into the SIP `From:` header; it does
+> not select the number itself.
 
 ## Text-to-Speech (Piper TTS)
 

@@ -63,6 +63,17 @@ firewall-related fields:
 * schedule a `/firewall/sync` POST via `cr.postcommit` whenever any
   `firewall_*` field changes.
 
+XML-RPC connectivity to FreeSWITCH (ADR-004, ADR-027):
+* `_freeswitch_rpc(command, args)` — low-level `mod_xml_rpc` call
+  returning a `(result, error)` tuple. `error` is `None` on success or
+  one of `NOT CONFIGURED` / `UNREACHABLE` / `AUTH FAILED` /
+  `INVALID RESPONSE`.
+* `freeswitch_api(command, args)` — thin wrapper returning the response
+  string or `False`; used wherever only success/failure matters.
+* `check_freeswitch_status()` — backs the **CHECK STATUS** button;
+  writes the specific failure reason into the read-only
+  `freeswitch_status` field so admins can tell the failure modes apart.
+
 ### firewall.py — firewall models
 
 | Model | Purpose |
@@ -126,6 +137,28 @@ Beyond firewall, the module contains:
 | `connect.fs_fifo` | mod_fifo queue records (ADR-013) |
 | `connect.freeswitch.parking.slot` | call parking (ADR-012) |
 
+### Outbound Caller ID resolution
+
+The number presented to the called party on an outbound PSTN call is
+resolved from `connect.outgoing_callerid` in a fixed order:
+
+**per-user `connect.user.outgoing_callerid` → system default (`is_default=True`) → extension**
+
+Two origination paths apply it independently:
+
+| Path | Where | Mechanism |
+|---|---|---|
+| Click-to-call from Odoo | `models/call.py` → `originate_call()` | b-leg `origination_caller_id_number` (ADR-027) |
+| Desk phone / Verto → PSTN | `models/outgoing_route.py` → `generate_dialplan()` | `effective_caller_id_number` override in the `dialplan_outgoing_route` template, keyed off the `odoo_connect_user_id` channel variable (ADR-021, ADR-027) |
+
+Only the number is pushed outwards; the outbound caller-id **name** is
+blanked so the internal caller's name never reaches the PSTN (ADR-026).
+
+The override lives only on the outbound leg, so internal
+extension-to-extension calls keep showing the extension. When neither a
+per-user nor a default CallerID is configured, the extension number is
+used. This mirrors the Twilio integration (`connect_twilio/models/domain.py`).
+
 ---
 
 ## Security
@@ -159,6 +192,29 @@ Firewall models are **admin-only** — `connect_user` has no access at all (the
 Whitelist / blacklist edits are admin-only via the Odoo UI; the
 service has no model-level access at all because it goes through the
 sudoed controller.
+
+### WebRTC password lifecycle (ADR-026)
+
+Each WebRTC-enabled `connect.user` holds a `webrtc_password` used to
+authenticate the Verto softphone against `mod_verto`. It is **rotated on
+every credential issuance**: `connect.user._rotate_webrtc_password()`
+(`models/fs_user.py`) generates a fresh `secrets.token_urlsafe(16)`,
+stores it, and returns it. The rotation fires inside
+`connect.settings.get_webrtc_config` (and the legacy duplicate route
+`/connect/webrtc/config`), i.e. roughly once per softphone boot / page
+load. A leaked password therefore self-invalidates the next time the
+user's softphone fetches its config.
+
+FreeSWITCH re-authenticates every Verto registration live against the DB
+value through the `/freeswitch/xml` directory binding, so a rotation
+takes effect immediately — no FS reload or `xml_locate` flush.
+
+To keep multiple browser tabs of the same user in sync, the helper also
+pushes the new `{login, password}` to the user's **private** bus channel
+(`self.user.partner_id`, notification type
+`connect_freeswitch.verto_credentials`); `phone_service.js` updates the
+live `VertoClient` password in place (`updateCredentials`). Active calls
+are not interrupted. The password is never surfaced in any view.
 
 ---
 
