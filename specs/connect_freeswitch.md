@@ -63,6 +63,17 @@ firewall-related fields:
 * schedule a `/firewall/sync` POST via `cr.postcommit` whenever any
   `firewall_*` field changes.
 
+XML-RPC connectivity to FreeSWITCH (ADR-004, ADR-027):
+* `_freeswitch_rpc(command, args)` — low-level `mod_xml_rpc` call
+  returning a `(result, error)` tuple. `error` is `None` on success or
+  one of `NOT CONFIGURED` / `UNREACHABLE` / `AUTH FAILED` /
+  `INVALID RESPONSE`.
+* `freeswitch_api(command, args)` — thin wrapper returning the response
+  string or `False`; used wherever only success/failure matters.
+* `check_freeswitch_status()` — backs the **CHECK STATUS** button;
+  writes the specific failure reason into the read-only
+  `freeswitch_status` field so admins can tell the failure modes apart.
+
 ### firewall.py — firewall models
 
 | Model | Purpose |
