@@ -244,8 +244,14 @@ class Call(models.Model):
         # the directory-seeded extension. Override on the B-leg itself
         # so the called party sees `caller_number` (extension for
         # internal, outgoing_callerid for external).
+        #
+        # For external (PSTN) calls the display NAME is blanked so the
+        # internal caller's name is never disclosed to the outside world;
+        # only the number is sent. Internal calls keep the name so the
+        # colleague sees who is ringing. See ADR-026.
+        b_leg_name = cid_name if exten else ''
         b_leg_vars = [
-            "origination_caller_id_name='{}'".format(cid_name),
+            "origination_caller_id_name='{}'".format(b_leg_name),
             "origination_caller_id_number={}".format(caller_number),
         ]
         # For external calls via gateway, force standard codecs on b-leg
