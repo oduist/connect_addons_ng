@@ -102,6 +102,21 @@ XML-RPC settings enable Odoo to push commands to FreeSWITCH (e.g., reload gatewa
 
 When configured, Odoo automatically sends `sofia profile external restart reloadxml` to FreeSWITCH whenever SIP gateways are created, modified, or deleted. This ensures FreeSWITCH picks up gateway changes immediately without manual intervention.
 
+#### Checking server status
+
+The **CHECK STATUS** button on the FreeSWITCH settings tab probes the
+server over XML-RPC and writes the result to the **Server Status**
+field. When the probe fails, the field shows the specific reason so you
+know which side to fix:
+
+| Server Status | Meaning | What to do |
+|---------------|---------|------------|
+| `UP — <version>` | FreeSWITCH reachable and answering. | Nothing — healthy. |
+| `NOT CONFIGURED` | No XML-RPC host set in Odoo; no connection is attempted. | Fill in the XML-RPC Host (and port/user/password) above. |
+| `UNREACHABLE` | Host set but the TCP connection failed (firewall, closed port, wrong host/IP, DNS). | Check the host/port, that `mod_xml_rpc` is listening, and that the port is open between Odoo and FreeSWITCH. |
+| `AUTH FAILED` | Host reachable but `mod_xml_rpc` rejected the credentials (HTTP 401). | Fix the XML-RPC User / Password to match the FreeSWITCH side. |
+| `INVALID RESPONSE` | Server answered but the payload could not be parsed. | Check the FreeSWITCH logs and the `mod_xml_rpc` configuration. |
+
 ### Endpoints
 
 Navigate to **Connect > PBX > Endpoints** to configure user devices.
