@@ -111,3 +111,8 @@ def migrate(cr, version):
             'connect_twilio: restored %d fields onto connect_settings',
             len(sets),
         )
+
+    # Odoo deletes the obsolete model's ir.model record but skips the SQL
+    # DROP (the model is already absent from the registry by now), leaving an
+    # orphan table. Drop it explicitly so the revert is clean.
+    cr.execute('DROP TABLE IF EXISTS connect_provider_twilio_config CASCADE')
