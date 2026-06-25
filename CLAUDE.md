@@ -113,7 +113,7 @@ Specifically:
 
 - **Always write comments in English.** This applies to all source and
   config files (Python, JS, XML, YAML, Dockerfiles, etc.). Do not leave
-  comments in Russian or any other language; translate existing
+  comments in any other language; translate existing
   non-English comments to English when you touch the surrounding code.
 - Models follow `connect.<name>` naming (e.g., `connect.call`, `connect.recording`)
 - Protected settings fields (API keys, tokens) are masked with `****` for non-managers
@@ -225,6 +225,27 @@ Internal developers who need tests initialize the submodule explicitly:
 ```bash
 git -c submodule.tests_suite.update=checkout submodule update --init tests_suite
 ```
+
+## Tests submodule branching policy
+
+The private tests repo (`oduist/connect_addons_tests`) has **one branch per
+Odoo series and no feature/topic branches**. Commit test changes **directly to
+the series branch that matches the Odoo version you are developing** — `19.0`
+work goes to the tests repo's `19.0` branch, `18.0` work to its `18.0` branch.
+Do **not** create per-feature branches in the tests repo, regardless of the
+feature branch name used in the main repo.
+
+The superproject `tests_suite` gitlink must always point at the **tip of the
+matching series branch**. Workflow when you add or edit a `test_*.py`:
+
+1. Inside `tests_suite/`, make sure you are on the series branch
+   (`git -C tests_suite checkout 19.0`), commit the test, and push it.
+2. In the main repo, advance the gitlink to the new tip
+   (`git add tests_suite`) and commit that bump on your feature branch.
+
+Never pin the gitlink to a feature-branch commit or an older commit: it
+silently regresses the shared test base when your branch merges back into the
+series branch.
 
 ## Agent Behavior
 
