@@ -155,14 +155,6 @@ Routes determine how outbound calls are sent through SIP gateways.
 
 Routes are evaluated in priority order; the first matching pattern is used.
 
-**Caller ID presented on outbound calls.** For calls leaving through a
-gateway, only the **number** is sent to the PSTN — taken from the calling
-user's **Outgoing CallerID** (`Connect > Users`) when configured, otherwise
-the user's extension. The caller-id **name** is intentionally left blank so
-the internal caller's name is never disclosed to the outside world. Internal
-extension-to-extension calls are unaffected and still show the caller's
-extension/name.
-
 **Example routes:**
 
 | Name | Pattern | Gateway | Strip | Prefix |
@@ -170,6 +162,31 @@ extension/name.
 | International | `^\+\d{7,}$` | main-trunk | 0 | |
 | Local | `^0\d{9}$` | main-trunk | 1 | +380 |
 | Emergency | `^(112\|911)$` | main-trunk | 0 | |
+
+### Outbound Caller ID (DID)
+
+The number the called party sees on an outbound PSTN call is resolved in
+this order:
+
+1. The caller's **Outgoing Caller ID** (per-user, set on the Connect User
+   form).
+2. The **system-wide default** Caller ID — the entry under
+   **Connect > PBX > Caller IDs** flagged **Default** — used when the user
+   has no per-user number assigned.
+3. The user's **extension number**, when neither of the above is configured.
+
+Only the **number** is sent to the PSTN — the caller-id **name** is
+intentionally left blank so the internal caller's name is never disclosed to
+the outside world.
+
+This applies to both click-to-call from Odoo and calls dialed directly from
+a registered desk phone or the WebRTC (Verto) softphone. Internal
+extension-to-extension calls are unaffected — they always present the
+extension number and the caller's name.
+
+> The legacy gateway-level **Caller ID in From** toggle only controls
+> whether the resolved number is copied into the SIP `From:` header; it does
+> not select the number itself.
 
 ## Text-to-Speech (Piper TTS)
 

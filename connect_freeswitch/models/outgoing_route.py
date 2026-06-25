@@ -42,7 +42,12 @@ class FreeSwitchOutgoingRoute(models.Model):
         # We deliberately push only the NUMBER outwards. The display name is
         # always blanked on the trunk leg (see the template) so the outside
         # world never learns the internal caller's name. See ADR-026.
+        #
+        # Number resolution order: the user's own outgoing_callerid, else the
+        # system-wide default DID (is_default), else nothing — in which case
+        # the directory's extension stands (ADR-027, issue #96).
         cid_num = ''
+        callerid = self.env['connect.outgoing_callerid']
         connect_user_id = params.get('variable_odoo_connect_user_id')
         if connect_user_id:
             try:
@@ -50,7 +55,12 @@ class FreeSwitchOutgoingRoute(models.Model):
             except ValueError:
                 user = self.env['connect.user']
             if user.exists() and user.outgoing_callerid:
-                cid_num = user.outgoing_callerid.number or ''
+                callerid = user.outgoing_callerid
+        if not callerid:
+            callerid = self.env['connect.outgoing_callerid'].sudo().search(
+                [('is_default', '=', True)], limit=1)
+        if callerid:
+            cid_num = callerid.number or ''
 
         for route in routes:
             if not re.match(route.pattern, destination):
