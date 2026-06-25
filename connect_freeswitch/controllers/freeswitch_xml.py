@@ -492,14 +492,19 @@ class FreeSwitchXMLController(http.Controller):
         return self._not_found()
 
     def _get_sofia_config(self, params):
-        """Serve sofia.conf with gateways from Odoo."""
+        """Serve sofia.conf with the external (TLS-capable) profile and any
+        configured gateways.
+
+        The external profile is rendered **unconditionally** — SIP endpoints
+        register against it and modules can bridge via ``sofia/external/sip:…``
+        even when no gateway records exist. Returning "not found" here when
+        there are no gateways left the profile unable to start on a fresh env
+        (ODU-45). Gateways are rendered into the profile only when present.
+        """
         Gateway = request.env['connect.freeswitch.gateway'].sudo()
         gateways = Gateway.search([('active', '=', True)])
 
-        if not gateways:
-            return self._not_found()
-
-        # Render each gateway individually
+        # Render each gateway individually (empty string if none).
         gateways_xml = '\n'.join(gw.generate_sofia_gateway_xml() for gw in gateways)
 
         sofia_log_level = request.env['connect.settings'].sudo().get_param('freeswitch_sofia_log_level') or '0'
