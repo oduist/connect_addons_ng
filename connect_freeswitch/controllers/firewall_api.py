@@ -26,7 +26,7 @@ class FirewallAPIController(http.Controller):
 
     @staticmethod
     def _check_token():
-        expected = request.env['connect.provider.freeswitch.config'].sudo()._get().firewall_service_token or ''
+        expected = request.env['connect.settings'].sudo()._get().firewall_service_token or ''
         if not expected:
             return False
         auth = request.httprequest.headers.get('Authorization', '')

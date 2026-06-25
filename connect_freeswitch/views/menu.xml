@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- ODU-14 / ADR-023 Pillar 7: provider-owned menu root for FreeSWITCH.
-         Provider-specific menus (XML templates, FIFO, gateways, routes,
-         parking, firewall) live under this root instead of under
-         connect.menu_connect_pbx. -->
+    <!-- ADR-031 / ODU-46: FreeSWITCH root nested under PBX (was a sibling
+         of the Connect app root). Provider-specific menus (XML templates,
+         FIFO, gateways, routes, parking, firewall) follow by reference. -->
     <menuitem id="menu_connect_freeswitch"
               name="FreeSWITCH"
-              parent="connect.menu_connect_root"
+              parent="connect.menu_connect_pbx"
               sequence="55"/>
 </odoo>

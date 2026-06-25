@@ -97,7 +97,7 @@ class User(models.Model):
             recording_url = '{}freeswitch/webhook/recording'.format(
                 base_url if base_url.endswith('/') else base_url + '/')
 
-        fs_domain = self.env['connect.provider.freeswitch.config'].sudo()._get().domain or '${domain}'
+        fs_domain = self.env['connect.settings'].sudo()._get().freeswitch_domain or '${domain}'
 
         return self.env['connect.freeswitch.template'].render('dialplan_user_bridge', {
             'number': re.escape(number),

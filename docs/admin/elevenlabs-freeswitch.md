@@ -35,7 +35,7 @@ In the ElevenLabs dashboard:
 
 ## Step 2 — Create the FreeSWITCH gateway
 
-In Odoo, navigate to **Connect → Configuration → FreeSWITCH → Gateways → New**.
+In Odoo, navigate to **Connect → PBX → FreeSWITCH → Gateways → New**.
 
 | Field | Value |
 |---|---|

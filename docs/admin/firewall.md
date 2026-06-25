@@ -133,7 +133,7 @@ A ready preset for `oduflow` lives at
 1. Install or upgrade `connect_freeswitch` — `post_init_hook` (or the
    per-version migration on upgrade) generates an initial **Firewall
    Service Token** and creates the agent singleton.
-2. Open **Configuration → General Settings → Firewall** as an admin:
+2. Open **Configuration → General Settings → FreeSWITCH → Firewall** as an admin:
    * Toggle **Firewall Enabled** on.
    * Set **Firewall Service URL** to where Traefik (or whichever
      reverse-proxy you use) reaches the service container.

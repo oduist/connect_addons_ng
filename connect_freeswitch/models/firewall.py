@@ -199,7 +199,7 @@ class FirewallEvent(models.Model):
     def _cron_cleanup(self):
         """Delete events older than firewall_event_retention_days. Called from ir.cron."""
         days = int(
-            self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_event_retention_days or 30
+            self.env['connect.settings'].sudo()._get().firewall_event_retention_days or 30
         )
         cutoff = fields.Datetime.now() - timedelta(days=days)
         old = self.search([("ts", "<", cutoff)])
@@ -235,7 +235,7 @@ class FirewallAgent(models.Model):
     def _compute_status(self):
         now = fields.Datetime.now()
         heartbeat_interval = int(
-            self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_heartbeat_interval or 60
+            self.env['connect.settings'].sudo()._get().firewall_heartbeat_interval or 60
         )
         for rec in self:
             if not rec.last_seen:
@@ -268,10 +268,10 @@ class FirewallAgent(models.Model):
         POST: postcommit callbacks dedupe by (function, args).
         """
         settings = self.env["connect.settings"].sudo()
-        if not self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_enabled:
+        if not self.env['connect.settings'].sudo()._get().firewall_enabled:
             return
-        url = self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_service_url
-        token = self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_service_token
+        url = self.env['connect.settings'].sudo()._get().firewall_service_url
+        token = self.env['connect.settings'].sudo()._get().firewall_service_token
         if not url or not token:
             return
         sync_url = url.rstrip("/") + "/firewall/sync"
@@ -302,10 +302,10 @@ class FirewallAgent(models.Model):
         """Return (url, token) for a path on the firewall service, or
         (None, None) if firewall is disabled / not configured."""
         settings = self.env["connect.settings"].sudo()
-        if not self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_enabled:
+        if not self.env['connect.settings'].sudo()._get().firewall_enabled:
             return None, None
-        base = self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_service_url
-        token = self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_service_token
+        base = self.env['connect.settings'].sudo()._get().firewall_service_url
+        token = self.env['connect.settings'].sudo()._get().firewall_service_token
         if not base or not token:
             return None, None
         return base.rstrip("/") + path, token

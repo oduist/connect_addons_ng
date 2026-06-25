@@ -1,5 +1,4 @@
 from . import call
-from . import provider_config
 from . import provider
 from . import fs_parking_slot
 from . import fs_template

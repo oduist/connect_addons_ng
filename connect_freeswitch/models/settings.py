@@ -1,38 +1,257 @@
-"""Thin remnant of FS settings.
+"""FreeSWITCH extensions to `connect.settings` (ADR-031 / ODU-46).
 
-ODU-23: FreeSWITCH fields (~25) and methods (freeswitch_api,
-check_freeswitch_status, get_webrtc_config, validation/write override)
-moved to `connect.provider.freeswitch.config`. This module-level file
-is kept only to register `ODUIST_MODULES` and provide back-compat
-method shims on `connect.settings` so JSON-RPC callers
-(notably the phone_service.js → orm.call('connect.settings',
-'get_webrtc_config')) keep working without a JS change.
+FreeSWITCH-specific fields and methods live back on the shared
+`connect.settings` model (the pre-ODU-23 design), reached as an install-
+conditional notebook tab on the single General Settings form. Field
+names carry the `freeswitch_` prefix to avoid colliding with the other
+providers sharing this model; the `firewall_*` sub-system keeps its own
+prefix.
 """
 # -*- coding: utf-8 -*-
 import logging
+import re
+import xml.etree.ElementTree as ET
+import xmlrpc.client
 
-from odoo import api, models
+from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+
 from odoo.addons.connect.models.license import ODUIST_MODULES
 
 ODUIST_MODULES.append('connect_freeswitch')
 
 logger = logging.getLogger(__name__)
 
+PROTECTED_FIELDS = {'display_firewall_service_token'}
+
 
 class Settings(models.Model):
     _inherit = 'connect.settings'
 
-    # Back-compat method shims — delegate to the new config singleton.
-    # Kept so external/JSON-RPC callers (e.g. phone_service.js calling
-    # `connect.settings.get_webrtc_config`) don't need a sync update.
+    freeswitch_socket_url = fields.Char(
+        string='FreeSWITCH Socket URL',
+        help='WebSocket URL for FreeSWITCH connection',
+    )
+    freeswitch_domain = fields.Char(
+        string='FreeSWITCH Domain',
+        help='SIP domain for FreeSWITCH registrations and routing.',
+    )
+    freeswitch_ice_servers = fields.Text(
+        string='ICE Servers',
+        default='stun:stun.l.google.com:19302\n'
+                'stun:stun1.l.google.com:19302\n'
+                'stun:stun.cloudflare.com:3478\n'
+                'stun:stun.nextcloud.com:443',
+    )
+    freeswitch_log_level = fields.Selection(
+        selection=[
+            ('alert', 'ALERT'), ('crit', 'CRIT'), ('err', 'ERR'),
+            ('warning', 'WARNING'), ('notice', 'NOTICE'),
+            ('info', 'INFO'), ('debug', 'DEBUG'),
+        ],
+        string='Log Level', default='info',
+    )
+    freeswitch_sofia_log_level = fields.Selection(
+        selection=[(str(i), str(i)) for i in range(10)],
+        string='Sofia Log Level', default='0',
+    )
+    freeswitch_xmlrpc_host = fields.Char(string='XML-RPC Host')
+    freeswitch_xmlrpc_port = fields.Integer(string='XML-RPC Port', default=8080)
+    freeswitch_xmlrpc_user = fields.Char(string='XML-RPC User')
+    freeswitch_xmlrpc_password = fields.Char(string='XML-RPC Password')
+
+    # Status fields (populated by check_status button)
+    freeswitch_status = fields.Char(string='Server Status', readonly=True)
+    freeswitch_uptime = fields.Char(string='Uptime', readonly=True)
+    freeswitch_calls = fields.Char(string='Active Calls', readonly=True)
+    freeswitch_registrations = fields.Char(string='Registered Endpoints', readonly=True)
+    freeswitch_gateway_statuses = fields.Text(string='Gateway Statuses', readonly=True)
+
+    # Firewall sub-system
+    firewall_enabled = fields.Boolean(string='Firewall Enabled', default=False)
+    firewall_service_url = fields.Char(
+        string='Firewall Service URL',
+        default='http://host.docker.internal:8081',
+    )
+    firewall_service_token = fields.Char(
+        string='Firewall Service Token (stored)',
+        groups='connect.group_admin',
+    )
+    display_firewall_service_token = fields.Char(string='Firewall Service Token')
+    firewall_heartbeat_interval = fields.Integer(string='Heartbeat Interval (sec)', default=60)
+    firewall_event_retention_days = fields.Integer(string='Event Retention (days)', default=30)
+    firewall_tcp_ports = fields.Char(string='Firewall TCP Ports', default='5060,5061,5080,5081')
+    firewall_udp_ports = fields.Char(string='Firewall UDP Ports', default='5060,5061,5080,5081')
+    firewall_banned_timeout = fields.Integer(string='Auto-ban TTL (sec)', default=86400)
+    firewall_authenticated_timeout = fields.Integer(string='Trust TTL (sec)', default=604800)
+    firewall_expire_short_timeout = fields.Integer(string='Challenge Window (sec)', default=30)
+    firewall_expire_long_timeout = fields.Integer(string='Default-Deny TTL (sec)', default=86400)
+
+    _TOKEN_MIN_LEN = 24
+    _TOKEN_ALLOWED_CHARS = set(
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-')
 
     @api.model
-    def get_webrtc_config(self):
-        return self.env['connect.provider.freeswitch.config'].get_webrtc_config()
+    def _validate_firewall_secret(self, value):
+        if value in (False, None):
+            return
+        value = value.strip()
+        if not value:
+            return
+        if len(value) < self._TOKEN_MIN_LEN:
+            raise ValidationError(
+                f'Firewall Service Token must be at least {self._TOKEN_MIN_LEN} characters long.')
+        bad = sorted({c for c in value if c not in self._TOKEN_ALLOWED_CHARS})
+        if bad:
+            raise ValidationError(
+                "Firewall Service Token can only contain letters, digits, "
+                "'_' and '-'; remove: {}".format(' '.join(bad)))
+
+    def write(self, vals):
+        if self.env.context.get('skip_protected_fields'):
+            return super().write(vals)
+        if 'display_firewall_service_token' in vals:
+            self._validate_firewall_secret(vals['display_firewall_service_token'])
+        res = super().write(vals)
+        # Protected-fields display masking (write the real value, mask the display)
+        changed = {}
+        for fname in PROTECTED_FIELDS:
+            if vals.get(fname):
+                value = vals[fname]
+                changed[fname.replace('display_', '')] = value
+                changed[fname] = '*' * len(value)
+        if changed:
+            self.with_context(skip_protected_fields=True).sudo().write(changed)
+        # Notify the firewall service of any firewall_* change.
+        if any(k.startswith('firewall_') or k == 'display_firewall_service_token'
+               for k in vals):
+            self.env['connect.firewall.agent']._trigger_sync('settings')
+        return res
 
     @api.model
     def freeswitch_api(self, command, args=''):
-        return self.env['connect.provider.freeswitch.config'].freeswitch_api(command, args)
+        """Execute a FreeSWITCH API command via mod_xml_rpc."""
+        cfg = self._get().sudo()
+        if not cfg.freeswitch_xmlrpc_host:
+            logger.warning('FreeSWITCH XML-RPC host not configured')
+            return False
+        url = 'http://{}:{}@{}:{}/RPC2'.format(
+            cfg.freeswitch_xmlrpc_user, cfg.freeswitch_xmlrpc_password,
+            cfg.freeswitch_xmlrpc_host, cfg.freeswitch_xmlrpc_port or 8080,
+        )
+        try:
+            server = xmlrpc.client.ServerProxy(url)
+            result = server.freeswitch.api(command, args)
+            logger.info('FreeSWITCH API %s %s: %s', command, args, result)
+            return result
+        except Exception as e:
+            logger.error('FreeSWITCH XML-RPC error: %s', e)
+            return False
 
-    def check_freeswitch_status(self):
-        return self.env['connect.provider.freeswitch.config']._get().check_status()
+    def check_status(self):
+        """Fetch live status from FreeSWITCH and update display fields."""
+        self.ensure_one()
+        down_vals = {
+            'freeswitch_status': 'DOWN (unreachable)',
+            'freeswitch_uptime': '', 'freeswitch_calls': '',
+            'freeswitch_registrations': '', 'freeswitch_gateway_statuses': '',
+        }
+        status_response = self.freeswitch_api('status')
+        if not status_response:
+            self.write(down_vals)
+            return
+        fs_version = ''
+        fs_uptime = ''
+        for line in status_response.splitlines():
+            line = line.strip()
+            if line.startswith('UP '):
+                fs_uptime = line[3:]
+            version_match = re.search(r'FreeSWITCH \(Version ([^)]+)\)', line)
+            if version_match:
+                fs_version = version_match.group(1)
+        fs_status = 'UP'
+        if fs_version:
+            fs_status = 'UP — {}'.format(fs_version)
+        fs_calls = '0'
+        calls_response = self.freeswitch_api('show', 'calls count')
+        if calls_response:
+            m = re.search(r'(\d+)\s+total', calls_response)
+            if m:
+                fs_calls = m.group(1)
+        fs_registrations = '0'
+        reg_response = self.freeswitch_api('sofia', 'xmlstatus profile external reg')
+        if reg_response and not reg_response.startswith('-ERR'):
+            try:
+                root = ET.fromstring(reg_response)
+                regs = root.findall('.//registration')
+                fs_registrations = str(len(regs))
+            except ET.ParseError:
+                fs_registrations = 'parse error'
+        gateways = self.env['connect.freeswitch.gateway'].search([('active', '=', True)])
+        status_map = {
+            'REGED': 'UP (Registered)', 'NOREG': 'UP (No Registration)',
+            'UNREGED': 'DOWN (Unregistered)', 'TRYING': 'TRYING',
+            'FAIL_WAIT': 'DOWN (Failed)',
+        }
+        gateway_lines = []
+        for gw in gateways:
+            gw_response = self.freeswitch_api('sofia', 'xmlstatus gateway {}'.format(gw.name))
+            gw_status = 'Unknown'
+            if not gw_response:
+                gw_status = 'Unreachable'
+            elif gw_response.startswith('-ERR'):
+                gw_status = 'Not loaded'
+            elif gw_response.lstrip().startswith('<'):
+                try:
+                    gw_root = ET.fromstring(gw_response)
+                    raw = gw_root.findtext('status', 'Unknown').strip()
+                    gw_status = status_map.get(raw, raw)
+                except ET.ParseError:
+                    gw_status = 'Parse error'
+            else:
+                gw_status = 'Not loaded ({})'.format(gw_response.splitlines()[0].strip())
+            gateway_lines.append('{}: {}'.format(gw.name, gw_status))
+        self.write({
+            'freeswitch_status': fs_status,
+            'freeswitch_uptime': fs_uptime,
+            'freeswitch_calls': fs_calls,
+            'freeswitch_registrations': fs_registrations,
+            'freeswitch_gateway_statuses': '\n'.join(gateway_lines) if gateway_lines else 'No active gateways',
+        })
+
+    @api.model
+    def get_webrtc_config(self):
+        """WebRTC config for the current user (Verto). Returns enabled=False
+        with a reason when the user doesn't have a WebRTC-enabled connect.user."""
+        user = self.env.user
+        connect_user = self.env['connect.user'].search([
+            ('user', '=', user.id),
+            ('webrtc_enabled', '=', True),
+            ('active', '=', True),
+        ], limit=1)
+        if not connect_user:
+            return {'enabled': False, 'reason': 'no_webrtc_user'}
+        cfg = self._get().sudo()
+        if not cfg.freeswitch_socket_url:
+            return {'enabled': False, 'reason': 'no_socket_url'}
+        ice_servers = []
+        for line in (cfg.freeswitch_ice_servers or '').splitlines():
+            url = line.strip()
+            if url:
+                ice_servers.append({'urls': url})
+        # Verto login = <login-local-part><res.users.id> (e.g. "litnimax42"),
+        # matching the FS XML directory. The '@'-stripping keeps mod_verto
+        # happy (it splits the JSON-RPC login on '@' to derive the realm) and
+        # the trailing id keeps it unique across users sharing an email local
+        # part. See specs/decisions/016-verto-login-uses-user-id.md.
+        return {
+            'enabled': True,
+            'socketUrl': cfg.freeswitch_socket_url,
+            'domain': cfg.freeswitch_domain,
+            'login': connect_user._get_verto_login(),
+            'password': connect_user.webrtc_password,
+            'callerName': connect_user.name,
+            'callerNumber': connect_user.exten_number or user.login,
+            'displayMode': connect_user.phone_display_mode or 'dropdown',
+            'iceServers': ice_servers,
+        }

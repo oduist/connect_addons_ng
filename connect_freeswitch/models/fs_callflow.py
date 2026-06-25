@@ -68,7 +68,7 @@ class CallFlow(models.Model):
         prompt = self.prompt_message or ''
         lang = self._get_piper_language()
 
-        fs_domain = self.env['connect.provider.freeswitch.config'].sudo()._get().domain or '${domain}'
+        fs_domain = self.env['connect.settings'].sudo()._get().freeswitch_domain or '${domain}'
 
         fifo_number = ''
         if self.fs_fifo_id and self.fs_fifo_id.exten_number:
@@ -164,7 +164,7 @@ class CallFlow(models.Model):
             recording_url = '{}freeswitch/webhook/recording'.format(
                 base_url if base_url.endswith('/') else base_url + '/')
 
-        fs_domain = self.env['connect.provider.freeswitch.config'].sudo()._get().domain or '${domain}'
+        fs_domain = self.env['connect.settings'].sudo()._get().freeswitch_domain or '${domain}'
 
         bridge_parts = []
         for user in self.ring_users:

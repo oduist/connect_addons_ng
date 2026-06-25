@@ -30,7 +30,7 @@ class FreeSwitchProvider(models.Model):
     def _get_webrtc_config(self, user=None):
         if self.code != 'freeswitch':
             return super()._get_webrtc_config(user=user)
-        return self.env['connect.provider.freeswitch.config'].sudo().get_webrtc_config()
+        return self.env['connect.settings'].sudo().get_webrtc_config()
 
     def _verify_webhook(self, request, data=None):
         """Bearer-token auth (ADR-015 / ODU-15). Used by the firewall
@@ -38,7 +38,7 @@ class FreeSwitchProvider(models.Model):
         when it POSTs `/firewall/sync` to the service."""
         if self.code != 'freeswitch':
             return super()._verify_webhook(request, data=data)
-        expected = self.env['connect.provider.freeswitch.config'].sudo()._get().firewall_service_token or ''
+        expected = self.env['connect.settings'].sudo()._get().firewall_service_token or ''
         if not expected:
             return False
         auth = request.httprequest.headers.get('Authorization', '')

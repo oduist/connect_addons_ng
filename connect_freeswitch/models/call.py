@@ -102,7 +102,7 @@ class Call(models.Model):
         if not number:
             raise UserError("No phone number provided.")
 
-        domain = self.env['connect.provider.freeswitch.config'].sudo()._get().domain
+        domain = self.env['connect.settings'].sudo()._get().freeswitch_domain
         if not domain:
             raise UserError("FreeSWITCH domain is not configured.")
 

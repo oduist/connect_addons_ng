@@ -44,7 +44,7 @@ class ConnectEndpoint(models.Model):
         number = exten.number if exten else self.exten_number or self.auth_user
         if not number:
             return ''
-        fs_domain = self.env['connect.provider.freeswitch.config'].sudo()._get().domain or '${domain}'
+        fs_domain = self.env['connect.settings'].sudo()._get().freeswitch_domain or '${domain}'
 
         return self.env['connect.freeswitch.template'].render('dialplan_user_bridge', {
             'number': re.escape(number),
