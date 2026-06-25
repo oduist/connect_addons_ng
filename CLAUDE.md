@@ -226,26 +226,25 @@ Internal developers who need tests initialize the submodule explicitly:
 git -c submodule.tests_suite.update=checkout submodule update --init tests_suite
 ```
 
-## Tests submodule branching policy
+## Contributing tests to the submodule — commit direct, NO pull request
 
-The private tests repo (`oduist/connect_addons_tests`) has **one branch per
-Odoo series and no feature/topic branches**. Commit test changes **directly to
-the series branch that matches the Odoo version you are developing** — `19.0`
-work goes to the tests repo's `19.0` branch, `18.0` work to its `18.0` branch.
-Do **not** create per-feature branches in the tests repo, regardless of the
-feature branch name used in the main repo.
+The `tests_suite` submodule is a shared, append-as-you-go test space — **not**
+a pull-request-driven repo. When you add or change `test_*.py` files:
 
-The superproject `tests_suite` gitlink must always point at the **tip of the
-matching series branch**. Workflow when you add or edit a `test_*.py`:
+- **Commit directly to the matching per-series branch** of
+  `connect_addons_tests` (`19.0` for the `19.0` main branch, `18.0` for
+  `18.0`, …) and push. Do **NOT** open a pull request and do **NOT** create a
+  feature branch for the tests. Everyone commits to the same series branch
+  from whatever workspace they are in.
+- There are **no working environments** for the tests repo — you never
+  provision or run anything "inside" it. It only holds `test_*.py` files that
+  the per-addon loaders pull in; tests run in the main module's environment.
+- After pushing the test commit, **bump the `tests_suite` gitlink** in the
+  main repo to the new series-branch commit and include that in your feature
+  branch, so the code change carries its coverage.
 
-1. Inside `tests_suite/`, make sure you are on the series branch
-   (`git -C tests_suite checkout 19.0`), commit the test, and push it.
-2. In the main repo, advance the gitlink to the new tip
-   (`git add tests_suite`) and commit that bump on your feature branch.
-
-Never pin the gitlink to a feature-branch commit or an older commit: it
-silently regresses the shared test base when your branch merges back into the
-series branch.
+(The per-series branch mapping is described under "Submodule init policy" and
+"Version Compatibility → Cross-branch versioning rules".)
 
 ## Agent Behavior
 

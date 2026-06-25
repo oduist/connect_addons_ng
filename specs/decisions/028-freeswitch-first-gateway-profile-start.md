@@ -1,4 +1,4 @@
-# ADR-027: First gateway creation must start (not just restart) the external sofia profile
+# ADR-028: First gateway creation must start (not just restart) the external sofia profile
 
 ## Status
 Accepted
