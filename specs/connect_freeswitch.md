@@ -63,6 +63,17 @@ firewall-related fields:
 * schedule a `/firewall/sync` POST via `cr.postcommit` whenever any
   `firewall_*` field changes.
 
+XML-RPC connectivity to FreeSWITCH (ADR-004, ADR-027):
+* `_freeswitch_rpc(command, args)` — low-level `mod_xml_rpc` call
+  returning a `(result, error)` tuple. `error` is `None` on success or
+  one of `NOT CONFIGURED` / `UNREACHABLE` / `AUTH FAILED` /
+  `INVALID RESPONSE`.
+* `freeswitch_api(command, args)` — thin wrapper returning the response
+  string or `False`; used wherever only success/failure matters.
+* `check_freeswitch_status()` — backs the **CHECK STATUS** button;
+  writes the specific failure reason into the read-only
+  `freeswitch_status` field so admins can tell the failure modes apart.
+
 ### firewall.py — firewall models
 
 | Model | Purpose |
@@ -125,6 +136,28 @@ Beyond firewall, the module contains:
 | `connect.freeswitch.template` | Jinja2 templates for dialplan / directory XML |
 | `connect.fs_fifo` | mod_fifo queue records (ADR-013) |
 | `connect.freeswitch.parking.slot` | call parking (ADR-012) |
+
+### Outbound Caller ID resolution
+
+The number presented to the called party on an outbound PSTN call is
+resolved from `connect.outgoing_callerid` in a fixed order:
+
+**per-user `connect.user.outgoing_callerid` → system default (`is_default=True`) → extension**
+
+Two origination paths apply it independently:
+
+| Path | Where | Mechanism |
+|---|---|---|
+| Click-to-call from Odoo | `models/call.py` → `originate_call()` | b-leg `origination_caller_id_number` (ADR-027) |
+| Desk phone / Verto → PSTN | `models/outgoing_route.py` → `generate_dialplan()` | `effective_caller_id_number` override in the `dialplan_outgoing_route` template, keyed off the `odoo_connect_user_id` channel variable (ADR-021, ADR-027) |
+
+Only the number is pushed outwards; the outbound caller-id **name** is
+blanked so the internal caller's name never reaches the PSTN (ADR-026).
+
+The override lives only on the outbound leg, so internal
+extension-to-extension calls keep showing the extension. When neither a
+per-user nor a default CallerID is configured, the extension number is
+used. This mirrors the Twilio integration (`connect_twilio/models/domain.py`).
 
 ---
 
@@ -264,7 +297,7 @@ routes — `data/fs_templates.xml`); `_parse_cdr_xml` reads it and
 absent does it fall back to FreeSWITCH's native `<channel_data><direction>`.
 This prevents `originate`-launched outbound calls — whose UA / origination leg
 is `inbound` from FreeSWITCH's own perspective — from being mislabelled as
-incoming. See **`specs/decisions/027-cdr-direction-from-dialplan-variable.md`**.
+incoming. See **`specs/decisions/028-cdr-direction-from-dialplan-variable.md`**.
 
 ---
 

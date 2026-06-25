@@ -1,4 +1,4 @@
-# ADR-027: Resolve CDR call direction from the dialplan `odoo_call_direction` variable
+# ADR-028: Resolve CDR call direction from the dialplan `odoo_call_direction` variable
 
 ## Status
 Accepted
@@ -70,6 +70,6 @@ UA / originate leg this fix corrects.
 ## Cross-branch backport
 
 Per `CLAUDE.md` versioning rules, the same fix ports to the `18.0` branch with the
-aligned tail version: `connect_freeswitch` moves `19.0.1.10.2 → 19.0.1.10.3` and
-`18.0.1.10.2 → 18.0.1.10.3`. Code-only change — no schema change and no migration
+aligned tail version: `connect_freeswitch` moves `19.0.1.10.3 → 19.0.1.10.4` and
+`18.0.1.10.3 → 18.0.1.10.4`. Code-only change — no schema change and no migration
 script. The backport ships as a separate PR.
