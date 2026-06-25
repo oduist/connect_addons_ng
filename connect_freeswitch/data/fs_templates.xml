@@ -434,7 +434,7 @@ Variables:
 
 The caller-id NUMBER is set from connect.user.outgoing_callerid (when
 configured); the caller-id NAME is always blanked so the internal caller's
-name is never disclosed to the PSTN / called party. See ADR-026.
+name is never disclosed to the PSTN / called party. See ADR-027.
 
 Variables:
   route_id        - connect.freeswitch.outgoing_route record ID

@@ -1,4 +1,4 @@
-# ADR-026: Blank the caller-id NAME on outbound PSTN legs
+# ADR-027: Blank the caller-id NAME on outbound PSTN legs
 
 ## Status
 Accepted

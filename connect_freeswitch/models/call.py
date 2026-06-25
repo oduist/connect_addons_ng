@@ -248,7 +248,7 @@ class Call(models.Model):
         # For external (PSTN) calls the display NAME is blanked so the
         # internal caller's name is never disclosed to the outside world;
         # only the number is sent. Internal calls keep the name so the
-        # colleague sees who is ringing. See ADR-026.
+        # colleague sees who is ringing. See ADR-027.
         b_leg_name = cid_name if exten else ''
         b_leg_vars = [
             "origination_caller_id_name='{}'".format(b_leg_name),
