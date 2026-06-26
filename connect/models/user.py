@@ -49,14 +49,18 @@ class User(models.Model):
 
     def manage_group(self, action='add'):
         attribute_name = 'user_ids' if release.version_info[0] >= 19 else 'users'
+        # Adjusting res.groups membership is an internal side-effect of
+        # connect.user CRUD (already gated by connect.group_admin on the
+        # model ACL). Use sudo so a Connect admin who is not also an Odoo
+        # system administrator can still create/remove connect.users.
         if self.user and self.user.has_group('base.group_system') and self.user.has_group('base.group_erp_manager'):
-            group_connect_admin = self.env.ref('connect.group_admin')
+            group_connect_admin = self.env.ref('connect.group_admin').sudo()
             if action == 'add':
                 group_connect_admin.write({attribute_name: [(4, self.user.id)]})
             else:
                 group_connect_admin.with_context(install_mode=True).write({attribute_name: [(3, self.user.id)]})
         elif self.user:
-            group_connect_user = self.env.ref('connect.group_user')
+            group_connect_user = self.env.ref('connect.group_user').sudo()
             if action == 'add':
                 group_connect_user.write({attribute_name: [(4, self.user.id)]})
             else:
