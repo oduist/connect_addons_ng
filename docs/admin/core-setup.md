@@ -63,6 +63,11 @@ Navigate to **Connect > PBX > Caller IDs** to manage outgoing numbers.
 
 Numbers must start with `+` followed by digits only. Only one caller ID can be marked as default at a time.
 
+The caller ID flagged **Default** is presented on outbound calls for users
+who have no per-user **Outgoing Caller ID** assigned. This system-wide
+fallback applies to both the Twilio and FreeSWITCH integrations; with no
+default set, FreeSWITCH falls back to the user's extension number.
+
 ## Extensions
 
 Extensions are auto-managed. When you create a PBX user or call flow, an extension number is automatically assigned. View all extensions in **Connect > PBX > Extensions**.

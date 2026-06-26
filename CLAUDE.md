@@ -113,7 +113,7 @@ Specifically:
 
 - **Always write comments in English.** This applies to all source and
   config files (Python, JS, XML, YAML, Dockerfiles, etc.). Do not leave
-  comments in Russian or any other language; translate existing
+  comments in any other language; translate existing
   non-English comments to English when you touch the surrounding code.
 - Models follow `connect.<name>` naming (e.g., `connect.call`, `connect.recording`)
 - Protected settings fields (API keys, tokens) are masked with `****` for non-managers
@@ -225,6 +225,26 @@ Internal developers who need tests initialize the submodule explicitly:
 ```bash
 git -c submodule.tests_suite.update=checkout submodule update --init tests_suite
 ```
+
+## Contributing tests to the submodule — commit direct, NO pull request
+
+The `tests_suite` submodule is a shared, append-as-you-go test space — **not**
+a pull-request-driven repo. When you add or change `test_*.py` files:
+
+- **Commit directly to the matching per-series branch** of
+  `connect_addons_tests` (`19.0` for the `19.0` main branch, `18.0` for
+  `18.0`, …) and push. Do **NOT** open a pull request and do **NOT** create a
+  feature branch for the tests. Everyone commits to the same series branch
+  from whatever workspace they are in.
+- There are **no working environments** for the tests repo — you never
+  provision or run anything "inside" it. It only holds `test_*.py` files that
+  the per-addon loaders pull in; tests run in the main module's environment.
+- After pushing the test commit, **bump the `tests_suite` gitlink** in the
+  main repo to the new series-branch commit and include that in your feature
+  branch, so the code change carries its coverage.
+
+(The per-series branch mapping is described under "Submodule init policy" and
+"Version Compatibility → Cross-branch versioning rules".)
 
 ## Agent Behavior
 
