@@ -116,6 +116,7 @@ class FreeSwitchCDRController(http.Controller):
         other_leg_uuid = None
         chain_id = None
         odoo_number_id = None
+        odoo_call_direction = None
 
         if variables is not None:
             # Click-to-call originates `user/<login>@<domain>` and the
@@ -190,21 +191,15 @@ class FreeSwitchCDRController(http.Controller):
 
             odoo_number_id = self._xml_text(variables, 'odoo_number_id')
 
-            # Authoritative direction: the dialplan tags every routed leg
-            # with `odoo_call_direction` (inbound DID → 'inbound',
-            # outgoing route → 'outgoing'). Honour it when present — for
-            # `originate`-launched (synthesised) calls the FS-level
-            # <channel_data><direction> is unreliable and the leg would
-            # otherwise be mis-parsed as inbound, producing a wrong
-            # `incoming` call direction (issue #43). Falls back to the
-            # <channel_data><direction> inference above when the variable
-            # is absent (e.g. internal extension-to-extension calls).
+            # The dialplan stamps the business-logic call direction on the
+            # channel (`odoo_call_direction`: 'inbound' on inbound DID
+            # routes, 'outgoing' on outgoing routes). It is a plain word,
+            # so no URL-decoding is needed. Prefer it downstream over
+            # FreeSWITCH's native per-leg direction, which marks the UA /
+            # originate leg of an outbound call as 'inbound' and mislabels
+            # such calls as incoming (issue #43).
             odoo_call_direction = self._xml_text(
-                variables, 'odoo_call_direction')
-            if odoo_call_direction == 'outgoing':
-                direction = 'outbound'
-            elif odoo_call_direction == 'inbound':
-                direction = 'inbound'
+                variables, 'odoo_call_direction') or None
 
         return {
             'uuid': uuid,
@@ -217,6 +212,7 @@ class FreeSwitchCDRController(http.Controller):
             'called_pbx_user_id': called_pbx_user_id,
             'other_leg_uuid': other_leg_uuid,
             'chain_id': chain_id,
+            'odoo_call_direction': odoo_call_direction,
             'odoo_number_id': int(odoo_number_id) if odoo_number_id else None,
         }
 
