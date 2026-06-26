@@ -5,6 +5,7 @@ import requests
 from tempfile import NamedTemporaryFile
 from odoo import fields, models, api, release, SUPERUSER_ID
 from odoo.exceptions import ValidationError
+from odoo.tools import config
 from .settings import format_connect_response, debug
 
 logger = logging.getLogger(__name__)
@@ -172,7 +173,11 @@ class Recording(models.Model):
         transcript_calls = self.env['connect.settings'].sudo().get_param('transcript_calls')
         recs = super(Recording, self.with_context(
             mail_create_nosubscribe=True, mail_create_nolog=True)).create(vals_list)
-        self.env.cr.commit()
+        # Persist the recording before the (potentially slow, external)
+        # transcription call. Skipped under test mode, where committing the
+        # cursor mid-transaction is forbidden and would break the rollback.
+        if not config['test_enable']:
+            self.env.cr.commit()
         if transcript_calls:
             for rec in recs:
                 try:
