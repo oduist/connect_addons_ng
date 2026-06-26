@@ -282,6 +282,25 @@ Operational guide for admins lives in **`docs/admin/firewall.md`**.
 
 ---
 
+## CDR webhook & call direction
+
+`controllers/freeswitch_cdr.py` receives `mod_xml_cdr` POSTs at
+`/freeswitch/webhook/cdr`, parses the XML into a dict, and hands it to
+`connect.call.on_freeswitch_cdr`.
+
+Call **direction** is resolved from the dialplan-stamped business direction,
+not FreeSWITCH's transport-level direction. The dialplan sets
+`odoo_call_direction` (`inbound` on inbound DID routes, `outgoing` on outgoing
+routes — `data/fs_templates.xml`); `_parse_cdr_xml` reads it and
+`connect.call._cdr_technical_direction` maps it to `technical_direction`
+(`outgoing` → `outbound-api`, `inbound` → `inbound`). Only when the variable is
+absent does it fall back to FreeSWITCH's native `<channel_data><direction>`.
+This prevents `originate`-launched outbound calls — whose UA / origination leg
+is `inbound` from FreeSWITCH's own perspective — from being mislabelled as
+incoming. See **`specs/decisions/028-cdr-direction-from-dialplan-variable.md`**.
+
+---
+
 ## Tests
 
 `tests/test_firewall.py` (gated test suite — symlinked from
@@ -294,3 +313,8 @@ Operational guide for admins lives in **`docs/admin/firewall.md`**.
 * `_cron_cleanup` retention logic;
 * the Unban action (`is_banned` compute + `action_unban_ip`)
   with the service calls mocked out.
+
+`tests/test_cdr_direction.py` covers CDR direction resolution: `_parse_cdr_xml`
+extraction of `odoo_call_direction`, and `_cdr_technical_direction` preferring it
+over the native FreeSWITCH direction (the issue #43 regression) with the
+native-direction fallback.

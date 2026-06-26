@@ -337,6 +337,9 @@ class Call(models.Model):
                 caller_pbx_user_id (int): connect.user ID from channel variable (optional)
                 called_pbx_user_id (int): connect.user ID (optional)
                 other_leg_uuid (str): Other leg UUID for linking (optional)
+                odoo_call_direction (str): dialplan-stamped business
+                    direction, 'inbound' or 'outgoing' (optional; preferred
+                    over the native FreeSWITCH `direction` when present)
 
         Returns:
             call id or False
@@ -371,17 +374,37 @@ class Call(models.Model):
                 "SELECT pg_advisory_unlock(hashtext(%s))", [chain_key])
 
     @api.model
+    def _cdr_technical_direction(self, cdr_data):
+        """Resolve the Twilio-compatible technical_direction for a CDR.
+
+        Prefer the business-logic direction the dialplan stamps on the
+        channel (`odoo_call_direction`) over FreeSWITCH's per-leg native
+        direction. originate-launched legs and the UA leg of an outgoing
+        call are `inbound` from FreeSWITCH's own perspective and would
+        otherwise be mislabelled as incoming (issue #43). Fall back to the
+        native direction when the variable is absent (e.g. a raw originate
+        that bypasses the dialplan).
+        """
+        odoo_direction = cdr_data.get('odoo_call_direction')
+        if odoo_direction == 'outgoing':
+            return 'outbound-api'
+        if odoo_direction == 'inbound':
+            return 'inbound'
+        return (
+            'outbound-api'
+            if cdr_data.get('direction') == 'outbound'
+            else 'inbound'
+        )
+
+    @api.model
     def _process_cdr_locked(self, cdr_data):
         """Inner CDR processing, called while holding the chain lock."""
         status = HANGUP_CAUSE_MAP.get(
             cdr_data.get('hangup_cause', ''), 'failed')
 
-        # Map FreeSWITCH direction to Twilio-compatible technical_direction
-        fs_direction = cdr_data.get('direction', '')
-        if fs_direction == 'outbound':
-            technical_direction = 'outbound-api'
-        else:
-            technical_direction = 'inbound'
+        # Map the call direction to a Twilio-compatible technical_direction,
+        # preferring the dialplan-stamped odoo_call_direction (issue #43).
+        technical_direction = self._cdr_technical_direction(cdr_data)
 
         generic_params = {
             'sid': cdr_data['uuid'],
