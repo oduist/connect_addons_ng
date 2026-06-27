@@ -189,8 +189,14 @@ class Call(models.Model):
         if exten:
             caller_number = connect_user.exten_number or (first_ep.auth_user if first_ep else '')
         else:
+            # Per-user outgoing CallerID, else the system-wide default DID
+            # (is_default), else the extension — symmetric with the Twilio
+            # path and the UA-originated dialplan override (ADR-027, #96).
+            default_cid = self.env['connect.outgoing_callerid'].sudo().search(
+                [('is_default', '=', True)], limit=1)
             caller_number = (
                 connect_user.outgoing_callerid.number
+                or default_cid.number
                 or connect_user.exten_number
                 or (first_ep.auth_user if first_ep else '')
             )
@@ -244,8 +250,14 @@ class Call(models.Model):
         # the directory-seeded extension. Override on the B-leg itself
         # so the called party sees `caller_number` (extension for
         # internal, outgoing_callerid for external).
+        #
+        # For external (PSTN) calls the display NAME is blanked so the
+        # internal caller's name is never disclosed to the outside world;
+        # only the number is sent. Internal calls keep the name so the
+        # colleague sees who is ringing. See ADR-026.
+        b_leg_name = cid_name if exten else ''
         b_leg_vars = [
-            "origination_caller_id_name='{}'".format(cid_name),
+            "origination_caller_id_name='{}'".format(b_leg_name),
             "origination_caller_id_number={}".format(caller_number),
         ]
         # For external calls via gateway, force standard codecs on b-leg
@@ -325,6 +337,9 @@ class Call(models.Model):
                 caller_pbx_user_id (int): connect.user ID from channel variable (optional)
                 called_pbx_user_id (int): connect.user ID (optional)
                 other_leg_uuid (str): Other leg UUID for linking (optional)
+                odoo_call_direction (str): dialplan-stamped business
+                    direction, 'inbound' or 'outgoing' (optional; preferred
+                    over the native FreeSWITCH `direction` when present)
 
         Returns:
             call id or False
@@ -359,17 +374,37 @@ class Call(models.Model):
                 "SELECT pg_advisory_unlock(hashtext(%s))", [chain_key])
 
     @api.model
+    def _cdr_technical_direction(self, cdr_data):
+        """Resolve the Twilio-compatible technical_direction for a CDR.
+
+        Prefer the business-logic direction the dialplan stamps on the
+        channel (`odoo_call_direction`) over FreeSWITCH's per-leg native
+        direction. originate-launched legs and the UA leg of an outgoing
+        call are `inbound` from FreeSWITCH's own perspective and would
+        otherwise be mislabelled as incoming (issue #43). Fall back to the
+        native direction when the variable is absent (e.g. a raw originate
+        that bypasses the dialplan).
+        """
+        odoo_direction = cdr_data.get('odoo_call_direction')
+        if odoo_direction == 'outgoing':
+            return 'outbound-api'
+        if odoo_direction == 'inbound':
+            return 'inbound'
+        return (
+            'outbound-api'
+            if cdr_data.get('direction') == 'outbound'
+            else 'inbound'
+        )
+
+    @api.model
     def _process_cdr_locked(self, cdr_data):
         """Inner CDR processing, called while holding the chain lock."""
         status = HANGUP_CAUSE_MAP.get(
             cdr_data.get('hangup_cause', ''), 'failed')
 
-        # Map FreeSWITCH direction to Twilio-compatible technical_direction
-        fs_direction = cdr_data.get('direction', '')
-        if fs_direction == 'outbound':
-            technical_direction = 'outbound-api'
-        else:
-            technical_direction = 'inbound'
+        # Map the call direction to a Twilio-compatible technical_direction,
+        # preferring the dialplan-stamped odoo_call_direction (issue #43).
+        technical_direction = self._cdr_technical_direction(cdr_data)
 
         generic_params = {
             'sid': cdr_data['uuid'],
