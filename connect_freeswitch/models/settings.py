@@ -2,6 +2,7 @@
 import logging
 import re
 import secrets
+import socket
 import xml.etree.ElementTree as ET
 import xmlrpc.client
 
@@ -250,11 +251,17 @@ class Settings(models.Model):
             base_url if base_url.endswith('/') else base_url + '/', token)
 
     @api.model
-    def freeswitch_api(self, command, args=''):
-        """Execute a FreeSWITCH API command via mod_xml_rpc.
+    def _freeswitch_rpc(self, command, args=''):
+        """Low-level mod_xml_rpc call that classifies the failure mode.
 
-        Returns the command response string, or False on failure.
-        Errors are logged but never raised to avoid blocking callers.
+        Returns a ``(result, error)`` tuple:
+        - on success ``(response_string, None)``;
+        - on failure ``(None, error)`` where ``error`` is one of
+          ``NOT CONFIGURED`` / ``UNREACHABLE`` / ``AUTH FAILED`` /
+          ``INVALID RESPONSE``.
+
+        Errors are logged but never raised, so callers are never blocked
+        by FS connectivity issues.
         """
         host = self.get_param('freeswitch_xmlrpc_host')
         port = self.get_param('freeswitch_xmlrpc_port') or 8080
@@ -262,31 +269,58 @@ class Settings(models.Model):
         password = self.sudo().get_param('freeswitch_xmlrpc_password')
         if not host:
             logger.warning("FreeSWITCH XML-RPC host not configured")
-            return False
+            return None, 'NOT CONFIGURED'
         url = "http://{}:{}@{}:{}/RPC2".format(user, password, host, port)
         try:
             server = xmlrpc.client.ServerProxy(url)
             result = server.freeswitch.api(command, args)
             logger.info("FreeSWITCH API %s %s: %s", command, args, result)
-            return result
+            return result, None
+        except xmlrpc.client.ProtocolError as e:
+            # HTTP-level error from mod_xml_rpc; 401 means bad credentials.
+            error = 'AUTH FAILED' if e.errcode == 401 else 'INVALID RESPONSE'
+            logger.error("FreeSWITCH XML-RPC protocol error (%s): %s",
+                         e.errcode, e.errmsg)
+            return None, error
+        except OSError as e:
+            # socket.timeout, ConnectionError, ConnectionRefusedError,
+            # socket.gaierror (DNS) — host configured but not reachable.
+            logger.error("FreeSWITCH XML-RPC unreachable: %s", e)
+            return None, 'UNREACHABLE'
         except Exception as e:
-            logger.error("FreeSWITCH XML-RPC error: %s", e)
-            return False
+            # xmlrpc.client.Fault, malformed XML, parse errors, etc.
+            logger.error("FreeSWITCH XML-RPC invalid response: %s", e)
+            return None, 'INVALID RESPONSE'
+
+    @api.model
+    def freeswitch_api(self, command, args=''):
+        """Execute a FreeSWITCH API command via mod_xml_rpc.
+
+        Returns the command response string, or False on failure.
+        Errors are logged but never raised to avoid blocking callers.
+        Use :meth:`_freeswitch_rpc` directly when the specific failure
+        mode is needed (e.g. to surface it in the status field).
+        """
+        result, error = self._freeswitch_rpc(command, args)
+        return result if error is None else False
 
     def check_freeswitch_status(self):
         """Fetch live status from FreeSWITCH and update display fields."""
         self.ensure_one()
         down_vals = {
-            'freeswitch_status': 'DOWN (unreachable)',
+            'freeswitch_status': '',
             'freeswitch_uptime': '',
             'freeswitch_calls': '',
             'freeswitch_registrations': '',
             'freeswitch_gateway_statuses': '',
         }
 
-        # 1. Basic status
-        status_response = self.freeswitch_api('status')
-        if not status_response:
+        # 1. Basic status — surface the specific failure mode (NOT
+        # CONFIGURED / UNREACHABLE / AUTH FAILED / INVALID RESPONSE)
+        # instead of a single misleading "DOWN" string.
+        status_response, status_error = self._freeswitch_rpc('status')
+        if status_error is not None:
+            down_vals['freeswitch_status'] = status_error
             self.write(down_vals)
             return
 
@@ -406,12 +440,18 @@ class Settings(models.Model):
         # makes the login globally unique even when two res.users share the
         # same email local part across domains. See
         # specs/decisions/016-verto-login-uses-user-id.md.
+        #
+        # Rotate the WebRTC password on every config issuance so a leaked
+        # password self-invalidates on the next softphone boot. The returned
+        # value (not a re-read of the field) is delivered to the client, which
+        # immediately registers with it against FreeSWITCH. See ADR-026.
+        password = connect_user._rotate_webrtc_password()
         return {
             'enabled': True,
             'socketUrl': socket_url,
             'domain': domain,
             'login': connect_user._get_verto_login(),
-            'password': connect_user.webrtc_password,
+            'password': password,
             'callerName': connect_user.name,
             'callerNumber': connect_user.exten_number or user.login,
             'displayMode': connect_user.phone_display_mode or 'dropdown',

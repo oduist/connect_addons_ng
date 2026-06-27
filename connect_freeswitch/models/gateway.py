@@ -88,11 +88,42 @@ class FreeSwitchGateway(models.Model):
         return result
 
     def _reload_sofia_profile(self):
-        """Ask FreeSWITCH to restart the external sofia profile and reload XML."""
-        self.env['connect.settings'].freeswitch_api(
-            'sofia', 'profile external restart reloadxml')
+        """Schedule a sofia 'external' profile reload after the commit.
+
+        The reload is deferred to post-commit so FreeSWITCH's xml_curl callback
+        reads the *committed* gateway rows: a synchronous reload inside
+        create()/write() races the open transaction, and the brand-new gateway
+        is invisible to the separate xml_curl request (issue #38).
+        """
+        self.env.cr.postcommit.add(
+            self.env['connect.freeswitch.gateway']._apply_sofia_profile_reload)
+
+    @api.model
+    def _apply_sofia_profile_reload(self):
+        """Start the external sofia profile if it is not loaded yet, otherwise
+        restart it to reload the gateway XML.
+
+        On a fresh deployment the external profile has never been started, so a
+        plain 'restart' is a silent no-op (issue #38). Detect via 'status
+        profile external' and 'start' when absent; FreeSWITCH then fetches the
+        now-committed gateway config via xml_curl.
+        """
+        Settings = self.env['connect.settings']
+        status = Settings.freeswitch_api('sofia', 'status profile external')
+        if not status or 'Invalid Profile' in status:
+            Settings.freeswitch_api('sofia', 'profile external start')
+        else:
+            Settings.freeswitch_api(
+                'sofia', 'profile external restart reloadxml')
 
     def _reload_acl(self):
+        """Schedule a FreeSWITCH ACL reload after the commit, so the gateway
+        IPs are visible to the separate xml_curl request (issue #38)."""
+        self.env.cr.postcommit.add(
+            self.env['connect.freeswitch.gateway']._apply_acl_reload)
+
+    @api.model
+    def _apply_acl_reload(self):
         """Ask FreeSWITCH to reload ACL configuration."""
         self.env['connect.settings'].freeswitch_api('reloadacl')
 

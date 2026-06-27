@@ -432,11 +432,14 @@ Variables:
         <field name="section">dialplan</field>
         <field name="description">Outbound call routing via SIP gateway.
 
+The caller-id NUMBER is set from connect.user.outgoing_callerid (when
+configured); the caller-id NAME is always blanked so the internal caller's
+name is never disclosed to the PSTN / called party. See ADR-026.
+
 Variables:
   route_id        - connect.freeswitch.outgoing_route record ID
   pattern         - Regex pattern for destination matching
   bridge_data     - Bridge string (sofia/gateway/name/number)
-  cid_name        - Caller ID name to present on PSTN (from connect.user.outgoing_callerid)
   cid_num         - Caller ID number to present on PSTN (from connect.user.outgoing_callerid)</field>
         <field name="content"><![CDATA[<extension name="outgoing_{{ route_id }}">
   <condition field="destination_number" expression="{{ pattern }}">
@@ -444,8 +447,8 @@ Variables:
     <action application="export" data="nolocal:absolute_codec_string=PCMU,PCMA"/>
     {% if cid_num %}
     <action application="set" data="effective_caller_id_number={{ cid_num }}"/>
-    <action application="set" data="effective_caller_id_name={{ cid_name }}"/>
     {% endif %}
+    <action application="set" data="effective_caller_id_name="/>
     <action application="bridge" data="{{ bridge_data }}"/>
   </condition>
 </extension>]]></field>
@@ -455,8 +458,8 @@ Variables:
     <action application="export" data="nolocal:absolute_codec_string=PCMU,PCMA"/>
     {% if cid_num %}
     <action application="set" data="effective_caller_id_number={{ cid_num }}"/>
-    <action application="set" data="effective_caller_id_name={{ cid_name }}"/>
     {% endif %}
+    <action application="set" data="effective_caller_id_name="/>
     <action application="bridge" data="{{ bridge_data }}"/>
   </condition>
 </extension>]]></field>

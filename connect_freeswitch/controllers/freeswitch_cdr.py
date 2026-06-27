@@ -121,6 +121,7 @@ class FreeSwitchCDRController(http.Controller):
         other_leg_uuid = None
         chain_id = None
         odoo_number_id = None
+        odoo_call_direction = None
 
         if variables is not None:
             # Click-to-call originates `user/<login>@<domain>` and the
@@ -195,6 +196,16 @@ class FreeSwitchCDRController(http.Controller):
 
             odoo_number_id = self._xml_text(variables, 'odoo_number_id')
 
+            # The dialplan stamps the business-logic call direction on the
+            # channel (`odoo_call_direction`: 'inbound' on inbound DID
+            # routes, 'outgoing' on outgoing routes). It is a plain word,
+            # so no URL-decoding is needed. Prefer it downstream over
+            # FreeSWITCH's native per-leg direction, which marks the UA /
+            # originate leg of an outbound call as 'inbound' and mislabels
+            # such calls as incoming (issue #43).
+            odoo_call_direction = self._xml_text(
+                variables, 'odoo_call_direction') or None
+
         return {
             'uuid': uuid,
             'caller': caller,
@@ -206,6 +217,7 @@ class FreeSwitchCDRController(http.Controller):
             'called_pbx_user_id': called_pbx_user_id,
             'other_leg_uuid': other_leg_uuid,
             'chain_id': chain_id,
+            'odoo_call_direction': odoo_call_direction,
             'odoo_number_id': int(odoo_number_id) if odoo_number_id else None,
         }
 
