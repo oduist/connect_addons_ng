@@ -162,6 +162,8 @@ Variables:
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="user/{{ number }}@{{ fs_domain }}"/>
   </condition>
 </extension>]]></field>
@@ -181,6 +183,8 @@ Variables:
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="user/{{ number }}@{{ fs_domain }}"/>
   </condition>
 </extension>]]></field>
@@ -236,6 +240,8 @@ Variables:
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="{{ ring_bridge }}"/>
     {% endif %}
     {% if fifo_number %}
@@ -266,6 +272,8 @@ Variables:
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="{{ ring_bridge }}"/>
     {% endif %}
     {% if fifo_number %}
@@ -298,6 +306,8 @@ Variables:
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="user/{{ user_number }}@{{ fs_domain }}"/>
   </condition>
 </extension>]]></field>
@@ -309,6 +319,8 @@ Variables:
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="user/{{ user_number }}@{{ fs_domain }}"/>
   </condition>
 </extension>]]></field>
@@ -349,6 +361,8 @@ Variables:
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
     {% if bridge_string %}
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="{{ bridge_string }}"/>
     {% endif %}
     {% if fifo_number %}
@@ -376,6 +390,8 @@ Variables:
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
     {% if bridge_string %}
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="{{ bridge_string }}"/>
     {% endif %}
     {% if fifo_number %}

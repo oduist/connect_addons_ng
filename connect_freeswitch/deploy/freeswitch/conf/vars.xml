@@ -34,6 +34,15 @@
   -->
   <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
   <X-PRE-PROCESS cmd="set" data="use_profile=internal"/>
+  <!--
+    Ringback tone played to the caller while a bridge target rings. The
+    image wipes FreeSWITCH's stock configs, so the usual `us-ring` global
+    must be (re)defined here or the dialplan's `ringback=${us-ring}` would
+    expand to an empty string. Standard US ring cadence: 2s on / 4s off,
+    440+480 Hz. Change here for a local cadence (e.g. Swiss %(1000,4000,425)).
+    See ADR-029 / issue #113.
+  -->
+  <X-PRE-PROCESS cmd="set" data="us-ring=%(2000,4000,440,480)"/>
   <!-- Log levels: read from Docker env vars (defaults in Dockerfile) -->
   <X-PRE-PROCESS cmd="env-set" data="core_loglevel=$FS_LOG_LEVEL"/>
   <X-PRE-PROCESS cmd="env-set" data="sofia_loglevel=$FS_SOFIA_LOG_LEVEL"/>

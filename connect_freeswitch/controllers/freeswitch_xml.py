@@ -451,6 +451,9 @@ class FreeSwitchXMLController(http.Controller):
                 '<action application="set" data="call_timeout=30"/>'
                 '<action application="set" data="hangup_after_bridge=true"/>'
                 '<action application="set" data="continue_on_fail=true"/>'
+                # Ringback so the caller hears ringing, not silence (ADR-029)
+                '<action application="set" data="ringback=${us-ring}"/>'
+                '<action application="set" data="transfer_ringback=${us-ring}"/>'
                 '<action application="bridge" data="user/$1@$${domain}"/>'
                 '</condition></extension>')
 

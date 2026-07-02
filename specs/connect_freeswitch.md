@@ -287,6 +287,12 @@ substitutes `FS_ESL_PASSWORD` into `event_socket.conf.xml`. The
 baked-in ESL password is `ConnectNGESLPassword` (project-specific,
 not the FreeSWITCH default `ClueCon`).
 
+`vars.xml` defines the `us-ring` ringback tone (`%(2000,4000,440,480)`)
+because the image wipes FreeSWITCH's stock configs; the dialplan
+templates set `ringback` / `transfer_ringback` to `${us-ring}` before
+every `bridge` so inbound callers hear ringing instead of silence
+(issue #113, ADR-029).
+
 ### Firewall service image (`deploy/firewall/`)
 
 `oduist/freeswitch-firewall` is a small Python container that:
