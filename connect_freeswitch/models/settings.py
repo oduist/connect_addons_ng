@@ -2,6 +2,7 @@
 import logging
 import re
 import socket
+import ssl
 import xml.etree.ElementTree as ET
 import xmlrpc.client
 
@@ -75,20 +76,30 @@ class Settings(models.Model):
     )
     freeswitch_xmlrpc_host = fields.Char(
         string="XML-RPC Host",
-        help="FreeSWITCH XML-RPC host (e.g. fs.example.com)",
+        help="Public host of the Traefik TLS endpoint that fronts FreeSWITCH "
+             "mod_xml_rpc (e.g. fs.example.com). Odoo connects to it over HTTPS.",
     )
     freeswitch_xmlrpc_port = fields.Integer(
         string="XML-RPC Port",
-        default=8080,
-        help="FreeSWITCH mod_xml_rpc port (default: 8080)",
+        default=443,
+        help="HTTPS port of the Traefik endpoint in front of mod_xml_rpc "
+             "(default: 443). mod_xml_rpc itself listens on a fixed internal "
+             "port behind Traefik and is never exposed directly.",
     )
     freeswitch_xmlrpc_user = fields.Char(
         string="XML-RPC User",
-        help="FreeSWITCH mod_xml_rpc username",
+        help="FreeSWITCH mod_xml_rpc username (HTTP Basic Auth, sent over TLS)",
     )
     freeswitch_xmlrpc_password = fields.Char(
         string="XML-RPC Password",
-        help="FreeSWITCH mod_xml_rpc password",
+        help="FreeSWITCH mod_xml_rpc password (HTTP Basic Auth, sent over TLS)",
+    )
+    freeswitch_xmlrpc_tls_verify = fields.Boolean(
+        string="Verify TLS Certificate",
+        default=True,
+        help="Verify the TLS certificate of the XML-RPC endpoint. Keep enabled "
+             "in production (Traefik serves a CA-signed certificate). Disable "
+             "only for development behind a self-signed certificate.",
     )
 
     # Status fields (populated by check_freeswitch_status button)
@@ -222,15 +233,24 @@ class Settings(models.Model):
         by FS connectivity issues.
         """
         host = self.get_param('freeswitch_xmlrpc_host')
-        port = self.get_param('freeswitch_xmlrpc_port') or 8080
+        port = self.get_param('freeswitch_xmlrpc_port') or 443
         user = self.get_param('freeswitch_xmlrpc_user')
         password = self.sudo().get_param('freeswitch_xmlrpc_password')
+        verify_tls = self.get_param('freeswitch_xmlrpc_tls_verify')
         if not host:
             logger.warning("FreeSWITCH XML-RPC host not configured")
             return None, 'NOT CONFIGURED'
-        url = "http://{}:{}@{}:{}/RPC2".format(user, password, host, port)
+        # mod_xml_rpc has no native TLS: Traefik terminates HTTPS in front of
+        # it and proxies to the internal plain-HTTP port. Always connect over
+        # https so the Basic Auth credential never travels in cleartext.
+        url = "https://{}:{}@{}:{}/RPC2".format(user, password, host, port)
+        context = ssl.create_default_context()
+        if not verify_tls:
+            # Self-signed development certificate: skip verification on request.
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
         try:
-            server = xmlrpc.client.ServerProxy(url)
+            server = xmlrpc.client.ServerProxy(url, context=context)
             result = server.freeswitch.api(command, args)
             logger.info("FreeSWITCH API %s %s: %s", command, args, result)
             return result, None
