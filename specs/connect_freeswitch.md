@@ -69,7 +69,7 @@ firewall-related fields:
 dialplan generators; it returns `''` (recording disabled) when the base
 URL or the token is missing.
 
-XML-RPC connectivity to FreeSWITCH (ADR-004, ADR-027, ADR-029):
+XML-RPC connectivity to FreeSWITCH (ADR-004, ADR-027, ADR-030):
 * `_freeswitch_rpc(command, args)` — low-level `mod_xml_rpc` call
   returning a `(result, error)` tuple. `error` is `None` on success or
   one of `NOT CONFIGURED` / `UNREACHABLE` / `AUTH FAILED` /
@@ -81,7 +81,7 @@ XML-RPC connectivity to FreeSWITCH (ADR-004, ADR-027, ADR-029):
   the `FS_XMLRPC_INTERNAL_PORT` controller constant. The
   `freeswitch_xmlrpc_tls_verify` Boolean (default on) controls TLS
   certificate verification — turn it off only behind a self-signed dev
-  certificate (ADR-029).
+  certificate (ADR-030).
 * `freeswitch_api(command, args)` — thin wrapper returning the response
   string or `False`; used wherever only success/failure matters.
 * `check_freeswitch_status()` — backs the **CHECK STATUS** button;
