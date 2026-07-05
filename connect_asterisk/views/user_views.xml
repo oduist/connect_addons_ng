@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_user_form_asterisk" model="ir.ui.view">
+        <field name="name">connect.user.form.asterisk</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_form"/>
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page name="asterisk" string="Asterisk">
+                    <group>
+                        <group string="Web Phone">
+                            <field name="phone_ring_volume"/>
+                            <field name="mask_call_number"
+                                   widget="boolean_toggle"/>
+                            <field name="call_popup_is_enabled"
+                                   widget="boolean_toggle"/>
+                            <field name="call_popup_is_sticky"
+                                   widget="boolean_toggle"
+                                   invisible="not call_popup_is_enabled"/>
+                        </group>
+                        <group string="Click-to-Call">
+                            <field name="asterisk_originate_vars"
+                                   placeholder="VAR=value, one per line"/>
+                        </group>
+                    </group>
+                </page>
+                <page name="asterisk_endpoints" string="Asterisk Endpoints">
+                    <field name="endpoint_ids">
+                        <list editable="bottom">
+                            <field name="name"/>
+                            <field name="asterisk_channel"/>
+                            <field name="asterisk_sip_transport"/>
+                            <field name="asterisk_originate_enabled"/>
+                            <field name="asterisk_auto_answer_header"
+                                   optional="hide"/>
+                            <field name="active" column_invisible="1"/>
+                        </list>
+                    </field>
+                </page>
+            </notebook>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="connect_settings_form_asterisk" model="ir.ui.view">
+        <field name="name">connect.settings.form.asterisk</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" ref="connect.connect_settings_form"/>
+        <field name="arch" type="xml">
+            <page name="general" position="after">
+                <page name="asterisk" string="Asterisk">
+                    <group>
+                        <group string="Status">
+                            <field name="asterisk_agent_status"/>
+                            <field name="asterisk_agent_version"/>
+                            <field name="asterisk_last_heartbeat"/>
+                            <field name="asterisk_core_status"/>
+                            <button name="asterisk_ping_agent" type="object"
+                                    string="PING AGENT" class="btn btn-info"
+                                    colspan="2"/>
+                            <button name="check_asterisk_status" type="object"
+                                    string="CHECK ASTERISK" class="btn btn-info"
+                                    colspan="2"/>
+                        </group>
+                        <group string="Agent">
+                            <field name="asterisk_enabled"
+                                   widget="boolean_toggle"/>
+                            <field name="asterisk_agent_url"
+                                   placeholder="http://host.docker.internal:8082"/>
+                            <field name="display_asterisk_agent_token"
+                                   password="True"
+                                   placeholder="**** (min 24 chars, [A-Za-z0-9_-])"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="AMI">
+                            <field name="asterisk_ami_host"
+                                   placeholder="127.0.0.1"/>
+                            <field name="asterisk_ami_port"/>
+                            <field name="asterisk_ami_user"
+                                   placeholder="connect-agent"/>
+                            <field name="asterisk_ami_password"
+                                   password="True"/>
+                            <field name="asterisk_events"/>
+                        </group>
+                        <group string="Originate &amp; Recordings">
+                            <field name="asterisk_originate_context"
+                                   placeholder="from-internal"/>
+                            <field name="asterisk_originate_timeout"/>
+                            <field name="asterisk_recordings_enabled"
+                                   widget="boolean_toggle"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Web Phone">
+                            <field name="asterisk_phone_enabled"
+                                   widget="boolean_toggle"/>
+                            <field name="asterisk_websocket_url"
+                                   placeholder="wss://pbx.example.com:8089/ws"/>
+                            <field name="asterisk_sip_proxy"
+                                   placeholder="pbx.example.com"/>
+                            <field name="asterisk_sip_realm"
+                                   placeholder="asterisk"/>
+                            <field name="asterisk_stun_server"
+                                   placeholder="stun.l.google.com:19302"/>
+                            <field name="asterisk_phone_trace_sip"/>
+                        </group>
+                        <group string="Web Phone Features">
+                            <field name="asterisk_attended_transfer_sequence"/>
+                            <field name="asterisk_disconnect_call_sequence"/>
+                            <field name="asterisk_transfer_contact_search"/>
+                        </group>
+                    </group>
+                </page>
+            </page>
+        </field>
+    </record>
+
+</odoo>

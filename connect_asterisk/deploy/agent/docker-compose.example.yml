@@ -1,0 +1,32 @@
+# Local development stack: vanilla Asterisk + the agent.
+# Odoo runs on the host (ODOO_URL points back through the bridge).
+services:
+  asterisk:
+    image: andrius/asterisk:latest
+    network_mode: host
+    volumes:
+      - ./dev/manager.conf:/etc/asterisk/manager.conf:ro
+      - asterisk-monitor:/var/spool/asterisk/monitor
+
+  agent:
+    build: .
+    environment:
+      ODOO_URL: http://host.docker.internal:8069
+      AGENT_TOKEN: dev-agent-token-0123456789abcdef
+      AMI_HOST: host.docker.internal
+      AMI_PORT: "5038"
+      AMI_USER: connect-agent
+      AMI_PASSWORD: dev-ami-password
+      LOG_LEVEL: DEBUG
+      AMI_TRACE: "true"
+    ports:
+      - "8082:8082"
+    volumes:
+      - asterisk-monitor:/var/spool/asterisk/monitor:ro
+      - agent-state:/var/lib/connect-asterisk
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  asterisk-monitor:
+  agent-state:
