@@ -39,8 +39,9 @@
                                    placeholder="443"/>
                             <field name="freeswitch_xmlrpc_user"
                                    placeholder="freeswitch"/>
-                            <field name="freeswitch_xmlrpc_password"
-                                   password="True"/>
+                            <field name="display_freeswitch_xmlrpc_password"
+                                   password="True"
+                                   placeholder="****"/>
                             <field name="freeswitch_xmlrpc_tls_verify"
                                    widget="boolean_toggle"/>
                         </group>

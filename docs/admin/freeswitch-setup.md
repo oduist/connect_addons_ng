@@ -101,7 +101,7 @@ Odoo always connects to XML-RPC **over HTTPS**. `mod_xml_rpc` has no native TLS,
 | **XML-RPC Host** | Public host of the Traefik TLS endpoint that fronts FreeSWITCH (e.g., `fs.example.com`). |
 | **XML-RPC Port** | HTTPS port of the Traefik endpoint (default: 443). `mod_xml_rpc` itself stays on the fixed internal port `8080` behind Traefik. |
 | **XML-RPC User** | mod_xml_rpc username (HTTP Basic Auth, sent over TLS). |
-| **XML-RPC Password** | mod_xml_rpc password (HTTP Basic Auth, sent over TLS). |
+| **XML-RPC Password** | mod_xml_rpc password (HTTP Basic Auth, sent over TLS). Stored admin-only and masked to `****` after saving — never exposed to non-administrators. |
 | **Verify TLS Certificate** | Verify the endpoint's certificate. Keep **on** in production (Traefik serves a CA-signed certificate). Turn **off** only in development behind a self-signed certificate. |
 
 When configured, Odoo automatically sends `sofia profile external restart reloadxml` to FreeSWITCH whenever SIP gateways are created, modified, or deleted. This ensures FreeSWITCH picks up gateway changes immediately without manual intervention.

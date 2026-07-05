@@ -16,6 +16,12 @@ ODUIST_MODULES.append('connect_freeswitch')
 if "display_firewall_service_token" not in PROTECTED_FIELDS:
     PROTECTED_FIELDS.append("display_firewall_service_token")
 
+# Same masking for the mod_xml_rpc password: the stored field is admin-only, and
+# the displayed field is masked back to **** so the secret never reaches the
+# browser or a non-admin get_param() over RPC.
+if "display_freeswitch_xmlrpc_password" not in PROTECTED_FIELDS:
+    PROTECTED_FIELDS.append("display_freeswitch_xmlrpc_password")
+
 logger = logging.getLogger(__name__)
 
 
@@ -91,8 +97,14 @@ class Settings(models.Model):
         help="FreeSWITCH mod_xml_rpc username (HTTP Basic Auth, sent over TLS)",
     )
     freeswitch_xmlrpc_password = fields.Char(
-        string="XML-RPC Password",
+        string="XML-RPC Password (stored)",
+        groups="connect.group_admin",
         help="FreeSWITCH mod_xml_rpc password (HTTP Basic Auth, sent over TLS)",
+    )
+    display_freeswitch_xmlrpc_password = fields.Char(
+        string="XML-RPC Password",
+        help="FreeSWITCH mod_xml_rpc password (HTTP Basic Auth, sent over TLS). "
+             "Masked to **** after saving; visible only to administrators.",
     )
     freeswitch_xmlrpc_tls_verify = fields.Boolean(
         string="Verify TLS Certificate",

@@ -31,8 +31,8 @@
 ### 1.3 Пароли и секреты в открытом виде
 
 - `connect.settings.openai_api_key` хранится plain Char с `groups="base.group_erp_manager"`, но утечка идёт через `display_openai_api_key` (маскируется «звёздочками», но до записи в БД оригинал лежит в vals и логах `write`).
-- `freeswitch_xmlrpc_password`, `freeswitch_api_*` — обычные `Char`, **без `groups=`** (`connect_freeswitch/models/settings.py:83-86`). Любой `connect.group_user` через `get_param` получит пароль.
-- XML-RPC URL собирается как `http://user:pass@host:port/RPC2` (`settings.py:109`) — пароль идёт plain-текстом поверх HTTP, без HTTPS и без опции ssl.
+- ~~`freeswitch_xmlrpc_password` — обычный `Char`, **без `groups=`**. Любой `connect.group_user` через `get_param` получит пароль.~~ **Решено (#37, ADR-029):** хранимое поле теперь `groups="connect.group_admin"`, а показывается маскируемое `display_freeswitch_xmlrpc_password` (в `PROTECTED_FIELDS`); `get_param` возвращает не-админам default.
+- ~~XML-RPC URL собирается как `http://user:pass@host:port/RPC2` — пароль идёт plain-текстом поверх HTTP, без HTTPS и без опции ssl.~~ **Решено (#37, ADR-029):** URL всегда `https://…/RPC2` с `ssl`-контекстом; TLS терминирует Traefik перед mod_xml_rpc.
 
 ### 1.4 Инъекция в FreeSWITCH originate
 
