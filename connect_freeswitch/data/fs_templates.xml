@@ -162,6 +162,8 @@ Variables:
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="user/{{ number }}@{{ fs_domain }}"/>
   </condition>
 </extension>]]></field>
@@ -181,6 +183,8 @@ Variables:
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="user/{{ number }}@{{ fs_domain }}"/>
   </condition>
 </extension>]]></field>
@@ -236,6 +240,8 @@ Variables:
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="{{ ring_bridge }}"/>
     {% endif %}
     {% if fifo_number %}
@@ -266,6 +272,8 @@ Variables:
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="{{ ring_bridge }}"/>
     {% endif %}
     {% if fifo_number %}
@@ -298,6 +306,8 @@ Variables:
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="user/{{ user_number }}@{{ fs_domain }}"/>
   </condition>
 </extension>]]></field>
@@ -309,6 +319,8 @@ Variables:
     <action application="set" data="call_timeout=30"/>
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="user/{{ user_number }}@{{ fs_domain }}"/>
   </condition>
 </extension>]]></field>
@@ -349,6 +361,8 @@ Variables:
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
     {% if bridge_string %}
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="{{ bridge_string }}"/>
     {% endif %}
     {% if fifo_number %}
@@ -376,6 +390,8 @@ Variables:
     <action application="set" data="hangup_after_bridge=true"/>
     <action application="set" data="continue_on_fail=true"/>
     {% if bridge_string %}
+    <action application="set" data="ringback=${us-ring}"/>
+    <action application="set" data="transfer_ringback=${us-ring}"/>
     <action application="bridge" data="{{ bridge_string }}"/>
     {% endif %}
     {% if fifo_number %}
@@ -566,17 +582,18 @@ Variables:
         <field name="description">Valet parking extension. Dialing a slot extension either parks the current call (if slot is free) or retrieves the parked call (if occupied). The webhook notifies Odoo when a channel enters/leaves the lot.
 
 Variables:
-  slot        - Slot extension number (e.g. "701")
-  lot_name    - Valet parking lot name (usually "default")
-  webhook_url - Odoo base URL (https://...) for parking event callbacks</field>
+  slot          - Slot extension number (e.g. "701")
+  lot_name      - Valet parking lot name (usually "default")
+  webhook_url   - Odoo base URL (https://...) for parking event callbacks
+  webhook_token - Shared secret authenticating the callbacks (ADR-025)</field>
         <field name="content"><![CDATA[<extension name="connect_valet_parking_{{ slot }}">
   <condition field="destination_number" expression="^{{ slot }}$">
     <action application="answer"/>
     <action application="set" data="valet_hold_music=silence_stream://-1"/>
     <action application="set" data="presence_id={{ slot }}@${domain_name}"/>
     <action application="set" data="execute_on_hangup=event Event-Name=PRESENCE_IN,proto=sip,login=${presence_id},from=${presence_id},event_type=presence,alt_event_type=dialog,status=Idle,rpid=away,answer-state=terminated"/>
-    <action application="set" data="api_hangup_hook=bgapi curl {{ webhook_url }}/freeswitch/webhook/parking?event=released&amp;slot={{ slot }}"/>
-    <action application="curl" data="{{ webhook_url }}/freeswitch/webhook/parking?event=entered&amp;slot={{ slot }}&amp;uuid=${uuid}&amp;caller_number=${caller_id_number}&amp;caller_name=${caller_id_name} background"/>
+    <action application="set" data="api_hangup_hook=bgapi curl {{ webhook_url }}/freeswitch/webhook/parking?event=released&amp;slot={{ slot }}&amp;token={{ webhook_token }}"/>
+    <action application="curl" data="{{ webhook_url }}/freeswitch/webhook/parking?event=entered&amp;slot={{ slot }}&amp;uuid=${uuid}&amp;caller_number=${caller_id_number}&amp;caller_name=${caller_id_name}&amp;token={{ webhook_token }} background"/>
     <action application="event" data="Event-Name=PRESENCE_IN,proto=sip,login=${presence_id},from=${presence_id},event_type=presence,alt_event_type=dialog,status=Parked,rpid=active,answer-state=confirmed"/>
     <action application="valet_park" data="{{ lot_name }} {{ slot }}"/>
   </condition>
@@ -587,8 +604,8 @@ Variables:
     <action application="set" data="valet_hold_music=silence_stream://-1"/>
     <action application="set" data="presence_id={{ slot }}@${domain_name}"/>
     <action application="set" data="execute_on_hangup=event Event-Name=PRESENCE_IN,proto=sip,login=${presence_id},from=${presence_id},event_type=presence,alt_event_type=dialog,status=Idle,rpid=away,answer-state=terminated"/>
-    <action application="set" data="api_hangup_hook=bgapi curl {{ webhook_url }}/freeswitch/webhook/parking?event=released&amp;slot={{ slot }}"/>
-    <action application="curl" data="{{ webhook_url }}/freeswitch/webhook/parking?event=entered&amp;slot={{ slot }}&amp;uuid=${uuid}&amp;caller_number=${caller_id_number}&amp;caller_name=${caller_id_name} background"/>
+    <action application="set" data="api_hangup_hook=bgapi curl {{ webhook_url }}/freeswitch/webhook/parking?event=released&amp;slot={{ slot }}&amp;token={{ webhook_token }}"/>
+    <action application="curl" data="{{ webhook_url }}/freeswitch/webhook/parking?event=entered&amp;slot={{ slot }}&amp;uuid=${uuid}&amp;caller_number=${caller_id_number}&amp;caller_name=${caller_id_name}&amp;token={{ webhook_token }} background"/>
     <action application="event" data="Event-Name=PRESENCE_IN,proto=sip,login=${presence_id},from=${presence_id},event_type=presence,alt_event_type=dialog,status=Parked,rpid=active,answer-state=confirmed"/>
     <action application="valet_park" data="{{ lot_name }} {{ slot }}"/>
   </condition>

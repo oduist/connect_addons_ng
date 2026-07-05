@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import re
+import secrets
 import socket
 import ssl
 import xml.etree.ElementTree as ET
@@ -15,6 +16,8 @@ ODUIST_MODULES.append('connect_freeswitch')
 # Mask the firewall service token the same way the core module masks openai_api_key.
 if "display_firewall_service_token" not in PROTECTED_FIELDS:
     PROTECTED_FIELDS.append("display_firewall_service_token")
+if "display_freeswitch_webhook_token" not in PROTECTED_FIELDS:
+    PROTECTED_FIELDS.append("display_freeswitch_webhook_token")
 
 # Same masking for the mod_xml_rpc password: the stored field is admin-only, and
 # the displayed field is masked back to **** so the secret never reaches the
@@ -113,6 +116,23 @@ class Settings(models.Model):
              "in production (Traefik serves a CA-signed certificate). Disable "
              "only for development behind a self-signed certificate.",
     )
+    # Shared secret authenticating every FreeSWITCH -> Odoo HTTP call
+    # (/freeswitch/xml, /freeswitch/webhook/*). Auto-generated so the
+    # endpoints are locked by default (fail-closed); see ADR-025.
+    freeswitch_webhook_token = fields.Char(
+        string="FreeSWITCH Webhook Token (stored)",
+        groups="connect.group_admin",
+        default=lambda self: secrets.token_urlsafe(32),
+    )
+    display_freeswitch_webhook_token = fields.Char(
+        string="FreeSWITCH Webhook Token",
+        help="Shared secret used by FreeSWITCH to authenticate against the "
+             "Odoo XML curl / CDR / recording / parking endpoints. Generate "
+             "a fresh value (≥24 chars, [A-Za-z0-9_-]) and copy it into the "
+             "FS_WEBHOOK_TOKEN env var of the FreeSWITCH container before "
+             "saving — the value is masked back to **** immediately "
+             "afterwards. Visible only to administrators.",
+    )
 
     # Status fields (populated by check_freeswitch_status button)
     freeswitch_status = fields.Char(string="Server Status", readonly=True)
@@ -193,8 +213,8 @@ class Settings(models.Model):
     )
 
     @api.model
-    def _validate_firewall_secret(self, value):
-        """Raise ValidationError on weak / malformed Firewall Service Token."""
+    def _validate_firewall_secret(self, value, label="Firewall Service Token"):
+        """Raise ValidationError on a weak / malformed shared-secret token."""
         from odoo.exceptions import ValidationError
         if value in (False, None):
             return
@@ -203,15 +223,15 @@ class Settings(models.Model):
             return
         if len(value) < self._TOKEN_MIN_LEN:
             raise ValidationError(
-                "Firewall Service Token must be at least {} characters long.".format(
-                    self._TOKEN_MIN_LEN
+                "{} must be at least {} characters long.".format(
+                    label, self._TOKEN_MIN_LEN
                 )
             )
         bad = sorted({c for c in value if c not in self._TOKEN_ALLOWED_CHARS})
         if bad:
             raise ValidationError(
-                "Firewall Service Token can only contain letters, digits, '_' and '-'; "
-                "remove: {}".format(" ".join(bad))
+                "{} can only contain letters, digits, '_' and '-'; "
+                "remove: {}".format(label, " ".join(bad))
             )
 
     def write(self, vals):
@@ -224,12 +244,34 @@ class Settings(models.Model):
                 self._validate_firewall_secret(
                     vals["display_firewall_service_token"]
                 )
+            if "display_freeswitch_webhook_token" in vals:
+                self._validate_firewall_secret(
+                    vals["display_freeswitch_webhook_token"],
+                    label="FreeSWITCH Webhook Token",
+                )
         res = super().write(vals)
         # Notify the firewall service that settings changed.
         if any(k.startswith("firewall_") or k == "display_firewall_service_token"
                for k in vals):
             self.env["connect.firewall.agent"]._trigger_sync("settings")
         return res
+
+    @api.model
+    def get_recording_webhook_url(self):
+        """Recording upload base URL including the auth token path segment.
+
+        record_session derives the file format from the URL extension, so
+        the token rides as a path segment instead of a query string
+        (ADR-025). Returns '' when web.base.url or the token is missing —
+        callers then leave recording disabled (fail-closed).
+        """
+        base_url = self.env['ir.config_parameter'].sudo().get_param(
+            'web.base.url') or ''
+        token = self.sudo().get_param('freeswitch_webhook_token') or ''
+        if not base_url or not token:
+            return ''
+        return '{}freeswitch/webhook/recording/{}'.format(
+            base_url if base_url.endswith('/') else base_url + '/', token)
 
     @api.model
     def _freeswitch_rpc(self, command, args=''):

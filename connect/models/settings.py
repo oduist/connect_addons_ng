@@ -270,9 +270,14 @@ class Settings(models.Model):
         api_key = self.sudo().get_param('openai_api_key')
         if not api_key:
             return False
-        if os.environ.get('OPENAI_PROXY'):
+        # OPENAI_PROXY is both the switch and the proxy URL. The previous
+        # code gated on OPENAI_PROXY but built the client from HTTPS_PROXY,
+        # so setting only the documented OPENAI_PROXY produced proxy=None
+        # and traffic egressed directly.
+        openai_proxy = os.environ.get('OPENAI_PROXY')
+        if openai_proxy:
             client = openai.OpenAI(
-                api_key=api_key, http_client=httpx.Client(proxy=os.environ.get('HTTPS_PROXY')))
+                api_key=api_key, http_client=httpx.Client(proxy=openai_proxy))
         else:
             client = openai.OpenAI(api_key=api_key)
         return client

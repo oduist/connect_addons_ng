@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from . import token_auth
 from . import firewall_api
 from . import freeswitch_cdr
 from . import freeswitch_parking

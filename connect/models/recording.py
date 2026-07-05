@@ -2,10 +2,10 @@ import json
 import logging
 import os
 import requests
+from markupsafe import escape
 from tempfile import NamedTemporaryFile
 from odoo import fields, models, api, release, SUPERUSER_ID
 from odoo.exceptions import ValidationError
-from odoo.tools import config
 from .settings import format_connect_response, debug
 
 logger = logging.getLogger(__name__)
@@ -44,15 +44,22 @@ class Recording(models.Model):
     transcript = fields.Text()
     transcription_token = fields.Char()
     transcription_error = fields.Char()
+    # Work-queue flag for the transcription cron. Set on create() when
+    # transcript_calls is enabled; the cron picks these up out of the
+    # request path (see _cron_transcribe_recordings).
+    transcription_pending = fields.Boolean(default=False, copy=False)
     transcription_price = fields.Char()
     summary = fields.Html()
     list_view_summary = fields.Html(compute='_get_list_view_summary')
 
     def transcribe_recording(self, openai_api_key, summary_prompt):
         result = {}
+        temp_file_path = None
         try:
             client = self.env['connect.settings'].get_openai_client()
-            response = requests.get(self.media_url, stream=True)
+            # Bounded download: media_url points at the provider's recording
+            # store; without a timeout a hung endpoint pins the worker.
+            response = requests.get(self.media_url, stream=True, timeout=30)
             response.raise_for_status()
             with NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
                 for chunk in response.iter_content(chunk_size=8192):
@@ -75,6 +82,13 @@ class Recording(models.Model):
             logger.exception(f'Transcribe error: {e}')
             result['transcription_error'] = str(e)
         finally:
+            # NamedTemporaryFile(delete=False) is not auto-removed; drop the
+            # downloaded audio so /tmp does not grow without bound.
+            if temp_file_path and os.path.exists(temp_file_path):
+                try:
+                    os.unlink(temp_file_path)
+                except OSError:
+                    logger.warning('Could not remove temp file %s', temp_file_path)
             self.write(result)
 
     def make_summary(self, client, summary_prompt, transcript):
@@ -96,7 +110,9 @@ class Recording(models.Model):
                 max_tokens=int(os.environ.get('OPENAI_COMPLETION_MAX_TOKENS', 4096)),
                 top_p=float(os.environ.get('OPENAI_COMPLETION_TOP_P', 1.0)),
                 frequency_penalty=float(os.environ.get('OPENAI_COMPLETION_FREQUENCY_PENALTY', 0.0)),
-                presence_penalty=float(os.environ.get('OPENAI_COMPLETION_PRESENSE_PENALTY', 0.0)),
+                presence_penalty=float(os.environ.get(
+                    'OPENAI_COMPLETION_PRESENCE_PENALTY',
+                    os.environ.get('OPENAI_COMPLETION_PRESENSE_PENALTY', 0.0))),
             )
             logger.info('%s', response.usage)
             return {'summary': response.choices[0].message.content.strip('\n\n')}
@@ -157,10 +173,13 @@ class Recording(models.Model):
             else:
                 rec.recording_widget = ''
                 continue
+            # media_url may be a raw, webhook-supplied URL when
+            # proxy_recordings is off; escape it before it lands in the
+            # sanitize=False Html field to prevent stored XSS.
             rec.recording_widget = '<audio id="sound_file" preload="auto" ' \
                 'controls="controls"> ' \
                 '<source src="{}"/>' \
-                '</audio>'.format(media_url)
+                '</audio>'.format(escape(media_url))
 
     def _get_list_view_summary(self):
         for rec in self:
@@ -173,18 +192,37 @@ class Recording(models.Model):
         transcript_calls = self.env['connect.settings'].sudo().get_param('transcript_calls')
         recs = super(Recording, self.with_context(
             mail_create_nosubscribe=True, mail_create_nolog=True)).create(vals_list)
-        # Persist the recording before the (potentially slow, external)
-        # transcription call. Skipped under test mode, where committing the
-        # cursor mid-transaction is forbidden and would break the rollback.
-        if not config['test_enable']:
-            self.env.cr.commit()
         if transcript_calls:
-            for rec in recs:
-                try:
-                    rec.get_transcript(fail_silently=True)
-                except Exception as e:
-                    logger.exception('Transcript error: %s', e)
+            # Defer transcription to _cron_transcribe_recordings. Running
+            # the Whisper + GPT round trip inline blocked the provider
+            # webhook that created the recording (timeout -> retry ->
+            # duplicate processing) and was only survivable via a
+            # mid-create cr.commit() that broke the caller transaction's
+            # atomicity. The flag is the cron's work queue instead.
+            recs.filtered(lambda r: not r.transcript).transcription_pending = True
         return recs
+
+    @api.model
+    def _cron_transcribe_recordings(self, limit=20):
+        """Transcribe recordings queued by create() (transcription_pending).
+
+        Runs out of the request path so a slow OpenAI round trip never
+        blocks a provider webhook. Each recording is committed
+        independently so one failure does not roll back the batch.
+        """
+        pending = self.search([('transcription_pending', '=', True)], limit=limit)
+        for rec in pending:
+            try:
+                rec.get_transcript(fail_silently=True)
+            except Exception:
+                logger.exception('Cron transcript error for recording %s', rec.id)
+            # Clear the flag whether or not it succeeded: transcribe_recording
+            # records the transcript or the error, and a single attempt
+            # matches the previous inline behaviour while avoiding an
+            # unbounded retry loop. The commit is safe here — the cron owns
+            # its own transaction, unlike create().
+            rec.transcription_pending = False
+            self.env.cr.commit()
 
     @api.depends('duration')
     def _get_duration_human(self):

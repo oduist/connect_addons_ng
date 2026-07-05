@@ -75,11 +75,9 @@ class FsFifo(models.Model):
         fs_domain = self.env['connect.settings'].sudo().get_param(
             'freeswitch_domain') or '${domain}'
 
-        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''
         recording_url = ''
-        if self.record_calls and base_url:
-            recording_url = '{}freeswitch/webhook/recording'.format(
-                base_url if base_url.endswith('/') else base_url + '/')
+        if self.record_calls:
+            recording_url = self.env['connect.settings'].get_recording_webhook_url()
 
         members = []
         for user in self.member_user_ids:

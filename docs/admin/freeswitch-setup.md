@@ -29,6 +29,7 @@ services:
     network_mode: host
     environment:
       - ODOO_URL=http://localhost:8069
+      - FS_WEBHOOK_TOKEN=<value of the FreeSWITCH Webhook Token>
 ```
 
 !!! warning "Network mode"
@@ -39,8 +40,26 @@ services:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ODOO_URL` | `http://localhost:8069` | Base URL for XML cURL callbacks to Odoo. |
+| `FS_WEBHOOK_TOKEN` | *(unset)* | Shared secret authenticating every FreeSWITCH → Odoo HTTP call (XML cURL, CDR, recordings, parking). **Required**: Odoo rejects the requests with 401 while it is unset or wrong. |
 | `SOUND_RATES` | `8000:16000` | Supported audio sample rates. |
 | `SOUND_TYPES` | `music:en-us-callie` | Prompt voices and hold music. |
+
+### Webhook Token Pairing
+
+Odoo authenticates all incoming FreeSWITCH HTTP requests with a shared
+secret. A random token is generated automatically on install/upgrade,
+which **locks the endpoints until you pair the container**:
+
+1. Generate a token (≥24 chars, letters/digits/`_`/`-`), e.g.
+   `openssl rand -base64 32 | tr '+/' '-_'`.
+2. In Odoo open *Connect → Settings → FreeSWITCH* and paste it into
+   **FreeSWITCH Webhook Token** (the field masks itself to `****` after
+   saving).
+3. Set the same value as `FS_WEBHOOK_TOKEN` on the FreeSWITCH container
+   and restart it.
+
+Without the pairing, registrations, dialplan lookups, CDRs and
+recording uploads all fail with HTTP 401 (fail-closed by design).
 
 ### Build and Run
 

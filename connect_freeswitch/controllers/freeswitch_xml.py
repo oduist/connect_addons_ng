@@ -7,6 +7,8 @@ from odoo import http
 from odoo.http import request, Response
 from odoo.addons.connect.models.settings import debug
 
+from .token_auth import check_fs_webhook_auth, unauthorized_response
+
 _logger = logging.getLogger(__name__)
 
 # Internal plain-HTTP port mod_xml_rpc listens on. It is never exposed
@@ -45,7 +47,13 @@ class FreeSwitchXMLController(http.Controller):
         - key_name, key_value: for specific lookups
         - user, domain: for user authentication
         - action: for specific actions (e.g., sip_auth)
+
+        The response embeds SIP/WebRTC credentials, so the request must
+        carry the shared webhook token (mod_xml_curl gateway-credentials,
+        Basic auth). Fail-closed — see ADR-025.
         """
+        if not check_fs_webhook_auth():
+            return unauthorized_response()
         section = kwargs.get('section', '')
         debug(request.env['connect.settings'].sudo(), "FreeSWITCH XML request: section=%s, params=%s" % (section, kwargs))
 
@@ -386,10 +394,13 @@ class FreeSwitchXMLController(http.Controller):
         if parking_slot:
             webhook_url = request.env['ir.config_parameter'].sudo().get_param(
                 'web.base.url') or ''
+            webhook_token = request.env['connect.settings'].sudo().get_param(
+                'freeswitch_webhook_token') or ''
             parts.append(Template.render('dialplan_valet_parking', {
                 'slot': parking_slot.exten,
                 'lot_name': 'default',
                 'webhook_url': webhook_url,
+                'webhook_token': webhook_token,
             }))
             return ''.join(parts)
 
@@ -446,6 +457,9 @@ class FreeSwitchXMLController(http.Controller):
                 '<action application="set" data="call_timeout=30"/>'
                 '<action application="set" data="hangup_after_bridge=true"/>'
                 '<action application="set" data="continue_on_fail=true"/>'
+                # Ringback so the caller hears ringing, not silence (ADR-029)
+                '<action application="set" data="ringback=${us-ring}"/>'
+                '<action application="set" data="transfer_ringback=${us-ring}"/>'
                 '<action application="bridge" data="user/$1@$${domain}"/>'
                 '</condition></extension>')
 
