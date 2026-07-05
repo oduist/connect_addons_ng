@@ -2,6 +2,8 @@
 import json
 import logging
 
+from markupsafe import escape
+
 from odoo import models, api, release
 
 from odoo.addons.connect.models.settings import debug
@@ -63,7 +65,11 @@ class Channel(models.Model):
         self, title='Connect', sticky=False, warning=False
     ):
         """Notify user about incoming call."""
-        caller = self.caller
+        # The message is rendered as trusted HTML (markup()) on the
+        # client, and self.caller / self.partner.name are attacker-
+        # controlled (inbound caller-id, partner name), so every dynamic
+        # value is HTML-escaped before interpolation to prevent XSS.
+        caller = escape(self.caller or '')
         caller_avatar = '/web/static/img/placeholder.png'
         if self.partner:
             caller = """
@@ -72,7 +78,7 @@ class Channel(models.Model):
                     {}
                 </a>
                 </p>
-            """.format(self.partner.id, 'res.partner', self.partner.name)
+            """.format(self.partner.id, 'res.partner', escape(self.partner.name or ''))
             caller_avatar = '/web/image/res.partner/{}/image_1024'.format(
                 self.partner.id
             )
@@ -86,7 +92,7 @@ class Channel(models.Model):
             <div>
                 <img style="max-height: 100px; max-width: 100px;"
                         class="rounded-circle"
-                        src={}/>
+                        src="{}"/>
             </div>
             <div>
                 <p class="text-center">Incoming call</p>

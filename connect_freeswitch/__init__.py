@@ -33,6 +33,17 @@ def setup_firewall(env):
     env['connect.firewall.agent'].sudo()._get_singleton()
 
 
+def ensure_webhook_token(env):
+    """Idempotent: generate freeswitch_webhook_token if missing (ADR-025).
+
+    A random token locks the FreeSWITCH HTTP endpoints (fail-closed)
+    until the operator pairs the container via FS_WEBHOOK_TOKEN.
+    """
+    settings = env['connect.settings'].sudo()
+    if not settings.get_param('freeswitch_webhook_token'):
+        settings.set_param('freeswitch_webhook_token', secrets.token_urlsafe(32))
+
+
 def post_init_hook(env):
     try:
         module = env['ir.module.module'].search([('name', '=', 'connect_freeswitch')], limit=1)
@@ -40,5 +51,6 @@ def post_init_hook(env):
             module.write({'create_date': fields.Datetime.now()})
         env['oduist.license'].update_license_status(raise_exc=False)
         setup_firewall(env)
+        ensure_webhook_token(env)
     except Exception as e:
         _logger.error('Error in post_init_hook: %s', str(e))

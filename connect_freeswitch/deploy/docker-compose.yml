@@ -40,6 +40,9 @@ services:
       - EPMD=false
       - DUMPCAP=false
       - ODOO_URL=${ODOO_URL}
+      # Shared secret for FreeSWITCH -> Odoo HTTP calls; must match the
+      # FreeSWITCH Webhook Token in Odoo settings (ADR-025).
+      - FS_WEBHOOK_TOKEN=${FS_WEBHOOK_TOKEN}
     volumes:
       - freeswitch-sounds:/usr/share/freeswitch/sounds
       - ./freeswitch/conf:/etc/freeswitch

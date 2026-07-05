@@ -1,6 +1,9 @@
 <configuration name="xml_cdr.conf" description="XML CDR">
   <settings>
     <param name="url" value="$${odoo_url}/freeswitch/webhook/cdr"/>
+    <!-- Authenticate against Odoo with the shared webhook token (ADR-025). -->
+    <param name="auth-scheme" value="basic"/>
+    <param name="cred" value="freeswitch:$${webhook_token}"/>
     <param name="retries" value="2"/>
     <param name="delay" value="5"/>
     <param name="log-b-leg" value="false"/>

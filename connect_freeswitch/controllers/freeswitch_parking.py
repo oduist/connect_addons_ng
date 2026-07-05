@@ -3,6 +3,8 @@ import logging
 from odoo import http
 from odoo.http import request, Response
 
+from .token_auth import check_fs_webhook_auth, unauthorized_response
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,6 +28,10 @@ class FreeSwitchParkingController(http.Controller):
         type='http', auth='none', methods=['GET', 'POST'], csrf=False,
     )
     def parking_webhook(self, **kwargs):
+        # The dialplan curl application carries the shared webhook token
+        # as a ``token`` query parameter (ADR-025).
+        if not check_fs_webhook_auth():
+            return unauthorized_response()
         event = kwargs.get('event')
         exten = kwargs.get('slot')
         if not event or not exten:

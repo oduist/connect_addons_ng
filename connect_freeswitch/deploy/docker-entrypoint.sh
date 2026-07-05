@@ -157,9 +157,23 @@ apply_esl_password() {
     echo "Applied FS_ESL_PASSWORD to event_socket.conf.xml"
 }
 
+check_webhook_token() {
+    # Odoo rejects xml_curl/xml_cdr/recording/parking requests without the
+    # shared webhook token (fail-closed, ADR-025), so an unset var means a
+    # non-functional PBX. Warn loudly but keep starting: the operator may
+    # still be pairing the container with Odoo.
+    if [ -z "$FS_WEBHOOK_TOKEN" ]; then
+        echo "WARNING: FS_WEBHOOK_TOKEN is not set. Odoo will reject all" >&2
+        echo "WARNING: FreeSWITCH directory/dialplan/CDR requests (401)." >&2
+        echo "WARNING: Copy the FreeSWITCH Webhook Token from Odoo settings" >&2
+        echo "WARNING: into this container's FS_WEBHOOK_TOKEN env var." >&2
+    fi
+}
+
 download_sounds
 setup_tls
 apply_esl_password
+check_webhook_token
 
 trap 'freeswitch -stop' TERM
 

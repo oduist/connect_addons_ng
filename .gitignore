@@ -16,3 +16,7 @@ filestore/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# FreeSWITCH TLS/DTLS material is generated at container start (ACME or a
+# self-signed fallback); never commit private keys (ADR-027).
+connect_freeswitch/deploy/freeswitch/conf/tls/*.pem
