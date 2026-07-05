@@ -11,6 +11,12 @@ from .token_auth import check_fs_webhook_auth, unauthorized_response
 
 _logger = logging.getLogger(__name__)
 
+# Internal plain-HTTP port mod_xml_rpc listens on. It is never exposed
+# directly: Traefik terminates TLS in front of it and proxies here. The
+# public HTTPS port Odoo connects to lives in the freeswitch_xmlrpc_port
+# setting (default 443) and is intentionally decoupled from this one.
+FS_XMLRPC_INTERNAL_PORT = 8080
+
 
 def pretty_xml(xml_str):
     """Pretty-print XML string with proper indentation."""
@@ -537,7 +543,8 @@ class FreeSwitchXMLController(http.Controller):
         if not user or not password:
             return self._not_found()
 
-        port = str(settings.get_param('freeswitch_xmlrpc_port') or 8080)
+        # Fixed internal port; Traefik fronts it with TLS (see constant above).
+        port = str(FS_XMLRPC_INTERNAL_PORT)
 
         Template = request.env['connect.freeswitch.template'].sudo()
         config_xml = Template.render('config_xml_rpc', {

@@ -85,7 +85,8 @@ FreeSWITCH requires the following ports:
 | 16000-17000 | UDP | RTP media — voice audio packets |
 | 65060 | UDP | SIP signaling (if using SIP phones) |
 | 7443 | TCP | SIP WebSocket Secure (if using SIP over WSS) |
-| 8080 | TCP | mod_xml_rpc (Odoo → FreeSWITCH commands, internal only) |
+| 443 | TCP | XML-RPC over HTTPS (Odoo → Traefik → FreeSWITCH commands) |
+| 8080 | TCP | mod_xml_rpc plain HTTP — **internal only**, never expose; Traefik proxies to it |
 
 ```bash
 sudo ufw allow 48082/tcp
@@ -112,12 +113,15 @@ Navigate to **Connect > Configuration > Settings** and open the **FreeSWITCH** t
 
 XML-RPC settings enable Odoo to push commands to FreeSWITCH (e.g., reload gateway configuration after changes). This requires `mod_xml_rpc` to be loaded on the FreeSWITCH side.
 
+Odoo always connects to XML-RPC **over HTTPS**. `mod_xml_rpc` has no native TLS, so Traefik terminates HTTPS in front of it and proxies to the internal plain-HTTP port (`8080`). This keeps the HTTP Basic Auth credential off the wire in cleartext — without it, anyone able to observe the network path between Odoo and FreeSWITCH could capture a credential that grants full control of the switch (originate, eavesdrop, eval). The reverse proxy is wired in `deploy/docker-compose.yml` (the `traefik` service plus `deploy/traefik/`).
+
 | Field | Description |
 |-------|-------------|
-| **XML-RPC Host** | FreeSWITCH server hostname or IP (e.g., `fs.example.com`). |
-| **XML-RPC Port** | mod_xml_rpc port (default: 8080). |
-| **XML-RPC User** | mod_xml_rpc username. |
-| **XML-RPC Password** | mod_xml_rpc password. |
+| **XML-RPC Host** | Public host of the Traefik TLS endpoint that fronts FreeSWITCH (e.g., `fs.example.com`). |
+| **XML-RPC Port** | HTTPS port of the Traefik endpoint (default: 443). `mod_xml_rpc` itself stays on the fixed internal port `8080` behind Traefik. |
+| **XML-RPC User** | mod_xml_rpc username (HTTP Basic Auth, sent over TLS). |
+| **XML-RPC Password** | mod_xml_rpc password (HTTP Basic Auth, sent over TLS). Stored admin-only and masked to `****` after saving — never exposed to non-administrators. |
+| **Verify TLS Certificate** | Verify the endpoint's certificate. Keep **on** in production (Traefik serves a CA-signed certificate). Turn **off** only in development behind a self-signed certificate. |
 
 When configured, Odoo automatically sends `sofia profile external restart reloadxml` to FreeSWITCH whenever SIP gateways are created, modified, or deleted. This ensures FreeSWITCH picks up gateway changes immediately without manual intervention.
 
@@ -132,7 +136,7 @@ know which side to fix:
 |---------------|---------|------------|
 | `UP — <version>` | FreeSWITCH reachable and answering. | Nothing — healthy. |
 | `NOT CONFIGURED` | No XML-RPC host set in Odoo; no connection is attempted. | Fill in the XML-RPC Host (and port/user/password) above. |
-| `UNREACHABLE` | Host set but the TCP connection failed (firewall, closed port, wrong host/IP, DNS). | Check the host/port, that `mod_xml_rpc` is listening, and that the port is open between Odoo and FreeSWITCH. |
+| `UNREACHABLE` | Host set but the TLS connection failed (firewall, closed port, wrong host/IP, DNS, or — when **Verify TLS Certificate** is on — an untrusted/self-signed certificate). | Check the host/port, that Traefik is terminating HTTPS and proxying to `mod_xml_rpc` on `8080`, and that the certificate is trusted (or turn off verification for a self-signed dev cert). |
 | `AUTH FAILED` | Host reachable but `mod_xml_rpc` rejected the credentials (HTTP 401). | Fix the XML-RPC User / Password to match the FreeSWITCH side. |
 | `INVALID RESPONSE` | Server answered but the payload could not be parsed. | Check the FreeSWITCH logs and the `mod_xml_rpc` configuration. |
 
@@ -297,12 +301,12 @@ TTS settings are in `autoload_configs/piper_tts.conf.xml`:
 
 ## TLS/SSL Certificates
 
-The deploy directory includes self-signed certificates:
+FreeSWITCH is always deployed behind **Traefik**, which is the single TLS edge for the stack (`deploy/docker-compose.yml` → `traefik` service, config in `deploy/traefik/`):
 
-- `deploy/freeswitch/conf/tls/wss.pem` — for Verto WSS connections
-- `deploy/freeswitch/conf/tls/dtls-srtp.pem` — for DTLS-SRTP media encryption
+- **Verto WSS / DTLS-SRTP** — FreeSWITCH terminates these itself. The `oduist/freeswitch` entrypoint extracts the freshest certificate from Traefik's ACME store (`acme.json`, shared via the `traefik-acme` volume) into `tls/wss.pem` and `tls/dtls-srtp.pem`. With no ACME cert available (local development) it falls back to a self-signed certificate.
+- **XML-RPC** — `mod_xml_rpc` has no native TLS, so Traefik terminates HTTPS in front of it (`deploy/traefik/dynamic.yml`) and proxies to the internal `8080` port. The same certificate Traefik manages secures this control-plane channel; Odoo connects over `https://`.
 
-For production, replace these with certificates signed by a trusted CA, or use a reverse proxy (e.g., nginx) to terminate TLS.
+Traefik requests a **Let's Encrypt** certificate out of the box. Set `FS_DOMAIN` (the public FQDN of the FreeSWITCH host) and `ACME_EMAIL` in `deploy/.env`; while testing, point `ACME_CASERVER` at the Let's Encrypt staging URL to avoid rate limits. In local development (`FS_DOMAIN=localhost`, no public domain) ACME cannot validate, so Traefik serves its built-in self-signed certificate — turn **Verify TLS Certificate** off in the XML-RPC settings.
 
 ## FreeSWITCH Configuration Files
 
