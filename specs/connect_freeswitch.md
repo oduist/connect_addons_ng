@@ -56,7 +56,7 @@ firewall-related fields:
 | `firewall_authenticated_timeout` | Integer | trust TTL after a successful registration (7 days, sliding) |
 | `firewall_expire_short_timeout` | Integer | challenge-response window (30 s) |
 | `firewall_expire_long_timeout` | Integer | default-deny TTL after a challenge is sent but not answered (24 h) |
-| `freeswitch_webhook_token` / `display_freeswitch_webhook_token` | Char | shared secret authenticating every FreeSWITCH → Odoo HTTP call (`/freeswitch/xml`, `/freeswitch/webhook/*`). Masked; admin-only; auto-generated (`secrets.token_urlsafe(32)`) by the field default, `post_init_hook` and the 19.0.1.10.2 migration (`ensure_webhook_token`). Paired with the container via the `FS_WEBHOOK_TOKEN` env var. See ADR-025 |
+| `freeswitch_webhook_token` / `display_freeswitch_webhook_token` | Char | shared secret authenticating every FreeSWITCH → Odoo HTTP call (`/freeswitch/xml`, `/freeswitch/webhook/*`). Masked; admin-only; auto-generated (`secrets.token_urlsafe(32)`) by the field default, `post_init_hook` and the 19.0.1.10.6 migration (`ensure_webhook_token`). Paired with the container via the `FS_WEBHOOK_TOKEN` env var. See ADR-025 |
 
 `write()` is extended to:
 * validate the Firewall Service Token and the FreeSWITCH Webhook Token

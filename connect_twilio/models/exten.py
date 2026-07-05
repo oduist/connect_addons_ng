@@ -35,4 +35,8 @@ class Exten(models.Model):
         params = dict(params or {})
         params['ExtenID'] = self.id
         params['ExtenNumber'] = self.number
-        return self.dst.render(request=request, params=params)
+        # Normalize request too: callers such as connect.settings.originate
+        # invoke exten.render() with no request, and the downstream
+        # connect.user / connect.callflow render() still default to {} and
+        # call request.get(...). Forwarding a bare None would crash them.
+        return self.dst.render(request=dict(request or {}), params=params)

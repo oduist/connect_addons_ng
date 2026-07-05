@@ -47,8 +47,13 @@ def check_fs_webhook_auth(token_from_path=None):
     if token_from_path:
         candidates.append(token_from_path)
 
+    # Compare as bytes: secrets.compare_digest raises TypeError on a str
+    # containing non-ASCII, which would turn an attacker-supplied non-ASCII
+    # token into a 500 instead of the uniform 401 on this open endpoint.
+    expected_b = expected.encode('utf-8', 'ignore')
     return any(
-        secrets.compare_digest(candidate, expected) for candidate in candidates
+        secrets.compare_digest(candidate.encode('utf-8', 'ignore'), expected_b)
+        for candidate in candidates
     )
 
 
