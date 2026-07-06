@@ -47,17 +47,17 @@ class FreeSwitchOutgoingRoute(models.Model):
         # system-wide default DID (is_default), else nothing — in which case
         # the directory's extension stands (ADR-027, issue #96).
         cid_num = ''
-        callerid = self.env['connect.outgoing_callerid']
+        callerid = self.env['connect.freeswitch.outgoing_callerid']
         connect_user_id = params.get('variable_odoo_connect_user_id')
         if connect_user_id:
             try:
                 user = self.env['connect.user'].sudo().browse(int(connect_user_id))
             except ValueError:
                 user = self.env['connect.user']
-            if user.exists() and user.outgoing_callerid:
-                callerid = user.outgoing_callerid
+            if user.exists() and user.freeswitch_outgoing_callerid:
+                callerid = user.freeswitch_outgoing_callerid
         if not callerid:
-            callerid = self.env['connect.outgoing_callerid'].sudo().search(
+            callerid = self.env['connect.freeswitch.outgoing_callerid'].sudo().search(
                 [('is_default', '=', True)], limit=1)
         if callerid:
             cid_num = callerid.number or ''

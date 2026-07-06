@@ -257,6 +257,16 @@ class Settings(models.Model):
         return res
 
     @api.model
+    def originate_call(self, number, res_model=None, res_id=None, user=None, **kwargs):
+        # Dispatch by the user's click-to-call provider; fall through to
+        # other installed telephony modules when it is not FreeSWITCH.
+        if self._get_originate_provider(user) != 'freeswitch':
+            return super().originate_call(
+                number, res_model=res_model, res_id=res_id, user=user, **kwargs)
+        return self.env['connect.call'].originate_call(
+            number, res_model=res_model, res_id=res_id)
+
+    @api.model
     def get_recording_webhook_url(self):
         """Recording upload base URL including the auth token path segment.
 
@@ -485,7 +495,7 @@ class Settings(models.Model):
             'login': connect_user._get_verto_login(),
             'password': password,
             'callerName': connect_user.name,
-            'callerNumber': connect_user.exten_number or user.login,
+            'callerNumber': connect_user.freeswitch_exten_number or user.login,
             'displayMode': connect_user.phone_display_mode or 'dropdown',
             'iceServers': ice_servers,
         }

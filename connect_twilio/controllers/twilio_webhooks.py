@@ -28,7 +28,7 @@ class ConnectTwilioController(Controller):
     def domain_webhook(self, **kw):
         if not self.check_signature(kw):
             return '<Response><Say>Invalid Twilio request!</Say></Response>'
-        domain = request.env['connect.domain'].with_user(request.env.ref("connect.user_connect_webhook"))
+        domain = request.env['connect.twilio.domain'].with_user(request.env.ref("connect.user_connect_webhook"))
         res = domain.route_call(kw)
         return f'{res}'
 
@@ -43,7 +43,7 @@ class ConnectTwilioController(Controller):
     def number_webhook(self, **kw):
         if not self.check_signature(kw):
             return '<Response><Say>Invalid Twilio request!</Say></Response>'
-        res = request.env['connect.number'].with_user(request.env.ref("connect.user_connect_webhook")).route_call(kw)
+        res = request.env['connect.twilio.number'].with_user(request.env.ref("connect.user_connect_webhook")).route_call(kw)
         return f'{res}'
 
     @route('/twilio/webhook/outgoing_callerid', methods=['POST'], type='http', auth='public', csrf=False)
@@ -51,7 +51,7 @@ class ConnectTwilioController(Controller):
         if not self.check_signature(kw):
             return False
         env = request.env
-        outgoing_callerid = env['connect.outgoing_callerid'].with_user(env.ref("connect.user_connect_webhook"))
+        outgoing_callerid = env['connect.twilio.outgoing_callerid'].with_user(env.ref("connect.user_connect_webhook"))
         res = outgoing_callerid.update_status(kw)
         return f'{res}'
 
@@ -59,7 +59,7 @@ class ConnectTwilioController(Controller):
     def gather_webhook(self, flow_id, **kw):
         if not self.check_signature(kw):
             return '<Response><Say>Invalid Twilio request!</Say></Response>'
-        callflow = request.env['connect.callflow'].with_user(request.env.ref("connect.user_connect_webhook"))
+        callflow = request.env['connect.twilio.callflow'].with_user(request.env.ref("connect.user_connect_webhook"))
         res = callflow.gather_action(flow_id, kw)
         return f'{res}'
 
@@ -71,10 +71,17 @@ class ConnectTwilioController(Controller):
         res = call.on_vm_recording_status(kw)
         return f'{res}'
 
+    # Old model names may still arrive from in-flight calls or stale voice
+    # URLs cached on the Twilio side after the provider-separation rename.
+    LEGACY_CALL_ACTION_MODELS = {
+        'connect.callflow': 'connect.twilio.callflow',
+    }
+
     @route('/twilio/webhook/<string:model_name>/call_action/<int:record_id>', methods=['POST'], type='http', auth='public', csrf=False)
     def call_action_edit_webhook(self, model_name, record_id, **kw):
         if not self.check_signature(kw):
             return '<Response><Say>Invalid Twilio request!</Say></Response>'
+        model_name = self.LEGACY_CALL_ACTION_MODELS.get(model_name, model_name)
         model = request.env[model_name].with_user(request.env.ref("connect.user_connect_webhook"))
         res = model.on_call_action(record_id, kw)
         return f'{res}'
@@ -99,7 +106,7 @@ class ConnectTwilioController(Controller):
     def twiml_webhook(self, twiml_id, **kw):
         if not self.check_signature(kw):
             return '<Response><Say>Invalid Twilio request!</Say></Response>'
-        twiml = request.env['connect.twiml'].with_user(request.env.ref("connect.user_connect_webhook"))
+        twiml = request.env['connect.twilio.twiml'].with_user(request.env.ref("connect.user_connect_webhook"))
         res = twiml.browse(twiml_id).render(kw)
         return f'{res}'
 

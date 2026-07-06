@@ -1,14 +1,15 @@
-from odoo import models, fields, api
+# -*- coding: utf-8 -*-
 import ast
+from odoo import models, fields, api
 from odoo.exceptions import ValidationError
 
 
-class ConnectMessageConfiguration(models.Model):
-    _name = 'connect.message_configuration'
+class MessageConfiguration(models.Model):
+    _name = 'connect.twilio.message_configuration'
     _description = 'Message Handling Configuration'
     _rec_name = 'id'
 
-    number = fields.Many2one('connect.number', required=True)
+    number = fields.Many2one('connect.twilio.number', required=True)
     destination = fields.Selection([
         ('res.partner', 'Partner'),
     ], required=True, default='res.partner', ondelete={'res.partner': 'set default'}, help='Destination model to create records from messages.')

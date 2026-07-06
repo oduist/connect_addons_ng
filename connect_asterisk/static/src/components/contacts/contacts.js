@@ -138,12 +138,14 @@ export class Contacts extends Component {
             self.orm.searchRead(
                 "connect.user",
                 [
-                    '|', ['exten_number', '=ilike', `%${self.searchQuery}%`],
+                    '|', ['asterisk_exten_number', '=ilike', `%${self.searchQuery}%`],
                     ['user', '=ilike', `%${self.searchQuery}%`]
                 ],
-                ['id', 'name', 'exten_number', 'user'],
-                {order: 'exten_number asc', limit: 10}
+                ['id', 'name', 'asterisk_exten_number', 'user'],
+                {order: 'asterisk_exten_number asc', limit: 10}
             ).then((records) => {
+                // Templates render user.exten_number; expose the provider field under the legacy key.
+                records.forEach((r) => { r.exten_number = r.asterisk_exten_number })
                 self.state.users = records
             })
         } else {

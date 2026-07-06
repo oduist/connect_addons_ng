@@ -1,41 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
-    <!-- Inherit core outgoing_callerid list to add status column -->
-    <record id="view_connect_outgoing_callerid_tree_twilio" model="ir.ui.view">
-        <field name="name">connect.outgoing_callerid.tree.twilio</field>
-        <field name="model">connect.outgoing_callerid</field>
-        <field name="inherit_id" ref="connect.view_connect_outgoing_callerid_tree"/>
+    <record id="view_twilio_outgoing_callerid_tree" model="ir.ui.view">
+        <field name="name">connect.twilio.outgoing_callerid.tree</field>
+        <field name="model">connect.twilio.outgoing_callerid</field>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='callerid_type']" position="before">
+            <list>
+                <field name="number"/>
+                <field name="friendly_name"/>
                 <field name="status"/>
-            </xpath>
+                <field name="callerid_type"/>
+                <field name="is_default"/>
+            </list>
         </field>
     </record>
 
-    <!-- Inherit core outgoing_callerid form to add Twilio validation -->
-    <record id="view_connect_outgoing_callerid_form_twilio" model="ir.ui.view">
-        <field name="name">connect.outgoing_callerid.form.twilio</field>
-        <field name="model">connect.outgoing_callerid</field>
-        <field name="inherit_id" ref="connect.view_connect_outgoing_callerid_form"/>
+    <record id="view_twilio_outgoing_callerid_form" model="ir.ui.view">
+        <field name="name">connect.twilio.outgoing_callerid.form</field>
+        <field name="model">connect.twilio.outgoing_callerid</field>
         <field name="arch" type="xml">
-            <!-- Add validate button before sheet -->
-            <xpath expr="//form/sheet" position="before">
+            <form>
                 <header>
                     <button name="validate" string="Validate" type="object" class="btn-primary"
                         invisible="callerid_type != 'outgoing_callerid' or status == 'validated'"/>
                 </header>
-            </xpath>
-
-            <!-- Add status and validation_code fields -->
-            <xpath expr="//field[@name='is_default']" position="before">
-                <field name="status" readonly="1"/>
-            </xpath>
-            <xpath expr="//field[@name='is_default']" position="after">
-                <field name="validation_code"
-                       invisible="callerid_type != 'outgoing_callerid' or status == 'validated'"/>
-            </xpath>
+                <sheet>
+                    <group>
+                        <group string="Caller ID">
+                            <field name="number"/>
+                            <field name="friendly_name"/>
+                            <field name="callerid_type"/>
+                            <field name="status" readonly="1"/>
+                            <field name="is_default"/>
+                            <field name="validation_code"
+                                   invisible="callerid_type != 'outgoing_callerid' or status == 'validated'"/>
+                        </group>
+                        <group string="Users">
+                            <field name="callerid_users" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
         </field>
     </record>
 
+    <record id="action_twilio_callerid" model="ir.actions.act_window">
+        <field name="name">Outgoing Caller IDs</field>
+        <field name="res_model">connect.twilio.outgoing_callerid</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_twilio_callerids"
+              name="Outgoing Caller IDs"
+              parent="menu_connect_twilio"
+              action="action_twilio_callerid"
+              sequence="40"/>
 </odoo>

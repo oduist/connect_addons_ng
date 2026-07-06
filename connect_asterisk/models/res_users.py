@@ -23,7 +23,7 @@ class ResUsers(models.Model):
             [('user', '=', user_id), ('active', '=', True)], limit=1)
         if not connect_user:
             return False
-        endpoint = connect_user.endpoint_ids.sudo().filtered(
+        endpoint = connect_user.asterisk_endpoint_ids.sudo().filtered(
             lambda e: e.asterisk_sip_transport == 'webrtc'
             and e.asterisk_sip_user and e.asterisk_sip_password)[:1]
         if not endpoint:

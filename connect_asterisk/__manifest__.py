@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Asterisk',
-    'version': '19.0.1.0.0',
+    'version': '19.0.2.0.0',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Asterisk integration for Oduist Connect',
@@ -8,8 +8,10 @@
     'data': [
         'security/access_rules.xml',
         'data/ast_templates.xml',
+        'views/menu.xml',
         'views/ast_template_views.xml',
         'views/endpoint_views.xml',
+        'views/number_views.xml',
         'views/user_views.xml',
         'views/channel_views.xml',
         'views/settings.xml',
@@ -26,6 +28,6 @@
     },
     'post_init_hook': 'post_init_hook',
     'installable': True,
-    'application': False,
+    'application': True,
     'license': 'Other proprietary',
 }

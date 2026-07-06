@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Top-level Asterisk application menu -->
+    <menuitem id="menu_asterisk_root"
+              name="Asterisk"
+              sequence="40"
+              web_icon="connect_asterisk,static/description/icon.png"/>
+
+    <menuitem id="menu_asterisk_config"
+              name="Configuration"
+              parent="menu_asterisk_root"
+              groups="connect.group_admin"
+              sequence="100"/>
+</odoo>

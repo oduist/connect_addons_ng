@@ -129,7 +129,7 @@ class Channel(models.Model):
             self.env['connect.call'].process_call_event(channel)
             return channel.id
 
-        endpoint = self.env['connect.endpoint'].get_endpoint_by_channel(
+        endpoint = self.env['connect.asterisk.endpoint'].get_endpoint_by_channel(
             channel_name)
         connect_user = endpoint.connect_user_id if endpoint else None
         params = {
@@ -146,7 +146,7 @@ class Channel(models.Model):
             params['parent_sid'] = linkedid
             if connect_user:
                 params['called_pbx_user_id'] = connect_user.id
-                params['called'] = (connect_user.exten_number
+                params['called'] = (connect_user.asterisk_exten_number
                                     or endpoint.asterisk_sip_user
                                     or params['called'])
         else:

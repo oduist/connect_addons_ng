@@ -187,7 +187,7 @@ class Settings(models.Model):
         for rec in self:
             rec.name = "General Settings"
 
-    def open_settings_form(self):
+    def open_settings_form(self, view_xmlid="connect.connect_settings_form", name="General Settings"):
         rec = self.search([])
         if not rec:
             rec = self.sudo().with_context(no_constrains=True).create({})
@@ -197,11 +197,42 @@ class Settings(models.Model):
             "type": "ir.actions.act_window",
             "res_model": "connect.settings",
             "res_id": rec.id,
-            "name": "General Settings",
+            "name": name,
             "view_mode": "form",
-            "view_id": self.env.ref("connect.connect_settings_form").id,
+            "view_id": self.env.ref(view_xmlid).id,
             "target": "current",
         }
+
+    @api.model
+    def originate_call(self, number, res_model=None, res_id=None, user=None, **kwargs):
+        """Dispatch click-to-call to the telephony provider chosen on the
+        connect.user (originate_provider). With a single provider module
+        installed the choice is implicit. Provider modules override this
+        method: handle the call when _originate_provider_key() matches,
+        otherwise fall through to super().
+        """
+        raise UserError(
+            'No telephony module can handle this call. Install a telephony '
+            'module (Twilio, FreeSWITCH, Asterisk) and select a click-to-call '
+            'provider on the Connect user.')
+
+    @api.model
+    def _get_originate_provider(self, user=None):
+        """Resolve the provider key used to originate calls for the user."""
+        odoo_user = user or self.env.user
+        connect_user = self.env['connect.user'].sudo().search(
+            [('user', '=', odoo_user.id)], limit=1)
+        provider = connect_user.originate_provider
+        if provider:
+            return provider
+        options = self.env['connect.user']._fields['originate_provider'].get_values(self.env)
+        if len(options) == 1:
+            return options[0]
+        if not options:
+            raise UserError('No telephony module is installed.')
+        raise UserError(
+            'Several telephony modules are installed. Select a click-to-call '
+            'provider on the Connect user (Connect > Users).')
 
     @api.model
     def get_param(self, param, default=False):

@@ -56,7 +56,7 @@ class Channel(models.Model):
                 user_or_number = re_number_domain.search(callinfo).group(2)
                 user = self.env['connect.user'].get_user_by_uri(callinfo)
                 if user:
-                    return user.exten.number
+                    return user.get_pbx_number() or user_or_number
                 else:
                     return user_or_number
             elif re_client_number.search(callinfo):

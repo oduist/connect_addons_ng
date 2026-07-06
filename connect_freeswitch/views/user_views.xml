@@ -5,13 +5,21 @@
         <field name="model">connect.user</field>
         <field name="inherit_id" ref="connect.view_connect_user_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="create_freeswitch_extension" type="object"
+                        string="FreeSWITCH Extension" class="btn btn-primary"/>
+            </xpath>
             <div class="oe_button_box" position="inside">
-                <button name="%(connect.action_connect_endpoint)d" type="action"
+                <button name="%(connect_freeswitch.action_freeswitch_endpoint)d" type="action"
                         class="oe_stat_button" icon="fa-headphones"
                         context="{'default_connect_user_id': id, 'search_default_connect_user_id': id}">
-                    <field name="endpoint_count" widget="statinfo" string="Endpoints"/>
+                    <field name="freeswitch_endpoint_count" widget="statinfo" string="Endpoints"/>
                 </button>
             </div>
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="freeswitch_exten" readonly="1"/>
+                <field name="freeswitch_outgoing_callerid"/>
+            </xpath>
             <notebook position="inside">
                 <page name="webrtc" string="WebRTC">
                     <group>
@@ -25,7 +33,7 @@
                     </group>
                 </page>
                 <page name="endpoints" string="Endpoints">
-                    <field name="endpoint_ids">
+                    <field name="freeswitch_endpoint_ids">
                         <list editable="bottom">
                             <field name="name"/>
                             <field name="auth_user"/>

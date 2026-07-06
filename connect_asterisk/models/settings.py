@@ -311,7 +311,7 @@ class Settings(models.Model):
         self.write({"asterisk_core_status": status})
 
     @api.model
-    def originate_call(self, number, res_model=None, res_id=None, user=None):
+    def originate_call(self, number, res_model=None, res_id=None, user=None, **kwargs):
         """Originate a call from the current user to the number (click-to-call).
 
         Pre-creates the first call leg with technical_direction
@@ -319,6 +319,11 @@ class Settings(models.Model):
         ChannelId) update it instead of creating a duplicate, then asks
         the agent to issue an AMI Originate per enabled endpoint.
         """
+        # Dispatch by the user's click-to-call provider; fall through to
+        # other installed telephony modules when it is not Asterisk.
+        if self._get_originate_provider(user) != 'asterisk':
+            return super().originate_call(
+                number, res_model=res_model, res_id=res_id, user=user, **kwargs)
         self.env["oduist.license"].check_license("connect", silent=False)
         number = strip_number(number)
         if not number:
@@ -328,7 +333,7 @@ class Settings(models.Model):
             [("user", "=", user.id)], limit=1)
         if not connect_user:
             raise ValidationError("PBX user is not defined!")
-        endpoints = connect_user.endpoint_ids.filtered(
+        endpoints = connect_user.asterisk_endpoint_ids.filtered(
             lambda e: e.asterisk_originate_enabled and e.asterisk_channel)
         if not endpoints:
             raise ValidationError(
@@ -349,7 +354,7 @@ class Settings(models.Model):
             other_channel_id = str(uuid.uuid4())
             channel = Channel.process_channel_event({
                 "sid": channel_id,
-                "caller": connect_user.exten_number or endpoint.asterisk_sip_user,
+                "caller": connect_user.asterisk_exten_number or endpoint.asterisk_sip_user,
                 "called": number,
                 "technical_direction": "outbound-api",
                 "status": "queued",
@@ -384,7 +389,7 @@ class Settings(models.Model):
                         "Message", message)
                 channel = Channel.sudo().process_channel_event({
                     "sid": channel_id,
-                    "caller": connect_user.exten_number or
+                    "caller": connect_user.asterisk_exten_number or
                               endpoint.asterisk_sip_user,
                     "called": number,
                     "technical_direction": "outbound-api",

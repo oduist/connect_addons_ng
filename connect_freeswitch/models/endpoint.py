@@ -21,8 +21,14 @@ AUTO_ANSWER_HEADERS = [
 
 
 class ConnectEndpoint(models.Model):
-    _inherit = 'connect.endpoint'
+    _name = 'connect.freeswitch.endpoint'
+    _description = 'FreeSWITCH Endpoint'
 
+    name = fields.Char(string='Name', required=True)
+    connect_user_id = fields.Many2one('connect.user', string='Connect User', ondelete='cascade')
+    exten = fields.Many2one('connect.freeswitch.exten', ondelete='set null', readonly=True)
+    exten_number = fields.Char(related='exten.number', store=True)
+    active = fields.Boolean(default=True)
     auth_user = fields.Char(string='Auth User')
     auth_password = fields.Char(
         string='Auth Password',
@@ -37,6 +43,10 @@ class ConnectEndpoint(models.Model):
         selection=AUTO_ANSWER_HEADERS,
         string='Auto-Answer Header',
         help='SIP header sent to auto-answer the phone during click-to-call originate.')
+
+    def create_extension(self):
+        self.ensure_one()
+        return self.env['connect.freeswitch.exten'].create_extension(self, self._name)
 
     def generate_dialplan(self, params, exten=None):
         """Generate FreeSWITCH dialplan to bridge to this standalone endpoint."""

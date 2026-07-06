@@ -5,6 +5,9 @@
         <field name="model">connect.user</field>
         <field name="inherit_id" ref="connect.view_connect_user_form"/>
         <field name="arch" type="xml">
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="asterisk_exten_number"/>
+            </xpath>
             <notebook position="inside">
                 <page name="asterisk" string="Asterisk">
                     <group>
@@ -25,7 +28,7 @@
                     </group>
                 </page>
                 <page name="asterisk_endpoints" string="Asterisk Endpoints">
-                    <field name="endpoint_ids">
+                    <field name="asterisk_endpoint_ids">
                         <list editable="bottom">
                             <field name="name"/>
                             <field name="asterisk_channel"/>

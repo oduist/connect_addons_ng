@@ -60,9 +60,9 @@
 
     <menuitem id="menu_freeswitch_template"
               name="XML Templates"
-              parent="connect.menu_connect_pbx"
+              parent="menu_freeswitch_config"
               action="action_freeswitch_template"
-              sequence="80"
+              sequence="30"
               groups="connect.group_admin"/>
 
 </odoo>

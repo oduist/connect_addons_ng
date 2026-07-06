@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_connect_number_tree" model="ir.ui.view">
-        <field name="name">connect.number.tree</field>
-        <field name="model">connect.number</field>
+    <record id="view_freeswitch_number_tree" model="ir.ui.view">
+        <field name="name">connect.freeswitch.number.tree</field>
+        <field name="model">connect.freeswitch.number</field>
         <field name="arch" type="xml">
             <list>
                 <field name="phone_number"/>
@@ -10,13 +10,14 @@
                 <field name="destination"/>
                 <field name="user"/>
                 <field name="callflow"/>
+                <field name="fs_fifo_id" optional="hide"/>
             </list>
         </field>
     </record>
 
-    <record id="view_connect_number_form" model="ir.ui.view">
-        <field name="name">connect.number.form</field>
-        <field name="model">connect.number</field>
+    <record id="view_freeswitch_number_form" model="ir.ui.view">
+        <field name="name">connect.freeswitch.number.form</field>
+        <field name="model">connect.freeswitch.number</field>
         <field name="arch" type="xml">
             <form>
                 <sheet>
@@ -30,6 +31,9 @@
                             <field name="destination"/>
                             <field name="user" invisible="destination != 'user'"/>
                             <field name="callflow" invisible="destination != 'callflow'"/>
+                            <field name="fs_fifo_id"
+                                   invisible="destination != 'fs_fifo'"
+                                   required="destination == 'fs_fifo'"/>
                         </group>
                     </group>
                 </sheet>
@@ -37,15 +41,15 @@
         </field>
     </record>
 
-    <record id="action_connect_number" model="ir.actions.act_window">
+    <record id="action_freeswitch_number" model="ir.actions.act_window">
         <field name="name">Numbers</field>
-        <field name="res_model">connect.number</field>
+        <field name="res_model">connect.freeswitch.number</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_connect_numbers"
+    <menuitem id="menu_freeswitch_numbers"
               name="Numbers"
-              parent="menu_connect_pbx"
-              action="action_connect_number"
-              sequence="20"/>
+              parent="menu_freeswitch_root"
+              action="action_freeswitch_number"
+              sequence="10"/>
 </odoo>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Top-level FreeSWITCH application menu -->
+    <menuitem id="menu_freeswitch_root"
+              name="FreeSWITCH"
+              sequence="30"
+              web_icon="connect_freeswitch,static/description/icon.png"/>
+
+    <menuitem id="menu_freeswitch_config"
+              name="Configuration"
+              parent="menu_freeswitch_root"
+              groups="connect.group_admin"
+              sequence="100"/>
+</odoo>
