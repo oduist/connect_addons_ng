@@ -140,7 +140,9 @@ class Settings(models.Model):
                     profile.id, webhook_url=webhook_url)
                 return profile.id
         profile = client.messaging_profiles.create(
-            name='Odoo Connect', webhook_url=webhook_url)
+            name='Odoo Connect',
+            webhook_url=webhook_url,
+            whitelisted_destinations=['*'])
         self.sudo().set_param('telnyx_messaging_profile_id', profile.data.id)
         return profile.data.id
 
@@ -230,8 +232,11 @@ class Settings(models.Model):
             )
         record = connect_user.record_calls
         record_status_url = urljoin(api_url, "telnyx/webhook/recordingstatus")
+        texml_url = urljoin(api_url, "telnyx/webhook/callaction")
         debug(self, 'Originate destination TeXML: {}'.format(texml))
         call_kwargs = {
+            'url': texml_url,
+            'url_method': 'POST',
             'texml': str(texml),
             'to': to,
             'from_': callerId,
@@ -246,23 +251,26 @@ class Settings(models.Model):
                 'recording_status_callback_event': 'completed',
             })
         channel = client.texml.accounts.calls.calls(account_sid, **call_kwargs)
-        # The SDK types the TeXML originate response narrowly, but the
-        # Twilio-compatible payload carries the call `sid` as an extra field.
         channel_sid = getattr(channel, 'sid', None)
-        if not channel_sid:
-            raise ValidationError(
-                'Telnyx originate response has no call SID: {}'.format(channel))
-        self.env["connect.channel"].sudo().create(
-            {
-                "sid": channel_sid,
-                "technical_direction": "outbound-api",
-                "caller_user": user.id,
-                "caller_pbx_user": connect_user.id,
-                "partner": partner_id,
-                "called": number,
-                "caller": callerId,
-            }
-        )
+        if channel_sid:
+            self.env["connect.channel"].sudo().create(
+                {
+                    "sid": channel_sid,
+                    "technical_direction": "outbound-api",
+                    "caller_user": user.id,
+                    "caller_pbx_user": connect_user.id,
+                    "partner": partner_id,
+                    "called": number,
+                    "caller": callerId,
+                }
+            )
+        else:
+            debug(
+                self,
+                'Telnyx originate response has no call SID; status callbacks '
+                'will create the channel record.',
+                level='warning',
+            )
 
     def get_telnyx_balance(self):
         """Fetch current Telnyx account balance"""

@@ -124,7 +124,7 @@ class User(models.Model):
             self, 'connect.user', current_exten=self.telnyx_exten)
 
     @api.model
-    def get_user_by_telnyx_uri(self, userinfo):
+    def get_user_by_uri(self, userinfo):
         """Lookup connect.user by SIP URI using the Telnyx credential
         usernames (both hardphone and web client)."""
         if not userinfo:
@@ -141,6 +141,9 @@ class User(models.Model):
                 debug(self, 'Found user: {} by {}.'.format(user.name, userinfo))
             return user
         return self.env['connect.user']
+
+    def get_user_by_telnyx_uri(self, userinfo):
+        return self.get_user_by_uri(userinfo)
 
     def _get_telnyx_uri(self):
         for rec in self:
