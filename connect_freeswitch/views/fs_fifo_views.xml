@@ -53,7 +53,7 @@
                             <field name="member_user_ids">
                                 <list>
                                     <field name="name"/>
-                                    <field name="exten_number"/>
+                                    <field name="freeswitch_exten_number"/>
                                 </list>
                             </field>
                         </page>
