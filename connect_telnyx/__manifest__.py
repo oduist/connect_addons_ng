@@ -6,7 +6,7 @@
     'summary': 'Telnyx integration for Oduist Connect',
     'depends': ['connect'],
     'external_dependencies': {
-        'python': ['telnyx', 'nacl'],
+        'python': ['telnyx', 'pynacl'],
     },
     'data': [
         'security/access_rules.xml',
