@@ -214,7 +214,30 @@ def migrate(cr, version):
               FROM connect_freeswitch_exten e
              WHERE t.exten = e.id
             """)
+
+    # 6. Restore the fifo links stashed by the pre-migration (the values
+    # were NULLed so Odoo could re-point the FKs at the then-empty new
+    # tables during registry init).
     if _table_exists(cr, 'connect_fs_fifo'):
+        for column, stash in (
+                ('exten', '_mig_exten'),
+                ('fallback_exten_id', '_mig_fallback_exten_id')):
+            cr.execute(
+                """
+                SELECT 1 FROM information_schema.columns
+                 WHERE table_name = 'connect_fs_fifo' AND column_name = %s
+                """, (stash,))
+            if not cr.fetchone():
+                continue
+            cr.execute(
+                f"""
+                UPDATE connect_fs_fifo
+                   SET "{column}" = "{stash}"
+                 WHERE "{stash}" IS NOT NULL
+                   AND EXISTS (SELECT 1 FROM connect_freeswitch_exten e
+                                WHERE e.id = "{stash}")
+                """)
+            cr.execute(f'ALTER TABLE connect_fs_fifo DROP COLUMN "{stash}"')
         cr.execute(
             """
             UPDATE connect_fs_fifo t
@@ -222,8 +245,21 @@ def migrate(cr, version):
               FROM connect_freeswitch_exten e
              WHERE t.exten = e.id
             """)
+    if _table_exists(cr, '_fs_fifo_endpoint_rel_legacy'):
+        cr.execute(
+            """
+            INSERT INTO fs_fifo_endpoint_rel (fifo_id, endpoint_id)
+            SELECT s.fifo_id, s.endpoint_id
+              FROM _fs_fifo_endpoint_rel_legacy s
+             WHERE EXISTS (SELECT 1 FROM connect_freeswitch_endpoint e
+                            WHERE e.id = s.endpoint_id)
+            ON CONFLICT DO NOTHING
+            """)
+        cr.execute('DROP TABLE _fs_fifo_endpoint_rel_legacy')
+        _logger.info("restored fs_fifo_endpoint_rel rows")
 
-    # 6. Repair FKs of surviving tables that still point at legacy tables.
+    # 7. Repair FKs of surviving tables that still point at legacy tables
+    # (fallback in case registry init did not re-add them).
     _fix_fk(cr, 'connect_fs_fifo', 'exten', 'connect_freeswitch_exten')
     _fix_fk(cr, 'connect_fs_fifo', 'fallback_exten_id', 'connect_freeswitch_exten')
     _fix_fk(cr, 'fs_fifo_endpoint_rel', 'endpoint_id',
