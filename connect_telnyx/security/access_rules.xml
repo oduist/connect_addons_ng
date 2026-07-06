@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- connect.telnyx.texml access rules -->
+    <record id="access_connect_telnyx_texml_admin" model="ir.model.access">
+        <field name="name">connect.telnyx.texml admin</field>
+        <field name="model_id" ref="model_connect_telnyx_texml"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_telnyx_texml_user" model="ir.model.access">
+        <field name="name">connect.telnyx.texml user</field>
+        <field name="model_id" ref="model_connect_telnyx_texml"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_telnyx_texml_webhook" model="ir.model.access">
+        <field name="name">connect.telnyx.texml webhook</field>
+        <field name="model_id" ref="model_connect_telnyx_texml"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.telnyx.domain access rules -->
+    <record id="access_connect_telnyx_domain_admin" model="ir.model.access">
+        <field name="name">connect.telnyx.domain admin</field>
+        <field name="model_id" ref="model_connect_telnyx_domain"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_telnyx_domain_user" model="ir.model.access">
+        <field name="name">connect.telnyx.domain user</field>
+        <field name="model_id" ref="model_connect_telnyx_domain"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_telnyx_domain_webhook" model="ir.model.access">
+        <field name="name">connect.telnyx.domain webhook</field>
+        <field name="model_id" ref="model_connect_telnyx_domain"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.telnyx.exten access rules -->
+    <record id="access_connect_telnyx_exten_admin" model="ir.model.access">
+        <field name="name">connect.telnyx.exten admin</field>
+        <field name="model_id" ref="model_connect_telnyx_exten"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_telnyx_exten_user" model="ir.model.access">
+        <field name="name">connect.telnyx.exten user</field>
+        <field name="model_id" ref="model_connect_telnyx_exten"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_telnyx_exten_webhook" model="ir.model.access">
+        <field name="name">connect.telnyx.exten webhook</field>
+        <field name="model_id" ref="model_connect_telnyx_exten"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.telnyx.callflow access rules -->
+    <record id="access_connect_telnyx_callflow_admin" model="ir.model.access">
+        <field name="name">connect.telnyx.callflow admin</field>
+        <field name="model_id" ref="model_connect_telnyx_callflow"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_telnyx_callflow_user" model="ir.model.access">
+        <field name="name">connect.telnyx.callflow user</field>
+        <field name="model_id" ref="model_connect_telnyx_callflow"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_telnyx_callflow_webhook" model="ir.model.access">
+        <field name="name">connect.telnyx.callflow webhook</field>
+        <field name="model_id" ref="model_connect_telnyx_callflow"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.telnyx.callflow_choice access rules -->
+    <record id="access_connect_telnyx_callflow_choice_admin" model="ir.model.access">
+        <field name="name">connect.telnyx.callflow_choice admin</field>
+        <field name="model_id" ref="model_connect_telnyx_callflow_choice"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_telnyx_callflow_choice_user" model="ir.model.access">
+        <field name="name">connect.telnyx.callflow_choice user</field>
+        <field name="model_id" ref="model_connect_telnyx_callflow_choice"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_telnyx_callflow_choice_webhook" model="ir.model.access">
+        <field name="name">connect.telnyx.callflow_choice webhook</field>
+        <field name="model_id" ref="model_connect_telnyx_callflow_choice"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.telnyx.number access rules -->
+    <record id="access_connect_telnyx_number_admin" model="ir.model.access">
+        <field name="name">connect.telnyx.number admin</field>
+        <field name="model_id" ref="model_connect_telnyx_number"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_telnyx_number_user" model="ir.model.access">
+        <field name="name">connect.telnyx.number user</field>
+        <field name="model_id" ref="model_connect_telnyx_number"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_telnyx_number_webhook" model="ir.model.access">
+        <field name="name">connect.telnyx.number webhook</field>
+        <field name="model_id" ref="model_connect_telnyx_number"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.telnyx.outgoing_callerid access rules -->
+    <record id="access_connect_telnyx_outgoing_callerid_admin" model="ir.model.access">
+        <field name="name">connect.telnyx.outgoing_callerid admin</field>
+        <field name="model_id" ref="model_connect_telnyx_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_telnyx_outgoing_callerid_user" model="ir.model.access">
+        <field name="name">connect.telnyx.outgoing_callerid user</field>
+        <field name="model_id" ref="model_connect_telnyx_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_telnyx_outgoing_callerid_webhook" model="ir.model.access">
+        <field name="name">connect.telnyx.outgoing_callerid webhook</field>
+        <field name="model_id" ref="model_connect_telnyx_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.telnyx.user_callflow access rules -->
+    <record id="access_connect_telnyx_user_callflow_admin" model="ir.model.access">
+        <field name="name">connect.telnyx.user_callflow admin</field>
+        <field name="model_id" ref="model_connect_telnyx_user_callflow"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_telnyx_user_callflow_user" model="ir.model.access">
+        <field name="name">connect.telnyx.user_callflow user</field>
+        <field name="model_id" ref="model_connect_telnyx_user_callflow"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.telnyx.user_callflow_call access rules -->
+    <record id="access_connect_telnyx_user_callflow_call_admin" model="ir.model.access">
+        <field name="name">connect.telnyx.user_callflow_call admin</field>
+        <field name="model_id" ref="model_connect_telnyx_user_callflow_call"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_telnyx_user_callflow_call_user" model="ir.model.access">
+        <field name="name">connect.telnyx.user_callflow_call user</field>
+        <field name="model_id" ref="model_connect_telnyx_user_callflow_call"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.telnyx.message_configuration access rules -->
+    <record id="access_connect_telnyx_message_configuration_admin" model="ir.model.access">
+        <field name="name">connect.telnyx.message_configuration admin</field>
+        <field name="model_id" ref="model_connect_telnyx_message_configuration"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- sms.composer access (for our override) -->
+    <record id="access_sms_composer_user" model="ir.model.access">
+        <field name="name">sms.composer connect user</field>
+        <field name="model_id" ref="sms.model_sms_composer"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+</odoo>

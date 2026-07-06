@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_call_form_telnyx" model="ir.ui.view">
+        <field name="name">connect.call.form.telnyx</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.view_connect_call_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='channels']" position="after">
+                <page name="telnyx" string="Telnyx">
+                    <group>
+                        <field name="telnyx_call_sid"/>
+                        <field name="telnyx_price"/>
+                        <field name="telnyx_price_unit"/>
+                        <field name="telnyx_is_price_fetched"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

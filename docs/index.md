@@ -12,13 +12,14 @@ Connect consists of a core module plus provider integrations:
 | **connect_twilio** | Twilio integration. Owns its numbers, extensions, call flows and caller IDs; adds Twilio Voice SDK phone widget, SIP domains, WhatsApp, TwiML apps. |
 | **connect_freeswitch** | FreeSWITCH integration. Owns its numbers, extensions, call flows, endpoints and caller IDs; adds Verto WebRTC client, XML dialplan generation, SIP gateways. |
 | **connect_asterisk** | Asterisk integration for existing PBXs. Owns its endpoints and DID mappings; adds JsSIP web phone and AMI event pipeline via a sidecar agent. |
+| **connect_telnyx** | Telnyx integration. Owns its numbers, extensions, call flows and caller IDs; adds Telnyx WebRTC phone widget, SIP domains (credential connections), TeXML apps, SMS. |
 
-Install the **connect** core module plus the integration module(s) matching your telephony provider — several providers can coexist in one database. Each integration adds its own submenu (**Twilio**, **FreeSWITCH**, **Asterisk**) inside the **Connect** app, after **Calls** and in installation order.
+Install the **connect** core module plus the integration module(s) matching your telephony provider — several providers can coexist in one database. Each integration adds its own submenu (**Twilio**, **FreeSWITCH**, **Asterisk**, **Telnyx**) inside the **Connect** app, after **Calls** and in installation order.
 
 ## Key Features
 
 - **Calls** — Incoming, outgoing, and internal calls with full history and partner linking
-- **Phone Widget** — Browser-based phone (Twilio Voice SDK, FreeSWITCH Verto WebRTC, or Asterisk JsSIP)
+- **Phone Widget** — Browser-based phone (Twilio Voice SDK, FreeSWITCH Verto WebRTC, Asterisk JsSIP, or Telnyx WebRTC)
 - **IVR / Call Flows** — Multi-level interactive voice response with DTMF and speech input
 - **Call Recording** — Automatic or per-user recording with in-browser playback
 - **AI Transcription** — OpenAI Whisper speech-to-text and GPT-4o call summaries
