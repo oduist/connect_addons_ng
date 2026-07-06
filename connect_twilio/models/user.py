@@ -103,10 +103,21 @@ class User(models.Model):
     domain = fields.Many2one(
         'connect.twilio.domain',
         ondelete='cascade',
-        default=lambda x: x.env['connect.twilio.domain'].search(
-            [('subdomain', 'not like', 'byoc')], limit=1
-        ),
+        default=lambda self: self._default_twilio_domain(),
     )
+
+    @api.model
+    def _default_twilio_domain(self):
+        # During module installation on a database with existing
+        # connect.user rows the new column is initialized before the
+        # domain table exists — return no default in that case.
+        self.env.cr.execute(
+            "SELECT 1 FROM information_schema.tables"
+            " WHERE table_name = 'connect_twilio_domain'")
+        if not self.env.cr.fetchone():
+            return False
+        return self.env['connect.twilio.domain'].search(
+            [('subdomain', 'not like', 'byoc')], limit=1)
     sip_enabled = fields.Boolean('SIP Phone Enabled')
     sip_priority = fields.Selection(
         [('1', '1'), ('2', '2')], required=True, default='2'
