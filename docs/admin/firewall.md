@@ -133,7 +133,7 @@ A ready preset for `oduflow` lives at
 1. Install or upgrade `connect_freeswitch` — `post_init_hook` (or the
    per-version migration on upgrade) generates an initial **Firewall
    Service Token** and creates the agent singleton.
-2. Open **Configuration → General Settings → Firewall** as an admin:
+2. Open **Connect → FreeSWITCH → Configuration → Settings**, page **Firewall**, as an admin:
    * Toggle **Firewall Enabled** on.
    * Set **Firewall Service URL** to where Traefik (or whichever
      reverse-proxy you use) reaches the service container.
@@ -145,11 +145,11 @@ A ready preset for `oduflow` lives at
      picks up the new token.
    * Adjust port lists and timeouts if you need to deviate from the
      defaults.
-3. Connect → PBX → Firewall → **Whitelist**: add your trunk providers,
+3. Connect → FreeSWITCH → Firewall → **Whitelist**: add your trunk providers,
    office NAT exits, anything you don't want auto-banned. Save —
    `connect.firewall.agent._trigger_sync()` will POST to
    `/firewall/sync` immediately.
-4. Connect → PBX → Firewall → **Agent Status**: should show the agent
+4. Connect → FreeSWITCH → Firewall → **Agent Status**: should show the agent
    as *online* within one heartbeat interval (default 60 s).
 
 ## Daily operations
@@ -158,13 +158,13 @@ A ready preset for `oduflow` lives at
   the service's dashboard:
   `https://<your-host>/firewall/` (basic-auth with `DASHBOARD_USER` /
   `DASHBOARD_PASSWORD`). Each row has an Unban button.
-* **From Odoo** — open `Connect → PBX → Firewall → Events`. Every row
+* **From Odoo** — open `Connect → FreeSWITCH → Firewall → Events`. Every row
   with **Event Type = Automatic Ban** gets a small unlock-icon
   button. Clicking it calls back into the service to remove the IP
   from `connect_fw_banned` and writes a `manual_unban_applied`
   audit record. The button hides itself as soon as the IP is no
   longer banned.
-* **Permanent block** — `Connect → PBX → Firewall → Blacklist`, add an
+* **Permanent block** — `Connect → FreeSWITCH → Firewall → Blacklist`, add an
   IP or CIDR. Useful for blocking entire VPS-provider subnets.
 
 ## Settings reference

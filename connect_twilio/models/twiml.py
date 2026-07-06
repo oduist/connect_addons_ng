@@ -24,7 +24,7 @@ def pretty_xml(content):
 
 
 class TwiML(models.Model):
-    _name = 'connect.twiml'
+    _name = 'connect.twilio.twiml'
     _description = 'TwiML app'
     _order = 'name'
 
@@ -47,7 +47,7 @@ class TwiML(models.Model):
     voice_url = fields.Char(compute='_get_twilio_urls', compute_sudo=True)
     voice_fallback_url = fields.Char(compute='_get_twilio_urls', compute_sudo=True)
     voice_status_url = fields.Char(compute='_get_twilio_urls', compute_sudo=True)
-    exten = fields.Many2one('connect.exten', ondelete='set null', readonly=True)
+    exten = fields.Many2one('connect.twilio.exten', ondelete='set null', readonly=True)
     exten_number = fields.Char(related='exten.number')
 
     def _find_twilio_app_by_old_sid(self, client):
@@ -247,7 +247,7 @@ class TwiML(models.Model):
 
     def create_extension(self):
         self.ensure_one()
-        return self.env['connect.exten'].create_extension(self, 'twiml')
+        return self.env['connect.twilio.exten'].create_extension(self, self._name)
 
     @api.onchange('code_type')
     def _set_default_twipy_code(self):

@@ -3,6 +3,7 @@ import logging
 import re
 import secrets
 import socket
+import ssl
 import xml.etree.ElementTree as ET
 import xmlrpc.client
 
@@ -17,6 +18,12 @@ if "display_firewall_service_token" not in PROTECTED_FIELDS:
     PROTECTED_FIELDS.append("display_firewall_service_token")
 if "display_freeswitch_webhook_token" not in PROTECTED_FIELDS:
     PROTECTED_FIELDS.append("display_freeswitch_webhook_token")
+
+# Same masking for the mod_xml_rpc password: the stored field is admin-only, and
+# the displayed field is masked back to **** so the secret never reaches the
+# browser or a non-admin get_param() over RPC.
+if "display_freeswitch_xmlrpc_password" not in PROTECTED_FIELDS:
+    PROTECTED_FIELDS.append("display_freeswitch_xmlrpc_password")
 
 logger = logging.getLogger(__name__)
 
@@ -78,20 +85,36 @@ class Settings(models.Model):
     )
     freeswitch_xmlrpc_host = fields.Char(
         string="XML-RPC Host",
-        help="FreeSWITCH XML-RPC host (e.g. fs.example.com)",
+        help="Public host of the Traefik TLS endpoint that fronts FreeSWITCH "
+             "mod_xml_rpc (e.g. fs.example.com). Odoo connects to it over HTTPS.",
     )
     freeswitch_xmlrpc_port = fields.Integer(
         string="XML-RPC Port",
-        default=8080,
-        help="FreeSWITCH mod_xml_rpc port (default: 8080)",
+        default=443,
+        help="HTTPS port of the Traefik endpoint in front of mod_xml_rpc "
+             "(default: 443). mod_xml_rpc itself listens on a fixed internal "
+             "port behind Traefik and is never exposed directly.",
     )
     freeswitch_xmlrpc_user = fields.Char(
         string="XML-RPC User",
-        help="FreeSWITCH mod_xml_rpc username",
+        help="FreeSWITCH mod_xml_rpc username (HTTP Basic Auth, sent over TLS)",
     )
     freeswitch_xmlrpc_password = fields.Char(
+        string="XML-RPC Password (stored)",
+        groups="connect.group_admin",
+        help="FreeSWITCH mod_xml_rpc password (HTTP Basic Auth, sent over TLS)",
+    )
+    display_freeswitch_xmlrpc_password = fields.Char(
         string="XML-RPC Password",
-        help="FreeSWITCH mod_xml_rpc password",
+        help="FreeSWITCH mod_xml_rpc password (HTTP Basic Auth, sent over TLS). "
+             "Masked to **** after saving; visible only to administrators.",
+    )
+    freeswitch_xmlrpc_tls_verify = fields.Boolean(
+        string="Verify TLS Certificate",
+        default=True,
+        help="Verify the TLS certificate of the XML-RPC endpoint. Keep enabled "
+             "in production (Traefik serves a CA-signed certificate). Disable "
+             "only for development behind a self-signed certificate.",
     )
     # Shared secret authenticating every FreeSWITCH -> Odoo HTTP call
     # (/freeswitch/xml, /freeswitch/webhook/*). Auto-generated so the
@@ -234,6 +257,16 @@ class Settings(models.Model):
         return res
 
     @api.model
+    def originate_call(self, number, res_model=None, res_id=None, user=None, **kwargs):
+        # Dispatch by the user's click-to-call provider; fall through to
+        # other installed telephony modules when it is not FreeSWITCH.
+        if self._get_originate_provider(user) != 'freeswitch':
+            return super().originate_call(
+                number, res_model=res_model, res_id=res_id, user=user, **kwargs)
+        return self.env['connect.call'].originate_call(
+            number, res_model=res_model, res_id=res_id)
+
+    @api.model
     def get_recording_webhook_url(self):
         """Recording upload base URL including the auth token path segment.
 
@@ -264,15 +297,24 @@ class Settings(models.Model):
         by FS connectivity issues.
         """
         host = self.get_param('freeswitch_xmlrpc_host')
-        port = self.get_param('freeswitch_xmlrpc_port') or 8080
+        port = self.get_param('freeswitch_xmlrpc_port') or 443
         user = self.get_param('freeswitch_xmlrpc_user')
         password = self.sudo().get_param('freeswitch_xmlrpc_password')
+        verify_tls = self.get_param('freeswitch_xmlrpc_tls_verify')
         if not host:
             logger.warning("FreeSWITCH XML-RPC host not configured")
             return None, 'NOT CONFIGURED'
-        url = "http://{}:{}@{}:{}/RPC2".format(user, password, host, port)
+        # mod_xml_rpc has no native TLS: Traefik terminates HTTPS in front of
+        # it and proxies to the internal plain-HTTP port. Always connect over
+        # https so the Basic Auth credential never travels in cleartext.
+        url = "https://{}:{}@{}:{}/RPC2".format(user, password, host, port)
+        context = ssl.create_default_context()
+        if not verify_tls:
+            # Self-signed development certificate: skip verification on request.
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
         try:
-            server = xmlrpc.client.ServerProxy(url)
+            server = xmlrpc.client.ServerProxy(url, context=context)
             result = server.freeswitch.api(command, args)
             logger.info("FreeSWITCH API %s %s: %s", command, args, result)
             return result, None
@@ -453,7 +495,7 @@ class Settings(models.Model):
             'login': connect_user._get_verto_login(),
             'password': password,
             'callerName': connect_user.name,
-            'callerNumber': connect_user.exten_number or user.login,
+            'callerNumber': connect_user.freeswitch_exten_number or user.login,
             'displayMode': connect_user.phone_display_mode or 'dropdown',
             'iceServers': ice_servers,
         }

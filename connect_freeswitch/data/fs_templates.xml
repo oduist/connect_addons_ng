@@ -16,7 +16,7 @@ Variables:
   cid_name       - Caller ID name
   cid_num        - Caller ID number
   connect_user_id - connect.user record ID
-  endpoint_id    - connect.endpoint record ID
+  endpoint_id    - connect.freeswitch.endpoint record ID
   odoo_user_id   - res.users record ID (may be empty)</field>
         <field name="content"><![CDATA[<user id="{{ xml_user_id }}">
   <params>
@@ -79,7 +79,7 @@ Variables:
     cid_name         - Caller ID name
     cid_num          - Caller ID number
     connect_user_id  - connect.user record ID
-    endpoint_id      - connect.endpoint record ID
+    endpoint_id      - connect.freeswitch.endpoint record ID
     odoo_user_id     - res.users record ID (may be empty)</field>
         <field name="content"><![CDATA[{% for ep in endpoints %}
 <user id="{{ ep.auth_user }}">
@@ -142,7 +142,7 @@ Variables:
 Variables:
   number          - Extension number (escaped for regex)
   user_id         - connect.user record ID
-  exten_id        - connect.exten record ID (may be empty)
+  exten_id        - connect.freeswitch.exten record ID (may be empty)
   record_calls    - Boolean, whether to record the call
   recording_url   - URL for recording webhook (if record_calls)
   fs_domain       - FreeSWITCH SIP domain</field>
@@ -201,7 +201,7 @@ sets per-call variables and bridges to the user; other destinations transfer
 directly to the chosen target.
 
 Variables:
-  callflow_id     - connect.callflow record ID
+  callflow_id     - connect.freeswitch.callflow record ID
   number          - Extension number (escaped for regex)
   lang            - Piper TTS language code (e.g. 'en')
   prompt          - TTS prompt text (plain text with spaces)
@@ -292,7 +292,7 @@ fires. Sets per-call variables (so Odoo's event handler attributes the
 call to the right user) and bridges to the user's SIP endpoint.
 
 Variables:
-  callflow_id     - connect.callflow record ID
+  callflow_id     - connect.freeswitch.callflow record ID
   digits          - The chosen DTMF sequence (raw)
   digits_escaped  - The chosen DTMF sequence (regex-escaped)
   user_id         - connect.user ID
@@ -335,9 +335,9 @@ After a failed bridge (nobody answered), optionally transfers the caller to
 an FS Queue; otherwise falls back to the first user's voicemail if enabled.
 
 Variables:
-  callflow_id            - connect.callflow record ID
+  callflow_id            - connect.freeswitch.callflow record ID
   number                 - Extension number (escaped for regex)
-  exten_id               - connect.exten record ID (may be empty)
+  exten_id               - connect.freeswitch.exten record ID (may be empty)
   record_calls           - Boolean, whether to record the call
   recording_url          - URL for recording webhook (if record_calls)
   bridge_string          - Comma-separated bridge endpoints
@@ -415,7 +415,7 @@ Variables:
   number_regex    - destination_number regex (bare digits, optional leading '+')
   did_label       - DID digits without '+' (used for the extension name)
   phone_number    - DID phone number as stored (kept for custom templates)
-  number_id       - connect.number record ID
+  number_id       - connect.freeswitch.number record ID
   destination     - Destination type: 'user' or 'callflow'
   transfer_target - Extension/number to transfer to (or empty if no destination)</field>
         <field name="content"><![CDATA[<extension name="did_{{ did_label }}">
@@ -498,7 +498,7 @@ Variables:
   fifo_id            - connect.fs_fifo record ID
   fifo_name          - FIFO queue name (e.g. fs_fifo_42)
   number             - Extension number (escaped for regex)
-  exten_id           - connect.exten record ID (may be empty)
+  exten_id           - connect.freeswitch.exten record ID (may be empty)
   max_wait           - Seconds to wait in the queue (enforced via fifo_orbit_exten)
   moh                - Music-on-Hold source (fed as fifo's `music_file` arg)
   record_calls       - Boolean, record the call leg
@@ -883,7 +883,7 @@ match any IVR choice. Speaks invalid_input_message via Piper TTS and
 transfers the caller back into the IVR so they can try again.
 
 Variables:
-  callflow_id     - connect.callflow record ID
+  callflow_id     - connect.freeswitch.callflow record ID
   number          - The IVR's own extension number (target of the re-entry transfer)
   lang            - Piper TTS language code
   invalid_msg     - Text spoken to the caller before re-entry</field>

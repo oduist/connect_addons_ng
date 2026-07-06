@@ -20,21 +20,6 @@
         <field name="groups" eval="[(4, ref('group_admin'))]"/>
     </record>
 
-    <!-- connect.endpoint record rules -->
-    <record id="rule_connect_endpoint_user" model="ir.rule">
-        <field name="name">Connect Endpoint: user sees own endpoints</field>
-        <field name="model_id" ref="model_connect_endpoint"/>
-        <field name="domain_force">[('connect_user_id.user', '=', user.id)]</field>
-        <field name="groups" eval="[(4, ref('group_user'))]"/>
-    </record>
-
-    <record id="rule_connect_endpoint_admin" model="ir.rule">
-        <field name="name">Connect Endpoint: admin sees all</field>
-        <field name="model_id" ref="model_connect_endpoint"/>
-        <field name="domain_force">[(1, '=', 1)]</field>
-        <field name="groups" eval="[(4, ref('group_admin'))]"/>
-    </record>
-
     <!-- connect.call record rules -->
     <record id="rule_connect_call_user" model="ir.rule">
         <field name="name">Connect Call: user sees own calls</field>

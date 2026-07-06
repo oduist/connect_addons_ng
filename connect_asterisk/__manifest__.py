@@ -1,0 +1,33 @@
+{
+    'name': 'Oduist Connect Asterisk',
+    'version': '19.0.2.0.0',
+    'author': 'Oduist',
+    'category': 'Phone',
+    'summary': 'Asterisk integration for Oduist Connect',
+    'depends': ['connect', 'web'],
+    'data': [
+        'security/access_rules.xml',
+        'data/ast_templates.xml',
+        'views/menu.xml',
+        'views/ast_template_views.xml',
+        'views/endpoint_views.xml',
+        'views/number_views.xml',
+        'views/user_views.xml',
+        'views/channel_views.xml',
+        'views/settings.xml',
+    ],
+    'assets': {
+        'web.assets_backend': [
+            'connect_asterisk/static/src/icomoon/style.css',
+            'connect_asterisk/static/src/lib/jssip.min.js',
+            'connect_asterisk/static/src/js/utils.js',
+            'connect_asterisk/static/src/components/*/*',
+            'connect_asterisk/static/src/js/core.js',
+            'connect_asterisk/static/src/widgets/phone_field/*',
+        ],
+    },
+    'post_init_hook': 'post_init_hook',
+    'installable': True,
+    'application': False,
+    'license': 'Other proprietary',
+}

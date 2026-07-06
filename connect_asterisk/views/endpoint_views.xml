@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_asterisk_endpoint_tree" model="ir.ui.view">
+        <field name="name">connect.asterisk.endpoint.tree</field>
+        <field name="model">connect.asterisk.endpoint</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="connect_user_id"/>
+                <field name="asterisk_channel" optional="show"/>
+                <field name="asterisk_sip_transport" optional="hide"/>
+                <field name="asterisk_originate_enabled" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_asterisk_endpoint_form" model="ir.ui.view">
+        <field name="name">connect.asterisk.endpoint.form</field>
+        <field name="model">connect.asterisk.endpoint</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1>
+                            <field name="name" placeholder="Endpoint Name"/>
+                        </h1>
+                        <label for="connect_user_id"/>
+                        <h2>
+                            <field name="connect_user_id" placeholder="Connect User"/>
+                        </h2>
+                    </div>
+                    <group string="Asterisk">
+                        <field name="asterisk_channel" placeholder="PJSIP/101"/>
+                        <field name="asterisk_sip_user"/>
+                        <field name="asterisk_sip_transport"/>
+                        <field name="exten_number"/>
+                        <label for="asterisk_sip_password"
+                               groups="connect.group_admin"/>
+                        <div class="d-flex align-items-center"
+                             groups="connect.group_admin">
+                            <field name="asterisk_sip_password" password="True"
+                                   nolabel="1"/>
+                            <button name="action_regenerate_asterisk_sip_password"
+                                    type="object"
+                                    string="Regenerate" class="btn-link ms-2"
+                                    icon="fa-refresh" invisible="not id"/>
+                        </div>
+                        <field name="asterisk_originate_enabled"
+                               widget="boolean_toggle"/>
+                        <field name="asterisk_originate_context"
+                               invisible="not asterisk_originate_enabled"/>
+                        <field name="asterisk_auto_answer_header"
+                               invisible="not asterisk_originate_enabled"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_asterisk_endpoint_search" model="ir.ui.view">
+        <field name="name">connect.asterisk.endpoint.search</field>
+        <field name="model">connect.asterisk.endpoint</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="connect_user_id"/>
+                <field name="asterisk_channel"/>
+                <separator/>
+                <filter string="Archived" name="archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_asterisk_endpoint" model="ir.actions.act_window">
+        <field name="name">Endpoints</field>
+        <field name="res_model">connect.asterisk.endpoint</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_asterisk_endpoints"
+              name="Endpoints"
+              parent="menu_asterisk_root"
+              action="action_asterisk_endpoint"
+              sequence="10"/>
+</odoo>

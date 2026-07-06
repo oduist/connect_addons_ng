@@ -27,7 +27,7 @@ class ConnectMessage(models.Model):
             elif rec.status == 'received':
                 rec.direction = 'incoming'
             else:
-                our_numbers = self.env['connect.number'].search([]).mapped(
+                our_numbers = self.env['connect.twilio.number'].search([]).mapped(
                     'phone_number'
                 )
                 our_whatsapp = self.env[
@@ -152,7 +152,7 @@ class ConnectMessage(models.Model):
                     target_msg = message
                     valid_target = True
                     config = self.env[
-                        'connect.message_configuration'
+                        'connect.twilio.message_configuration'
                     ].search(
                         [('number.phone_number', '=', to_number)], limit=1
                     )
@@ -306,7 +306,7 @@ class ConnectMessage(models.Model):
         if outgoing_callerid:
             sender = outgoing_callerid
         else:
-            number = sender_user.connect_user.outgoing_callerid
+            number = sender_user.connect_user.twilio_outgoing_callerid
             if not number:
                 raise ValidationError(
                     'You dont have an outgoing callerid number!'
