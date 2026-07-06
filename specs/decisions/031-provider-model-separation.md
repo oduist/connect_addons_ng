@@ -85,14 +85,20 @@ All decided by the product owner:
    otherwise a clear UserError. Provider overrides chain via
    `super()`.
 
-6. **Menu separation.** Top-level menus per app: **Connect** (Calls →
-   {Calls, Recordings, Channels(admin)}, Users, Configuration →
-   {Settings, Debug, License}), **Twilio** (numbers, extensions, call
-   flows, caller IDs, TwiML, SIP domains, Messages incl. message
-   configuration and WhatsApp, Settings), **FreeSWITCH** (numbers,
-   extensions, call flows, endpoints, caller IDs, FIFO, parking,
-   firewall, Configuration → {gateways, routes, templates, Settings}),
-   **Asterisk** (endpoints, Configuration → {templates, Settings}).
+6. **Menu separation.** *(Amended: the first cut made each provider a
+   top-level Odoo app; the owner corrected this to provider submenus
+   inside the single **Connect** app.)* **Connect** stays the only
+   top-level menu: Calls → {Calls, Recordings, Channels(admin)}, Users,
+   then one submenu per installed provider, then Configuration →
+   {Settings, Debug, License}. Provider submenus — **Twilio** (numbers,
+   extensions, call flows, caller IDs, TwiML, SIP domains, Messages
+   incl. message configuration and WhatsApp, Settings), **FreeSWITCH**
+   (numbers, extensions, call flows, endpoints, caller IDs, FIFO,
+   parking, firewall, Configuration → {gateways, routes, templates,
+   Settings}), **Asterisk** (endpoints, numbers, Configuration →
+   {templates, Settings}) — all share sequence 50, so they render after
+   Calls/Users in installation order (equal sequence falls back to id
+   order) and the core Configuration menu (seq 100) is always last.
    `connect.settings` remains a single model; each provider gets its
    own standalone settings form view + menu instead of injecting
    notebook pages into the core form.

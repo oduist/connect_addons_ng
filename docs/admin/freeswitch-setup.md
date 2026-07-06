@@ -52,7 +52,7 @@ which **locks the endpoints until you pair the container**:
 
 1. Generate a token (≥24 chars, letters/digits/`_`/`-`), e.g.
    `openssl rand -base64 32 | tr '+/' '-_'`.
-2. In Odoo open *FreeSWITCH → Configuration → Settings* and paste it into
+2. In Odoo open *Connect → FreeSWITCH → Configuration → Settings* and paste it into
    **FreeSWITCH Webhook Token** (the field masks itself to `****` after
    saving).
 3. Set the same value as `FS_WEBHOOK_TOKEN` on the FreeSWITCH container
@@ -101,7 +101,7 @@ sudo ufw allow 65060/udp   # only if using SIP phones
 
 ### Settings
 
-Navigate to **FreeSWITCH > Configuration > Settings**.
+Navigate to **Connect > FreeSWITCH > Configuration > Settings**.
 
 | Field | Description |
 |-------|-------------|
@@ -142,7 +142,7 @@ know which side to fix:
 
 ### Endpoints
 
-Navigate to **FreeSWITCH > Endpoints** to configure user devices.
+Navigate to **Connect > FreeSWITCH > Endpoints** to configure user devices.
 
 Each PBX user needs at least one endpoint to make and receive calls.
 
@@ -158,7 +158,7 @@ Each PBX user needs at least one endpoint to make and receive calls.
 
 ### SIP Gateways
 
-Navigate to **FreeSWITCH > Configuration > SIP Gateways** to configure PSTN trunks.
+Navigate to **Connect > FreeSWITCH > Configuration > SIP Gateways** to configure PSTN trunks.
 
 A gateway connects FreeSWITCH to an external SIP provider for making/receiving calls to/from the public phone network.
 
@@ -178,7 +178,7 @@ A gateway connects FreeSWITCH to an external SIP provider for making/receiving c
 
 ### Outgoing Routes
 
-Navigate to **FreeSWITCH > Configuration > Outgoing Routes** to configure call routing rules.
+Navigate to **Connect > FreeSWITCH > Configuration > Outgoing Routes** to configure call routing rules.
 
 Routes determine how outbound calls are sent through SIP gateways.
 
@@ -209,7 +209,7 @@ this order:
 1. The caller's **Outgoing Caller ID** (per-user, set on the Connect User
    form).
 2. The **system-wide default** Caller ID — the entry under
-   **FreeSWITCH > Outgoing Caller IDs** flagged **Default** — used when the user
+   **Connect > FreeSWITCH > Outgoing Caller IDs** flagged **Default** — used when the user
    has no per-user number assigned.
 3. The user's **extension number**, when neither of the above is configured.
 
@@ -329,7 +329,7 @@ All configuration files are in `deploy/freeswitch/conf/`. Key files:
 
 ## XML Templates
 
-Navigate to **FreeSWITCH > Configuration > XML Templates** to view and customize the FreeSWITCH XML configuration templates.
+Navigate to **Connect > FreeSWITCH > Configuration > XML Templates** to view and customize the FreeSWITCH XML configuration templates.
 
 Odoo generates FreeSWITCH XML dynamically using Jinja2 templates. Each template produces a specific piece of configuration — user directory entries, dialplan extensions, gateway definitions, etc. The system ships with sensible defaults, but administrators can customize any template to modify the generated XML.
 
@@ -431,7 +431,7 @@ If a SIP phone can make outgoing calls but does not ring for incoming calls:
 Inbound DID matching tolerates an optional leading `+`: a number stored as
 `+41215121140` matches a trunk that delivers `41215121140`, and vice-versa.
 You do **not** need to match the trunk's exact E.164/national format when
-entering the DID under **FreeSWITCH > Numbers**.
+entering the DID under **Connect > FreeSWITCH > Numbers**.
 
 If an inbound call still drops with a 404, the delivered digits themselves do
 not match. Check the `destination_number` the trunk actually sends (Odoo debug
@@ -461,6 +461,6 @@ not normalized and require the stored number to match the delivered digits.
 
 ### Gateway registration failures
 
-- Verify gateway credentials in **FreeSWITCH > Configuration > SIP Gateways**
+- Verify gateway credentials in **Connect > FreeSWITCH > Configuration > SIP Gateways**
 - Check SIP trunk provider firewall rules
 - Review registration status: `docker exec -it freeswitch fs_cli -x "sofia status"`

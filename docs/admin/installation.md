@@ -45,10 +45,10 @@
 
 ## Post-Installation
 
-Each installed integration adds its own top-level menu (**Twilio**,
-**FreeSWITCH**, **Asterisk**) with a **Configuration > Settings** entry for the
-provider credentials; core options live in **Connect > Configuration >
-Settings**. See the provider-specific setup guides:
+Each installed integration adds its own submenu (**Twilio**, **FreeSWITCH**,
+**Asterisk**) inside the **Connect** app with a **Configuration > Settings**
+entry for the provider credentials; core options live in **Connect >
+Configuration > Settings**. See the provider-specific setup guides:
 
 - [Core Configuration](core-setup.md) — General settings, transcription
 - [Twilio Setup](twilio-setup.md) — Twilio account, SIP domains, WhatsApp

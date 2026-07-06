@@ -9,7 +9,7 @@
 
 ## Account Configuration
 
-Navigate to **Twilio > Configuration > Settings**.
+Navigate to **Connect > Twilio > Configuration > Settings**.
 
 ### Credentials
 
@@ -47,7 +47,7 @@ Click **SYNC TWILIO ACCOUNT** to import all Twilio resources:
 
 ## SIP Domains
 
-Navigate to **Twilio > SIP Domains** to manage SIP domains.
+Navigate to **Connect > Twilio > SIP Domains** to manage SIP domains.
 
 A SIP domain is required for SIP phone registration and the web phone widget.
 
@@ -98,7 +98,7 @@ When editing a PBX user (**Connect > Users**), the Twilio integration adds:
 
 ## TwiML Applications
 
-Navigate to **Twilio > TwiML Apps** to manage voice applications.
+Navigate to **Connect > Twilio > TwiML Apps** to manage voice applications.
 
 TwiML apps define custom call handling logic:
 
@@ -112,7 +112,7 @@ Each TwiML app can be assigned an extension number for direct dialing.
 
 ## Phone Numbers (Twilio-specific)
 
-Navigate to **Twilio > Numbers**. In addition to the common number fields,
+Navigate to **Connect > Twilio > Numbers**. In addition to the common number fields,
 Twilio numbers carry:
 
 | Field | Description |
@@ -127,7 +127,7 @@ Webhook URLs for voice and messaging are automatically configured when you assig
 
 ### WhatsApp Senders
 
-Navigate to **Twilio > Messages > WhatsApp Senders** to manage WhatsApp-enabled numbers.
+Navigate to **Connect > Twilio > Messages > WhatsApp Senders** to manage WhatsApp-enabled numbers.
 
 Click **Sync** to import senders from your Twilio account.
 
@@ -143,7 +143,7 @@ Click **Sync** to import senders from your Twilio account.
 
 ### WhatsApp Message Templates
 
-Navigate to **Twilio > Messages > WhatsApp Templates** to manage pre-approved message templates.
+Navigate to **Connect > Twilio > Messages > WhatsApp Templates** to manage pre-approved message templates.
 
 Templates must be approved by WhatsApp before they can be used for outbound messaging. Use **Sync** to import templates from Twilio.
 
@@ -166,6 +166,6 @@ All Twilio webhooks are under `/twilio/webhook/*`.
 
 For Twilio, outgoing caller IDs can be validated:
 
-1. Create a new caller ID in **Twilio > Outgoing Caller IDs**
+1. Create a new caller ID in **Connect > Twilio > Outgoing Caller IDs**
 2. Click **Validate** — Twilio will call the number and provide a validation code
 3. Enter the validation code to confirm the number

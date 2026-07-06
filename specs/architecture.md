@@ -522,21 +522,25 @@ connect_crm_twilio/                   # auto-installed bridge (connect_crm ×
 
 ---
 
-## Menu Structure (top-level apps)
+## Menu Structure
 
-Each module owns its own top-level app menu; the core **Connect** menu no
-longer hosts provider items.
+**Connect** is the single top-level app. Each provider module adds its own
+submenu under it; all provider submenus share sequence 50, so they appear
+after Calls/Users in installation order (equal sequence falls back to id
+order), and the core Configuration menu (seq 100) always stays last.
 
 ```
-Connect:     Calls {Calls, Recordings, Channels (admin)}, Users,
-             Configuration {Settings, Debug Log (admin), License}
-Twilio:      Numbers, Extensions, Call Flows, Outgoing Caller IDs, TwiML Apps,
-             SIP Domains, Messages {Messages, Message Configuration (admin),
-             WhatsApp Senders (admin), WhatsApp Templates (admin)},
-             Configuration {Settings}
-FreeSWITCH:  Numbers, Extensions, Call Flows, Endpoints, Outgoing Caller IDs,
-             FIFO Queues, Parking Slots, Firewall {Agent Status, Whitelist,
-             Blacklist, Events}, Configuration {SIP Gateways, Outgoing Routes,
-             XML Templates, Settings}
-Asterisk:    Endpoints, Numbers, Configuration {Templates, Settings}
+Connect
+  +-- Calls {Calls, Recordings, Channels (admin)}
+  +-- Users
+  +-- Twilio:      Numbers, Extensions, Call Flows, Outgoing Caller IDs,
+  |                TwiML Apps, SIP Domains, Messages {Messages, Message
+  |                Configuration (admin), WhatsApp Senders (admin), WhatsApp
+  |                Templates (admin)}, Configuration {Settings}
+  +-- FreeSWITCH:  Numbers, Extensions, Call Flows, Endpoints, Outgoing
+  |                Caller IDs, FIFO Queues, Parking Slots, Firewall {Agent
+  |                Status, Whitelist, Blacklist, Events}, Configuration
+  |                {SIP Gateways, Outgoing Routes, XML Templates, Settings}
+  +-- Asterisk:    Endpoints, Numbers, Configuration {Templates, Settings}
+  +-- Configuration {Settings, Debug Log (admin), License}
 ```

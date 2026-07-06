@@ -604,11 +604,13 @@ Default WhatsApp content template: `voice_call_request` - used for voice call co
 
 ### Menu Items
 
-`connect_twilio` owns the top-level **Twilio** app menu (ADR-031); nothing is
-added under the core Connect menu.
+`connect_twilio` owns the **Twilio** submenu of the Connect app (ADR-031).
+All provider submenus share sequence 50 under `connect.menu_connect_root`,
+so they appear after Calls/Users in installation order and before the core
+Configuration menu (seq 100).
 
 ```
-Twilio (root, seq 20)
+Connect > Twilio (seq 50)
   +-- Numbers (seq 10)
   +-- Extensions (seq 20)
   +-- Call Flows (seq 30)

@@ -604,10 +604,11 @@ All models get list (tree) and form views. Key view details:
 
 ### Menu Structure
 
-The core **Connect** app only carries the shared ledger and configuration.
-All PBX configuration menus (Numbers, Extensions, Call Flows, Endpoints,
-Caller IDs, …) live under the per-provider top-level apps (**Twilio**,
-**FreeSWITCH**, **Asterisk**) — see `specs/architecture.md`.
+**Connect** is the single top-level app. Core carries the shared ledger and
+configuration; each provider module plugs its own submenu (**Twilio**,
+**FreeSWITCH**, **Asterisk**) under `menu_connect_root` at sequence 50, so
+providers appear after Calls/Users in installation order and Configuration
+(seq 100) always stays last — see `specs/architecture.md`.
 
 ```
 Connect (root, seq 10)
@@ -616,6 +617,7 @@ Connect (root, seq 10)
   |   +-- Recordings (seq 30)
   |   +-- Channels (admin)
   +-- Users (seq 20)
+  +-- <provider submenus> (seq 50, installation order)
   +-- Configuration (seq 100)
       +-- Settings (admin)
       +-- Debug Log (admin)

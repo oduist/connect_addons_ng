@@ -13,7 +13,7 @@ Connect consists of a core module plus provider integrations:
 | **connect_freeswitch** | FreeSWITCH integration. Owns its numbers, extensions, call flows, endpoints and caller IDs; adds Verto WebRTC client, XML dialplan generation, SIP gateways. |
 | **connect_asterisk** | Asterisk integration for existing PBXs. Owns its endpoints and DID mappings; adds JsSIP web phone and AMI event pipeline via a sidecar agent. |
 
-Install the **connect** core module plus the integration module(s) matching your telephony provider — several providers can coexist in one database. Each integration gets its own top-level menu (**Twilio**, **FreeSWITCH**, **Asterisk**) next to the **Connect** app.
+Install the **connect** core module plus the integration module(s) matching your telephony provider — several providers can coexist in one database. Each integration adds its own submenu (**Twilio**, **FreeSWITCH**, **Asterisk**) inside the **Connect** app, after **Calls** and in installation order.
 
 ## Key Features
 
@@ -28,9 +28,9 @@ Install the **connect** core module plus the integration module(s) matching your
 ## Quick Start
 
 1. Install the core module (`connect`) and your integration module
-2. Configure the telephony provider in its own menu, e.g. **Twilio > Configuration > Settings** or **FreeSWITCH > Configuration > Settings**
+2. Configure the telephony provider in its own menu, e.g. **Connect > Twilio > Configuration > Settings** or **Connect > FreeSWITCH > Configuration > Settings**
 3. Create PBX users in **Connect > Users**
-4. Set up phone numbers in the provider menu, e.g. **Twilio > Numbers** or **FreeSWITCH > Numbers**
+4. Set up phone numbers in the provider menu, e.g. **Connect > Twilio > Numbers** or **Connect > FreeSWITCH > Numbers**
 5. Start making calls from the phone widget in the Odoo navbar
 
 See the [Admin Guide](admin/installation.md) for detailed setup instructions.

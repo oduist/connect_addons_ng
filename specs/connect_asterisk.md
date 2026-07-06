@@ -235,13 +235,15 @@ aligned with the `connect_twilio` phone widget (already core-wired):
 
 ## Views & menu
 
-`connect_asterisk` owns the top-level **Asterisk** app menu (ADR-031);
-nothing is added under the core Connect menu. The Asterisk settings are
-edited through the module's own standalone settings form view, opened
+`connect_asterisk` owns the **Asterisk** submenu of the Connect app
+(ADR-031). All provider submenus share sequence 50 under
+`connect.menu_connect_root`, so they appear after Calls/Users in installation
+order and before the core Configuration menu (seq 100). The Asterisk settings
+are edited through the module's own standalone settings form view, opened
 via the core parametrized `open_settings_form()`.
 
 ```
-Asterisk (root, seq 40)
+Connect > Asterisk (seq 50)
   +-- Endpoints (seq 10)
   +-- Numbers (seq 20)
   +-- Configuration (seq 100, admin)

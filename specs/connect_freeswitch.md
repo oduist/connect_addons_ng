@@ -292,11 +292,13 @@ event cleanup keeps the audit log within `firewall_event_retention_days`.
 
 ### Menu structure
 
-`connect_freeswitch` owns the top-level **FreeSWITCH** app menu (ADR-031);
-nothing is added under the core Connect menu.
+`connect_freeswitch` owns the **FreeSWITCH** submenu of the Connect app
+(ADR-031). All provider submenus share sequence 50 under
+`connect.menu_connect_root`, so they appear after Calls/Users in installation
+order and before the core Configuration menu (seq 100).
 
 ```
-FreeSWITCH (root, seq 30)
+Connect > FreeSWITCH (seq 50)
   +-- Numbers (seq 10)
   +-- Extensions (seq 20)
   +-- Call Flows (seq 30)

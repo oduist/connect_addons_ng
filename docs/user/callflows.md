@@ -77,7 +77,7 @@ A queue can be used three ways:
 
 ### Admin configuration summary
 
-FS Queues are configured under **FreeSWITCH → FIFO Queues**. Each queue defines:
+FS Queues are configured under **Connect → FreeSWITCH → FIFO Queues**. Each queue defines:
 
 - member users and/or endpoint agents,
 - max wait time,

@@ -1,8 +1,8 @@
 # Core Configuration
 
 Core settings are managed in **Connect > Configuration > Settings**.
-Provider-specific settings have their own menus: **Twilio > Configuration >
-Settings**, **FreeSWITCH > Configuration > Settings**, **Asterisk >
+Provider-specific settings have their own menus: **Connect > Twilio > Configuration >
+Settings**, **Connect > FreeSWITCH > Configuration > Settings**, **Connect > Asterisk >
 Configuration > Settings**.
 
 ## General Tab
@@ -55,7 +55,7 @@ numbering plans.
 ## Phone Numbers (DIDs)
 
 Inbound phone numbers belong to the telephony provider: navigate to
-**Twilio > Numbers**, **FreeSWITCH > Numbers** or **Asterisk > Numbers**.
+**Connect > Twilio > Numbers**, **Connect > FreeSWITCH > Numbers** or **Connect > Asterisk > Numbers**.
 
 | Field | Description |
 |-------|-------------|
@@ -67,7 +67,7 @@ Inbound phone numbers belong to the telephony provider: navigate to
 ## Outgoing Caller IDs
 
 Outgoing caller IDs also belong to the provider: navigate to
-**Twilio > Outgoing Caller IDs** or **FreeSWITCH > Outgoing Caller IDs**.
+**Connect > Twilio > Outgoing Caller IDs** or **Connect > FreeSWITCH > Outgoing Caller IDs**.
 
 Numbers must start with `+` followed by digits only. Only one caller ID can be marked as default at a time.
 
@@ -80,13 +80,13 @@ default set, FreeSWITCH falls back to the user's extension number.
 
 Extensions are auto-managed per provider. When you create a PBX user or call
 flow, an extension number is automatically assigned in that provider's
-numbering plan. View extensions in **Twilio > Extensions** or
-**FreeSWITCH > Extensions**. (The Asterisk integration keeps numbering in your
+numbering plan. View extensions in **Connect > Twilio > Extensions** or
+**Connect > FreeSWITCH > Extensions**. (The Asterisk integration keeps numbering in your
 existing dialplan — the user form only mirrors the extension as plain text.)
 
 ## Message Configuration
 
-Navigate to **Twilio > Messages > Message Configuration** to configure automatic partner creation from incoming messages.
+Navigate to **Connect > Twilio > Messages > Message Configuration** to configure automatic partner creation from incoming messages.
 
 | Field | Description |
 |-------|-------------|

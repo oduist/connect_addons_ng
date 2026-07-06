@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Top-level Twilio application menu -->
+    <!-- Twilio submenu of the Connect app. All provider submenus share the
+         same sequence so they appear after Calls in installation order (equal
+         sequence falls back to id order); the core Configuration menu
+         (seq 100) always stays last. -->
     <menuitem id="menu_connect_twilio"
               name="Twilio"
-              sequence="20"
-              web_icon="connect_twilio,static/description/icon.png"/>
+              parent="connect.menu_connect_root"
+              sequence="50"/>
 
     <menuitem id="menu_twilio_messages"
               name="Messages"

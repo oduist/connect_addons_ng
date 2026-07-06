@@ -22,7 +22,7 @@ Asterisk** — the agent is not in the media or signaling path.
 Install `connect_asterisk` like any Odoo addon. On install a random
 Agent Token is generated automatically.
 
-## 2. Configure Asterisk → Configuration → Settings
+## 2. Configure Connect → Asterisk → Configuration → Settings
 
 | Setting | Meaning |
 |---------|---------|
@@ -80,12 +80,12 @@ Topology notes:
 ## 5. Map users and endpoints
 
 For each Odoo user create a **Connect User** (**Connect > Users**) and
-add an **Endpoint** under **Asterisk > Endpoints** with the *Asterisk
+add an **Endpoint** under **Connect > Asterisk > Endpoints** with the *Asterisk
 Channel* of their phone (e.g. `PJSIP/101`). The endpoint matches AMI
 events to the user and is dialed first on click-to-call. Optional
 per-endpoint settings: originate context, auto-answer SIP header, SIP
 transport. To let the dialplan route a DID to a user, map it under
-**Asterisk > Numbers** (used by the `get_user_data_by_did` lookup).
+**Connect > Asterisk > Numbers** (used by the `get_user_data_by_did` lookup).
 
 If you want Odoo to manage SIP credentials, the
 `/asterisk/api/sip_peers?token=...` route renders a pjsip wizard
@@ -115,7 +115,7 @@ salesperson) and `get_user_data_by_did` (DID → user dialstring).
 - `docker logs connect-asterisk-agent` — AMI connection and event flow
   (`AMI_TRACE=true` dumps raw events).
 - `asterisk -rx "manager show connected"` — the agent's AMI session.
-- Asterisk → Configuration → Settings → status fields are refreshed by
+- Connect → Asterisk → Configuration → Settings → status fields are refreshed by
   agent heartbeats every 60 s.
 - Stale active calls are healed automatically: the agent reconciles
   with `CoreShowChannels` once a minute and emits synthetic hangups.
