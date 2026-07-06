@@ -9,7 +9,36 @@ logger = logging.getLogger(__name__)
 class User(models.Model):
     _inherit = 'connect.user'
 
+    originate_provider = fields.Selection(
+        selection_add=[('freeswitch', 'FreeSWITCH')],
+        ondelete={'freeswitch': 'set null'},
+    )
+    freeswitch_exten = fields.Many2one(
+        'connect.freeswitch.exten', ondelete='set null', readonly=True,
+        string='FreeSWITCH Extension')
+    freeswitch_exten_number = fields.Char(
+        related='freeswitch_exten.number', store=True,
+        string='FreeSWITCH Extension Number')
+    freeswitch_outgoing_callerid = fields.Many2one(
+        'connect.freeswitch.outgoing_callerid', ondelete='set null',
+        string='FreeSWITCH Outgoing CallerID')
+    freeswitch_endpoint_ids = fields.One2many(
+        'connect.freeswitch.endpoint', 'connect_user_id', string='FreeSWITCH Endpoints')
+    freeswitch_endpoint_count = fields.Integer(compute='_compute_freeswitch_endpoint_count')
     webrtc_enabled = fields.Boolean(string='WebRTC Enabled', default=False)
+
+    def _compute_freeswitch_endpoint_count(self):
+        for rec in self:
+            rec.freeswitch_endpoint_count = len(rec.freeswitch_endpoint_ids)
+
+    @api.model
+    def _pbx_number_fields(self):
+        return super()._pbx_number_fields() + ['freeswitch_exten_number']
+
+    def create_freeswitch_extension(self):
+        self.ensure_one()
+        return self.env['connect.freeswitch.exten'].create_extension(
+            self, 'connect.user', current_exten=self.freeswitch_exten)
     originate_ring = fields.Boolean(string='Originate Ring', default=True,
         help='Include WebRTC client when originating click-to-call calls.')
     phone_display_mode = fields.Selection(
@@ -113,7 +142,7 @@ class User(models.Model):
     def generate_dialplan(self, params, exten=None):
         """Generate FreeSWITCH dialplan to bridge to this user's endpoints."""
         self.ensure_one()
-        number = exten.number if exten else self.exten_number
+        number = exten.number if exten else self.freeswitch_exten_number
         if not number:
             return ''
 

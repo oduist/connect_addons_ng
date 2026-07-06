@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_asterisk_number_tree" model="ir.ui.view">
+        <field name="name">connect.asterisk.number.tree</field>
+        <field name="model">connect.asterisk.number</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="phone_number"/>
+                <field name="friendly_name"/>
+                <field name="user"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_asterisk_number" model="ir.actions.act_window">
+        <field name="name">Numbers</field>
+        <field name="res_model">connect.asterisk.number</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Map inbound DIDs to Connect users</p>
+            <p>The customer's Asterisk dialplan can resolve a DID to the
+               user's dialstring via /asterisk/api/get_user_data_by_did.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_asterisk_numbers"
+              name="Numbers"
+              parent="menu_asterisk_root"
+              action="action_asterisk_number"
+              sequence="20"/>
+</odoo>

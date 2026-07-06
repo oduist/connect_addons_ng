@@ -23,14 +23,18 @@ When you create a PBX user and link it to an Odoo user, the Connect User group i
 | Messages | Read, Write, Create | Full | Read, Write, Create |
 | Recordings | Read | Full | Read, Write, Create |
 | PBX Users | Read | Full | — |
-| Numbers | Read | Full | — |
-| Caller IDs | Read | Full | — |
-| Extensions | Read | Full | — |
-| Call Flows | Read | Full | — |
-| Endpoints | Read | Full | — |
-| Settings | Read | Full | — |
+| Numbers (per provider) | Read | Full | — |
+| Caller IDs (per provider) | Read | Full | — |
+| Extensions (per provider) | Read | Full | — |
+| Call Flows (per provider) | Read | Full | — |
+| Endpoints (per provider) | Read, Write (own) | Full | — |
+| Settings | — | Full | — |
 | Favorites | Full | Full | — |
-| Debug Log | Read | Full | Read, Create |
+| Debug Log | — | Full | Create |
+
+Numbers, caller IDs, extensions, call flows and endpoints are per-provider
+models owned by `connect_twilio`, `connect_freeswitch` and `connect_asterisk`;
+their access rules ship with those modules and follow the same pattern.
 
 ## Protected Fields
 

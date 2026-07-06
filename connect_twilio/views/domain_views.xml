@@ -3,19 +3,19 @@
 
     <record id="domain_action" model="ir.actions.act_window">
         <field name="name">Domains</field>
-        <field name="res_model">connect.domain</field>
+        <field name="res_model">connect.twilio.domain</field>
         <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_connect_domains"
-              sequence="20"
+              sequence="60"
               parent="menu_connect_twilio"
-              name="Domains"
+              name="SIP Domains"
               action="domain_action"/>
 
     <record id="view_connect_domain_tree" model="ir.ui.view">
         <field name="name">connect.domain.tree</field>
-        <field name="model">connect.domain</field>
+        <field name="model">connect.twilio.domain</field>
         <field name="arch" type="xml">
             <list>
                 <field name="friendly_name"/>
@@ -27,7 +27,7 @@
 
     <record id="view_connect_domain_form" model="ir.ui.view">
         <field name="name">connect.domain.form</field>
-        <field name="model">connect.domain</field>
+        <field name="model">connect.twilio.domain</field>
         <field name="arch" type="xml">
             <form>
                 <sheet>

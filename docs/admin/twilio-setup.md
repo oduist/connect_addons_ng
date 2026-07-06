@@ -9,7 +9,7 @@
 
 ## Account Configuration
 
-Navigate to **Connect > Configuration > Settings** and open the **Twilio** tab.
+Navigate to **Connect > Twilio > Configuration > Settings**.
 
 ### Credentials
 
@@ -47,7 +47,7 @@ Click **SYNC TWILIO ACCOUNT** to import all Twilio resources:
 
 ## SIP Domains
 
-Navigate to **Connect > PBX > Domains** to manage SIP domains.
+Navigate to **Connect > Twilio > SIP Domains** to manage SIP domains.
 
 A SIP domain is required for SIP phone registration and the web phone widget.
 
@@ -66,13 +66,13 @@ When you create a domain, Connect automatically:
 
 ## User Setup (Twilio-specific)
 
-When editing a PBX user (**Connect > PBX > Users**), the Twilio integration adds:
+When editing a PBX user (**Connect > Users**), the Twilio integration adds:
 
 ### Phone Channels
 
 | Field | Description |
 |-------|-------------|
-| **Web Phone Enabled** | Allow this user to make/receive calls from the browser. |
+| **Web Phone Enabled** | Allow this user to make/receive calls from the browser. Enabled by default only when Twilio is the sole installed telephony module; with several providers installed, enable it explicitly per user. |
 | **Web Phone Priority** | Ring order: 1 = first, 2 = second. |
 | **Web Phone Ring Timeout** | Seconds to ring before moving to next channel. |
 | **SIP Phone Enabled** | Allow this user to register a SIP phone. |
@@ -83,7 +83,8 @@ When editing a PBX user (**Connect > PBX > Users**), the Twilio integration adds
 
 | Field | Description |
 |-------|-------------|
-| **Domain** | SIP domain for this user. |
+| **Username** | Alphanumeric PBX username (unique). Required only when the SIP phone or web phone is enabled — a user without Twilio phones can leave it empty (relevant when several provider modules are co-installed). |
+| **Domain** | SIP domain for this user. Same conditional requirement as Username. |
 | **Password** | SIP password. Auto-generated with strong policy (12+ chars). |
 | **SIP URI** | Computed: `username@domain.sip.twilio.com`. |
 | **Edge** | Preferred Twilio edge for this user. |
@@ -97,7 +98,7 @@ When editing a PBX user (**Connect > PBX > Users**), the Twilio integration adds
 
 ## TwiML Applications
 
-Navigate to **Connect > PBX > TwiML** to manage voice applications.
+Navigate to **Connect > Twilio > TwiML Apps** to manage voice applications.
 
 TwiML apps define custom call handling logic:
 
@@ -111,12 +112,13 @@ Each TwiML app can be assigned an extension number for direct dialing.
 
 ## Phone Numbers (Twilio-specific)
 
-The Twilio integration extends phone numbers with:
+Navigate to **Connect > Twilio > Numbers**. In addition to the common number fields,
+Twilio numbers carry:
 
 | Field | Description |
 |-------|-------------|
 | **SID** | Twilio Phone Number SID. Populated by sync. |
-| **Destination** | Extended to include **TwiML** as a routing option (in addition to User and Callflow). |
+| **Destination** | Includes **TwiML** as a routing option (in addition to User and Callflow). |
 | **Ignore** | Skip this number during sync operations. |
 
 Webhook URLs for voice and messaging are automatically configured when you assign a destination.
@@ -125,7 +127,7 @@ Webhook URLs for voice and messaging are automatically configured when you assig
 
 ### WhatsApp Senders
 
-Navigate to **Connect > Messages > WhatsApp Senders** to manage WhatsApp-enabled numbers.
+Navigate to **Connect > Twilio > Messages > WhatsApp Senders** to manage WhatsApp-enabled numbers.
 
 Click **Sync** to import senders from your Twilio account.
 
@@ -141,7 +143,7 @@ Click **Sync** to import senders from your Twilio account.
 
 ### WhatsApp Message Templates
 
-Navigate to **Connect > Messages > WhatsApp Templates** to manage pre-approved message templates.
+Navigate to **Connect > Twilio > Messages > WhatsApp Templates** to manage pre-approved message templates.
 
 Templates must be approved by WhatsApp before they can be used for outbound messaging. Use **Sync** to import templates from Twilio.
 
@@ -156,7 +158,7 @@ Templates must be approved by WhatsApp before they can be used for outbound mess
 
 ## Webhook URL
 
-Your Odoo instance must be accessible from the internet for Twilio webhooks. Set the **API URL** in the General settings tab to your public Odoo URL (e.g., `https://odoo.example.com`).
+Your Odoo instance must be accessible from the internet for Twilio webhooks. Set the **API URL** in **Connect > Configuration > Settings** to your public Odoo URL (e.g., `https://odoo.example.com`).
 
 All Twilio webhooks are under `/twilio/webhook/*`.
 
@@ -164,6 +166,6 @@ All Twilio webhooks are under `/twilio/webhook/*`.
 
 For Twilio, outgoing caller IDs can be validated:
 
-1. Create a new caller ID in **Connect > PBX > Caller IDs**
+1. Create a new caller ID in **Connect > Twilio > Outgoing Caller IDs**
 2. Click **Validate** — Twilio will call the number and provide a validation code
 3. Enter the validation code to confirm the number

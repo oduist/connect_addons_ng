@@ -94,7 +94,7 @@ class FreeSwitchXMLController(http.Controller):
         3. User by exten_number (bridge to user)
         4. Standalone endpoint by exten_number (bridge to endpoint)
         """
-        Endpoint = request.env['connect.endpoint'].sudo()
+        Endpoint = request.env['connect.freeswitch.endpoint'].sudo()
         ConnectUser = request.env['connect.user'].sudo()
 
         fs_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain')
@@ -132,7 +132,7 @@ class FreeSwitchXMLController(http.Controller):
 
         # 3. Search by exten_number (bridge to user)
         connect_user = ConnectUser.search([
-            ('exten_number', '=', user),
+            ('freeswitch_exten_number', '=', user),
             ('active', '=', True),
         ], limit=1)
         if connect_user:
@@ -159,7 +159,7 @@ class FreeSwitchXMLController(http.Controller):
             auth_user=endpoint.auth_user, domain=domain)
 
         cid_name = connect_user.name if connect_user else endpoint.auth_user
-        cid_num = (connect_user.exten_number if connect_user else endpoint.exten_number) or endpoint.auth_user
+        cid_num = (connect_user.freeswitch_exten_number if connect_user else endpoint.exten_number) or endpoint.auth_user
 
         return self._render_directory_user(
             xml_user_id=xml_user_id,
@@ -186,7 +186,7 @@ class FreeSwitchXMLController(http.Controller):
         cid_name = connect_user.name
         # Avoid surfacing the internal user.id as caller-id-number; fall back
         # to the user's name so the called party sees something meaningful.
-        cid_num = connect_user.exten_number or connect_user.name or xml_user_id
+        cid_num = connect_user.freeswitch_exten_number or connect_user.name or xml_user_id
 
         return self._render_directory_user(
             xml_user_id=xml_user_id,
@@ -205,7 +205,7 @@ class FreeSwitchXMLController(http.Controller):
         dial_parts = []
 
         # All active SIP endpoints (incoming calls ring all, not just originate_ring)
-        endpoints = request.env['connect.endpoint'].sudo().search([
+        endpoints = request.env['connect.freeswitch.endpoint'].sudo().search([
             ('connect_user_id', '=', connect_user.id),
             ('active', '=', True),
             ('auth_user', '!=', False),
@@ -225,7 +225,7 @@ class FreeSwitchXMLController(http.Controller):
         dial_string = ",".join(dial_parts)
 
         cid_name = connect_user.name
-        cid_num = connect_user.exten_number or (endpoints[0].auth_user if endpoints else '')
+        cid_num = connect_user.freeswitch_exten_number or (endpoints[0].auth_user if endpoints else '')
 
         # Password: use webrtc_password or first endpoint's password (needed for FS XML structure)
         password = connect_user.webrtc_password or (endpoints[0].auth_password if endpoints else '') or ''
@@ -268,7 +268,7 @@ class FreeSwitchXMLController(http.Controller):
 
     def _get_full_directory(self, domain):
         """Generate full directory XML with all users."""
-        Endpoint = request.env['connect.endpoint'].sudo()
+        Endpoint = request.env['connect.freeswitch.endpoint'].sudo()
         ConnectUser = request.env['connect.user'].sudo()
 
         actual_domain = request.env['connect.settings'].sudo().get_param('freeswitch_domain') or domain
@@ -287,7 +287,7 @@ class FreeSwitchXMLController(http.Controller):
                 'auth_user': endpoint.auth_user,
                 'password': endpoint.auth_password,
                 'cid_name': connect_user.name if connect_user else endpoint.auth_user,
-                'cid_num': (connect_user.exten_number if connect_user else endpoint.exten_number) or endpoint.auth_user,
+                'cid_num': (connect_user.freeswitch_exten_number if connect_user else endpoint.exten_number) or endpoint.auth_user,
                 'connect_user_id': str(connect_user.id) if connect_user else '',
                 'endpoint_id': str(endpoint.id),
                 'odoo_user_id': str(connect_user.user.id) if connect_user and connect_user.user else '',
@@ -310,7 +310,7 @@ class FreeSwitchXMLController(http.Controller):
                 'auth_user': verto_login,
                 'password': wu.webrtc_password,
                 'cid_name': wu.name,
-                'cid_num': wu.exten_number or wu.name or verto_login,
+                'cid_num': wu.freeswitch_exten_number or wu.name or verto_login,
                 'connect_user_id': str(wu.id),
                 'endpoint_id': '',
                 'odoo_user_id': str(wu.user.id),
@@ -362,7 +362,7 @@ class FreeSwitchXMLController(http.Controller):
 
     def _route_inbound(self, destination, params):
         """Route inbound calls from PSTN trunks via connect.number."""
-        Number = request.env['connect.number'].sudo()
+        Number = request.env['connect.freeswitch.number'].sudo()
 
         # Match tolerating an optional leading '+' between the trunk format and
         # the stored DID (see connect.number._find_by_did).
@@ -379,7 +379,7 @@ class FreeSwitchXMLController(http.Controller):
 
     def _route_internal(self, destination, params):
         """Route internal calls: extensions, outgoing routes, system extensions."""
-        Exten = request.env['connect.exten'].sudo()
+        Exten = request.env['connect.freeswitch.exten'].sudo()
 
         parts = []
 
@@ -409,7 +409,7 @@ class FreeSwitchXMLController(http.Controller):
         # variables and bridges to the user.
         ivr_choice = re.match(r'^cf_call_(\d+)_(.+)$', destination)
         if ivr_choice:
-            cf = request.env['connect.callflow'].sudo().browse(int(ivr_choice.group(1)))
+            cf = request.env['connect.freeswitch.callflow'].sudo().browse(int(ivr_choice.group(1)))
             if cf.exists():
                 choice_xml = cf._generate_ivr_choice_dialplan(ivr_choice.group(2))
                 if choice_xml:
@@ -419,7 +419,7 @@ class FreeSwitchXMLController(http.Controller):
         # IVR catch-all (invalid DTMF) extension.
         ivr_invalid = re.match(r'^cf_invalid_(\d+)$', destination)
         if ivr_invalid:
-            cf = request.env['connect.callflow'].sudo().browse(int(ivr_invalid.group(1)))
+            cf = request.env['connect.freeswitch.callflow'].sudo().browse(int(ivr_invalid.group(1)))
             if cf.exists():
                 invalid_xml = cf._generate_ivr_invalid_dialplan()
                 if invalid_xml:

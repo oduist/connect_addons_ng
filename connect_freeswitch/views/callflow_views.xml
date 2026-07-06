@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_connect_callflow_tree" model="ir.ui.view">
-        <field name="name">connect.callflow.tree</field>
-        <field name="model">connect.callflow</field>
+    <record id="view_freeswitch_callflow_tree" model="ir.ui.view">
+        <field name="name">connect.freeswitch.callflow.tree</field>
+        <field name="model">connect.freeswitch.callflow</field>
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
@@ -11,9 +11,9 @@
         </field>
     </record>
 
-    <record id="view_connect_callflow_form" model="ir.ui.view">
-        <field name="name">connect.callflow.form</field>
-        <field name="model">connect.callflow</field>
+    <record id="view_freeswitch_callflow_form" model="ir.ui.view">
+        <field name="name">connect.freeswitch.callflow.form</field>
+        <field name="model">connect.freeswitch.callflow</field>
         <field name="arch" type="xml">
             <form>
                 <sheet>
@@ -28,9 +28,9 @@
                             <field name="exten" readonly="1"/>
                             <field name="exten_number" readonly="1"/>
                             <field name="language"/>
-                            <field name="voice"/>
                             <field name="record_calls"/>
                             <field name="gather_input"/>
+                            <field name="fs_fifo_id"/>
                         </group>
                         <group string="Voicemail">
                             <field name="voicemail_enabled"/>
@@ -59,7 +59,6 @@
                                 <list editable="bottom">
                                     <field name="choice_digits"/>
                                     <field name="exten"/>
-                                    <field name="speech"/>
                                 </list>
                             </field>
                         </page>
@@ -67,7 +66,7 @@
                             <field name="ring_users">
                                 <list>
                                     <field name="user"/>
-                                    <field name="exten"/>
+                                    <field name="freeswitch_exten"/>
                                 </list>
                             </field>
                         </page>
@@ -77,15 +76,15 @@
         </field>
     </record>
 
-    <record id="action_connect_callflow" model="ir.actions.act_window">
+    <record id="action_freeswitch_callflow" model="ir.actions.act_window">
         <field name="name">Call Flows</field>
-        <field name="res_model">connect.callflow</field>
+        <field name="res_model">connect.freeswitch.callflow</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_connect_callflows"
+    <menuitem id="menu_freeswitch_callflows"
               name="Call Flows"
-              parent="menu_connect_pbx"
-              action="action_connect_callflow"
-              sequence="50"/>
+              parent="menu_freeswitch_root"
+              action="action_freeswitch_callflow"
+              sequence="30"/>
 </odoo>

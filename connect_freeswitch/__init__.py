@@ -16,7 +16,7 @@ def backfill_endpoint_passwords(env):
     Shared helper called from the per-series post-migration entry point.
     """
     from .models.passphrase import generate_passphrase
-    endpoints = env['connect.endpoint'].sudo().with_context(active_test=False).search([
+    endpoints = env['connect.freeswitch.endpoint'].sudo().with_context(active_test=False).search([
         '|', ('auth_password', '=', False), ('auth_password', '=', ''),
     ])
     for endpoint in endpoints:

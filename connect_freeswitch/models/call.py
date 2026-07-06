@@ -144,7 +144,7 @@ class Call(models.Model):
         display_number = number
 
         # SIP endpoints with originate_ring enabled
-        endpoints = self.env['connect.endpoint'].search([
+        endpoints = self.env['connect.freeswitch.endpoint'].search([
             ('connect_user_id', '=', connect_user.id),
             ('active', '=', True),
             ('originate_ring', '=', True),
@@ -188,23 +188,23 @@ class Call(models.Model):
         a_leg = ','.join(a_leg_parts)
 
         # Check if target is an internal extension
-        exten = self.env['connect.exten'].search(
+        exten = self.env['connect.freeswitch.exten'].search(
             [('number', '=', number)], limit=1)
 
         # Caller ID for b-leg (what the called party sees)
         first_ep = endpoints[:1]
         if exten:
-            caller_number = connect_user.exten_number or (first_ep.auth_user if first_ep else '')
+            caller_number = connect_user.freeswitch_exten_number or (first_ep.auth_user if first_ep else '')
         else:
             # Per-user outgoing CallerID, else the system-wide default DID
             # (is_default), else the extension — symmetric with the Twilio
             # path and the UA-originated dialplan override (ADR-027, #96).
-            default_cid = self.env['connect.outgoing_callerid'].sudo().search(
+            default_cid = self.env['connect.freeswitch.outgoing_callerid'].sudo().search(
                 [('is_default', '=', True)], limit=1)
             caller_number = (
-                connect_user.outgoing_callerid.number
+                connect_user.freeswitch_outgoing_callerid.number
                 or default_cid.number
-                or connect_user.exten_number
+                or connect_user.freeswitch_exten_number
                 or (first_ep.auth_user if first_ep else '')
             )
 
@@ -294,8 +294,8 @@ class Call(models.Model):
                 return self._build_user_bridge(target_user, domain)
 
         # Check if extension points to a standalone endpoint
-        if exten.model == 'connect.endpoint' and exten.res_id:
-            target_ep = self.env['connect.endpoint'].browse(exten.res_id)
+        if exten.model == 'connect.freeswitch.endpoint' and exten.res_id:
+            target_ep = self.env['connect.freeswitch.endpoint'].browse(exten.res_id)
             if target_ep.exists() and target_ep.active and target_ep.auth_user:
                 return 'user/{}@{}'.format(target_ep.auth_user, domain)
 
@@ -307,7 +307,7 @@ class Call(models.Model):
         b_parts = []
 
         # SIP endpoints (all active, not just originate_ring)
-        target_endpoints = self.env['connect.endpoint'].search([
+        target_endpoints = self.env['connect.freeswitch.endpoint'].search([
             ('connect_user_id', '=', target_user.id),
             ('active', '=', True),
             ('auth_user', '!=', False),
@@ -327,7 +327,7 @@ class Call(models.Model):
 
         # Fallback
         return 'user/{}@{}'.format(
-            target_user.exten_number or '', domain)
+            target_user.freeswitch_exten_number or '', domain)
 
     @api.model
     def on_freeswitch_cdr(self, cdr_data):
@@ -427,7 +427,7 @@ class Call(models.Model):
         # Override called with DID number for inbound calls
         odoo_number_id = cdr_data.get('odoo_number_id')
         if odoo_number_id:
-            number = self.env['connect.number'].browse(odoo_number_id).exists()
+            number = self.env['connect.freeswitch.number'].browse(odoo_number_id).exists()
             if number:
                 generic_params['called'] = number.phone_number
 

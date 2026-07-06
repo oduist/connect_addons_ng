@@ -10,16 +10,6 @@
               parent="menu_connect_root"
               sequence="10"/>
 
-    <menuitem id="menu_connect_messages_parent"
-              name="Messages"
-              parent="menu_connect_root"
-              sequence="20"/>
-
-    <menuitem id="menu_connect_pbx"
-              name="PBX"
-              parent="menu_connect_root"
-              sequence="50"/>
-
     <menuitem id="menu_connect_settings"
               name="Configuration"
               parent="menu_connect_root"

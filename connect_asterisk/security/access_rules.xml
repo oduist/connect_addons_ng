@@ -16,4 +16,71 @@
         <field name="perm_unlink" eval="True"/>
     </record>
 
+    <!-- connect.asterisk.endpoint access rules -->
+    <record id="access_asterisk_endpoint_user" model="ir.model.access">
+        <field name="name">connect.asterisk.endpoint user</field>
+        <field name="model_id" ref="model_connect_asterisk_endpoint"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_asterisk_endpoint_admin" model="ir.model.access">
+        <field name="name">connect.asterisk.endpoint admin</field>
+        <field name="model_id" ref="model_connect_asterisk_endpoint"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_asterisk_endpoint_webhook" model="ir.model.access">
+        <field name="name">connect.asterisk.endpoint webhook</field>
+        <field name="model_id" ref="model_connect_asterisk_endpoint"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.asterisk.endpoint record rules -->
+    <record id="rule_asterisk_endpoint_user" model="ir.rule">
+        <field name="name">Asterisk Endpoint: user sees own endpoints</field>
+        <field name="model_id" ref="model_connect_asterisk_endpoint"/>
+        <field name="domain_force">[('connect_user_id.user', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('connect.group_user'))]"/>
+    </record>
+
+    <record id="rule_asterisk_endpoint_admin" model="ir.rule">
+        <field name="name">Asterisk Endpoint: admin sees all</field>
+        <field name="model_id" ref="model_connect_asterisk_endpoint"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('connect.group_admin'))]"/>
+    </record>
+
+    <!-- connect.asterisk.number access rules -->
+    <record id="access_asterisk_number_user" model="ir.model.access">
+        <field name="name">connect.asterisk.number user</field>
+        <field name="model_id" ref="model_connect_asterisk_number"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_asterisk_number_admin" model="ir.model.access">
+        <field name="name">connect.asterisk.number admin</field>
+        <field name="model_id" ref="model_connect_asterisk_number"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
 </odoo>

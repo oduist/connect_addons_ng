@@ -9,5 +9,6 @@ from . import fs_fifo
 from . import fs_user
 from . import gateway
 from . import number
+from . import outgoing_callerid
 from . import outgoing_route
 from . import settings

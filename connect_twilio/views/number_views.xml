@@ -1,34 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
-    <!-- Inherit core number list to add twilio columns -->
-    <record id="view_connect_number_tree_twilio" model="ir.ui.view">
-        <field name="name">connect.number.tree.twilio</field>
-        <field name="model">connect.number</field>
-        <field name="inherit_id" ref="connect.view_connect_number_tree"/>
+    <record id="view_twilio_number_tree" model="ir.ui.view">
+        <field name="name">connect.twilio.number.tree</field>
+        <field name="model">connect.twilio.number</field>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='callflow']" position="after">
+            <list>
+                <field name="phone_number"/>
+                <field name="friendly_name"/>
+                <field name="destination"/>
+                <field name="user"/>
+                <field name="callflow"/>
                 <field name="twiml"/>
                 <field name="is_ignored"/>
-            </xpath>
+            </list>
         </field>
     </record>
 
-    <!-- Inherit core number form to add twilio fields -->
-    <record id="view_connect_number_form_twilio" model="ir.ui.view">
-        <field name="name">connect.number.form.twilio</field>
-        <field name="model">connect.number</field>
-        <field name="inherit_id" ref="connect.view_connect_number_form"/>
+    <record id="view_twilio_number_form" model="ir.ui.view">
+        <field name="name">connect.twilio.number.form</field>
+        <field name="model">connect.twilio.number</field>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='callflow']" position="after">
-                <field name="twiml"
-                       invisible="destination != 'twiml'"
-                       required="destination == 'twiml'"/>
-            </xpath>
-            <xpath expr="//field[@name='is_default']" position="before">
-                <field name="is_ignored"/>
-            </xpath>
+            <form>
+                <sheet>
+                    <group>
+                        <group string="Number">
+                            <field name="phone_number"/>
+                            <field name="friendly_name"/>
+                            <field name="is_ignored"/>
+                            <field name="is_default"/>
+                        </group>
+                        <group string="Routing">
+                            <field name="destination"/>
+                            <field name="user" invisible="destination != 'user'"/>
+                            <field name="callflow" invisible="destination != 'callflow'"/>
+                            <field name="twiml"
+                                   invisible="destination != 'twiml'"
+                                   required="destination == 'twiml'"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
         </field>
     </record>
 
+    <record id="action_twilio_number" model="ir.actions.act_window">
+        <field name="name">Numbers</field>
+        <field name="res_model">connect.twilio.number</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_twilio_numbers"
+              name="Numbers"
+              parent="menu_connect_twilio"
+              action="action_twilio_number"
+              sequence="10"/>
 </odoo>

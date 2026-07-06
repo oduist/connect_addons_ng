@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import re
 from odoo import api, models, fields, release
 
@@ -11,7 +12,7 @@ class SendSMS(models.TransientModel):
     def _list_all_numbers(self):
         self._cr.execute(
             "SELECT phone_number, COALESCE(phone_number, phone_number) "
-            "FROM connect_number ORDER BY 2"
+            "FROM connect_twilio_number ORDER BY 2"
         )
         return self._cr.fetchall()
 

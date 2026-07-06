@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 import logging
+import re
 from urllib.parse import urljoin
 from odoo import fields, models, api, release
+if release.version_info[0] >= 19:
+    from odoo.models import Constraint
 from odoo.exceptions import ValidationError
 from odoo.addons.connect.models.settings import debug
 from .settings import format_connect_response
@@ -10,11 +13,54 @@ logger = logging.getLogger(__name__)
 
 
 class OutgoingCallerID(models.Model):
-    _inherit = 'connect.outgoing_callerid'
+    _name = 'connect.twilio.outgoing_callerid'
+    _description = 'Twilio Outgoing CallerId'
+    _order = 'number'
+    _rec_names_search = ['number', 'friendly_name']
 
+    name = fields.Char(compute='_get_name')
+    friendly_name = fields.Char(required=True)
+    number = fields.Char(required=True)
+    callerid_type = fields.Selection(
+        [('outgoing_callerid', 'CallerID'), ('number', 'DID Number')],
+        required=True, default='outgoing_callerid')
+    is_default = fields.Boolean(string='Default')
+    callerid_users = fields.One2many(
+        comodel_name='connect.user',
+        inverse_name='twilio_outgoing_callerid', string='callerId Users')
     sid = fields.Char(readonly=True)
     status = fields.Char(readonly=True)
     validation_code = fields.Char(readonly=True)
+
+    if release.version_info[0] >= 19:
+        _number_uniq = Constraint('UNIQUE(number)', 'This number is already used!')
+    else:
+        _sql_constraints = [('number_uniq', 'UNIQUE(number)', 'This number is already used!')]
+
+    def _get_name(self):
+        for rec in self:
+            rec.name = '{} "{}"'.format(rec.number, rec.friendly_name)
+
+    @api.constrains('number')
+    def _check_number(self):
+        # Iterate: a constraint receives a (possibly multi-record)
+        # recordset, so self.number would raise "Expected singleton" on a
+        # batch create. The single regex also covers the +-prefix check.
+        for rec in self:
+            if rec.number and not re.match(r'^\+[0-9]+$', rec.number):
+                raise ValidationError(
+                    'Number must be in E.164 form: a + followed by digits only.')
+
+    @api.constrains('is_default')
+    def _reset_default(self):
+        if self.env.context.get('skip_reset_default'):
+            return
+        # Only clear the other records when this one is BECOMING the
+        # default.
+        for rec in self:
+            if rec.is_default:
+                self.with_context(skip_reset_default=True).search(
+                    [('id', '!=', rec.id)]).write({'is_default': False})
 
     @api.constrains('is_default')
     def _check_default(self):
@@ -32,10 +78,10 @@ class OutgoingCallerID(models.Model):
         else:
             numbers = []
         for number in numbers:
-            existing_number = self.env['connect.outgoing_callerid'].search([
+            existing_number = self.env[self._name].search([
                 ('sid', '=', number.sid)])
             if not existing_number:
-                existing_number = self.env['connect.outgoing_callerid'].search([
+                existing_number = self.env[self._name].search([
                     ('number', '=', number.phone_number)])
             data = {
                 'sid': number.sid,
@@ -62,7 +108,7 @@ class OutgoingCallerID(models.Model):
                     else:
                         client.incoming_phone_numbers(existing_number.sid).update(
                             friendly_name=existing_number.friendly_name)
-        recs_to_remove = self.env['connect.outgoing_callerid'].search(
+        recs_to_remove = self.env[self._name].search(
             [('sid', 'not in', [k.sid for k in numbers]), ('callerid_type', '=', callerid_type)])
         debug(self, 'Removing {} CallerIds: {}'.format(callerid_type, [k.number for k in recs_to_remove]))
         recs_to_remove.unlink()
@@ -84,7 +130,7 @@ class OutgoingCallerID(models.Model):
             number.write({'status': 'validated', 'sid': params['OutgoingCallerIdSid']})
         else:
             number.status = 'validation failed'
-        self.env['connect.settings'].connect_reload_view('connect.outgoing_callerid')
+        self.env['connect.settings'].connect_reload_view(self._name)
         return True
 
     def validate(self):
@@ -108,7 +154,7 @@ class OutgoingCallerID(models.Model):
                 self.sync()
                 return {
                     'type': 'ir.actions.act_window',
-                    'res_model': 'connect.outgoing_callerid',
+                    'res_model': self._name,
                     'view_mode': 'list',
                     'name': 'Outgoing CallerIds',
                 }
@@ -133,7 +179,7 @@ class OutgoingCallerID(models.Model):
                     client = self.env['connect.settings'].get_client()
                     client.outgoing_caller_ids(rec.sid).update(friendly_name=self.friendly_name)
             elif rec.sid and rec.callerid_type == 'number':
-                number = self.env['connect.number'].search([('phone_number', '=', rec.number)])
+                number = self.env['connect.twilio.number'].search([('phone_number', '=', rec.number)])
                 number.friendly_name = rec.friendly_name
 
     def unlink(self):
@@ -150,6 +196,6 @@ class OutgoingCallerID(models.Model):
         for sid in sids.keys():
             try:
                 client.outgoing_caller_ids(sid).delete()
-            except Exception as e:
+            except Exception:
                 logger.error('Could not delete outgoing callerid number %s', sids[sid])
         return res
