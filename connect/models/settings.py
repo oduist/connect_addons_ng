@@ -208,8 +208,8 @@ class Settings(models.Model):
         """Dispatch click-to-call to the telephony provider chosen on the
         connect.user (originate_provider). With a single provider module
         installed the choice is implicit. Provider modules override this
-        method: handle the call when _originate_provider_key() matches,
-        otherwise fall through to super().
+        method: handle the call when _get_originate_provider(user) returns
+        their key, otherwise fall through to super().
         """
         raise UserError(
             'No telephony module can handle this call. Install a telephony '
