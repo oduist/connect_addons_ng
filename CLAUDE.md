@@ -8,28 +8,41 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 
 ## Modules
 
-- **`connect`** — Technology-agnostic core. Stores calls, messages, recordings, users, callflows, extensions. Handles OpenAI transcription/summarization, SMS composer UI, partner integration. **Never imports provider-specific code.**
-- **`connect_twilio`** — Twilio integration. Extends core models via `_inherit`. Adds TwiML apps, SIP domains, WhatsApp, webhook handlers, Twilio Voice JS SDK phone widget.
-- **`connect_freeswitch`** — FreeSWITCH integration. Adds Verto WebRTC client, XML dialplan generation, endpoint management.
-- **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). See ADR-026.
+- **`connect`** — Technology-agnostic core: the shared call/message ledger (`connect.call`, `connect.channel`, `connect.recording`, `connect.message`), PBX people (`connect.user`), common settings, OpenAI transcription/summarization, partner integration. **Never imports provider-specific code and holds NO PBX-configuration models.**
+- **`connect_twilio`** — Twilio integration. Owns its PBX configuration: `connect.twilio.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,twiml,domain}`, WhatsApp, sms.composer, webhook handlers, Twilio Voice JS SDK phone widget. Top-level **Twilio** menu (incl. Messages).
+- **`connect_freeswitch`** — FreeSWITCH integration. Owns `connect.freeswitch.{exten,callflow,callflow_choice,number,endpoint,outgoing_callerid}` plus gateways/routes/FIFO/parking/firewall, Verto WebRTC client, XML dialplan generation. Top-level **FreeSWITCH** menu.
+- **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). Owns `connect.asterisk.{endpoint,number}`; AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). Top-level **Asterisk** menu. See ADR-026.
+- **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
 
-Dependencies: `connect_twilio`, `connect_freeswitch` and `connect_asterisk` all depend on `connect` but are independent of each other.
+Dependencies: `connect_twilio`, `connect_freeswitch` and `connect_asterisk` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module).
 
 ## Architecture
 
-The core design pattern: core defines abstract interfaces, integration modules implement them via `_inherit`.
+Provider model separation (ADR-031): each telephony system lives in its own
+numbering plan and business logic. Extensions, numbers, call flows, caller IDs
+and endpoints are **independent per-provider models** — a FreeSWITCH extension
+has nothing to do with a Twilio extension. Provider modules still `_inherit`
+the shared ledger models (call/channel/user/settings) to add adapter
+fields/methods that normalize provider events into the common history.
 
 ```
-Core:   _name = 'connect.foo'     → abstract methods (raise NotImplementedError or pass)
-Twilio: _inherit = 'connect.foo'  → implements abstract methods, adds provider fields
+Ledger:  _name = 'connect.call'              → shared, providers _inherit adapters
+Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider module
 ```
 
 **Boundary rules:**
 - Core never imports `twilio` or references Twilio-specific concepts (SIDs, TwiML)
 - OpenAI transcription (Whisper + GPT-4o summary) lives in core — it's provider-agnostic
-- SMS composer lives in core with abstract `send()` — integration modules implement it
-- Settings form uses notebook tabs; each integration adds its own page via view inheritance
+- `connect.message` (ledger, abstract `send()`) stays in core; sms.composer UI and message menus live in connect_twilio
+- `connect.settings` is a single model; each provider ships its OWN standalone settings form view + menu (opened via the parametrized `connect.settings.open_settings_form(view_xmlid, name)`) — do NOT inject notebook pages into the core form
+- `connect.settings.originate_call()` is a dispatcher: provider overrides check `_get_originate_provider(user)` for their key and fall through to `super()`
 - Special webhook user (`connect.user_connect_webhook`) is defined in core data, used by all integrations
+
+> **Deliberately duplicated code (no mixins — ADR-031).** The exten
+> dst-Reference mechanics, the callflow language selection list and the
+> caller-ID E.164/is_default logic exist as full copies in BOTH
+> connect_twilio and connect_freeswitch. When you fix or change one copy,
+> apply the same change to the other module in the same commit.
 
 **Security groups:** `connect.group_user` (read), `connect.group_admin` (full CRUD), `connect.group_webhook` (webhook record creation)
 
@@ -39,8 +52,8 @@ Twilio: _inherit = 'connect.foo'  → implements abstract methods, adds provider
 > the **Connect User** group should have on it, then write the `ir.model.access`
 > rows (and any `ir.rule`) accordingly. `connect.group_admin` defaults to full
 > CRUD. Admin-only infrastructure/config models (e.g. `connect.settings`,
-> `connect.debug`, `connect.message_configuration`, the firewall models) must
-> grant the user group **no** access.
+> `connect.debug`, `connect.twilio.message_configuration`, the firewall
+> models) must grant the user group **no** access.
 
 ## Key Files
 

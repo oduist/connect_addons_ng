@@ -4,6 +4,7 @@
 
 - **Name:** Oduist Connect FreeSWITCH
 - **Technical:** `connect_freeswitch`
+- **Version:** 19.0.2.0.0
 - **Depends:** `connect`, `web`
 - **Application:** False
 - **License:** Proprietary
@@ -11,10 +12,14 @@
 ## Overview
 
 The `connect_freeswitch` module extends the core `connect` module with
-FreeSWITCH-specific functionality. Like `connect_twilio` it follows the
-abstract-core / concrete-integration pattern: core defines models and
-abstract hooks, FreeSWITCH-side code adds fields and behaviour via
-`_inherit`.
+FreeSWITCH-specific functionality. The shared ledger models
+(`connect.call`, `connect.user`, `connect.settings`) are extended via
+`_inherit`; since ADR-031 the module also **owns its PBX configuration
+models** as independent `connect.freeswitch.*` models (exten, callflow,
+number, endpoint, outgoing caller ID) — no core counterparts exist. The
+exten dst-Reference mechanics, the callflow language list and the E.164
+caller-ID constraint are deliberate copies of the Twilio counterparts —
+**no shared mixin**; fixes must be applied in both modules.
 
 It ships **three deliverables**:
 
@@ -140,23 +145,24 @@ Beyond firewall, the module contains:
 
 | Model | Purpose |
 |---|---|
-| `connect.user` (`_inherit`) | adds WebRTC fields and dial-string generation |
-| `connect.endpoint` (`_inherit`) | SIP endpoint management. `auth_password` is auto-generated as a typeable passphrase (`models/passphrase.py`, `secrets`-based), `readonly` + `copy=False`, defaulted on create; `action_regenerate_auth_password()` issues a new one. Empty passwords on existing endpoints are backfilled non-destructively by `backfill_endpoint_passwords(env)` (post-migration). UI uses the `endpoint_password` OWL widget (mask + Show/Hide + Copy) — see ADR-022 |
-| `connect.exten` (`_inherit`) | extension number tooling |
-| `connect.callflow` (`_inherit`) | callflow extension for FreeSWITCH-specific destinations; `_get_piper_language()` returns the BCP-47 code used as the Piper TTS model key (must match a `<model language="...">` entry in `piper_tts.conf.xml`) |
-| `connect.number` (`_inherit`) | DID assignment |
+| `connect.user` (`_inherit`) | adds `freeswitch_exten` / `freeswitch_exten_number` (registered in `_pbx_number_fields()`), `freeswitch_outgoing_callerid`, `freeswitch_endpoint_ids`, WebRTC fields and dial-string generation; `originate_provider` `selection_add` `'freeswitch'` |
+| `connect.freeswitch.endpoint` (own model, ADR-031) | SIP endpoint management (formerly `connect.endpoint`). `auth_password` is auto-generated as a typeable passphrase (`models/passphrase.py`, `secrets`-based), `readonly` + `copy=False`, defaulted on create; `action_regenerate_auth_password()` issues a new one. Empty passwords on existing endpoints are backfilled non-destructively by `backfill_endpoint_passwords(env)` (post-migration). UI uses the `endpoint_password` OWL widget (mask + Show/Hide + Copy) — see ADR-022 |
+| `connect.freeswitch.exten` (own model, ADR-031) | extension routing (formerly `connect.exten`); dst Reference → `connect.user` / `connect.freeswitch.callflow` / `connect.freeswitch.endpoint` / `connect.fs_fifo` |
+| `connect.freeswitch.callflow` + `_choice` (own models, ADR-031) | IVR configuration and FreeSWITCH destinations (formerly `connect.callflow`); `_get_piper_language()` returns the BCP-47 code used as the Piper TTS model key (must match a `<model language="...">` entry in `piper_tts.conf.xml`) |
+| `connect.freeswitch.number` (own model, ADR-031) | DID assignment (formerly `connect.number`) |
+| `connect.freeswitch.outgoing_callerid` (own model, ADR-031) | outbound caller IDs (formerly `connect.outgoing_callerid`); E.164 `+` constraint, single default |
 | `connect.freeswitch.gateway` | SIP gateway records, rendered into pjsip_wizard XML |
 | `connect.freeswitch.outgoing_route` | outbound routing rules |
 | `connect.freeswitch.template` | Jinja2 templates for dialplan / directory XML |
-| `connect.fs_fifo` | mod_fifo queue records (ADR-013) |
+| `connect.fs_fifo` | mod_fifo queue records (ADR-013); user agents list resolves via `freeswitch_exten_number` |
 | `connect.freeswitch.parking.slot` | call parking (ADR-012) |
 
 ### Outbound Caller ID resolution
 
 The number presented to the called party on an outbound PSTN call is
-resolved from `connect.outgoing_callerid` in a fixed order:
+resolved from `connect.freeswitch.outgoing_callerid` in a fixed order:
 
-**per-user `connect.user.outgoing_callerid` → system default (`is_default=True`) → extension**
+**per-user `connect.user.freeswitch_outgoing_callerid` → system default (`is_default=True`) → extension**
 
 Two origination paths apply it independently:
 
@@ -273,13 +279,64 @@ event cleanup keeps the audit log within `firewall_event_retention_days`.
 * a singleton form for the agent record with status badge;
 * the Unban button on auto_ban events (visible only when the IP is
   still in the live banned set);
-* a `Connect → PBX → Firewall` menu structure with sub-items
+* a `FreeSWITCH → Firewall` menu structure with sub-items
   `Agent Status`, `Whitelist`, `Blacklist`, `Events`.
 
 `views/settings.xml`:
-* extends the existing settings page with a `Firewall` page —
-  Enabled toggle, Service URL, masked Firewall Service Token,
-  heartbeat interval, retention, ports, timeouts.
+* **standalone** FreeSWITCH settings form (XML-RPC connection, domain,
+  webhook token, recording upload, plus the `Firewall` page — Enabled
+  toggle, Service URL, masked Firewall Service Token, heartbeat interval,
+  retention, ports, timeouts), opened through the core parametrized
+  `open_settings_form()`; no notebook pages are injected into the core
+  settings form (ADR-031).
+
+### Menu structure
+
+`connect_freeswitch` owns the top-level **FreeSWITCH** app menu (ADR-031);
+nothing is added under the core Connect menu.
+
+```
+FreeSWITCH (root, seq 30)
+  +-- Numbers (seq 10)
+  +-- Extensions (seq 20)
+  +-- Call Flows (seq 30)
+  +-- Endpoints (seq 40)
+  +-- Outgoing Caller IDs (seq 50)
+  +-- FIFO Queues (seq 60)
+  +-- Parking Slots (seq 70)
+  +-- Firewall (seq 80, admin)
+  |   +-- Agent Status / Whitelist / Blacklist / Events
+  +-- Configuration (seq 100, admin)
+      +-- SIP Gateways
+      +-- Outgoing Routes
+      +-- XML Templates
+      +-- Settings
+```
+
+---
+
+## Migration (19.0.2.0.0, ADR-031)
+
+Production runs FreeSWITCH only, so `connect_freeswitch` is the only provider
+module with a data migration (connect_twilio / connect_asterisk ship none):
+
+* **connect 19.0.4.0.0 pre-migration** (in the core module) renames the moved
+  PBX tables to `_*_legacy` archives so the registry cleanup cannot drop them,
+  and removes the sms.composer inherit view (the wizard moved to
+  connect_twilio).
+* **connect_freeswitch 19.0.2.0.0 pre-migration** stashes the
+  `connect_fs_fifo` exten FKs (`exten`, `fallback_exten_id`) and the
+  `fs_fifo_endpoint_rel` M2M rows into temporary `_mig_*` columns/tables and
+  drops the stale constraints, so the fresh FK to the still-empty
+  `connect_freeswitch_exten` table cannot abort the upgrade.
+* **connect_freeswitch 19.0.2.0.0 post-migration** copies the legacy data
+  **id-preserving** into the new models
+  (`_connect_exten_legacy` → `connect_freeswitch_exten`, callflow(+choice,
+  ring-users rel), number, endpoint, outgoing_callerid), remaps the exten
+  `model` Reference strings (`connect.callflow` →
+  `connect.freeswitch.callflow`, …), transfers the legacy `connect_user`
+  columns (`exten`, `outgoing_callerid`) into the new per-provider columns,
+  and restores the stashed fifo FKs.
 
 ---
 

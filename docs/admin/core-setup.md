@@ -1,6 +1,9 @@
 # Core Configuration
 
-All settings are managed in **Connect > Configuration > Settings**.
+Core settings are managed in **Connect > Configuration > Settings**.
+Provider-specific settings have their own menus: **Twilio > Configuration >
+Settings**, **FreeSWITCH > Configuration > Settings**, **Asterisk >
+Configuration > Settings**.
 
 ## General Tab
 
@@ -32,34 +35,39 @@ Connect uses OpenAI for automatic call transcription and summarization.
 
 ## PBX Users
 
-Navigate to **Connect > PBX > Users** to create PBX user accounts.
+Navigate to **Connect > Users** to create PBX user accounts.
 
 | Field | Description |
 |-------|-------------|
-| **Username** | Alphanumeric PBX identifier (required, unique). |
 | **Odoo User** | Link to an Odoo user account. One PBX user per Odoo user. |
 | **Record Calls** | Enable call recording for this user. Default: enabled. |
 | **Voicemail Enabled** | Allow callers to leave voicemail when user is unavailable. |
 | **Voicemail Prompt** | Custom voicemail greeting (supports Jinja2 templates). |
-| **Outgoing Caller ID** | Default outgoing number for this user. |
 | **Missed Call Notifications** | Send notifications for missed calls. |
+| **Click-to-call Provider** | Which installed telephony module originates calls for this user. Leave empty when only one provider module is installed. |
 
-When a PBX user is created, an extension number is automatically assigned.
+Provider-specific fields (Twilio username/SIP domain, per-provider extension
+numbers, outgoing caller IDs, endpoints) are added to the user form by the
+installed integration modules. When a PBX user is created, the Twilio and
+FreeSWITCH integrations automatically assign an extension number in their own
+numbering plans.
 
 ## Phone Numbers (DIDs)
 
-Navigate to **Connect > PBX > Numbers** to manage inbound phone numbers.
+Inbound phone numbers belong to the telephony provider: navigate to
+**Twilio > Numbers**, **FreeSWITCH > Numbers** or **Asterisk > Numbers**.
 
 | Field | Description |
 |-------|-------------|
 | **Phone Number** | The DID number (e.g., +1234567890). |
 | **Friendly Name** | Human-readable label. |
-| **Destination** | Route incoming calls to a **User** or **Call Flow**. |
+| **Destination** | Route incoming calls to a **User** or **Call Flow** (Twilio/FreeSWITCH; Asterisk numbers only map a DID to a user for dialplan lookups). |
 | **Default** | Mark as the default outgoing number. |
 
 ## Outgoing Caller IDs
 
-Navigate to **Connect > PBX > Caller IDs** to manage outgoing numbers.
+Outgoing caller IDs also belong to the provider: navigate to
+**Twilio > Outgoing Caller IDs** or **FreeSWITCH > Outgoing Caller IDs**.
 
 Numbers must start with `+` followed by digits only. Only one caller ID can be marked as default at a time.
 
@@ -70,11 +78,15 @@ default set, FreeSWITCH falls back to the user's extension number.
 
 ## Extensions
 
-Extensions are auto-managed. When you create a PBX user or call flow, an extension number is automatically assigned. View all extensions in **Connect > PBX > Extensions**.
+Extensions are auto-managed per provider. When you create a PBX user or call
+flow, an extension number is automatically assigned in that provider's
+numbering plan. View extensions in **Twilio > Extensions** or
+**FreeSWITCH > Extensions**. (The Asterisk integration keeps numbering in your
+existing dialplan — the user form only mirrors the extension as plain text.)
 
 ## Message Configuration
 
-Navigate to **Connect > Configuration > Message Config** to configure automatic partner creation from incoming messages.
+Navigate to **Twilio > Messages > Message Configuration** to configure automatic partner creation from incoming messages.
 
 | Field | Description |
 |-------|-------------|

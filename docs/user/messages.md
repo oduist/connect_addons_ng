@@ -2,7 +2,7 @@
 
 ## Viewing Messages
 
-Navigate to **Connect > Messages** to see all SMS and WhatsApp messages.
+Navigate to **Twilio > Messages > Messages** to see all SMS and WhatsApp messages.
 
 Each message shows:
 
@@ -62,7 +62,7 @@ If a message fails, click the **Retry** button on the message record to attempt 
 
 Incoming SMS and WhatsApp messages are automatically:
 
-1. Recorded in **Connect > Messages**
+1. Recorded in **Twilio > Messages > Messages**
 2. Linked to the partner (if the sender's number matches a contact)
 3. Optionally, a new partner can be auto-created (see Message Configuration in admin guide)
 

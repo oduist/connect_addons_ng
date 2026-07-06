@@ -4,23 +4,29 @@
 
 - **Name:** Oduist Connect
 - **Technical:** `connect`
-- **Version:** 19.0.1.0.0
-- **Depends:** `base`, `mail`, `contacts`
-- **Python deps:** `phonenumbers`, `jinja2`, `openai` (for transcription - not Twilio-specific)
+- **Version:** 19.0.4.0.0
+- **Depends:** `base`, `mail`, `contacts`, `sms`
+- **Python deps:** `phonenumbers`, `jinja2`, `openai` (for transcription - not Twilio-specific), `PyJWT`
 - **Application:** True
 - **License:** LGPL-3
 
 ## Overview
 
 The core `connect` module is a technology-agnostic base for telephony integration in Odoo.
-It stores call data, messages, recordings, user profiles, and routing configuration without
-any dependency on a specific telephony provider. Integration modules (`connect_twilio`,
-`connect_freeswitch`, etc.) extend these models via `_inherit` to add provider-specific
-fields, webhook handlers, and API calls.
+It stores the shared call/message ledger (calls, channels, messages, recordings) and the
+PBX user directory (`connect.user`) without any dependency on a specific telephony
+provider. Integration modules (`connect_twilio`, `connect_freeswitch`,
+`connect_asterisk`) extend these ledger models via `_inherit` to add adapter fields,
+webhook handlers, and API calls.
 
-OpenAI transcription and SMS composition live in core because they are not tied to any
-specific telephony provider. Any integration module can trigger transcription on a recording
-or send an SMS through the abstract `send()` method.
+Since ADR-031 core contains **no PBX configuration models**: extensions, call flows,
+numbers, endpoints, outgoing caller IDs and message configuration are independent
+models owned by the provider modules (`connect.twilio.*`, `connect.freeswitch.*`,
+`connect.asterisk.*`). The SMS composer wizard also lives in `connect_twilio`.
+
+OpenAI transcription lives in core because it is not tied to any specific telephony
+provider. Any integration module can trigger transcription on a recording, and any
+module can implement the abstract `connect.message.send()` contract.
 
 ---
 
@@ -57,7 +63,9 @@ for easy access from other models.
 |--------|-------------|
 | `get_param()` | Singleton parameter access |
 | `set_param()` | Singleton parameter write |
-| `open_settings_form()` | UI action to open settings |
+| `open_settings_form(view_xmlid="connect.connect_settings_form", name="General Settings")` | UI action opening the settings singleton through the given form view. Parametrized so each provider module's Settings menu opens the same record through its own standalone view (e.g. `connect_twilio.twilio_settings_form`). |
+| `originate_call(number, res_model=None, res_id=None, user=None, **kwargs)` | Click-to-call dispatcher. Resolves the provider via `_get_originate_provider()`; provider modules override and chain via `super()` — each handles the call when its key matches, otherwise falls through. The core base raises a `UserError` when no provider can handle the call. |
+| `_get_originate_provider(user=None)` | Resolve the provider key for the user: explicit `connect.user.originate_provider` → the only installed provider (single `selection_add` entry) → `UserError` (none installed, or several installed and no choice made). |
 | `connect_notify(bus)` | Send bus notification |
 | `connect_reload_view(bus)` | Send bus reload event |
 | `set_defaults()` | Set installation defaults |
@@ -72,6 +80,10 @@ for easy access from other models.
   for recording transcription.
 - `display_openai_api_key` uses protected field masking pattern (shows `****` unless
   the user is in `base.group_erp_manager`).
+- `connect.settings` stays **one model** even with several providers installed:
+  provider fields all live on the singleton, but each provider ships its own
+  standalone settings form view + menu (no notebook-page injection into the core
+  form since ADR-031).
 
 ---
 
@@ -309,23 +321,26 @@ atomic.
 Rec name: `name`
 Order: `name`
 
+Slimmed by ADR-031: the PBX plumbing (`exten`, `exten_number`,
+`outgoing_callerid`, `endpoint_ids`, `callflow`) moved to the provider modules,
+which contribute their own fields via `_inherit` (`twilio_exten`,
+`freeswitch_exten`, `asterisk_exten_number`, per-provider caller-ID and endpoint
+links).
+
 **Fields:**
 
 | Field | Type | Notes |
 |-------|------|-------|
 | `name` | Char | Computed (stored) from `user.name` |
-| `user` | Many2one | `res.users`, Required |
-| `exten` | Many2one | `connect.exten`, readonly |
-| `exten_number` | Char | Related to exten |
-| `callflow` | One2many | `connect.user_callflow` |
+| `user` | Many2one | `res.users`, Required, `domain=[('share','=',False)]` |
 | `record_calls` | Boolean | Default: True |
 | `voicemail_enabled` | Boolean | |
 | `voicemail_prompt` | Text | Jinja2 template |
-| `outgoing_callerid` | Many2one | `connect.outgoing_callerid`, no domain (provider modules may restrict the picker via view-inheritance) |
 | `missed_calls_notify` | Boolean | |
 | `greeting_message` | Char | |
 | `summary_prompt` | Char | Per-user override |
 | `active` | Boolean | Default: True |
+| `originate_provider` | Selection | Base selection is empty; each provider module `selection_add`s its key (`twilio`, `freeswitch`, `asterisk`). Chooses which provider handles click-to-call for this user; may stay empty when only one provider is installed. |
 
 **Constraints:**
 - `UNIQUE(user)` - one connect.user per res.users
@@ -335,213 +350,25 @@ Order: `name`
 | Method | Description |
 |--------|-------------|
 | `_get_name()` | Compute name from linked res.users |
-| `manage_group()` | Add/remove security groups on linked res.users |
-| `get_user_by_exten_number()` | Lookup connect.user by extension number |
+| `_pbx_number_fields()` | Provider hook (`@api.model`): names of Char fields on connect.user holding a provider extension number. Returns `[]` in core; provider modules append their field (`twilio_exten_number`, `freeswitch_exten_number`, `asterisk_exten_number`). |
+| `get_pbx_number()` | First non-empty provider extension number of this user (iterates `_pbx_number_fields()`). Used e.g. by `connect.channel._get_channel_numbers()`. |
+| `get_user_by_exten_number()` | Lookup connect.user by extension number; searches across all `_pbx_number_fields()`, so it works with any combination of installed providers. |
 | `get_user_by_uri()` | No-op in core (returns empty recordset). Integration modules override to lookup connect.user by SIP URI or client identity. |
-| `create_extension()` | Create associated `connect.exten` record |
-| `render_voicemail_prompt()` | Render Jinja2 voicemail template with call context |
-| `get_greeting_message()` | Return greeting (override point for integrations) |
-| `get_voicemail_prompt()` | Return voicemail prompt (override point) |
-| `on_call_action()` | Abstract: handle incoming call action |
-| `_manage_channel_callflow()` | CRUD for user callflow entries |
-| `_manage_voicemail_enabled()` | Constrains: sync voicemail state |
+| `manage_group()` | Add/remove security groups on linked res.users |
+| `create()` / `write()` / `unlink()` | Group management side effects |
 
 **Note:** Field is named `user` (not `user_id`) to match the convention from the old module.
 
----
-
-### 7. user_callflow.py
-
-#### `connect.user_callflow`
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `user` | Many2one | `connect.user` |
-| `prio` | Integer | Priority ordering |
-| `callflow_type` | Char | Type of callflow step |
-| `method` | Char | Method to invoke |
-
-#### `connect.user_callflow_call`
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `call` | Many2one | `connect.call` |
-| `callflow` | Many2one | `connect.user_callflow` |
+**Moved models (ADR-031):** `connect.exten`, `connect.callflow` (+`_choice`),
+`connect.number`, `connect.endpoint`, `connect.outgoing_callerid`,
+`connect.user_callflow` (+`_call`) and `connect.message_configuration` no longer
+exist in core. See `specs/connect_twilio.md`, `specs/connect_freeswitch.md` and
+`specs/connect_asterisk.md` for their per-provider successors. The
+`connect` 19.0.4.0.0 pre-migration archives the old tables as `_*_legacy`.
 
 ---
 
-### 8. endpoint.py - `connect.endpoint`
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `name` | Char | Required |
-| `connect_user_id` | Many2one | `connect.user`, optional |
-| `exten` | Many2one | `connect.exten` |
-| `exten_number` | Char | Related to `exten.number` |
-| `active` | Boolean | |
-
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `create_extension()` | Create associated `connect.exten` record for this endpoint |
-
-**Notes:**
-- `connect_user_id` is optional to support standalone endpoints (e.g., conference room phones, lobby phones) that are not associated with a specific user.
-
----
-
-### 9. number.py - `connect.number`
-
-**Fields:**
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `phone_number` | Char | Required |
-| `friendly_name` | Char | |
-| `is_default` | Boolean | |
-| `destination` | Selection | `user`, `callflow` |
-| `callflow` | Many2one | `connect.callflow` |
-| `user` | Many2one | `connect.user` |
-
-**Constraints:**
-- `UNIQUE(phone_number)`
-
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `render()` | Route incoming call to the configured destination |
-| `route_call()` | Abstract: provider-specific call routing |
-
-**Notes:**
-- No `twiml` destination option in core. That is Twilio-specific.
-- The `destination` selection is extended by `connect_twilio` to add `twiml`.
-- The `twiml` Many2one field also lives only in `connect_twilio`.
-
----
-
-### 10. outgoing_callerid.py - `connect.outgoing_callerid`
-
-**Fields:**
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `name` | Char | Computed |
-| `friendly_name` | Char | Required |
-| `number` | Char | Required |
-| `status` | Char | |
-| `is_default` | Boolean | |
-| `callerid_type` | Selection | `outgoing_callerid`, `number` |
-| `callerid_users` | One2many | `connect.user` |
-
-**Constraints:**
-- `UNIQUE(number)`
-
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `_get_name()` | Computed: friendly_name + number |
-| `_check_number()` | Constrains: must start with `+` |
-| `_reset_default()` | Constrains: only one default allowed |
-| `_check_default()` | Constrains: validate default selection |
-
----
-
-### 11. exten.py - `connect.exten`
-
-**Fields:**
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `name` | Char | Computed |
-| `number` | Char | Required |
-| `model` | Char | Target model name |
-| `model_friendly` | Char | Computed human-readable model name |
-| `res_id` | Integer | Target record ID |
-| `dst` | Reference | Computed with inverse: `connect.user` / `connect.callflow` |
-| `dst_name` | Char | Computed display name of destination |
-| `twiml` | Text | Computed, readonly - preview of generated response |
-
-**Constraints:**
-- `UNIQUE(number)`
-
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `_get_name()` | Computed name |
-| `_get_model_friendly()` | Human-readable model name |
-| `_get_dst()` | Compute reference from model/res_id |
-| `_set_dst()` | Inverse: write model/res_id from reference |
-| `_get_twiml()` | Compute preview of generated telephony response |
-| `render()` | Delegate rendering to the destination model |
-| `create_extension()` | Factory: create extension for a given destination |
-| `create()` | Override: auto-assign number |
-| `write()` | Override: handle destination changes |
-| `unlink()` | Override: cleanup |
-| `copy_data()` | Duplicate extension data |
-
-**Notes:**
-- `dst` selection excludes `connect.twiml` in core. The Twilio module adds it.
-
----
-
-### 12. callflow.py - `connect.callflow`
-
-**Fields:**
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `name` | Char | Required |
-| `exten` | Many2one | `connect.exten`, readonly |
-| `exten_number` | Char | Related |
-| `language` | Selection | BCP-47, populated by `_get_language_selection()`; default `en-US` |
-| `voice` | Char | Default: `Woman` |
-| `gather_input` | Boolean | |
-| `gather_input_type` | Selection | `dtmf speech`, `dtmf`, `speech` |
-| `gather_timeout` | Integer | Default: 5 |
-| `gather_hints` | Char | |
-| `prompt_message` | Text | |
-| `invalid_input_message` | Text | |
-| `gather_digits` | Integer | Default: 1 |
-| `choices` | One2many | `connect.callflow_choice` |
-| `ring_users` | Many2many | `connect.user` |
-| `record_calls` | Boolean | |
-| `voicemail_prompt` | Text | |
-| `voicemail_enabled` | Boolean | |
-
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `create_extension()` | Create associated `connect.exten` |
-| `_get_language_selection()` | Return list of `(code, label)` tuples for the `language` field. Override in an extension to extend/restrict the set. Default list = intersection of Twilio Polly and bundled Piper voices. |
-| `get_prompt_message()` | Abstract: return prompt for the caller |
-| `get_gather_invalid_input_message()` | Abstract: return invalid input message |
-| `get_voicemail_prompt_message()` | Abstract: return voicemail prompt |
-
-**Notes:**
-- `render()` is NOT defined in core. The Twilio module adds TwiML rendering.
-  The FreeSWITCH module could add dialplan XML rendering.
-- Core stores the IVR configuration; integration modules render it into their
-  respective protocols.
-
----
-
-### 13. callflow_choice.py - `connect.callflow_choice`
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `callflow` | Many2one | `connect.callflow`, required |
-| `choice_digits` | Char | Required (DTMF digit(s)) |
-| `exten` | Many2one | `connect.exten`, required |
-| `speech` | Char | Speech recognition keyword |
-
----
-
-### 14. debug.py - `connect.debug`
+### 7. debug.py - `connect.debug`
 
 Order: `id desc`
 
@@ -558,7 +385,7 @@ Order: `id desc`
 
 ---
 
-### 15. res_partner.py - inherits `res.partner`
+### 8. res_partner.py - inherits `res.partner`
 
 **Fields:**
 
@@ -591,7 +418,7 @@ Order: `id desc`
 
 ---
 
-### 16. res_users.py - inherits `res.users`
+### 9. res_users.py - inherits `res.users`
 
 **Fields:**
 
@@ -613,7 +440,7 @@ Order: `id desc`
 
 ---
 
-### 17. mail.py
+### 10. mail.py
 
 #### Inherits `mail.message`
 
@@ -636,23 +463,7 @@ Order: `id desc`
 
 ---
 
-### 18. message_configuration.py - `connect.message_configuration`
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `number` | Many2one | `connect.number`, required |
-| `destination` | Selection | `res.partner` |
-| `default_values` | Text | JSON default field values |
-
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `_check_default_values()` | Constrains: validate JSON format |
-
----
-
-### 19. favorite.py - `connect.favorite`
+### 11. favorite.py - `connect.favorite`
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -696,25 +507,9 @@ Order: `id desc`
 |--------|-------------|
 | `action_confirm()` | Execute the transfer |
 
-### sms_composer.py - inherits `sms.composer`
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `outgoing_callerid` | Selection | List of available outgoing numbers |
-
-**Methods:**
-
-| Method | Description |
-|--------|-------------|
-| `_list_all_numbers()` | Return available outgoing numbers for selection |
-| `_action_send_sms()` | Override: send SMS via `connect.message.send()` |
-
-**Notes:**
-- The SMS composer lives in core because it is a UI-level feature that works with any
-  integration module.
-- `_action_send_sms()` calls `self.env['connect.message'].send()`, which is abstract
-  in core. The actual send implementation is provided by whichever integration module
-  is installed (e.g., `connect_twilio` implements `send()` via Twilio API).
+**Note:** The SMS composer (`sms.composer` inherit) moved to `connect_twilio`
+(ADR-031) — its number list is raw SQL over the Twilio number table. Core only
+keeps the abstract `connect.message.send()` contract.
 
 ---
 
@@ -739,20 +534,15 @@ All models get access rules for the three groups:
 | `connect.message` | Read | Full | Create+Read |
 | `connect.recording` | Read | Full | Create+Read |
 | `connect.user` | Read | Full | - |
-| `connect.number` | Read | Full | - |
-| `connect.outgoing_callerid` | Read | Full | - |
-| `connect.exten` | Read | Full | - |
-| `connect.callflow` | Read | Full | - |
-| `connect.callflow_choice` | Read | Full | - |
-| `connect.user_callflow` | Read | Full | - |
-| `connect.user_callflow_call` | Read | Full | - |
 | `connect.debug` | - | Full | Create |
 | `connect.settings` | - | Full | - |
-| `connect.endpoint` | Read+Write | Full | - |
-| `connect.message_configuration` | - | Full | - |
 | `connect.favorite` | Read+Write | Full | - |
+| `connect.transfer_wizard` | Full | Full | - |
 
-`connect.settings`, `connect.debug` and `connect.message_configuration` are
+Access rules for the PBX configuration models live in the provider modules
+next to the models themselves (ADR-031).
+
+`connect.settings` and `connect.debug` are
 **admin-only** — `group_user` has no model access. End-user features still need
 configuration values, so `connect.settings.get_param()` sudo-finds the singleton
 and returns the value without requiring the caller to hold model access; it only
@@ -766,15 +556,11 @@ non-sudo (configuration writes remain manager-only). The `debug()` helper writes
 
 - Users see only their own `connect.user` records
 - Admins see all `connect.user` records
-- Users can read and edit only `connect.endpoint` records linked to their own
-  `connect.user` (`connect_user_id.user = user`); admins see all
-  (`rule_connect_endpoint_user` / `rule_connect_endpoint_admin`). The record rule
-  applies to write as well, so a user can self-manage their own SIP device
-  (Regenerate password, set Originate Ring / auto-answer header) but never touch
-  another user's endpoint — and one user's `auth_password` stays out of another's
-  reach. `group_user` has read+write but not create/unlink on the model.
 - Users see calls/messages/recordings associated with their `connect.user` or where they
   are the `caller_user`/`answered_user`/`sender_user`
+- Endpoint record rules (own-device self-management) moved to the provider
+  modules together with the endpoint models (`connect.freeswitch.endpoint`,
+  `connect.asterisk.endpoint`).
 
 ---
 
@@ -806,36 +592,34 @@ All models get list (tree) and form views. Key view details:
 | View | Notes |
 |------|-------|
 | `call_views.xml` | List + form with recording widget, partner button, chatter |
-| `channel_views.xml` | List + form |
-| `message_views.xml` | List + form with media widget, direction/status icons |
+| `channel_views.xml` | List + form (admin menu entry) |
+| `message_views.xml` | List + form with media widget, direction/status icons (menu entry lives in connect_twilio) |
 | `recording_views.xml` | List + form with audio player, transcript, summary |
-| `user_views.xml` | List + form with callflow, voicemail, extension |
-| `number_views.xml` | List + form with destination routing |
-| `outgoing_callerid_views.xml` | List + form |
-| `exten_views.xml` | List + form with destination reference |
-| `callflow_views.xml` | Form with choices, gather config, ring users |
+| `user_views.xml` | List + form with voicemail, summary prompt, originate provider |
 | `debug_views.xml` | List (read-only) |
-| `settings_views.xml` | Form with notebook tabs (base tab, registration tab, OpenAI tab) |
+| `settings.xml` | Core settings form (general, registration, transcription/OpenAI). Provider settings forms live in their own modules and open the same singleton via the parametrized `open_settings_form()`. |
 | `res_partner_views.xml` | Inherit partner form: add call/message count smart buttons |
-| `message_configuration_views.xml` | List + form |
 | `favorite_views.xml` | List + form |
+| `license.xml` | License form + menu |
 
 ### Menu Structure
 
+The core **Connect** app only carries the shared ledger and configuration.
+All PBX configuration menus (Numbers, Extensions, Call Flows, Endpoints,
+Caller IDs, …) live under the per-provider top-level apps (**Twilio**,
+**FreeSWITCH**, **Asterisk**) — see `specs/architecture.md`.
+
 ```
-Connect (root)
+Connect (root, seq 10)
   +-- Calls (seq 10)
-  +-- Messages (seq 20)
-  +-- Recordings (seq 30)
-  +-- Users (seq 40)
-  +-- Numbers (seq 50)
-  +-- Caller IDs (seq 60)
-  +-- Call Flows (seq 70)
-  +-- Extensions (seq 80)
-  +-- Configuration
-      +-- Settings (seq 10)
-      +-- Message Config (seq 20)
-      +-- Debug Log (seq 30)
+  |   +-- Calls (seq 10)
+  |   +-- Recordings (seq 30)
+  |   +-- Channels (admin)
+  +-- Users (seq 20)
+  +-- Configuration (seq 100)
+      +-- Settings (admin)
+      +-- Debug Log (admin)
+      +-- License (admin)
 ```
 
 ---
@@ -844,6 +628,6 @@ Connect (root)
 
 ```
 connect (core)
-  depends: ['base', 'mail', 'contacts']
-  python:  ['phonenumbers', 'jinja2', 'openai']
+  depends: ['base', 'mail', 'contacts', 'sms']
+  python:  ['phonenumbers', 'jinja2', 'openai', 'PyJWT']
 ```

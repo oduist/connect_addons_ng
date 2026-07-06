@@ -4,20 +4,21 @@ Modular telephony integration platform for Odoo. Make and receive calls, send SM
 
 ## Architecture
 
-Connect consists of three modules:
+Connect consists of a core module plus provider integrations:
 
 | Module | Purpose |
 |--------|---------|
-| **connect** | Technology-agnostic core. Stores calls, messages, recordings, users, callflows, extensions. Handles AI transcription and summarization. |
-| **connect_twilio** | Twilio integration. Adds Twilio Voice SDK phone widget, SIP domains, WhatsApp, TwiML apps. |
-| **connect_freeswitch** | FreeSWITCH integration. Adds Verto WebRTC client, XML dialplan generation, SIP gateways. |
+| **connect** | Technology-agnostic core. Stores calls, messages, recordings and users. Handles AI transcription and summarization. |
+| **connect_twilio** | Twilio integration. Owns its numbers, extensions, call flows and caller IDs; adds Twilio Voice SDK phone widget, SIP domains, WhatsApp, TwiML apps. |
+| **connect_freeswitch** | FreeSWITCH integration. Owns its numbers, extensions, call flows, endpoints and caller IDs; adds Verto WebRTC client, XML dialplan generation, SIP gateways. |
+| **connect_asterisk** | Asterisk integration for existing PBXs. Owns its endpoints and DID mappings; adds JsSIP web phone and AMI event pipeline via a sidecar agent. |
 
-Install the **connect** core module plus one integration module matching your telephony provider.
+Install the **connect** core module plus the integration module(s) matching your telephony provider — several providers can coexist in one database. Each integration gets its own top-level menu (**Twilio**, **FreeSWITCH**, **Asterisk**) next to the **Connect** app.
 
 ## Key Features
 
 - **Calls** — Incoming, outgoing, and internal calls with full history and partner linking
-- **Phone Widget** — Browser-based phone (Twilio Voice SDK or FreeSWITCH Verto WebRTC)
+- **Phone Widget** — Browser-based phone (Twilio Voice SDK, FreeSWITCH Verto WebRTC, or Asterisk JsSIP)
 - **IVR / Call Flows** — Multi-level interactive voice response with DTMF and speech input
 - **Call Recording** — Automatic or per-user recording with in-browser playback
 - **AI Transcription** — OpenAI Whisper speech-to-text and GPT-4o call summaries
@@ -27,9 +28,9 @@ Install the **connect** core module plus one integration module matching your te
 ## Quick Start
 
 1. Install the core module (`connect`) and your integration module
-2. Configure the telephony provider in **Connect > Configuration > Settings**
-3. Create PBX users in **Connect > PBX > Users**
-4. Set up phone numbers in **Connect > PBX > Numbers**
+2. Configure the telephony provider in its own menu, e.g. **Twilio > Configuration > Settings** or **FreeSWITCH > Configuration > Settings**
+3. Create PBX users in **Connect > Users**
+4. Set up phone numbers in the provider menu, e.g. **Twilio > Numbers** or **FreeSWITCH > Numbers**
 5. Start making calls from the phone widget in the Odoo navbar
 
 See the [Admin Guide](admin/installation.md) for detailed setup instructions.

@@ -58,9 +58,9 @@ Click any phone number field in Odoo (on partner forms, leads, etc.) to instantl
 
 | Menu | What You'll Find |
 |------|------------------|
-| **Connect > Calls** | All your call history |
-| **Connect > Messages** | SMS and WhatsApp messages |
-| **Connect > Recordings** | Call recordings with playback |
+| **Connect > Calls > Calls** | All your call history |
+| **Twilio > Messages > Messages** | SMS and WhatsApp messages |
+| **Connect > Calls > Recordings** | Call recordings with playback |
 
 ## Partner Integration
 

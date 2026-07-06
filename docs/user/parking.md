@@ -41,7 +41,7 @@ Parked calls can be retrieved from the same three places:
 - **Hardware SIP phone:** press the DSS button for the occupied slot.
   Your phone is called back and bridged to the parked party.
 - **Admin form (debug):** open the slot record under
-  *Admin → PBX → Parking Slots* and press **Unpark**.
+  *FreeSWITCH → Parking Slots* and press **Unpark**.
 
 ## Tips
 

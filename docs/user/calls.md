@@ -45,7 +45,7 @@ The call is handed off to the new destination.
 
 ## Call History
 
-Navigate to **Connect > Calls** to view all calls.
+Navigate to **Connect > Calls > Calls** to view all calls.
 
 Each call record shows:
 
