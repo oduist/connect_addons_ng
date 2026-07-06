@@ -41,6 +41,11 @@ class User(models.Model):
     telnyx_outgoing_callerid = fields.Many2one(
         'connect.telnyx.outgoing_callerid', ondelete='set null',
         string='Telnyx Outgoing CallerID')
+    telnyx_whatsapp_sender_id = fields.Many2one(
+        'connect.telnyx.whatsapp_sender',
+        string='Telnyx WhatsApp Sender',
+        ondelete='set null',
+    )
     telnyx_domain = fields.Many2one(
         'connect.telnyx.domain',
         ondelete='cascade',

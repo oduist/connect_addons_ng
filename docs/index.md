@@ -12,7 +12,7 @@ Connect consists of a core module plus provider integrations:
 | **connect_twilio** | Twilio integration. Owns its numbers, extensions, call flows and caller IDs; adds Twilio Voice SDK phone widget, SIP domains, WhatsApp, TwiML apps. |
 | **connect_freeswitch** | FreeSWITCH integration. Owns its numbers, extensions, call flows, endpoints and caller IDs; adds Verto WebRTC client, XML dialplan generation, SIP gateways. |
 | **connect_asterisk** | Asterisk integration for existing PBXs. Owns its endpoints and DID mappings; adds JsSIP web phone and AMI event pipeline via a sidecar agent. |
-| **connect_telnyx** | Telnyx integration. Owns its numbers, extensions, call flows and caller IDs; adds Telnyx WebRTC phone widget, SIP domains (credential connections), TeXML apps, SMS. |
+| **connect_telnyx** | Telnyx integration. Owns its numbers, extensions, call flows and caller IDs; adds Telnyx WebRTC phone widget, SIP domains (credential connections), TeXML apps, SMS, WhatsApp, RCS. |
 
 Install the **connect** core module plus the integration module(s) matching your telephony provider — several providers can coexist in one database. Each integration adds its own submenu (**Twilio**, **FreeSWITCH**, **Asterisk**, **Telnyx**) inside the **Connect** app, after **Calls** and in installation order.
 

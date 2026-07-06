@@ -40,11 +40,12 @@ E.164 caller-ID constraint are deliberate copies of the
 Twilio/FreeSWITCH counterparts — **no shared mixin**; fixes must be
 applied to all three modules (ADR-031/ADR-032).
 
-### v1 scope exclusions (ADR-032)
+### v1 scope exclusions (ADR-032, amended by ADR-033)
 
-WhatsApp/RCS, attended transfer (`connect.call.transfer()`), Twilio-style
-caller-ID validation, regions/edges. Call cost fetching is best-effort
-via detail records.
+Attended transfer (`connect.call.transfer()`), Twilio-style caller-ID
+validation, regions/edges, WhatsApp voice calling, rich RCS
+cards/carousels. Call cost fetching is best-effort via detail records.
+WhatsApp and RCS **messaging** are integrated (ADR-033).
 
 ---
 
@@ -170,6 +171,40 @@ renders `connect.user` destinations via `telnyx_render()`.
 
 Same shape as the Twilio counterparts (`connect.telnyx.*`).
 
+### whatsapp_sender.py - `connect.telnyx.whatsapp_sender` (ADR-033)
+
+WhatsApp-enabled phone numbers synced from
+`whatsapp.phone_numbers.list()` (+ profile subresource). Fields:
+`number` (unique), `phone_number_id`, `waba_id`, `status`,
+`display_name`, `quality_rating`, `calling_enabled` (info only),
+editable `profile_*` (pushed via `profile.update`), `number_id`,
+`no_sync`, `is_default`. Methods: `sync()`, `get_default_sender(user)`
+(user pref → default flag → any), `send_whatsapp()` (freeform requires
+an inbound message within 24h — else a template; creates
+`connect.message` type `WhatsApp` + chatter), `chatter_post()`.
+
+### whatsapp_template.py - `connect.telnyx.whatsapp_template` (ADR-033)
+
+Meta-approved templates synced from `whatsapp.templates.list()`
+(`telnyx_id`, `template_id`, `name`, `language`, `category`, `status`,
+`rejection_reason`, raw `components`, extracted `body`).
+`create_in_telnyx()` submits a body-only template for approval;
+`_as_message_template()` / `_ordered_variable_values()` build the
+send-time payload from `{{n}}` variables.
+
+### rcs_agent.py - `connect.telnyx.rcs_agent` (ADR-033)
+
+RCS agents synced read-only from `messaging.rcs.agents.list()`
+(`agent_id` unique, `agent_name`, `enabled`, `profile_id`,
+`is_default`). `send_rcs()` sends `content_message.text` with an
+optional SMS fallback (`messages.rcs.send`) and logs a
+`connect.message` type `RCS` + chatter.
+
+### mail.py (ADR-033)
+
+Adds `RCS` to `mail.message.message_type` and
+`mail.notification.notification_type` (core adds `WhatsApp`).
+
 ### texml.py - `connect.telnyx.texml`
 
 TeXML application management (analog of `connect.twilio.twiml`):
@@ -224,6 +259,18 @@ validation: Ed25519 over the raw body
 Same as the Twilio one (raw SQL over `connect_telnyx_number`); subject
 to the co-installation limitation of ADR-032 §9.
 
+### whatsapp_composer.py - `connect.telnyx.whatsapp_composer` (ADR-033)
+
+Transient wizard: sender (default via `get_default_sender`), phone,
+approved template + variables JSON with live body preview, freeform
+body. Mirrors the Twilio composer UX.
+
+### rcs_composer.py - `connect.telnyx.rcs_composer` (ADR-033)
+
+Transient wizard: agent (default via `get_default_agent`), phone, body,
+SMS-fallback toggle + fallback sender (defaults to the default outgoing
+caller ID).
+
 ---
 
 ## Security
@@ -232,7 +279,10 @@ Access matrix mirrors connect_twilio (ADR-032 §13): PBX config models —
 user read / admin full / webhook read; `user_callflow(_call)` — user
 read / admin full; `message_configuration` — admin only;
 `outgoing_callerid` webhook has **no write** row (no validation
-callback). Plus the `sms.composer` user grant.
+callback); WhatsApp senders — user R / admin CRUD / webhook R;
+WhatsApp templates and RCS agents — user R / admin CRUD; the WhatsApp
+and RCS composers — user CRUD (transients). Plus the `sms.composer`
+user grant.
 
 ---
 
@@ -251,7 +301,8 @@ callflows, caller IDs, TeXML apps, domains, message configuration;
 core user form/list extended with the Telnyx Phone tab and columns;
 `connect.call` form gets a Telnyx page. Menu: **Connect > Telnyx**
 (seq 50): Numbers, Extensions, Call Flows, Outgoing Caller IDs, TeXML
-Apps, SIP Domains, Messages (Messages, Message Configuration),
+Apps, SIP Domains, Messages (Messages, Message Configuration,
+WhatsApp Senders, WhatsApp Templates, RCS Agents — admin),
 Configuration > Settings.
 
 ---
@@ -273,10 +324,13 @@ bundle `lib/telnyx-webrtc.js`, global `TelnyxWebRTC.TelnyxRTC`):
   `sip:<number>@<subdomain>.sip.telnyx.com` so Odoo routes them. Token
   refresh re-initializes the client. Remote audio attaches to
   `#connect-telnyx-remote-audio`.
+- Mail integration: `telnyx-sms-reply` / `telnyx-whatsapp-reply` /
+  `telnyx-rcs-reply` chatter actions, the Notification icon patch for
+  the `WhatsApp`/`RCS` types, and a WhatsApp *Message* button on the
+  phone field widget (ADR-033).
 - The rest (calls/contacts/favorites/tray components, active-calls
   service, phone field widget, actions service) is the Twilio code with
-  renamed registry keys and the `telnyx_exten_number` field; WhatsApp
-  actions and buttons are removed.
+  renamed registry keys and the `telnyx_exten_number` field.
 
 ---
 

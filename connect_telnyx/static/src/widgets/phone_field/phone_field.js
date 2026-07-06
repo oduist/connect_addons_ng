@@ -20,4 +20,29 @@ patch(PhoneField.prototype, {
         // user's click-to-call provider.
         this.env.model.orm.call("connect.settings", "originate_call", args, {})
     },
+
+    async _onClickTelnyxWhatsappMessageButton(e) {
+        e.preventDefault()
+        await this.props.record.save()
+        this.action.doAction(
+            {
+                type: "ir.actions.act_window",
+                target: "new",
+                name: "Send WhatsApp Message",
+                res_model: "connect.telnyx.whatsapp_composer",
+                views: [[false, "form"]],
+                context: {
+                    active_model: this.props.record.resModel,
+                    active_id: this.props.record.resId,
+                    default_phone: this.props.record.data[this.props.name],
+                },
+            },
+            {
+                onClose: () => {
+                    this.props.record.load()
+                    this.props.record.model.notify()
+                },
+            }
+        )
+    },
 })

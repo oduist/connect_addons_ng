@@ -91,6 +91,20 @@ class Settings(models.Model):
             self.env["connect.telnyx.domain"].sync()
             self.env["connect.telnyx.number"].sync()
             self.env["connect.telnyx.outgoing_callerid"].sync()
+            # WhatsApp/RCS onboarding is optional on the Telnyx account —
+            # keep their sync failures non-fatal (ADR-033).
+            for model, title in [
+                ("connect.telnyx.whatsapp_sender", "WhatsApp Senders"),
+                ("connect.telnyx.whatsapp_template", "WhatsApp Templates"),
+                ("connect.telnyx.rcs_agent", "RCS Agents"),
+            ]:
+                try:
+                    self.env[model].sync()
+                except Exception as e:
+                    logger.warning('%s sync failed: %s', title, e)
+                    self.connect_notify(
+                        "{} sync failed: {}".format(title, e),
+                        title="Sync Warning", warning=True)
             self.connect_notify(
                 "Telnyx account synced successfully", title="Sync Complete")
         except Exception as e:

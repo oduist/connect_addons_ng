@@ -33,6 +33,7 @@
                 <field name="telnyx_domain"/>
                 <field name="telnyx_exten" readonly="1"/>
                 <field name="telnyx_outgoing_callerid"/>
+                <field name="telnyx_whatsapp_sender_id"/>
             </xpath>
 
             <!-- Add Phone tab with SIP/Client settings to notebook -->

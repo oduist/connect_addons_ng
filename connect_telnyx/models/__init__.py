@@ -2,6 +2,7 @@ from . import settings
 from . import texml
 from . import call
 from . import channel
+from . import mail
 from . import message
 from . import recording
 from . import user
@@ -11,4 +12,7 @@ from . import outgoing_callerid
 from . import callflow
 from . import exten
 from . import domain
+from . import whatsapp_sender
+from . import whatsapp_template
+from . import rcs_agent
 from . import message_configuration

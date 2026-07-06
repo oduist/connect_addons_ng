@@ -78,9 +78,40 @@ Telnyx v2 JSON events.
 Message routing to Odoo records is configured under Connect > Telnyx >
 Messages > Message Configuration.
 
+## WhatsApp
+
+Onboard your WhatsApp Business Account and phone numbers in the Telnyx
+Mission Control Portal first, then run **SYNC TELNYX ACCOUNT** (or the
+Sync button on the list views):
+
+- **WhatsApp Senders** (Connect > Telnyx > Messages) are imported from
+  the account's WhatsApp phone numbers. The business profile (about,
+  address, description, email, website) is editable in Odoo and pushed
+  back to Telnyx. Mark one sender as **Default**; users may also have a
+  personal sender (Connect > Users > Telnyx WhatsApp Sender).
+- **WhatsApp Templates** are synced with their Meta approval status.
+  New templates (body text with `{{1}}`-style variables) can be created
+  in Odoo and submitted for approval with one click.
+- Sending: the WhatsApp **Message** button on phone fields, the
+  *WhatsApp Reply* action on chatter messages, or the composer wizard.
+  Freeform messages are allowed only within the 24-hour customer
+  window; outside of it an approved template must be selected.
+- Incoming WhatsApp messages and delivery reports arrive on the same
+  `/telnyx/webhook/message` route (`payload.type = whatsapp`).
+
+## RCS
+
+RCS agents are provisioned through Telnyx (Google RBM verification) and
+synced read-only into **RCS Agents** (Connect > Telnyx > Messages).
+Sending uses the *RCS Reply* chatter action or the composer wizard;
+messages are sent as RCS text with an optional SMS fallback from a
+configurable sender number. Incoming RCS messages arrive as
+`payload.type = RCS` on the messaging webhook.
+
 ## Known limitations (v1)
 
-- WhatsApp and RCS are not integrated.
+- WhatsApp voice calling is not integrated (messaging only); rich RCS
+  cards/carousels are not composed from Odoo (text + SMS fallback only).
 - Attended transfer from the web phone is not available yet.
 - Call cost fetching relies on Telnyx detail records and may lag behind
   call completion.

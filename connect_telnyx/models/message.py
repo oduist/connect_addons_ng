@@ -17,7 +17,8 @@ class ConnectMessage(models.Model):
 
     @api.depends('status', 'sender_user')
     def _compute_direction(self):
-        """Override: check Telnyx numbers to determine direction.
+        """Override: check Telnyx numbers and WhatsApp senders to
+        determine direction.
 
         Known limitation (ADR-032): co-installing connect_twilio and
         connect_telnyx leaves the last-loaded module owning this compute
@@ -32,10 +33,24 @@ class ConnectMessage(models.Model):
                 our_numbers = self.env['connect.telnyx.number'].search([]).mapped(
                     'phone_number'
                 )
-                if rec.from_number in our_numbers:
+                our_whatsapp = self.env[
+                    'connect.telnyx.whatsapp_sender'
+                ].search([]).mapped('number')
+                all_our_numbers = set(our_numbers) | set(our_whatsapp)
+                if rec.from_number in all_our_numbers:
                     rec.direction = 'outgoing'
                 else:
                     rec.direction = 'incoming'
+
+    @api.model
+    def _telnyx_message_type(self, payload):
+        """Map the Telnyx payload type to the connect.message type."""
+        payload_type = (payload.get('type') or '').lower()
+        if payload_type == 'whatsapp':
+            return 'WhatsApp'
+        if payload_type == 'rcs':
+            return 'RCS'
+        return 'sms'
 
     @api.model
     def _telnyx_message_values(self, payload):
@@ -71,7 +86,7 @@ class ConnectMessage(models.Model):
             if event_type == 'message.received':
                 logger.info("Received Telnyx message webhook data:\n%s", payload)
                 values = self._telnyx_message_values(payload)
-                values['message_type'] = 'sms'
+                values['message_type'] = self._telnyx_message_type(payload)
                 from_number = values.get('from_number')
                 to_number = values.get('to_number')
                 partner = self.env['res.partner'].get_partner_by_number(
@@ -246,6 +261,23 @@ class ConnectMessage(models.Model):
                             'has_error': True,
                         }
                     )
+                    # Mirror the Twilio status-callback UX: surface the
+                    # failure in the chatter of the related record.
+                    if (message.message_type in ['WhatsApp', 'RCS']
+                            and message.res_model and message.res_id):
+                        connect_partner = self.env.ref(
+                            "connect.user_connect_webhook").partner_id
+                        sender_model = (
+                            'connect.telnyx.whatsapp_sender'
+                            if message.message_type == 'WhatsApp'
+                            else 'connect.telnyx.rcs_agent')
+                        sender = self.env[sender_model].search([], limit=1)
+                        if sender:
+                            sender.chatter_post(
+                                message.res_model, message.res_id,
+                                connect_partner.id,
+                                'Failed to send this {} message'.format(
+                                    message.message_type))
         except Exception as e:
             logger.error("Error handling incoming message: %s", e)
         return ''
