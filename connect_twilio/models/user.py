@@ -71,7 +71,9 @@ class User(models.Model):
         ondelete={'twilio': 'set null'},
     )
     twilio_exten = fields.Many2one('connect.twilio.exten', ondelete='set null', readonly=True, string='Twilio Extension')
-    twilio_exten_number = fields.Char(related='twilio_exten.number', store=True)
+    twilio_exten_number = fields.Char(
+        related='twilio_exten.number', store=True,
+        string='Twilio Extension Number')
     twilio_outgoing_callerid = fields.Many2one(
         'connect.twilio.outgoing_callerid', ondelete='set null',
         string='Twilio Outgoing CallerID')

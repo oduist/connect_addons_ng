@@ -17,7 +17,8 @@ class User(models.Model):
         'connect.freeswitch.exten', ondelete='set null', readonly=True,
         string='FreeSWITCH Extension')
     freeswitch_exten_number = fields.Char(
-        related='freeswitch_exten.number', store=True)
+        related='freeswitch_exten.number', store=True,
+        string='FreeSWITCH Extension Number')
     freeswitch_outgoing_callerid = fields.Many2one(
         'connect.freeswitch.outgoing_callerid', ondelete='set null',
         string='FreeSWITCH Outgoing CallerID')
