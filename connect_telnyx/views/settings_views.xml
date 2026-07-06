@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Standalone Telnyx settings form on the shared connect.settings
+         singleton: only Telnyx fields, opened from the Telnyx menu. -->
+    <record id="connect_settings_form_telnyx" model="ir.ui.view">
+        <field name="name">connect.settings.form.telnyx</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" eval="False"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <sheet>
+                    <notebook>
+                        <page name="telnyx_api" string="Telnyx API">
+                            <group>
+                                <group string="Telnyx Credentials" name="telnyx_api">
+                                    <div colspan="2">
+                                        <small><strong>You can find your Telnyx API data in
+                                            <a href="https://portal.telnyx.com/" target="_blank">your Mission Control Portal</a>
+                                        </strong></small>
+                                    </div>
+                                    <field name="telnyx_auto_sync" groups="base.group_no_one"/>
+                                    <field name="display_telnyx_api_key" string="API Key" password="1"/>
+                                    <field name="telnyx_public_key" string="Public Key"
+                                           help="The Ed25519 public key from Mission Control (Account &gt; Keys &amp; Credentials &gt; Public Key), used to verify webhook signatures."/>
+                                    <field name="telnyx_account_sid" string="Account SID"
+                                           help="The TeXML Account SID (your Telnyx account ID) from Mission Control. Required for click-to-call."/>
+                                    <button colspan="2" name="telnyx_sync" type="object"
+                                            string="SYNC TELNYX ACCOUNT" class="btn btn-primary"/>
+                                </group>
+                                <group string="Balance">
+                                    <field name="telnyx_balance" string="Current Balance" readonly="1"/>
+                                    <button class="btn btn-info" colspan="2" name="get_telnyx_balance"
+                                            type="object" string="GET TELNYX BALANCE"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Calls">
+                                    <field name="telnyx_fetch_call_prices"/>
+                                </group>
+                                <group string="Messaging">
+                                    <field name="telnyx_messaging_profile_id" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Development" groups="base.group_no_one" name="telnyx_dev">
+                            <group>
+                                <group>
+                                    <field name="telnyx_verify_requests"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.actions.server" id="telnyx_settings_action">
+        <field name="type">ir.actions.server</field>
+        <field name="name">Telnyx Settings</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="connect.model_connect_settings"/>
+        <field name="code">action = model.open_settings_form("connect_telnyx.connect_settings_form_telnyx", "Telnyx Settings")</field>
+    </record>
+
+    <menuitem id="menu_telnyx_settings"
+              name="Settings"
+              parent="menu_telnyx_config"
+              action="telnyx_settings_action"
+              groups="connect.group_admin"
+              sequence="10"/>
+
+</odoo>

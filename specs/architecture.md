@@ -15,11 +15,11 @@
    own numbering plan; there is no call path between providers. The shared code these
    models carry (exten dst-Reference mechanics, callflow language list, E.164
    caller-ID constraint) is **duplicated on purpose — no mixins** (owner decision):
-   fixes to those areas must be applied in BOTH `connect_twilio` and
-   `connect_freeswitch`.
+   fixes to those areas must be applied in `connect_twilio`,
+   `connect_freeswitch` AND `connect_telnyx`.
 
 3. **Integration modules still extend core models via `_inherit`.** Modules like
-   `connect_twilio`, `connect_freeswitch` and `connect_asterisk` add adapter fields,
+   `connect_twilio`, `connect_freeswitch`, `connect_asterisk` and `connect_telnyx` add adapter fields,
    methods, and webhook handlers to the shared core models (`connect.call`,
    `connect.channel`, `connect.user`, `connect.settings`). They never redefine core
    models.
@@ -129,19 +129,19 @@ chosen on the user (implicit when exactly one provider is installed).
 | UI views | Ledger views, Users, the **Connect** app menu |
 | Settings | Registration, usage tracking, OpenAI config; parametrized open_settings_form() |
 
-### What lives in Integration Modules (`connect_twilio`, `connect_freeswitch`, `connect_asterisk`)
+### What lives in Integration Modules (`connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`)
 
 | Category | Examples |
 |----------|---------|
-| PBX configuration models | connect.twilio.{exten,callflow,number,outgoing_callerid,user_callflow,message_configuration}, connect.freeswitch.{exten,callflow,number,endpoint,outgoing_callerid}, connect.asterisk.{endpoint,number} — independent per-provider models, code duplicated on purpose (no mixins, ADR-031) |
+| PBX configuration models | connect.twilio.{exten,callflow,number,outgoing_callerid,user_callflow,message_configuration}, connect.freeswitch.{exten,callflow,number,endpoint,outgoing_callerid}, connect.asterisk.{endpoint,number}, connect.telnyx.{exten,callflow,number,outgoing_callerid,user_callflow,message_configuration} — independent per-provider models, code duplicated on purpose (no mixins, ADR-031) |
 | API client | get_client() for Twilio REST / freeswitch_api() for FreeSWITCH XML-RPC / asterisk_ami_action() via the sidecar agent |
 | Webhook handlers | on_call_status(), receive(), on_recording_status(), on_ami_* adapters |
-| Protocol rendering | TwiML generation, FreeSWITCH XML dialplan, Asterisk pjsip/manager.conf snippets |
+| Protocol rendering | TwiML generation, FreeSWITCH XML dialplan, Asterisk pjsip/manager.conf snippets, TeXML generation (connect_telnyx own builder) |
 | Provider sync | sync() methods for numbers, callerIDs, domains |
 | Credential management | SIP accounts, API keys, JWT tokens |
-| Provider-specific models | connect.twilio.twiml, connect.twilio.domain, connect.whatsapp_sender, connect.firewall.{whitelist,blacklist,event,agent}, connect.asterisk.template |
-| SMS composition | sms.composer inherit in connect_twilio (implements the core connect.message.send() contract) |
-| Frontend SDK | Twilio Voice SDK phone widget, Verto WebRTC client, JsSIP web phone |
+| Provider-specific models | connect.twilio.twiml, connect.twilio.domain, connect.whatsapp_sender, connect.firewall.{whitelist,blacklist,event,agent}, connect.asterisk.template, connect.telnyx.texml, connect.telnyx.domain |
+| SMS composition | sms.composer inherit in connect_twilio and connect_telnyx (implements the core connect.message.send() contract; last-loaded wins on co-install — ADR-032) |
+| Frontend SDK | Twilio Voice SDK phone widget, Verto WebRTC client, JsSIP web phone, Telnyx WebRTC phone widget |
 | Auxiliary services | `connect_freeswitch` ships a paired SIP-firewall service (own Docker image, talks ESL + iptables on the host kernel, see ADR-014). The service authenticates to Odoo via dedicated `/freeswitch/firewall/api/*` HTTP controllers carrying the shared `firewall_service_token` as `Authorization: Bearer …` — no dedicated Odoo user (ADR-015). `connect_asterisk` ships a thin sidecar agent (`oduist/asterisk-agent`) holding the persistent AMI connection to the customer's existing Asterisk; events flow to `/asterisk/webhook/*` and actions flow back over the agent HTTP API, both directions carrying the shared `asterisk_agent_token` as Bearer (ADR-026). |
 | Message sending | send() implementation via provider API |
 | Provider-specific fields | SIDs, webhook URLs, provider-specific status codes |
@@ -249,6 +249,24 @@ connect.user gains: asterisk_exten_number (plain Char — numbering stays in the
 customer's dialplan), web phone preferences; originate_provider += 'asterisk'
 ```
 
+### Telnyx models (`connect_telnyx`, ADR-032)
+
+```
+connect.telnyx.exten (+ dst Reference to user/callflow/texml)
+connect.telnyx.callflow (+ connect.telnyx.callflow_choice)
+connect.telnyx.number (attached to the routing TeXML app + messaging profile)
+connect.telnyx.outgoing_callerid (owned numbers only — no validation API)
+connect.telnyx.user_callflow (+ _call)
+connect.telnyx.message_configuration
+connect.telnyx.texml (TeXML application; Twilio-compatible XML, own builder)
+connect.telnyx.domain (credential connection + TeXML app SIP subdomain)
+
+connect.user gains: telnyx_exten(_number), telnyx_outgoing_callerid,
+telnyx_domain, telnyx_{sip,client}_{enabled,priority,ring_timeout},
+per-channel telephony credentials (sip_username/sip_password generated by
+Telnyx); originate_provider += 'telnyx'
+```
+
 ---
 
 ## Settings Architecture
@@ -269,6 +287,8 @@ FreeSWITCH > Configuration > Settings   → connect_freeswitch view (XML-RPC,
                                           domain, webhook token, firewall)
 Asterisk > Configuration > Settings     → connect_asterisk view (agent URL/token,
                                           AMI bootstrap, web phone)
+Telnyx > Configuration > Settings       → connect_telnyx view (API key, public
+                                          key, account SID, sync, balance)
 ```
 
 Co-installation of several providers in one database is supported: Twilio's
@@ -514,6 +534,18 @@ connect_asterisk/                     # Asterisk integration
     webhooks.py / agent_api.py
   deploy/agent/                       # oduist/asterisk-agent sidecar
   static/src/                         # JsSIP web phone
+
+connect_telnyx/                       # Telnyx integration (TeXML-first, ADR-032)
+  models/
+    texml_response.py                 # own TeXML builder (no twilio dependency)
+    texml.py                          # connect.telnyx.texml (TeXML apps)
+    domain.py                         # credential connection + app SIP subdomain
+    exten.py / callflow.py / number.py / outgoing_callerid.py
+    user_callflow.py / message_configuration.py
+    user.py / call.py / channel.py / message.py / recording.py / settings.py  # _inherit
+  controllers/
+    telnyx_webhooks.py                # /telnyx/webhook/* (Ed25519 validation)
+  static/src/                         # @telnyx/webrtc phone widget
 
 connect_crm_twilio/                   # auto-installed bridge (connect_crm ×
                                       # connect_twilio): message_configuration

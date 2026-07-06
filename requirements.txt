@@ -1,3 +1,5 @@
 openai
 pyjwt
 twilio
+telnyx
+pynacl

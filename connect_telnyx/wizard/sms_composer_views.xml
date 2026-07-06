@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sms_composer_form_connect" model="ir.ui.view">
+        <field name="name">sms.composer.form.connect.telnyx</field>
+        <field name="model">sms.composer</field>
+        <field name="inherit_id" ref="sms.sms_composer_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='body']" position="before">
+                <field name="outgoing_callerid"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
