@@ -1,6 +1,6 @@
 """Generate freeswitch_webhook_token for existing installations (ADR-025).
 
-19.0.1.10.2 adds token authentication to every FreeSWITCH -> Odoo HTTP
+19.0.1.10.5 added token authentication to every FreeSWITCH -> Odoo HTTP
 endpoint (/freeswitch/xml and /freeswitch/webhook/*). The ORM backfills
 the new column from the field default, but this script guarantees the
 token exists even if the column was created empty. A random value means
