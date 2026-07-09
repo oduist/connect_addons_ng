@@ -34,8 +34,14 @@ class CallFlow(models.Model):
     choices = fields.One2many('connect.freeswitch.callflow_choice', 'callflow')
     ring_users = fields.Many2many('connect.user')
     record_calls = fields.Boolean()
-    voicemail_prompt = fields.Text()
-    voicemail_enabled = fields.Boolean()
+    voicemail_prompt = fields.Text(
+        help='Message played before recording callflow voicemail. '
+             'Callflow voicemail takes precedence over user voicemail inside '
+             'callflows; direct user routing keeps user voicemail behavior.')
+    voicemail_enabled = fields.Boolean(
+        help='Enable callflow voicemail after no callflow action handles the '
+             'caller. Requires a voicemail prompt. FS Queue voicemail is '
+             'configured separately on the queue timeout settings.')
     fs_fifo_id = fields.Many2one(
         'connect.fs_fifo', string='FS Queue', ondelete='set null',
         help='Fallback queue. Used after ring_users do not answer; '
@@ -100,6 +106,8 @@ class CallFlow(models.Model):
             return self._generate_ring_group_dialplan(number, exten)
         elif self.fs_fifo_id:
             return self._generate_fifo_fallback_dialplan(number)
+        elif self._get_voicemail_context()['voicemail_enabled']:
+            return self._generate_voicemail_dialplan(number, exten)
         else:
             return ('<extension name="callflow_{id}">'
                     '<condition field="destination_number" expression="^{number}$">'
@@ -144,6 +152,8 @@ class CallFlow(models.Model):
         if self.fs_fifo_id and self.fs_fifo_id.exten_number:
             fifo_number = self.fs_fifo_id.exten_number
 
+        voicemail_context = self._get_voicemail_context()
+
         ring_parts = []
         for user in self.ring_users:
             if user.freeswitch_exten_number:
@@ -183,6 +193,9 @@ class CallFlow(models.Model):
             'fs_domain': fs_domain,
             'ring_bridge': ring_bridge,
             'fifo_number': fifo_number,
+            'voicemail_enabled': voicemail_context['voicemail_enabled'],
+            'voicemail_prompt': voicemail_context['voicemail_prompt'],
+            'voicemail_url': voicemail_context['voicemail_url'],
             'invalid_regex': invalid_regex,
             'dmachine_timeout': dmachine_timeout,
         })
@@ -245,11 +258,7 @@ class CallFlow(models.Model):
         if self.fs_fifo_id and self.fs_fifo_id.exten_number:
             fifo_number = self.fs_fifo_id.exten_number
 
-        voicemail_user_number = ''
-        if self.voicemail_enabled:
-            first_user = self.ring_users[:1]
-            if first_user and first_user.freeswitch_exten_number:
-                voicemail_user_number = first_user.freeswitch_exten_number
+        voicemail_context = self._get_voicemail_context()
 
         return self.env['connect.freeswitch.template'].render('dialplan_ring_group', {
             'callflow_id': self.id,
@@ -259,9 +268,35 @@ class CallFlow(models.Model):
             'recording_url': recording_url,
             'bridge_string': ','.join(bridge_parts),
             'fifo_number': fifo_number,
-            'voicemail_enabled': bool(self.voicemail_enabled),
-            'voicemail_user_number': voicemail_user_number,
+            'voicemail_enabled': voicemail_context['voicemail_enabled'],
+            'voicemail_prompt': voicemail_context['voicemail_prompt'],
+            'voicemail_url': voicemail_context['voicemail_url'],
+            'lang': voicemail_context['lang'],
         })
+
+    def _get_voicemail_context(self):
+        prompt = (self.voicemail_prompt or '').strip()
+        voicemail_url = ''
+        if self.voicemail_enabled and prompt:
+            voicemail_url = self.env['connect.settings'].get_voicemail_webhook_url()
+        return {
+            'voicemail_enabled': bool(self.voicemail_enabled and prompt and voicemail_url),
+            'voicemail_prompt': prompt,
+            'voicemail_url': voicemail_url,
+            'lang': self._get_piper_language(),
+        }
+
+    def _generate_voicemail_dialplan(self, number, exten=None):
+        voicemail_context = self._get_voicemail_context()
+        return self.env['connect.freeswitch.template'].render(
+            'dialplan_callflow_voicemail', {
+                'callflow_id': self.id,
+                'number': re.escape(number),
+                'exten_id': exten.id if exten else None,
+                'voicemail_prompt': voicemail_context['voicemail_prompt'],
+                'voicemail_url': voicemail_context['voicemail_url'],
+                'lang': voicemail_context['lang'],
+            })
 
     def _generate_fifo_fallback_dialplan(self, number):
         """Callflow with only fs_fifo_id: act as a thin transfer-to-queue wrapper."""

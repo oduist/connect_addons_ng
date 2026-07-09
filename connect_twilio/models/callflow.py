@@ -42,8 +42,13 @@ class CallFlow(models.Model):
     choices = fields.One2many('connect.twilio.callflow_choice', 'callflow')
     ring_users = fields.Many2many('connect.user')
     record_calls = fields.Boolean()
-    voicemail_prompt = fields.Text()
-    voicemail_enabled = fields.Boolean()
+    voicemail_prompt = fields.Text(
+        help='Message played before recording callflow voicemail. '
+             'Callflow voicemail takes precedence over user voicemail inside '
+             'callflows; direct user routing keeps user voicemail behavior.')
+    voicemail_enabled = fields.Boolean(
+        help='Enable callflow voicemail after no callflow action handles the '
+             'caller. Requires a voicemail prompt.')
     gather_action_url = fields.Char(compute='_get_gather_action_url')
 
     def create_extension(self):
@@ -194,12 +199,12 @@ class CallFlow(models.Model):
         response = VoiceResponse()
         if request.get('DialCallStatus') != 'completed':
             callflow = self.browse(flow_id)
-            if callflow.voicemail_prompt:
+            if callflow.voicemail_enabled and callflow.voicemail_prompt:
                 api_url = self.env['connect.settings'].sudo().get_param('api_url')
                 edge = self.env['connect.settings'].sudo().get_param('twilio_edge')
                 record_status_url = urljoin(api_url, 'twilio/webhook/vm_recordingstatus#e={}'.format(edge))
                 response.pause(length=1)
-                response.say(callflow.voicemail_prompt, language=callflow.language, voice=callflow.voice)
+                callflow.get_voicemail_prompt_message(response)
                 response.record(
                     maxLength=120,
                     finishOnKey='#',
