@@ -17,6 +17,8 @@ import importlib.util
 import os
 import sys
 
+from . import test_ai_assistant
+
 _SUITE = os.path.normpath(
     os.path.join(os.path.dirname(__file__), "..", "..",
                  "tests_suite", "connect_telnyx", "tests")

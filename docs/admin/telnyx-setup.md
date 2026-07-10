@@ -13,6 +13,28 @@
 
 Navigate to **Connect > Telnyx > Configuration > Settings**.
 
+## AI Voice Assistants
+
+After the credentials and public HTTPS API URL are configured, open
+**Connect > Telnyx > AI Assistants**. Creating a record creates the Telnyx AI
+Assistant and configures its dynamic-variable and tool webhooks. **Pull from
+Telnyx** refreshes a record; the main **SYNC TELNYX ACCOUNT** action also
+imports assistants created in Mission Control.
+
+To answer an existing Telnyx number with an assistant, open the number and set
+**Destination** to **AI Assistant**. The number remains attached to the Odoo
+TeXML routing application; do not assign it directly to the assistant in
+Mission Control.
+
+The **Call with Assistant** button starts an outbound call using an existing
+owned caller ID. It never buys or assigns a number. Recording and memory are
+off by default and must be enabled on each assistant. CRM and Helpdesk tools
+are published only when the matching Connect modules are installed.
+
+Telnyx signs context and insight callbacks with the account Ed25519 public
+key. Odoo tools use a separate random token per assistant; rotate it from the
+assistant form if it may have been exposed.
+
 ### Credentials
 
 | Field | Description |

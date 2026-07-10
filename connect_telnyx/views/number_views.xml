@@ -11,6 +11,7 @@
                 <field name="user"/>
                 <field name="callflow"/>
                 <field name="texml"/>
+                <field name="ai_assistant"/>
                 <field name="is_ignored"/>
             </list>
         </field>
@@ -36,6 +37,9 @@
                             <field name="texml"
                                    invisible="destination != 'texml'"
                                    required="destination == 'texml'"/>
+                            <field name="ai_assistant"
+                                   invisible="destination != 'ai_assistant'"
+                                   required="destination == 'ai_assistant'"/>
                         </group>
                     </group>
                 </sheet>
