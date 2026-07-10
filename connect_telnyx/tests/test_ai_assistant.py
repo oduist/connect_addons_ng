@@ -43,8 +43,6 @@ class TestTelnyxAIAssistant(TransactionCase):
         number = self.env['connect.telnyx.number'].create({
             'phone_number': '+15550001111',
             'sid': 'number-test',
-        })
-        number.with_context(skip_telnyx_sync=True).write({
             'destination': 'ai_assistant',
             'ai_assistant': self.assistant.id,
         })

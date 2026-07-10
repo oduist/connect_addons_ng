@@ -354,7 +354,8 @@ class TelnyxAIAssistant(models.Model):
             if not sid:
                 continue
             rec = self.search([("sid", "=", sid)], limit=1)
-            vals = self._remote_values(item, imported=not bool(rec))
+            vals = self._remote_values(
+                item, imported=rec.imported if rec else True)
             if rec:
                 rec.with_context(skip_telnyx_ai_sync=True).write(vals)
             else:
