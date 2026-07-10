@@ -98,8 +98,9 @@ successful `uuid_transfer` is not immediately killed.
 
 `connect.group_user` has read-only agent access, per the product decision.
 `connect.group_admin` has CRUD. `connect.group_webhook` has read-only access
-plus an all-record read rule. No non-admin group has access to settings or
-stored provider secrets.
+plus an all-record read rule. The webhook group also receives read-only access
+to `connect.exten`, required to resolve the configured human transfer number.
+No non-admin group has access to settings or stored provider secrets.
 
 ## Deferred
 
