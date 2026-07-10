@@ -13,9 +13,10 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_freeswitch`** — FreeSWITCH integration. Owns `connect.freeswitch.{exten,callflow,callflow_choice,number,endpoint,outgoing_callerid}` plus gateways/routes/FIFO/parking/firewall, Verto WebRTC client, XML dialplan generation. **FreeSWITCH** submenu under the Connect app.
 - **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). Owns `connect.asterisk.{endpoint,number}`; AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). **Asterisk** submenu under the Connect app. See ADR-026.
 - **`connect_telnyx`** — Telnyx integration (TeXML-first, ADR-032). Owns `connect.telnyx.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,texml,domain}`; SIP domain = credential connection + TeXML app SIP subdomain, per-user telephony credentials, @telnyx/webrtc phone widget, SMS/WhatsApp/RCS via messaging profile (ADR-033: `connect.telnyx.{whatsapp_sender,whatsapp_template,rcs_agent}` + composers), Ed25519 webhook validation. **Telnyx** submenu under the Connect app.
+- **`connect_3cx`** — 3CX integration (server-side CRM template, ADR-034) for existing customer 3CX V20 PBXs (PRO/AI editions only). Owns **no** PBX-configuration models: `connect.settings`/`connect.user` extensions + `/3cx/webhook/*` controllers (contact lookup at call arrival, call journaling at call end, contact creation) + a generated CRM template downloaded from the settings form. Click-to-call opens the 3CX Web Client dial URL (`originate_call` returns an act_url; core `redial()` returns it through). No web phone (3CX exposes no third-party WebRTC/WSS) and no SMS. **3CX** submenu under the Connect app.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
 
-Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk` and `connect_telnyx` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module).
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx` and `connect_3cx` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module).
 
 ## Architecture
 
@@ -64,6 +65,7 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_twilio.md` — Twilio module spec (models, webhooks, controllers, frontend)
 - `specs/connect_asterisk.md` — Asterisk module spec (models, agent contract, controllers, frontend)
 - `specs/connect_telnyx.md` — Telnyx module spec (models, TeXML routing, controllers, frontend)
+- `specs/connect_3cx.md` — 3CX module spec (settings/user extensions, webhook controllers, CRM template)
 - `docs/` — User and admin documentation (MkDocs Material), see `docs/mkdocs.yml` for structure
 
 ## Development Commands
@@ -139,6 +141,7 @@ Specifically:
 - Twilio webhook routes are all under `/twilio/webhook/*` and validate `X-Twilio-Signature` when enabled
 - Asterisk webhook/API routes are under `/asterisk/webhook/*` and `/asterisk/api/*` and require `Authorization: Bearer <asterisk_agent_token>`
 - Telnyx webhook routes are all under `/telnyx/webhook/*` and validate the Ed25519 `telnyx-signature-ed25519` header when enabled
+- 3CX webhook routes are all under `/3cx/webhook/*` and require the `X-Connect-Api-Key: <threecx_api_key>` header (`Authorization: Bearer` also accepted); they are additionally gated on `threecx_enabled`
 - Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`
 
 ## FreeSWITCH & Firewall Docker Images
@@ -310,6 +313,7 @@ oduflow run_odoo_tests connect_twilio
 oduflow run_odoo_tests connect_freeswitch
 oduflow run_odoo_tests connect_asterisk
 oduflow run_odoo_tests connect_telnyx
+oduflow run_odoo_tests connect_3cx
 ```
 
 ## Installing as a uv dependency (external consumers)

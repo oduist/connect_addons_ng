@@ -19,10 +19,13 @@
    `connect_freeswitch` AND `connect_telnyx`.
 
 3. **Integration modules still extend core models via `_inherit`.** Modules like
-   `connect_twilio`, `connect_freeswitch`, `connect_asterisk` and `connect_telnyx` add adapter fields,
+   `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx` and
+   `connect_3cx` add adapter fields,
    methods, and webhook handlers to the shared core models (`connect.call`,
    `connect.channel`, `connect.user`, `connect.settings`). They never redefine core
-   models.
+   models. A provider module may own **no** PBX configuration models at all:
+   `connect_3cx` (ADR-034) is settings + user `_inherit` plus webhook controllers
+   only — 3CX owns its numbering, routing and devices.
 
 4. **OpenAI transcription is in core (not Twilio-specific).** Recording transcription via
    OpenAI Whisper and call summarization via GPT-4o are technology-agnostic features.
@@ -129,19 +132,19 @@ chosen on the user (implicit when exactly one provider is installed).
 | UI views | Ledger views, Users, the **Connect** app menu |
 | Settings | Registration, usage tracking, OpenAI config; parametrized open_settings_form() |
 
-### What lives in Integration Modules (`connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`)
+### What lives in Integration Modules (`connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_3cx`)
 
 | Category | Examples |
 |----------|---------|
-| PBX configuration models | connect.twilio.{exten,callflow,number,outgoing_callerid,user_callflow,message_configuration}, connect.freeswitch.{exten,callflow,number,endpoint,outgoing_callerid}, connect.asterisk.{endpoint,number}, connect.telnyx.{exten,callflow,number,outgoing_callerid,user_callflow,message_configuration} — independent per-provider models, code duplicated on purpose (no mixins, ADR-031) |
+| PBX configuration models | connect.twilio.{exten,callflow,number,outgoing_callerid,user_callflow,message_configuration}, connect.freeswitch.{exten,callflow,number,endpoint,outgoing_callerid}, connect.asterisk.{endpoint,number}, connect.telnyx.{exten,callflow,number,outgoing_callerid,user_callflow,message_configuration} — independent per-provider models, code duplicated on purpose (no mixins, ADR-031). `connect_3cx` owns none (ADR-034) |
 | API client | get_client() for Twilio REST / freeswitch_api() for FreeSWITCH XML-RPC / asterisk_ami_action() via the sidecar agent |
-| Webhook handlers | on_call_status(), receive(), on_recording_status(), on_ami_* adapters |
+| Webhook handlers | on_call_status(), receive(), on_recording_status(), on_ami_* adapters, /3cx/webhook/* CRM-template handlers (lookup, report_call, create_contact) |
 | Protocol rendering | TwiML generation, FreeSWITCH XML dialplan, Asterisk pjsip/manager.conf snippets, TeXML generation (connect_telnyx own builder) |
 | Provider sync | sync() methods for numbers, callerIDs, domains |
 | Credential management | SIP accounts, API keys, JWT tokens |
 | Provider-specific models | connect.twilio.twiml, connect.twilio.domain, connect.whatsapp_sender, connect.firewall.{whitelist,blacklist,event,agent}, connect.asterisk.template, connect.telnyx.texml, connect.telnyx.domain |
 | SMS composition | sms.composer inherit in connect_twilio and connect_telnyx (implements the core connect.message.send() contract; last-loaded wins on co-install — ADR-032) |
-| Frontend SDK | Twilio Voice SDK phone widget, Verto WebRTC client, JsSIP web phone, Telnyx WebRTC phone widget |
+| Frontend SDK | Twilio Voice SDK phone widget, Verto WebRTC client, JsSIP web phone, Telnyx WebRTC phone widget. `connect_3cx` ships no phone: 3CX exposes no third-party WebRTC/WSS access — click-to-call opens the 3CX Web Client dial URL (ADR-034) |
 | Auxiliary services | `connect_freeswitch` ships a paired SIP-firewall service (own Docker image, talks ESL + iptables on the host kernel, see ADR-014). The service authenticates to Odoo via dedicated `/freeswitch/firewall/api/*` HTTP controllers carrying the shared `firewall_service_token` as `Authorization: Bearer …` — no dedicated Odoo user (ADR-015). `connect_asterisk` ships a thin sidecar agent (`oduist/asterisk-agent`) holding the persistent AMI connection to the customer's existing Asterisk; events flow to `/asterisk/webhook/*` and actions flow back over the agent HTTP API, both directions carrying the shared `asterisk_agent_token` as Bearer (ADR-026). |
 | Message sending | send() implementation via provider API |
 | Provider-specific fields | SIDs, webhook URLs, provider-specific status codes |

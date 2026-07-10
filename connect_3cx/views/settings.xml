@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Standalone 3CX settings form on the shared connect.settings
+         singleton: only 3CX fields, opened from the 3CX menu. -->
+    <record id="connect_settings_form_threecx" model="ir.ui.view">
+        <field name="name">connect.settings.form.threecx</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" eval="False"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <sheet>
+                    <notebook>
+                        <page name="threecx" string="3CX">
+                            <div class="alert alert-info" role="alert">
+                                Server-side CRM integration for 3CX V20
+                                (PRO or AI edition). Steps: 1) enable the
+                                integration and set the PBX URL, 2) download
+                                the CRM template, 3) upload it in the 3CX
+                                Admin Console under Integrations &#8594; CRM,
+                                4) set each user's 3CX extension on the
+                                Connect user. Calls are journaled into the
+                                ledger when they end; click-to-call opens
+                                the 3CX Web Client.
+                            </div>
+                            <group>
+                                <group string="Integration">
+                                    <field name="threecx_enabled"
+                                           widget="boolean_toggle"/>
+                                    <field name="threecx_pbx_url"
+                                           placeholder="https://mycompany.3cx.eu"/>
+                                    <field name="display_threecx_api_key"
+                                           password="True"
+                                           placeholder="**** (min 24 chars, [A-Za-z0-9_-])"/>
+                                    <button name="threecx_generate_api_key"
+                                            type="object"
+                                            string="GENERATE API KEY"
+                                            class="btn btn-secondary"
+                                            confirm="Generate a new API key? The CRM template must be re-downloaded and re-uploaded to 3CX."
+                                            colspan="2"/>
+                                    <button name="threecx_download_template"
+                                            type="object"
+                                            string="DOWNLOAD CRM TEMPLATE"
+                                            class="btn btn-primary"
+                                            colspan="2"/>
+                                </group>
+                                <group string="Status">
+                                    <field name="threecx_last_lookup"/>
+                                    <field name="threecx_last_journal"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.actions.server" id="threecx_settings_action">
+        <field name="type">ir.actions.server</field>
+        <field name="name">3CX Settings</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="connect.model_connect_settings"/>
+        <field name="code">action = model.open_settings_form("connect_3cx.connect_settings_form_threecx", "3CX Settings")</field>
+    </record>
+
+    <menuitem id="menu_threecx_settings"
+              name="Settings"
+              parent="menu_threecx_config"
+              action="threecx_settings_action"
+              groups="connect.group_admin"
+              sequence="20"/>
+
+</odoo>
