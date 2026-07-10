@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pipecat_agent_list" model="ir.ui.view">
+        <field name="name">connect.pipecat.agent.list</field>
+        <field name="model">connect.pipecat.agent</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="exten_number" string="Extension"/>
+                <field name="language"/>
+                <field name="llm_provider"/>
+                <field name="llm_model"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_pipecat_agent_form" model="ir.ui.view">
+        <field name="name">connect.pipecat.agent.form</field>
+        <field name="model">connect.pipecat.agent</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="create_extension" type="object"
+                                class="oe_stat_button" icon="fa-phone"
+                                string="Extension"/>
+                    </div>
+                    <widget name="web_ribbon" text="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <group>
+                        <group string="Agent">
+                            <field name="name"/>
+                            <field name="active" widget="boolean_toggle"/>
+                            <field name="exten" readonly="1"/>
+                            <field name="language"/>
+                            <field name="max_duration"/>
+                            <field name="record_calls"/>
+                        </group>
+                        <group string="Human Transfer">
+                            <field name="transfer_exten"/>
+                            <field name="transfer_prompt"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Prompt" name="prompt">
+                            <group>
+                                <field name="system_prompt"/>
+                                <field name="greeting"/>
+                            </group>
+                        </page>
+                        <page string="Providers" name="providers">
+                            <group>
+                                <group string="Speech to Text">
+                                    <field name="stt_provider"/>
+                                    <field name="stt_model"/>
+                                </group>
+                                <group string="Language Model">
+                                    <field name="llm_provider"/>
+                                    <field name="llm_model"/>
+                                </group>
+                                <group string="Text to Speech">
+                                    <field name="tts_provider"/>
+                                    <field name="tts_model"/>
+                                    <field name="tts_voice"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_pipecat_agent" model="ir.actions.act_window">
+        <field name="name">AI Agents</field>
+        <field name="res_model">connect.pipecat.agent</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem id="menu_pipecat_agent" name="AI Agents"
+              parent="connect.menu_connect_pbx" action="action_pipecat_agent"
+              sequence="55"/>
+</odoo>

@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libedit-dev zlib1g-dev uuid-dev libspeex-dev libspeexdsp-dev \
     # Module deps
     libopus-dev libsndfile1-dev libtiff-dev libjpeg-dev \
+    libwebsockets-dev libboost-system-dev libboost-thread-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Build libks2 (needed for mod_verto, mod_rtc) ────────────────────────────
@@ -51,6 +52,10 @@ RUN git clone --depth 1 --branch ${MOD_PIPER_TTS_VERSION} \
     && cp -r /tmp/mod_piper_tts/sources \
        /usr/src/freeswitch/src/mod/asr_tts/mod_piper_tts
 
+# mod_audio_fork is vendored so image builds do not depend on a mutable or
+# disappearing third-party repository.
+COPY mod_audio_fork /usr/src/freeswitch/src/mod/applications/mod_audio_fork
+
 # ── Bootstrap FreeSWITCH (cached independently of module list) ─────────────
 WORKDIR /usr/src/freeswitch
 
@@ -73,6 +78,7 @@ applications/mod_dptools
 applications/mod_http_cache
 applications/mod_fifo
 applications/mod_valet_parking
+applications/mod_audio_fork
 formats/mod_local_stream
 dialplans/mod_dialplan_xml
 codecs/mod_opus

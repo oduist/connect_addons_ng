@@ -33,6 +33,8 @@ Major features:
 - call parking with BLF subscriptions (ADR-012);
 - gateway / outgoing route management;
 - piper TTS module embedded in the image;
+- vendored `mod_audio_fork` for bidirectional 16 kHz L16 WebSocket media
+  used by `connect_pipecat` (ADR-030);
 - SIP brute-force firewall integration (see below, ADR-014).
 
 ---
