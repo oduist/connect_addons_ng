@@ -25,6 +25,8 @@ class TestTelnyxAIAssistant(TransactionCase):
     def test_remote_payload_has_safe_defaults_and_tools(self):
         payload = self.assistant._remote_payload()
         self.assertEqual(payload['enabled_features'], ['telephony'])
+        self.assertEqual(payload['tools'][0], {
+            'type': 'hangup', 'hangup': {}})
         self.assertFalse(
             payload['telephony_settings']['recording_settings']['enabled'])
         tool_names = [

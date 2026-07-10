@@ -116,7 +116,7 @@ class TelnyxAIAssistant(models.Model):
 
     def _tool_payload(self):
         self.ensure_one()
-        tools = [{"type": "hangup"}]
+        tools = [{"type": "hangup", "hangup": {}}]
         if self.enable_contact_tools:
             tools.extend([
                 self._webhook_tool(
