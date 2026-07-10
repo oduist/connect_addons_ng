@@ -16,6 +16,15 @@ class TelnyxAICallWizard(models.TransientModel):
     to_number = fields.Char(required=True)
     partner = fields.Many2one('res.partner', ondelete='set null')
 
+    def _texml_connection_id(self):
+        domain = self.env['connect.telnyx.domain'].search([], limit=1)
+        connection_id = domain.application.sid if domain else False
+        if not connection_id:
+            raise ValidationError(
+                'Synchronize the Telnyx routing TeXML application first.'
+            )
+        return connection_id
+
     def action_call(self):
         self.ensure_one()
         if not self.assistant.sid:
@@ -34,7 +43,8 @@ class TelnyxAICallWizard(models.TransientModel):
                 'customer_language': self.partner.lang or '',
             }
         response = self.env['connect.settings'].telnyx_api_request(
-            'POST', 'texml/ai_calls', payload={
+            'POST', 'texml/ai_calls/{}'.format(self._texml_connection_id()),
+            payload={
                 'From': self.caller_id.number,
                 'To': number,
                 'AIAssistantId': self.assistant.sid,

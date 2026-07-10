@@ -272,7 +272,10 @@ class TelnyxAIAssistant(models.Model):
             vals.setdefault("tool_token", secrets.token_urlsafe(32))
         records = super().create(vals_list)
         if (self.env.context.get("install_mode")
-                or self.env.context.get("skip_telnyx_ai_sync")):
+                or self.env.context.get("skip_telnyx_ai_sync")
+                or not self.env["connect.settings"].sudo().get_param(
+                    "telnyx_auto_sync"
+                )):
             return records
         for rec in records:
             rec._create_remote()

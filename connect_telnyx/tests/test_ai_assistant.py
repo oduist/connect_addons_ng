@@ -83,6 +83,69 @@ class TestTelnyxAIAssistant(TransactionCase):
         self.assertTrue(records.imported)
         self.assertTrue(records.record_calls)
 
+    def test_create_respects_auto_sync_disabled(self):
+        settings = self.env['connect.settings'].sudo()
+        settings.set_param('telnyx_auto_sync', False)
+        try:
+            with patch.object(
+                    Settings, 'telnyx_api_request', autospec=True
+            ) as request_mock:
+                assistant = self.env['connect.telnyx.ai_assistant'].create({
+                    'name': 'Local Draft Agent',
+                    'instructions': 'Stay local.',
+                })
+        finally:
+            settings.set_param('telnyx_auto_sync', True)
+        self.assertFalse(assistant.sid)
+        request_mock.assert_not_called()
+
+    def test_ai_call_wizard_uses_texml_connection_endpoint(self):
+        texml = self.env['connect.telnyx.texml'].with_context(
+            install_mode=True
+        ).create({
+            'name': 'Routing App',
+            'code_type': 'model_method',
+            'model': 'connect.telnyx.domain',
+            'method': 'route_call',
+            'sid': 'texml-connection-test',
+        })
+        self.env['connect.telnyx.domain'].with_context(
+            no_telnyx_create=True
+        ).create({
+            'friendly_name': 'Test Domain',
+            'subdomain': 'test-ai',
+            'application': texml.id,
+        })
+        caller_id = self.env['connect.telnyx.outgoing_callerid'].create({
+            'number': '+15550009999',
+            'friendly_name': 'Test caller',
+        })
+        partner = self.env['res.partner'].create({
+            'name': 'AI Callee', 'phone': '+15550008888'})
+        wizard = self.env['connect.telnyx.ai_call_wizard'].create({
+            'assistant': self.assistant.id,
+            'caller_id': caller_id.id,
+            'to_number': '15550008888',
+            'partner': partner.id,
+        })
+
+        def api_response(_settings, method, path, **kwargs):
+            self.assertEqual(method, 'POST')
+            self.assertEqual(path, 'texml/ai_calls/texml-connection-test')
+            self.assertEqual(kwargs['payload']['To'], '+15550008888')
+            self.assertEqual(
+                kwargs['payload']['AIAssistantId'], self.assistant.sid)
+            return {'call_sid': 'v3:test-ai-call'}
+
+        with patch.object(
+                Settings, 'telnyx_api_request', autospec=True,
+                side_effect=api_response):
+            wizard.action_call()
+        channel = self.env['connect.channel'].search([
+            ('sid', '=', 'v3:test-ai-call')])
+        self.assertEqual(len(channel), 1)
+        self.assertEqual(channel.called, '+15550008888')
+
     def test_contact_tool_is_allowlisted(self):
         partner = self.env['res.partner'].create({
             'name': 'AI Caller', 'phone': '+15550002222'})
