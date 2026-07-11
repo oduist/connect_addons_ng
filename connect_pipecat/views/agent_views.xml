@@ -75,6 +75,7 @@
         <field name="view_mode">list,form</field>
     </record>
     <menuitem id="menu_pipecat_agent" name="AI Agents"
-              parent="connect.menu_connect_pbx" action="action_pipecat_agent"
+              parent="connect_freeswitch.menu_freeswitch_root"
+              action="action_pipecat_agent"
               sequence="55"/>
 </odoo>

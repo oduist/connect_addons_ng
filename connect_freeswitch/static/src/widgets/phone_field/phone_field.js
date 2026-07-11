@@ -14,6 +14,6 @@ patch(PhoneField.prototype, {
         e.preventDefault()
         const {resModel, resId} = this.props.record.model.config
         const args = [this.props.record.data[this.props.name], resModel, resId]
-        this.env.model.orm.call("connect.call", "originate_call", args, {})
+        this.env.model.orm.call("connect.settings", "originate_call", args, {})
     },
 })

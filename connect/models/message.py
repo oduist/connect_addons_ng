@@ -61,10 +61,14 @@ class ConnectMessage(models.Model):
             # media_url / media_content_type come from inbound webhook
             # params (MediaUrl0, MediaContentType0); escape both before
             # they land in this sanitize=False Html field (stored XSS).
+            # Escaping only stops attribute breakout — it does not neutralize
+            # a dangerous scheme (e.g. javascript:), which stays clickable in
+            # the <a href>. Allowlist http/https so a crafted media_url can
+            # never render a script-executing link.
             raw_url = rec.media_url or ''
             ctype = (rec.media_content_type or '').lower()
             url = escape(raw_url)
-            if raw_url:
+            if raw_url.startswith(('http://', 'https://')):
                 if ctype.startswith('image/'):
                     html = '<img src="{}" style="max-width:50%;height:auto;"/>'.format(url)
                 elif ctype.startswith('audio/'):

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_telnyx_number_tree" model="ir.ui.view">
+        <field name="name">connect.telnyx.number.tree</field>
+        <field name="model">connect.telnyx.number</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="phone_number"/>
+                <field name="friendly_name"/>
+                <field name="destination"/>
+                <field name="user"/>
+                <field name="callflow"/>
+                <field name="texml"/>
+                <field name="ai_assistant"/>
+                <field name="is_ignored"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_telnyx_number_form" model="ir.ui.view">
+        <field name="name">connect.telnyx.number.form</field>
+        <field name="model">connect.telnyx.number</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="Number">
+                            <field name="phone_number"/>
+                            <field name="friendly_name"/>
+                            <field name="is_ignored"/>
+                            <field name="is_default"/>
+                        </group>
+                        <group string="Routing">
+                            <field name="destination"/>
+                            <field name="user" invisible="destination != 'user'"/>
+                            <field name="callflow" invisible="destination != 'callflow'"/>
+                            <field name="texml"
+                                   invisible="destination != 'texml'"
+                                   required="destination == 'texml'"/>
+                            <field name="ai_assistant"
+                                   invisible="destination != 'ai_assistant'"
+                                   required="destination == 'ai_assistant'"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_telnyx_number" model="ir.actions.act_window">
+        <field name="name">Numbers</field>
+        <field name="res_model">connect.telnyx.number</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_telnyx_numbers"
+              name="Numbers"
+              parent="menu_connect_telnyx"
+              action="action_telnyx_number"
+              sequence="10"/>
+</odoo>

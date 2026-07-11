@@ -11,7 +11,7 @@ dynamic = ["dependencies"]
 [tool.hatch.build.hooks.odoo-addons-dirs]
 
 [tool.hatch.build.targets.wheel]
-only-include = ["connect", "connect_twilio", "connect_freeswitch", "connect_pipecat"]
+only-include = ["connect", "connect_twilio", "connect_freeswitch", "connect_telnyx", "connect_pipecat"]
 
 [tool.hatch-odoo]
 addons_dirs = ["."]

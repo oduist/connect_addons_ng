@@ -9,8 +9,8 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='user']" position="after">
                 <field name="username"/>
-            </xpath>
-            <xpath expr="//field[@name='outgoing_callerid']" position="after">
+                <field name="twilio_exten" optional="show"/>
+                <field name="twilio_outgoing_callerid" optional="hide"/>
                 <field name="sip_enabled" string="SIP"/>
                 <field name="client_enabled" string="Web"/>
                 <field name="application" optional="hide"/>
@@ -25,6 +25,12 @@
         <field name="model">connect.user</field>
         <field name="inherit_id" ref="connect.view_connect_user_form"/>
         <field name="arch" type="xml">
+            <!-- Twilio extension stat button -->
+            <xpath expr="//header" position="inside">
+                <button name="create_twilio_extension" type="object"
+                        string="Twilio Extension" class="btn btn-primary"/>
+            </xpath>
+
             <!-- Add username and domain to User Info group -->
             <xpath expr="//field[@name='user']" position="after">
                 <field name="username"/>
@@ -34,6 +40,8 @@
                 <field name="domain"/>
                 <field name="twilio_edge"
                        help="Choose the closest Twilio Edge or use Global Low-latency routing."/>
+                <field name="twilio_exten" readonly="1"/>
+                <field name="twilio_outgoing_callerid"/>
             </xpath>
 
             <!-- Add whatsapp_sender_id and application to Call Settings group -->
@@ -44,7 +52,7 @@
 
             <!-- Add Phone tab with SIP/Client settings to notebook -->
             <xpath expr="//page[@name='organization']" position="before">
-                <page name="phone" string="Phone">
+                <page name="phone" string="Twilio Phone">
                     <group>
                         <group string="SIP Phone">
                             <field name="sip_enabled" string="Enabled"/>

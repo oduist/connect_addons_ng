@@ -6,23 +6,36 @@ logger = logging.getLogger(__name__)
 
 
 class Number(models.Model):
-    _inherit = 'connect.number'
+    _name = 'connect.freeswitch.number'
+    _description = 'FreeSWITCH Phone Number'
+    _rec_name = 'phone_number'
+    _order = 'phone_number'
 
-    destination = fields.Selection(
-        selection_add=[('fs_fifo', 'FS Queue')],
-        ondelete={'fs_fifo': 'set null'},
-    )
+    is_default = fields.Boolean(string='Default')
+    phone_number = fields.Char(required=True)
+    friendly_name = fields.Char()
+    destination = fields.Selection(selection=[
+        ('user', 'User'),
+        ('callflow', 'CallFlow'),
+        ('fs_fifo', 'FS Queue'),
+    ], ondelete='set null')
+    callflow = fields.Many2one('connect.freeswitch.callflow', ondelete='set null')
+    user = fields.Many2one('connect.user', ondelete='set null')
     fs_fifo_id = fields.Many2one(
         'connect.fs_fifo', string='FS Queue', ondelete='set null')
 
     def write(self, vals):
-        if 'destination' in vals and vals['destination'] != 'fs_fifo':
-            vals.setdefault('fs_fifo_id', False)
+        if 'destination' in vals:
+            mapping = {'user': 'user', 'callflow': 'callflow', 'fs_fifo': 'fs_fifo_id'}
+            keep = mapping.get(vals['destination'])
+            for field in mapping.values():
+                if field != keep:
+                    vals.setdefault(field, False)
         return super().write(vals)
 
     @api.model
     def _find_by_did(self, destination):
-        """Find the connect.number for an inbound destination, tolerating an
+        """Find the number record for an inbound destination, tolerating an
         optional leading '+' mismatch between the trunk format and the stored
         DID (e.g. trunk sends ``41215121140`` while the DID is stored as
         ``+41215121140`` or vice-versa). Exact match wins; only if none is
@@ -41,7 +54,7 @@ class Number(models.Model):
 
         transfer_target = ''
         if self.destination == 'user' and self.user:
-            transfer_target = self.user.exten_number
+            transfer_target = self.user.freeswitch_exten_number
         elif self.destination == 'callflow' and self.callflow:
             transfer_target = self.callflow.exten_number or str(self.callflow.id)
         elif self.destination == 'fs_fifo' and self.fs_fifo_id:

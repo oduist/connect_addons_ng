@@ -8,27 +8,43 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 
 ## Modules
 
-- **`connect`** — Technology-agnostic core. Stores calls, messages, recordings, users, callflows, extensions. Handles OpenAI transcription/summarization, SMS composer UI, partner integration. **Never imports provider-specific code.**
-- **`connect_twilio`** — Twilio integration. Extends core models via `_inherit`. Adds TwiML apps, SIP domains, WhatsApp, webhook handlers, Twilio Voice JS SDK phone widget.
-- **`connect_freeswitch`** — FreeSWITCH integration. Adds Verto WebRTC client, XML dialplan generation, endpoint management.
+- **`connect`** — Technology-agnostic core: the shared call/message ledger (`connect.call`, `connect.channel`, `connect.recording`, `connect.message`), PBX people (`connect.user`), common settings, OpenAI transcription/summarization, partner integration. **Never imports provider-specific code and holds NO PBX-configuration models.**
+- **`connect_twilio`** — Twilio integration. Owns its PBX configuration: `connect.twilio.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,twiml,domain}`, WhatsApp, sms.composer, webhook handlers, Twilio Voice JS SDK phone widget. **Twilio** submenu under the Connect app (incl. Messages).
+- **`connect_freeswitch`** — FreeSWITCH integration. Owns `connect.freeswitch.{exten,callflow,callflow_choice,number,endpoint,outgoing_callerid}` plus gateways/routes/FIFO/parking/firewall, Verto WebRTC client, XML dialplan generation. **FreeSWITCH** submenu under the Connect app.
+- **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). Owns `connect.asterisk.{endpoint,number}`; AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). **Asterisk** submenu under the Connect app. See ADR-026.
+- **`connect_telnyx`** — Telnyx integration (TeXML-first, ADR-032). Owns `connect.telnyx.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,texml,domain}`; SIP domain = credential connection + TeXML app SIP subdomain, per-user telephony credentials, @telnyx/webrtc phone widget, SMS/WhatsApp/RCS via messaging profile (ADR-033: `connect.telnyx.{whatsapp_sender,whatsapp_template,rcs_agent}` + composers), Ed25519 webhook validation. **Telnyx** submenu under the Connect app.
+- **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
 
-Dependencies: `connect_twilio` and `connect_freeswitch` both depend on `connect` but are independent of each other.
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk` and `connect_telnyx` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module).
 
 ## Architecture
 
-The core design pattern: core defines abstract interfaces, integration modules implement them via `_inherit`.
+Provider model separation (ADR-031): each telephony system lives in its own
+numbering plan and business logic. Extensions, numbers, call flows, caller IDs
+and endpoints are **independent per-provider models** — a FreeSWITCH extension
+has nothing to do with a Twilio extension. Provider modules still `_inherit`
+the shared ledger models (call/channel/user/settings) to add adapter
+fields/methods that normalize provider events into the common history.
 
 ```
-Core:   _name = 'connect.foo'     → abstract methods (raise NotImplementedError or pass)
-Twilio: _inherit = 'connect.foo'  → implements abstract methods, adds provider fields
+Ledger:  _name = 'connect.call'              → shared, providers _inherit adapters
+Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider module
 ```
 
 **Boundary rules:**
 - Core never imports `twilio` or references Twilio-specific concepts (SIDs, TwiML)
 - OpenAI transcription (Whisper + GPT-4o summary) lives in core — it's provider-agnostic
-- SMS composer lives in core with abstract `send()` — integration modules implement it
-- Settings form uses notebook tabs; each integration adds its own page via view inheritance
+- `connect.message` (ledger, abstract `send()`) stays in core; sms.composer UI and message menus live in connect_twilio
+- `connect.settings` is a single model; each provider ships its OWN standalone settings form view + menu (opened via the parametrized `connect.settings.open_settings_form(view_xmlid, name)`) — do NOT inject notebook pages into the core form
+- `connect.settings.originate_call()` is a dispatcher: provider overrides check `_get_originate_provider(user)` for their key and fall through to `super()`
 - Special webhook user (`connect.user_connect_webhook`) is defined in core data, used by all integrations
+
+> **Deliberately duplicated code (no mixins — ADR-031).** The exten
+> dst-Reference mechanics, the callflow language selection list and the
+> caller-ID E.164/is_default logic exist as full copies in
+> connect_twilio, connect_freeswitch AND connect_telnyx. When you fix or
+> change one copy, apply the same change to the other modules in the
+> same commit.
 
 **Security groups:** `connect.group_user` (read), `connect.group_admin` (full CRUD), `connect.group_webhook` (webhook record creation)
 
@@ -38,14 +54,16 @@ Twilio: _inherit = 'connect.foo'  → implements abstract methods, adds provider
 > the **Connect User** group should have on it, then write the `ir.model.access`
 > rows (and any `ir.rule`) accordingly. `connect.group_admin` defaults to full
 > CRUD. Admin-only infrastructure/config models (e.g. `connect.settings`,
-> `connect.debug`, `connect.message_configuration`, the firewall models) must
-> grant the user group **no** access.
+> `connect.debug`, `connect.twilio.message_configuration`, the firewall
+> models) must grant the user group **no** access.
 
 ## Key Files
 
 - `specs/architecture.md` — Authoritative design specification (boundaries, extension pattern, data flow)
 - `specs/connect_core.md` — Core module spec (models, fields, methods, security, views)
 - `specs/connect_twilio.md` — Twilio module spec (models, webhooks, controllers, frontend)
+- `specs/connect_asterisk.md` — Asterisk module spec (models, agent contract, controllers, frontend)
+- `specs/connect_telnyx.md` — Telnyx module spec (models, TeXML routing, controllers, frontend)
 - `docs/` — User and admin documentation (MkDocs Material), see `docs/mkdocs.yml` for structure
 
 ## Development Commands
@@ -119,12 +137,15 @@ Specifically:
 - Protected settings fields (API keys, tokens) are masked with `****` for non-managers
 - Debug logging uses `connect.debug` model with daily cron cleanup
 - Twilio webhook routes are all under `/twilio/webhook/*` and validate `X-Twilio-Signature` when enabled
-- Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`
+- Asterisk webhook/API routes are under `/asterisk/webhook/*` and `/asterisk/api/*` and require `Authorization: Bearer <asterisk_agent_token>`
+- Telnyx webhook routes are all under `/telnyx/webhook/*` and validate the Ed25519 `telnyx-signature-ed25519` header when enabled
+- Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`
 
 ## FreeSWITCH & Firewall Docker Images
 
 - FreeSWITCH image: `oduist/freeswitch` — Dockerfile: `connect_freeswitch/deploy/Dockerfile`, config: `connect_freeswitch/deploy/freeswitch/conf/`
 - Firewall image: `oduist/freeswitch-firewall` — Dockerfile: `connect_freeswitch/deploy/firewall/Dockerfile`, sources: `connect_freeswitch/deploy/firewall/src/`
+- Asterisk agent image: `oduist/asterisk-agent` — Dockerfile: `connect_asterisk/deploy/agent/Dockerfile`, sources: `connect_asterisk/deploy/agent/src/`. Same versioning policy: rebuilt only when a release changes files under `connect_asterisk/deploy/agent/`; tag = short `connect_asterisk` manifest version; build multi-arch (`linux/amd64,linux/arm64`) — the agent runs on customer hardware.
 
 ### Versioning policy
 
@@ -202,10 +223,16 @@ connect_addons_ng/              ← Main repo (public)
 │   └── tests/__init__.py       ← conditional loader (tracked)
 ├── connect_freeswitch/
 │   └── tests/__init__.py       ← conditional loader (tracked)
+├── connect_asterisk/
+│   └── tests/__init__.py       ← conditional loader (tracked)
+├── connect_telnyx/
+│   └── tests/__init__.py       ← conditional loader (tracked)
 └── tests_suite/                ← Private submodule (oduist/connect_addons_tests)
     ├── connect/tests/test_*.py
     ├── connect_twilio/tests/test_*.py
-    └── connect_freeswitch/tests/test_*.py
+    ├── connect_freeswitch/tests/test_*.py
+    ├── connect_asterisk/tests/test_*.py
+    └── connect_telnyx/tests/test_*.py
 ```
 
 The loader checks `os.path.isdir("../../tests_suite/<addon>/tests")`. When present, it dynamically loads each `test_*.py` via `importlib.util.spec_from_file_location` and registers it as a submodule of `<addon>.tests`. When absent, the loader is a no-op — the addon installs cleanly with no tests.
@@ -281,6 +308,8 @@ git -c submodule.tests_suite.update=checkout submodule update --init tests_suite
 oduflow run_odoo_tests connect
 oduflow run_odoo_tests connect_twilio
 oduflow run_odoo_tests connect_freeswitch
+oduflow run_odoo_tests connect_asterisk
+oduflow run_odoo_tests connect_telnyx
 ```
 
 ## Installing as a uv dependency (external consumers)

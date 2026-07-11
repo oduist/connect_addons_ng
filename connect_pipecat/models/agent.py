@@ -14,7 +14,7 @@ class PipecatAgent(models.Model):
     system_prompt = fields.Text(required=True)
     greeting = fields.Text()
     language = fields.Selection(
-        selection=lambda self: self.env['connect.callflow']._get_language_selection(),
+        selection=lambda self: self.env['connect.freeswitch.callflow']._get_language_selection(),
         default='en-US',
         required=True,
     )
@@ -36,7 +36,8 @@ class PipecatAgent(models.Model):
     tts_model = fields.Char(default='gpt-4o-mini-tts', required=True)
     tts_voice = fields.Char(default='alloy', required=True)
     transfer_exten = fields.Many2one(
-        'connect.exten', ondelete='set null', string='Human Transfer Extension',
+        'connect.freeswitch.exten', ondelete='set null',
+        string='Human Transfer Extension',
     )
     transfer_prompt = fields.Text(
         default='Transfer the caller when they explicitly ask for a human.',
@@ -44,7 +45,7 @@ class PipecatAgent(models.Model):
     max_duration = fields.Integer(default=1800, required=True)
     record_calls = fields.Boolean(default=True)
     exten = fields.Many2one(
-        'connect.exten', ondelete='set null', readonly=True, copy=False,
+        'connect.freeswitch.exten', ondelete='set null', readonly=True, copy=False,
     )
     exten_number = fields.Char(related='exten.number', store=True)
 
@@ -56,7 +57,9 @@ class PipecatAgent(models.Model):
 
     def create_extension(self):
         self.ensure_one()
-        return self.env['connect.exten'].create_extension(self, 'pipecat.agent')
+        return self.env['connect.freeswitch.exten'].create_extension(
+            self, 'connect.pipecat.agent',
+        )
 
     def generate_dialplan(self, params, exten=None):
         self.ensure_one()

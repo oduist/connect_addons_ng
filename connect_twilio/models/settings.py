@@ -118,10 +118,10 @@ class Settings(models.Model):
         if api_url_check:
             raise ValidationError(api_url_check)
         try:
-            self.env["connect.twiml"].sync()
-            self.env["connect.domain"].sync()
-            self.env["connect.number"].sync()
-            self.env["connect.outgoing_callerid"].sync()
+            self.env["connect.twilio.twiml"].sync()
+            self.env["connect.twilio.domain"].sync()
+            self.env["connect.twilio.number"].sync()
+            self.env["connect.twilio.outgoing_callerid"].sync()
             self.env["connect.whatsapp_sender"].sync()
             self.env["connect.message_content_template"].sync()
             self.connect_notify("Twilio account synced successfully", title="Sync Complete")
@@ -148,7 +148,12 @@ class Settings(models.Model):
         return twiml
 
     @api.model
-    def originate_call(self, number, res_model=None, res_id=None, user=None, whatsapp_call=False):
+    def originate_call(self, number, res_model=None, res_id=None, user=None, whatsapp_call=False, **kwargs):
+        # Dispatch by the user's click-to-call provider; fall through to
+        # other installed telephony modules when it is not Twilio.
+        if self._get_originate_provider(user) != 'twilio':
+            return super().originate_call(
+                number, res_model=res_model, res_id=res_id, user=user, **kwargs)
         self.env["oduist.license"].check_license("connect", silent=False)
         number = strip_number(number)
         if len(number) > MAX_EXTEN_LEN:
@@ -170,7 +175,7 @@ class Settings(models.Model):
             user = self.env.user
         if not user.connect_user:
             raise ValidationError("User does not have a SIP username defined!")
-        first_flow = self.env['connect.user_callflow'].search([
+        first_flow = self.env['connect.twilio.user_callflow'].search([
             ('user', '=', user.id),
             ('callflow_type', 'in', ['client', 'sip'])
         ], order='prio', limit=1)
@@ -186,7 +191,7 @@ class Settings(models.Model):
             )
         if "client:" in to:
             to += "&From={}".format((number or '').replace("+", ""))
-        exten = self.env["connect.exten"].search(
+        exten = self.env["connect.twilio.exten"].search(
             [("number", "=", number)], limit=1
         )
         api_url = self.sudo().get_param("api_url")
@@ -198,7 +203,7 @@ class Settings(models.Model):
             api_url, "twilio/webhook/callstatus#e={}".format(edge)
         )
         if exten:
-            callerId = user.connect_user.exten.number
+            callerId = user.connect_user.twilio_exten.number
             twiml = exten.render()
         else:
             if whatsapp_call:
@@ -220,10 +225,10 @@ class Settings(models.Model):
 </Response>""".format(callerId, status_url, number)
             else:
                 default_number = self.env[
-                    "connect.outgoing_callerid"
+                    "connect.twilio.outgoing_callerid"
                 ].search([("is_default", "=", True)], limit=1)
-                if user.connect_user.outgoing_callerid:
-                    callerId = user.connect_user.outgoing_callerid.number
+                if user.connect_user.twilio_outgoing_callerid:
+                    callerId = user.connect_user.twilio_outgoing_callerid.number
                 else:
                     callerId = default_number.number
                 twiml = self.get_external_call_route(

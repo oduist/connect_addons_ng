@@ -5,7 +5,7 @@
 If call recording is enabled for your account, calls are automatically recorded. Recordings appear:
 
 - **On the call record** — Inline audio player in the call form
-- **In the recordings list** — Navigate to **Connect > Recordings**
+- **In the recordings list** — Navigate to **Connect > Calls > Recordings**
 
 ### Playback
 
@@ -46,7 +46,7 @@ When **Register Summary** is enabled in settings, call summaries are automatical
 
 ## Browsing Recordings
 
-Navigate to **Connect > Recordings** to see all recordings in a list view.
+Navigate to **Connect > Calls > Recordings** to see all recordings in a list view.
 
 The list shows:
 

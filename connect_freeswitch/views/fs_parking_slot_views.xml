@@ -97,9 +97,9 @@
 
     <menuitem id="menu_fs_parking_slot"
               name="Parking Slots"
-              parent="connect.menu_connect_pbx"
+              parent="menu_freeswitch_root"
               action="action_fs_parking_slot"
-              sequence="80"
+              sequence="70"
               groups="connect.group_admin"/>
 
 </odoo>

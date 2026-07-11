@@ -53,5 +53,5 @@ class WebRTCController(http.Controller):
             'login': connect_user._get_verto_login(),
             'password': password,
             'callerName': connect_user.name,
-            'callerNumber': connect_user.exten_number or user.login,
+            'callerNumber': connect_user.freeswitch_exten_number or user.login,
         }
