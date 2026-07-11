@@ -6,7 +6,7 @@ from markupsafe import Markup, escape
 from phonenumbers import parse, format_number, PhoneNumberFormat
 
 from odoo import models, fields, api, SUPERUSER_ID, release
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, UserError
 from odoo.tools import mail
 
 logger = logging.getLogger(__name__)
@@ -169,6 +169,20 @@ class ConnectMessage(models.Model):
             'media_content_type': params.get('MediaContentType0'),
             'media_url': params.get('MediaUrl0'),
         }
+
+    def send(self, recipient, body, res_id=None, res_model=None,
+             outgoing_callerid=None, **kwargs):
+        """Dispatch outgoing messages to the messaging provider chosen on
+        the connect.user (message_provider). With a single provider module
+        installed the choice is implicit. Provider modules override this
+        method: handle the message when
+        connect.settings._get_message_provider() returns their key,
+        otherwise fall through to super().
+        """
+        raise UserError(
+            'No messaging module can handle this message. Install a '
+            'messaging module (Twilio, Bird) and select a messaging '
+            'provider on the Connect user.')
 
     def action_retry(self):
         for rec in self:

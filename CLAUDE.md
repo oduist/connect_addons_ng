@@ -12,9 +12,10 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_twilio`** — Twilio integration. Owns its PBX configuration: `connect.twilio.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,twiml,domain}`, WhatsApp, sms.composer, webhook handlers, Twilio Voice JS SDK phone widget. **Twilio** submenu under the Connect app (incl. Messages).
 - **`connect_freeswitch`** — FreeSWITCH integration. Owns `connect.freeswitch.{exten,callflow,callflow_choice,number,endpoint,outgoing_callerid}` plus gateways/routes/FIFO/parking/firewall, Verto WebRTC client, XML dialplan generation. **FreeSWITCH** submenu under the Connect app.
 - **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). Owns `connect.asterisk.{endpoint,number}`; AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). **Asterisk** submenu under the Connect app. See ADR-026.
+- **`connect_bird`** — Bird.com (ex-MessageBird) integration. Owns `connect.bird.{channel,message_template,message_configuration,webhook}`; SMS/WhatsApp send/receive via the Bird Channels API (raw httpx, no SDK), WhatsApp templates, voice-call ledger from `voice.*` webhooks, click-to-call via two-leg callback originate (no web phone — Bird has no WebRTC SDK), recordings fetched by cron. Single `/bird/webhook` endpoint with MessageBird HMAC signature. **Bird** submenu under the Connect app. See ADR-035.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
 
-Dependencies: `connect_twilio`, `connect_freeswitch` and `connect_asterisk` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module).
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk` and `connect_bird` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module).
 
 ## Architecture
 
@@ -33,7 +34,7 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 **Boundary rules:**
 - Core never imports `twilio` or references Twilio-specific concepts (SIDs, TwiML)
 - OpenAI transcription (Whisper + GPT-4o summary) lives in core — it's provider-agnostic
-- `connect.message` (ledger, abstract `send()`) stays in core; sms.composer UI and message menus live in connect_twilio
+- `connect.message` (ledger) stays in core; `send()` is a dispatcher like `originate_call()`: provider overrides check `_get_message_provider()` for their key and fall through to `super()` (per-user `connect.user.message_provider`). sms.composer UI and message menus live in the messaging provider modules (connect_twilio, connect_bird)
 - `connect.settings` is a single model; each provider ships its OWN standalone settings form view + menu (opened via the parametrized `connect.settings.open_settings_form(view_xmlid, name)`) — do NOT inject notebook pages into the core form
 - `connect.settings.originate_call()` is a dispatcher: provider overrides check `_get_originate_provider(user)` for their key and fall through to `super()`
 - Special webhook user (`connect.user_connect_webhook`) is defined in core data, used by all integrations
@@ -61,6 +62,7 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_core.md` — Core module spec (models, fields, methods, security, views)
 - `specs/connect_twilio.md` — Twilio module spec (models, webhooks, controllers, frontend)
 - `specs/connect_asterisk.md` — Asterisk module spec (models, agent contract, controllers, frontend)
+- `specs/connect_bird.md` — Bird module spec (models, webhooks, controllers, wizards)
 - `docs/` — User and admin documentation (MkDocs Material), see `docs/mkdocs.yml` for structure
 
 ## Development Commands
@@ -135,6 +137,7 @@ Specifically:
 - Debug logging uses `connect.debug` model with daily cron cleanup
 - Twilio webhook routes are all under `/twilio/webhook/*` and validate `X-Twilio-Signature` when enabled
 - Asterisk webhook/API routes are under `/asterisk/webhook/*` and `/asterisk/api/*` and require `Authorization: Bearer <asterisk_agent_token>`
+- Bird events arrive on the single `/bird/webhook` route and validate the MessageBird HMAC signature (`messagebird-signature` / `messagebird-request-timestamp`) when enabled
 - Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`
 
 ## FreeSWITCH & Firewall Docker Images

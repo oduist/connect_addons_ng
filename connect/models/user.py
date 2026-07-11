@@ -32,6 +32,13 @@ class User(models.Model):
         selection=[], string='Click-to-call Provider',
         help='Telephony module used to originate calls for this user. '
              'Leave empty when only one telephony module is installed.')
+    # Messaging counterpart of originate_provider: provider modules that
+    # implement connect.message.send() add their key via selection_add
+    # (e.g. 'twilio', 'bird').
+    message_provider = fields.Selection(
+        selection=[], string='Messaging Provider',
+        help='Messaging module used to send SMS/WhatsApp for this user. '
+             'Leave empty when only one messaging module is installed.')
 
     if release.version_info[0] >= 19:
         _user_uniq = Constraint('UNIQUE("user")', 'This Odoo user account is already defined!')

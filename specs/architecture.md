@@ -19,10 +19,10 @@
    `connect_freeswitch`.
 
 3. **Integration modules still extend core models via `_inherit`.** Modules like
-   `connect_twilio`, `connect_freeswitch` and `connect_asterisk` add adapter fields,
-   methods, and webhook handlers to the shared core models (`connect.call`,
-   `connect.channel`, `connect.user`, `connect.settings`). They never redefine core
-   models.
+   `connect_twilio`, `connect_freeswitch`, `connect_asterisk` and `connect_bird` add
+   adapter fields, methods, and webhook handlers to the shared core models
+   (`connect.call`, `connect.channel`, `connect.user`, `connect.settings`). They
+   never redefine core models.
 
 4. **OpenAI transcription is in core (not Twilio-specific).** Recording transcription via
    OpenAI Whisper and call summarization via GPT-4o are technology-agnostic features.
@@ -30,10 +30,14 @@
    The `openai` Python package is a core dependency, and `openai_api_key` +
    `get_openai_client()` live in `connect.settings`.
 
-5. **SMS composer lives in `connect_twilio`.** The `sms_composer.py` wizard (raw SQL
-   over the Twilio number table) implements sending via the Twilio-implemented
-   `connect.message.send()`. Core keeps the abstract `send()` contract on
-   `connect.message` for any future SMS provider.
+5. **SMS composers live in the messaging provider modules.** Both `connect_twilio`
+   and `connect_bird` inherit `sms.composer`; sending goes through the core
+   `connect.message.send()` **dispatcher** (ADR-035): core resolves the messaging
+   provider per user via `connect.user.message_provider`
+   (`connect.settings._get_message_provider()`, single-installed-provider
+   fallback), each provider's `send()` override handles its own key and falls
+   through to `super()` — the exact mirror of the click-to-call
+   `originate_provider` machinery.
 
 6. **Each integration module implements:** webhook handlers, API client initialization,
    protocol-specific rendering (TwiML, FreeSWITCH XML, etc.), provider-specific
@@ -129,18 +133,18 @@ chosen on the user (implicit when exactly one provider is installed).
 | UI views | Ledger views, Users, the **Connect** app menu |
 | Settings | Registration, usage tracking, OpenAI config; parametrized open_settings_form() |
 
-### What lives in Integration Modules (`connect_twilio`, `connect_freeswitch`, `connect_asterisk`)
+### What lives in Integration Modules (`connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_bird`)
 
 | Category | Examples |
 |----------|---------|
-| PBX configuration models | connect.twilio.{exten,callflow,number,outgoing_callerid,user_callflow,message_configuration}, connect.freeswitch.{exten,callflow,number,endpoint,outgoing_callerid}, connect.asterisk.{endpoint,number} — independent per-provider models, code duplicated on purpose (no mixins, ADR-031) |
-| API client | get_client() for Twilio REST / freeswitch_api() for FreeSWITCH XML-RPC / asterisk_ami_action() via the sidecar agent |
-| Webhook handlers | on_call_status(), receive(), on_recording_status(), on_ami_* adapters |
-| Protocol rendering | TwiML generation, FreeSWITCH XML dialplan, Asterisk pjsip/manager.conf snippets |
-| Provider sync | sync() methods for numbers, callerIDs, domains |
+| PBX configuration models | connect.twilio.{exten,callflow,number,outgoing_callerid,user_callflow,message_configuration}, connect.freeswitch.{exten,callflow,number,endpoint,outgoing_callerid}, connect.asterisk.{endpoint,number}, connect.bird.{channel,message_template,message_configuration,webhook} — independent per-provider models, code duplicated on purpose (no mixins, ADR-031) |
+| API client | get_client() for Twilio REST / freeswitch_api() for FreeSWITCH XML-RPC / asterisk_ami_action() via the sidecar agent / bird_request() raw HTTP helper |
+| Webhook handlers | on_call_status(), receive(), on_recording_status(), on_ami_* adapters, receive_bird()/on_bird_call_event() |
+| Protocol rendering | TwiML generation, FreeSWITCH XML dialplan, Asterisk pjsip/manager.conf snippets, Bird callFlow command lists |
+| Provider sync | sync() methods for numbers, callerIDs, domains, Bird channels/templates |
 | Credential management | SIP accounts, API keys, JWT tokens |
 | Provider-specific models | connect.twilio.twiml, connect.twilio.domain, connect.whatsapp_sender, connect.firewall.{whitelist,blacklist,event,agent}, connect.asterisk.template |
-| SMS composition | sms.composer inherit in connect_twilio (implements the core connect.message.send() contract) |
+| SMS composition | sms.composer inherits in connect_twilio and connect_bird; sending goes through the core connect.message.send() dispatcher (message_provider) |
 | Frontend SDK | Twilio Voice SDK phone widget, Verto WebRTC client, JsSIP web phone |
 | Auxiliary services | `connect_freeswitch` ships a paired SIP-firewall service (own Docker image, talks ESL + iptables on the host kernel, see ADR-014). The service authenticates to Odoo via dedicated `/freeswitch/firewall/api/*` HTTP controllers carrying the shared `firewall_service_token` as `Authorization: Bearer …` — no dedicated Odoo user (ADR-015). `connect_asterisk` ships a thin sidecar agent (`oduist/asterisk-agent`) holding the persistent AMI connection to the customer's existing Asterisk; events flow to `/asterisk/webhook/*` and actions flow back over the agent HTTP API, both directions carrying the shared `asterisk_agent_token` as Bearer (ADR-026). |
 | Message sending | send() implementation via provider API |
@@ -249,6 +253,20 @@ connect.user gains: asterisk_exten_number (plain Char — numbering stays in the
 customer's dialplan), web phone preferences; originate_provider += 'asterisk'
 ```
 
+### Bird models (`connect_bird`)
+
+```
+connect.bird.channel (synced channel registry: sms/whatsapp/voice channelIds —
+the Channels API config anchor)
+connect.bird.message_template (approved WhatsApp templates, Touchpoints API)
+connect.bird.message_configuration (inbound message routing)
+connect.bird.webhook (webhook subscription registry)
+
+connect.user gains: bird_phone_number (agent phone for the two-leg callback
+originate — Bird has no WebRTC SDK, so no web phone), bird_voice_channel,
+bird_message_channel; originate_provider += 'bird'; message_provider += 'bird'
+```
+
 ---
 
 ## Settings Architecture
@@ -269,6 +287,9 @@ FreeSWITCH > Configuration > Settings   → connect_freeswitch view (XML-RPC,
                                           domain, webhook token, firewall)
 Asterisk > Configuration > Settings     → connect_asterisk view (agent URL/token,
                                           AMI bootstrap, web phone)
+Bird > Configuration > Settings         → connect_bird view (workspace ID,
+                                          access key, webhook setup, ring
+                                          timeout, signature verification)
 ```
 
 Co-installation of several providers in one database is supported: Twilio's
@@ -515,6 +536,19 @@ connect_asterisk/                     # Asterisk integration
   deploy/agent/                       # oduist/asterisk-agent sidecar
   static/src/                         # JsSIP web phone
 
+connect_bird/                         # Bird.com (MessageBird) integration
+  models/
+    bird_channel.py                   # connect.bird.channel (synced registry)
+    message_template.py               # connect.bird.message_template
+    message_configuration.py          # connect.bird.message_configuration
+    bird_webhook.py                   # connect.bird.webhook (subscriptions)
+    user.py                           # _inherit (bird_phone_number, channels)
+    message.py / channel.py / call.py / recording.py / settings.py  # _inherit
+  controllers/
+    bird_webhooks.py                  # single /bird/webhook endpoint
+  wizard/
+    sms_composer.py / whatsapp_composer.py
+
 connect_crm_twilio/                   # auto-installed bridge (connect_crm ×
                                       # connect_twilio): message_configuration
                                       # CRM extension
@@ -542,5 +576,8 @@ Connect
   |                Status, Whitelist, Blacklist, Events}, Configuration
   |                {SIP Gateways, Outgoing Routes, XML Templates, Settings}
   +-- Asterisk:    Endpoints, Numbers, Configuration {Templates, Settings}
+  +-- Bird:        Channels, Messages {Messages}, Configuration {Settings,
+  |                Message Templates, Message Configuration, Webhook
+  |                Subscriptions}
   +-- Configuration {Settings, Debug Log (admin), License}
 ```

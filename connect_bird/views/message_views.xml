@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_message_form_bird" model="ir.ui.view">
+        <field name="name">connect.message.form.bird</field>
+        <field name="model">connect.message</field>
+        <field name="inherit_id" ref="connect.view_connect_message_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='parent_message']" position="after">
+                <field name="bird_message_id"/>
+                <field name="bird_channel"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

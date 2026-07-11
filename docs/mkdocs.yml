@@ -32,6 +32,7 @@ nav:
       - Twilio Integration: admin/twilio-setup.md
       - FreeSWITCH Integration: admin/freeswitch-setup.md
       - Asterisk Integration: admin/asterisk-setup.md
+      - Bird Integration: admin/bird-setup.md
       - Call Parking: admin/parking.md
       - Security: admin/security.md
       - SIP Firewall: admin/firewall.md
