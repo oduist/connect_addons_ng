@@ -8,6 +8,7 @@ from tempfile import NamedTemporaryFile
 
 from odoo import fields, models, api
 from odoo.exceptions import ValidationError
+from odoo.tools import config
 
 from odoo.addons.connect.models.settings import debug
 
@@ -134,7 +135,10 @@ class Recording(models.Model):
             except Exception:
                 logger.exception(
                     'Cron download error for recording %s', rec.id)
-            self.env.cr.commit()
+            # The test cursor forbids commit; each download is committed
+            # independently only in real cron runs.
+            if not config['test_enable']:
+                self.env.cr.commit()
 
     def get_transcript(self, fail_silently=False):
         # Core requires media_url; Vonage recordings live in the
