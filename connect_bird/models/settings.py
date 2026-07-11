@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 import re
-import secrets
 from urllib.parse import urljoin
 
 import httpx
@@ -19,22 +18,39 @@ logger = logging.getLogger(__name__)
 
 MAX_EXTEN_LEN = 4
 
-BIRD_API_BASE = 'https://api.bird.com'
+# Bird developer platform (platform.bird.com). Regional hosts; the region
+# is encoded in the access key prefix (bk_{region}_...).
+BIRD_HOST_TEMPLATE = 'https://{region}.platform.bird.com'
+BIRD_DEFAULT_REGION = 'eu1'
 
 BIRD_PROTECTED_FIELDS = [
     'display_bird_access_key',
     'display_bird_webhook_signing_key',
 ]
 
-# Events provisioned by setup_bird_webhooks(). All share the same endpoint;
-# the controller dispatches on the envelope "event" key.
-BIRD_WEBHOOK_EVENTS = [
-    'sms.inbound',
-    'sms.outbound',
-    'whatsapp.inbound',
-    'whatsapp.outbound',
-    'voice.inbound',
-    'voice.outbound',
+# Events requested when registering the webhook endpoint. The SMS event
+# names are published (SDK/webhooks guide); the inbound/voice/whatsapp
+# names are asserted from the platform's naming convention and verified
+# against the live API — _register_webhook_endpoint() falls back to the
+# known-safe subset when the full list is rejected.
+BIRD_WEBHOOK_EVENTS_SAFE = [
+    'sms.accepted',
+    'sms.sent',
+    'sms.delivered',
+    'sms.undelivered',
+    'sms.failed',
+    'sms.rejected',
+    'sms.expired',
+]
+BIRD_WEBHOOK_EVENTS = BIRD_WEBHOOK_EVENTS_SAFE + [
+    'sms.received',
+    'whatsapp.received',
+    'whatsapp.sent',
+    'whatsapp.delivered',
+    'whatsapp.failed',
+    'voice.call.created',
+    'voice.call.updated',
+    'voice.call.completed',
 ]
 
 
@@ -52,38 +68,56 @@ class Settings(models.Model):
     # Never grant this to connect.group_webhook: the webhook user is the
     # identity of all public webhook controllers, and get_param() returns
     # groups-restricted fields to group members. Signature validation in
-    # the controller reads the signing key via sudo() and is not affected.
+    # the controller reads the signing secret via sudo() and is not affected.
     bird_access_key = fields.Char(groups="base.group_erp_manager")
     display_bird_access_key = fields.Char()
-    bird_workspace_id = fields.Char(string='Bird Workspace ID')
+    # Signing secret (whsec_...) issued by Bird when the webhook endpoint
+    # is registered. Returned by the API exactly once.
     bird_webhook_signing_key = fields.Char(groups="base.group_erp_manager")
     display_bird_webhook_signing_key = fields.Char()
     bird_verify_requests = fields.Boolean(
         default=True, string='Verify Bird Requests')
     bird_signature_tolerance = fields.Integer(
         default=300, string='Signature Timestamp Tolerance (seconds)')
+    bird_sms_category = fields.Char(
+        default='transactional', string='SMS Category',
+        help='Content classification sent with outgoing SMS '
+             '(e.g. transactional, marketing, authentication). Controls '
+             'opt-out policy and compliance on the Bird side.')
     bird_ring_timeout = fields.Integer(
         default=30, string='Agent Ring Timeout (seconds)',
-        help='How long Bird rings the agent phone on click-to-call (3-120).')
+        help='How long Bird rings the agent phone on click-to-call.')
+
+    @api.model
+    def _get_bird_base_url(self):
+        """Regional API base. The region is taken from the access key
+        prefix (bk_{region}_...); ir.config_parameter connect.bird_api_url
+        overrides the whole base for debugging.
+        """
+        override = self.env['ir.config_parameter'].sudo().get_param(
+            'connect.bird_api_url')
+        if override:
+            return override.rstrip('/')
+        access_key = self.sudo().get_param('bird_access_key') or ''
+        match = re.match(r'^bk_([a-z0-9]+)_', access_key)
+        region = match.group(1) if match else BIRD_DEFAULT_REGION
+        return BIRD_HOST_TEMPLATE.format(region=region)
 
     @api.model
     def bird_request(self, method, path, payload=None, params=None,
                      timeout=15, raise_exc=True):
-        """Single entry point for Bird API calls.
+        """Single entry point for Bird platform API calls.
 
-        ``path`` is relative to the workspace, e.g. '/channels/{id}/messages'.
-        Returns the decoded JSON body ({} for empty responses) or False when
-        the request failed and ``raise_exc`` is not set.
+        ``path`` is relative to /v1, e.g. '/sms/messages'. Returns the
+        decoded JSON body ({} for empty responses) or False when the
+        request failed and ``raise_exc`` is not set.
         """
         access_key = self.sudo().get_param('bird_access_key')
-        workspace_id = self.sudo().get_param('bird_workspace_id')
-        if not (access_key and workspace_id):
-            raise ValidationError('Set Bird access key and workspace ID first!')
-        base_url = self.env['ir.config_parameter'].sudo().get_param(
-            'connect.bird_api_url', BIRD_API_BASE)
-        url = '{}/workspaces/{}{}'.format(base_url, workspace_id, path)
+        if not access_key:
+            raise ValidationError('Set Bird access key first!')
+        url = '{}/v1{}'.format(self._get_bird_base_url(), path)
         headers = {
-            'Authorization': 'AccessKey {}'.format(access_key),
+            'Authorization': 'Bearer {}'.format(access_key),
             'Content-Type': 'application/json',
         }
         try:
@@ -115,75 +149,130 @@ class Settings(models.Model):
         """Compact human message from a Bird error response."""
         try:
             data = res.json()
-            errors = data.get('errors') or []
-            details = '; '.join(
-                filter(None, [e.get('message') or e.get('code')
-                              for e in errors if isinstance(e, dict)]))
-            if details:
-                return '{} ({})'.format(details, res.status_code)
+            # Platform errors: {"code": "...", "message": "..."}; some
+            # endpoints return {"errors": [{...}]} lists.
+            if isinstance(data, dict):
+                if data.get('message'):
+                    return '{} ({})'.format(data['message'], res.status_code)
+                errors = data.get('errors') or []
+                details = '; '.join(
+                    filter(None, [e.get('message') or e.get('code')
+                                  for e in errors if isinstance(e, dict)]))
+                if details:
+                    return '{} ({})'.format(details, res.status_code)
         except ValueError:
             pass
         return '{} {}'.format(res.status_code, (res.text or '')[:200])
 
+    @api.model
+    def bird_paginate(self, path, params=None):
+        """Iterate a cursor-paginated collection (data / next_cursor)."""
+        params = dict(params or {})
+        params.setdefault('limit', 100)
+        while True:
+            data = self.bird_request('GET', path, params=params,
+                                     raise_exc=False)
+            if data is False:
+                return
+            for item in data.get('data') or []:
+                yield item
+            cursor = data.get('next_cursor')
+            if not cursor:
+                return
+            params['starting_after'] = cursor
+
     def sync(self):
-        if not (self.sudo().get_param('bird_access_key')
-                and self.sudo().get_param('bird_workspace_id')):
-            raise ValidationError('You must set Bird access key and workspace ID!')
+        if not self.sudo().get_param('bird_access_key'):
+            raise ValidationError('You must set the Bird access key!')
         api_url_check = self.check_api_url()
         if api_url_check:
             raise ValidationError(api_url_check)
-        self.env['connect.bird.channel'].sync()
+        self.env['connect.bird.number'].sync()
         self.env['connect.bird.message_template'].sync()
         self.connect_notify(
             'Bird account synced successfully', title='Sync Complete')
 
-    def setup_bird_webhooks(self):
-        """Provision workspace-wide webhook subscriptions (idempotent).
+    def _register_webhook_endpoint(self, url, events):
+        """POST /v1/webhooks with a fallback to the known-safe event
+        subset when the platform rejects event names it does not know.
+        Returns the created endpoint object (with the one-time secret).
+        """
+        res = self.bird_request('POST', '/webhooks', {
+            'url': url,
+            'events': events,
+        }, raise_exc=False)
+        if res is False and events != BIRD_WEBHOOK_EVENTS_SAFE:
+            logger.warning(
+                'Bird webhook registration with the full event list '
+                'failed; retrying with the known-safe SMS subset.')
+            res = self.bird_request('POST', '/webhooks', {
+                'url': url,
+                'events': BIRD_WEBHOOK_EVENTS_SAFE,
+            })
+        elif res is False:
+            raise ValidationError(
+                'Bird webhook registration failed, check the Odoo log.')
+        return res
 
-        Subscriptions carry no channelId filters so newly synced channels
-        do not require re-subscription.
+    def setup_bird_webhooks(self):
+        """Register the single webhook endpoint (idempotent).
+
+        Bird returns the signing secret (whsec_...) exactly once, in the
+        creation response — it is stored on connect.settings immediately.
         """
         self.ensure_one()
         api_url = self.sudo().get_param('api_url')
         api_url_check = self.check_api_url()
         if api_url_check:
             raise ValidationError(api_url_check)
-        signing_key = self.sudo().get_param('bird_webhook_signing_key')
-        if not signing_key:
-            signing_key = secrets.token_urlsafe(32)
-            self.sudo().with_context(skip_protected_fields=True).set_param(
-                'bird_webhook_signing_key', signing_key)
-            self.sudo().with_context(skip_protected_fields=True).set_param(
-                'display_bird_webhook_signing_key', '*' * len(signing_key))
         url = urljoin(api_url, 'bird/webhook')
-        created = self.env['connect.bird.webhook'].setup_subscriptions(
-            url, signing_key, BIRD_WEBHOOK_EVENTS)
+        existing = self.env['connect.bird.webhook'].search(
+            [('url', '=', url)], limit=1)
+        if existing and self.sudo().get_param('bird_webhook_signing_key'):
+            self.connect_notify(
+                'Bird webhook endpoint already registered for this URL.',
+                title='Webhooks Setup')
+            return
+        res = self._register_webhook_endpoint(url, BIRD_WEBHOOK_EVENTS)
+        secret = res.get('secret')
+        if secret:
+            self.sudo().with_context(skip_protected_fields=True).set_param(
+                'bird_webhook_signing_key', secret)
+            self.sudo().with_context(skip_protected_fields=True).set_param(
+                'display_bird_webhook_signing_key', '*' * len(secret))
+        values = {
+            'sid': res.get('id'),
+            'url': url,
+            'status': res.get('status'),
+            'events': ', '.join(res.get('events') or []),
+        }
+        if existing:
+            existing.write(values)
+        else:
+            self.env['connect.bird.webhook'].create(values)
         self.connect_notify(
-            'Bird webhooks configured: {} created, {} already in place.'.format(
-                created, len(BIRD_WEBHOOK_EVENTS) - created),
+            'Bird webhook endpoint registered ({} events).'.format(
+                len(res.get('events') or [])),
             title='Webhooks Setup')
 
     @api.model
-    def _build_bird_originate_payload(self, agent_number, destination,
-                                      record, notification_url):
-        """Two-leg callback originate: dial the agent first, then bridge
-        to the destination. Isolated in one builder because the exact
-        bridge options shape is confirmed against the live API.
+    def _build_bird_originate_payload(self, agent_number, from_number,
+                                      destination, record, notification_url):
+        """Two-leg callback originate: dial the agent first, then connect
+        to the destination. Isolated in one builder because the voice API
+        request shape is confirmed against the live platform
+        (POST /v1/voice/calls is present but not yet publicly documented).
         """
         payload = {
             'to': agent_number,
-            'ringTimeout': int(self.sudo().get_param('bird_ring_timeout') or 30),
-            'maxDuration': int(self.sudo().get_param('call_duration_limit')),
+            'from': from_number,
+            'connect_to': destination,
+            'ring_timeout': int(self.sudo().get_param('bird_ring_timeout') or 30),
+            'max_duration': int(self.sudo().get_param('call_duration_limit')),
             'record': bool(record),
-            'callFlow': [{
-                'command': 'bridge',
-                'options': {
-                    'to': destination,
-                },
-            }],
         }
         if notification_url:
-            payload['notification'] = {'url': notification_url}
+            payload['notification_url'] = notification_url
         return payload
 
     @api.model
@@ -207,8 +296,8 @@ class Settings(models.Model):
         if not connect_user.bird_phone_number:
             raise ValidationError(
                 'Set the agent phone number (Bird) on the Connect user!')
-        channel = (connect_user.bird_voice_channel
-                   or self.env['connect.bird.channel'].get_default_channel('voice'))
+        from_number = (connect_user.bird_voice_number
+                       or self.env['connect.bird.number'].get_default_number('voice'))
         partner_id = False
         obj = self.env[res_model].browse(res_id) if res_model and res_id else False
         if res_model == 'res.partner' and obj:
@@ -220,18 +309,17 @@ class Settings(models.Model):
         api_url = self.sudo().get_param('api_url')
         notification_url = urljoin(api_url, 'bird/webhook')
         payload = self._build_bird_originate_payload(
-            connect_user.bird_phone_number, number,
+            connect_user.bird_phone_number, from_number.number, number,
             connect_user.record_calls, notification_url)
         debug(self, 'Bird originate payload: {}'.format(payload))
-        res = self.bird_request(
-            'POST', '/channels/{}/calls'.format(channel.sid), payload)
+        res = self.bird_request('POST', '/voice/calls', payload)
         # Pre-create the agent leg so the voice webhooks update it instead
         # of creating a technical_direction-less duplicate. The destination
         # is stored at once: the bridged leg may arrive as a separate call
         # object without a guaranteed parent linkage.
         ch = self.env['connect.channel'].sudo().process_channel_event({
-            'sid': res['id'],
-            'caller': channel.identifier,
+            'sid': res.get('id'),
+            'caller': from_number.number,
             'called': number,
             'to': connect_user.bird_phone_number,
             'technical_direction': 'outbound-api',

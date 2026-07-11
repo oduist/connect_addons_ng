@@ -6,7 +6,7 @@
         <field name="model">connect.bird.message_configuration</field>
         <field name="arch" type="xml">
             <list>
-                <field name="channel"/>
+                <field name="number"/>
                 <field name="destination"/>
                 <field name="default_values"/>
             </list>
@@ -20,7 +20,7 @@
             <form>
                 <sheet>
                     <group>
-                        <field name="channel"/>
+                        <field name="number"/>
                         <field name="destination"/>
                         <field name="default_values"
                                placeholder="{'field': 'value'}"/>

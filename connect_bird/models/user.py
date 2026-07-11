@@ -18,19 +18,18 @@ class User(models.Model):
         ondelete={'bird': 'set null'},
     )
     # Bird has no WebRTC SDK, so click-to-call is a two-leg callback:
-    # Bird dials this number first, then bridges to the destination.
+    # Bird dials this number first, then connects the destination.
     bird_phone_number = fields.Char(
         'Bird Agent Phone',
         help='E.164 number Bird dials first on click-to-call.')
-    bird_voice_channel = fields.Many2one(
-        'connect.bird.channel', string='Bird Voice Channel',
+    bird_voice_number = fields.Many2one(
+        'connect.bird.number', string='Bird Voice Number',
         ondelete='set null',
-        domain="[('platform_id', '=', 'voice')]")
-    bird_message_channel = fields.Many2one(
-        'connect.bird.channel', string='Bird Message Channel',
+        help='Caller ID for click-to-call (default number when empty).')
+    bird_message_number = fields.Many2one(
+        'connect.bird.number', string='Bird Message Number',
         ondelete='set null',
-        domain="[('platform_id', 'in', ('sms', 'whatsapp'))]",
-        help='Default sender channel for outgoing messages.')
+        help='Default sender for outgoing messages.')
 
     @api.model
     def _pbx_number_fields(self):

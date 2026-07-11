@@ -16,12 +16,12 @@ class SendSMS(models.TransientModel):
         parent = super()
         numbers = (parent._list_all_numbers()
                    if hasattr(parent, '_list_all_numbers') else [])
-        channels = self.env['connect.bird.channel'].search(
-            [('platform_id', 'in', ('sms', 'whatsapp'))])
+        bird_numbers = self.env['connect.bird.number'].search([])
         existing = {n[0] for n in numbers}
         numbers += [
-            (c.identifier, c.identifier) for c in channels
-            if c.identifier and c.identifier not in existing]
+            (n.number, n.number) for n in bird_numbers
+            if n.number and n.number not in existing
+            and (n.has_capability('sms') or n.has_capability('whatsapp'))]
         return numbers
 
     def _action_send_sms(self):

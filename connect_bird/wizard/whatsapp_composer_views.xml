@@ -19,7 +19,7 @@
                     <group>
                         <field name="res_model" invisible="1"/>
                         <field name="res_id" invisible="1"/>
-                        <field name="channel_id" options="{'no_create': True}" required="1"/>
+                        <field name="number_id" options="{'no_create': True}" required="1"/>
                         <field name="phone" required="1"/>
                         <field name="template_id" options="{'no_create': True}"/>
                         <field name="template_variables" placeholder='{"name": "Max"}'

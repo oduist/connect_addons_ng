@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- connect.bird.channel access rules -->
-    <record id="access_bird_channel_admin" model="ir.model.access">
-        <field name="name">connect.bird.channel admin</field>
-        <field name="model_id" ref="model_connect_bird_channel"/>
+    <!-- connect.bird.number access rules -->
+    <record id="access_bird_number_admin" model="ir.model.access">
+        <field name="name">connect.bird.number admin</field>
+        <field name="model_id" ref="model_connect_bird_number"/>
         <field name="group_id" ref="connect.group_admin"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="True"/>
@@ -12,9 +12,9 @@
         <field name="perm_unlink" eval="True"/>
     </record>
 
-    <record id="access_bird_channel_user" model="ir.model.access">
-        <field name="name">connect.bird.channel user</field>
-        <field name="model_id" ref="model_connect_bird_channel"/>
+    <record id="access_bird_number_user" model="ir.model.access">
+        <field name="name">connect.bird.number user</field>
+        <field name="model_id" ref="model_connect_bird_number"/>
         <field name="group_id" ref="connect.group_user"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
@@ -22,9 +22,9 @@
         <field name="perm_unlink" eval="False"/>
     </record>
 
-    <record id="access_bird_channel_webhook" model="ir.model.access">
-        <field name="name">connect.bird.channel webhook</field>
-        <field name="model_id" ref="model_connect_bird_channel"/>
+    <record id="access_bird_number_webhook" model="ir.model.access">
+        <field name="name">connect.bird.number webhook</field>
+        <field name="model_id" ref="model_connect_bird_number"/>
         <field name="group_id" ref="connect.group_webhook"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>

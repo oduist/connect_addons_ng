@@ -9,8 +9,8 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='active']" position="after">
                 <field name="bird_phone_number"/>
-                <field name="bird_voice_channel"/>
-                <field name="bird_message_channel"/>
+                <field name="bird_voice_number"/>
+                <field name="bird_message_number"/>
             </xpath>
         </field>
     </record>

@@ -10,28 +10,27 @@ from odoo.exceptions import ValidationError
 logger = logging.getLogger(__name__)
 
 # Normalize Bird message statuses to the core display vocabulary. Statuses
-# not listed here are stored as-is (sent, delivered, scheduled, ...).
+# not listed here are stored as-is (sent, delivered, ...).
 BIRD_MESSAGE_STATUS_MAP = {
     'accepted': 'sent',
     'processing': 'sent',
-    'delivery_failed': 'failed',
-    'sending_failed': 'failed',
-    'skipped': 'failed',
-    'deleted': 'canceled',
+    'undelivered': 'failed',
+    'rejected': 'failed',
+    'expired': 'failed',
 }
-BIRD_FAILED_STATUSES = ('delivery_failed', 'sending_failed', 'skipped')
+BIRD_FAILED_STATUSES = ('undelivered', 'failed', 'rejected', 'expired')
 
 
 class ConnectMessage(models.Model):
     _inherit = 'connect.message'
 
     bird_message_id = fields.Char('Bird Message ID', index=True, readonly=True)
-    bird_channel = fields.Many2one(
-        'connect.bird.channel', ondelete='set null', readonly=True)
+    bird_number = fields.Many2one(
+        'connect.bird.number', ondelete='set null', readonly=True)
 
     @api.depends('status', 'sender_user')
     def _compute_direction(self):
-        """Override: also check Bird channel identifiers for direction."""
+        """Override: also check Bird sender numbers for direction."""
         for rec in self:
             if rec.sender_user:
                 rec.direction = 'outgoing'
@@ -39,7 +38,7 @@ class ConnectMessage(models.Model):
                 rec.direction = 'incoming'
             else:
                 our_numbers = set(
-                    self.env['connect.bird.channel'].search([]).mapped('identifier'))
+                    self.env['connect.bird.number'].search([]).mapped('number'))
                 if rec.from_number in our_numbers:
                     rec.direction = 'outgoing'
                 else:
@@ -50,37 +49,60 @@ class ConnectMessage(models.Model):
         return BIRD_MESSAGE_STATUS_MAP.get(status, status)
 
     @api.model
-    def _get_bird_sender_channels(self, outgoing_callerid=None):
-        """Ordered candidate sender channels: an explicit choice disables
-        fallback; automatic selection tries WhatsApp first, then SMS.
+    def _normalize_bird_status(self, status):
+        """The platform returns the message status either as a plain
+        string or as an object; flatten defensively.
         """
-        Channel = self.env['connect.bird.channel']
+        if isinstance(status, dict):
+            status = (status.get('value') or status.get('state')
+                      or status.get('status') or '')
+        return self._map_bird_message_status(status or 'sent')
+
+    @api.model
+    def _get_bird_sender_numbers(self, outgoing_callerid=None):
+        """Ordered (product, number) send attempts: an explicit sender
+        disables number fallback; automatic selection tries WhatsApp
+        first, then SMS (mirrors the Twilio behavior).
+        """
+        Number = self.env['connect.bird.number']
         if outgoing_callerid:
             if isinstance(outgoing_callerid, models.BaseModel):
-                return [outgoing_callerid]
-            channel = Channel.search([
-                '|', ('identifier', '=', outgoing_callerid),
-                ('sid', '=', outgoing_callerid),
-                ('platform_id', 'in', ('sms', 'whatsapp')),
-            ], limit=1)
-            if not channel:
+                number = outgoing_callerid
+            else:
+                number = Number.search([
+                    '|', ('number', '=', outgoing_callerid),
+                    ('sid', '=', outgoing_callerid),
+                ], limit=1)
+            if not number:
                 raise ValidationError(
-                    'No Bird channel matches sender {}!'.format(outgoing_callerid))
-            return [channel]
-        user_channel = self.env.user.connect_user.bird_message_channel
-        if user_channel:
-            return [user_channel]
-        channels = []
-        for platform in ('whatsapp', 'sms'):
-            try:
-                channels.append(Channel.get_default_channel(platform))
-            except ValidationError:
-                continue
-        if not channels:
+                    'No Bird number matches sender {}!'.format(
+                        outgoing_callerid))
+            numbers = [number]
+        elif self.env.user.connect_user.bird_message_number:
+            numbers = [self.env.user.connect_user.bird_message_number]
+        else:
+            numbers = []
+            for capability in ('whatsapp', 'sms'):
+                try:
+                    number = Number.get_default_number(capability)
+                except ValidationError:
+                    continue
+                if number not in numbers:
+                    numbers.append(number)
+            if not numbers:
+                raise ValidationError(
+                    'No active Bird number. Run Sync in Bird Settings '
+                    'and check your numbers!')
+        attempts = []
+        for number in numbers:
+            if number.has_capability('whatsapp'):
+                attempts.append(('whatsapp', number))
+            if number.has_capability('sms'):
+                attempts.append(('sms', number))
+        if not attempts:
             raise ValidationError(
-                'No active Bird message channel. Run Sync in Bird Settings '
-                'and check your channels!')
-        return channels
+                'The selected Bird number has no messaging capability!')
+        return attempts
 
     def send(self, recipient, body, res_id=None, res_model=None,
              outgoing_callerid=None, **kwargs):
@@ -99,10 +121,10 @@ class ConnectMessage(models.Model):
         explicit.
         """
         self.env['oduist.license'].check_license('connect', silent=False)
-        channels = self._get_bird_sender_channels(outgoing_callerid)
-        res = channel = False
-        for channel in channels:
-            res = self.client_send(recipient, channel, body)
+        attempts = self._get_bird_sender_numbers(outgoing_callerid)
+        res = product = number = False
+        for product, number in attempts:
+            res = self.client_send(recipient, number, body, product)
             if res:
                 break
         if not res:
@@ -111,87 +133,93 @@ class ConnectMessage(models.Model):
                 '24-hour customer service window (use a template to start '
                 'a conversation) or check the Odoo log.')
         return self._register_bird_outgoing_message(
-            res, channel, recipient, body, res_id, res_model)
+            res, number, product, recipient, body, res_id, res_model)
 
-    def send_bird_template(self, recipient, template, params=None, res_id=None,
-                           res_model=None):
-        """Send an approved template (the only way to start a WhatsApp
+    def send_bird_template(self, recipient, template, params=None,
+                           res_id=None, res_model=None):
+        """Send an approved WhatsApp template (the only way to start a
         conversation outside the 24-hour window).
 
         ``template`` is a connect.bird.message_template record or id,
-        ``params`` a {key: value} dict for the template variables.
+        ``params`` a {key: value} dict for the template variables. The
+        request shape is confirmed against the live platform
+        (POST /v1/whatsapp/messages is present but not yet publicly
+        documented).
         """
         self.env['oduist.license'].check_license('connect', silent=False)
         if not isinstance(template, models.BaseModel):
             template = self.env['connect.bird.message_template'].browse(template)
         template.ensure_one()
-        channel = self.env['connect.bird.channel'].get_default_channel(
-            template.platform or 'whatsapp')
-        user_channel = self.env.user.connect_user.bird_message_channel
-        if user_channel and user_channel.platform_id == (template.platform or 'whatsapp'):
-            channel = user_channel
+        number = self.env.user.connect_user.bird_message_number
+        if not number or not number.has_capability('whatsapp'):
+            number = self.env['connect.bird.number'].get_default_number(
+                'whatsapp')
         payload = {
-            'receiver': {'contacts': [{'identifierValue': recipient}]},
+            'to': recipient,
+            'from': number.number,
             'template': {
-                'projectId': template.project_id,
-                'version': 'latest',
+                'name': template.name,
                 'locale': template.locale or 'en',
-                'parameters': [
-                    {'type': 'string', 'key': key, 'value': str(value)}
+                'variables': {
+                    str(key): str(value)
                     for key, value in (params or {}).items()
-                ],
+                },
             },
         }
         res = self.env['connect.settings'].bird_request(
-            'POST', '/channels/{}/messages'.format(channel.sid), payload)
+            'POST', '/whatsapp/messages', payload)
         body = template.body_preview or 'Template: {}'.format(template.name)
         return self._register_bird_outgoing_message(
-            res, channel, recipient, body, res_id, res_model)
+            res, number, 'whatsapp', recipient, body, res_id, res_model)
 
-    def client_send(self, recipient, channel, body, media_url=None):
-        """POST one message to the Bird Channels API; False on failure."""
-        payload = {
-            'receiver': {'contacts': [{'identifierValue': recipient}]},
-        }
-        if media_url:
-            payload['body'] = {
-                'type': 'image',
-                'image': {
-                    'images': [{'mediaUrl': media_url}],
-                    'text': body or '',
-                },
+    def client_send(self, recipient, number, body, product):
+        """POST one message to the Bird platform; False on failure."""
+        settings = self.env['connect.settings']
+        if product == 'sms':
+            payload = {
+                'to': recipient,
+                'from': number.number,
+                'text': body,
+                'category': settings.sudo().get_param(
+                    'bird_sms_category') or 'transactional',
             }
+            path = '/sms/messages'
         else:
-            payload['body'] = {'type': 'text', 'text': {'text': body}}
-        res = self.env['connect.settings'].bird_request(
-            'POST', '/channels/{}/messages'.format(channel.sid), payload,
-            raise_exc=False)
+            # WhatsApp free-form text inside the 24h customer-service
+            # window; shape confirmed against the live platform.
+            payload = {
+                'to': recipient,
+                'from': number.number,
+                'text': body,
+            }
+            path = '/whatsapp/messages'
+        res = settings.bird_request('POST', path, payload, raise_exc=False)
         if not res:
             logger.warning(
-                'Bird send via %s channel %s to %s failed.',
-                channel.platform_id, channel.identifier, recipient)
+                'Bird %s send from %s to %s failed.',
+                product, number.number, recipient)
             return False
-        logger.info('Bird message to %s is sent.', recipient)
+        logger.info('Bird %s message to %s is sent.', product, recipient)
         return res
 
-    def _register_bird_outgoing_message(self, res, channel, recipient, body,
-                                        res_id=None, res_model=None):
+    def _register_bird_outgoing_message(self, res, number, product,
+                                        recipient, body, res_id=None,
+                                        res_model=None):
         """Create the ledger record and post to the target chatter."""
         sender_user = self.env.user
         partner = self.env['res.partner'].get_partner_by_number(recipient)
         message = self.env['connect.message'].sudo().create({
             'bird_message_id': res.get('id'),
-            'bird_channel': channel.id,
-            'message_type': (
-                'WhatsApp' if channel.platform_id == 'whatsapp' else 'sms'),
-            'from_number': channel.identifier,
+            'bird_number': number.id,
+            'message_type': 'WhatsApp' if product == 'whatsapp' else 'sms',
+            'from_number': number.number,
             'to_number': recipient,
             'body': body,
             'sender_user': sender_user.id,
             'partner': partner.id if partner else False,
             'res_id': res_id,
             'res_model': res_model,
-            'status': self._map_bird_message_status(res.get('status', 'sent')),
+            'status': self._normalize_bird_status(res.get('status')),
         })
         # Add message to chatter
         if res_model and res_id:
@@ -214,7 +242,7 @@ class ConnectMessage(models.Model):
                     'author_id': chatter.author_id.id,
                     'mail_message_id': chatter.id,
                     'res_partner_id': chatter.author_id.id,
-                    'sms_number': channel.identifier,
+                    'sms_number': number.number,
                     'notification_type': message.message_type,
                     'is_read': True,
                     'notification_status': 'ready',
@@ -225,70 +253,67 @@ class ConnectMessage(models.Model):
         return message
 
     @api.model
-    def _extract_bird_body(self, payload):
-        """(text, media_url, media_content_type) from a Bird message body.
+    def _extract_bird_message_data(self, data):
+        """(message_id, from_number, to_number, text, media_url,
+        media_content_type) from a webhook event ``data`` object.
 
         All payload-shape assumptions are centralized here so live-traffic
-        fixes touch one place.
+        fixes touch one place. Known keys from the published SMS events:
+        sms_id, to, from, carrier, error; inbound events additionally
+        carry the text body.
         """
-        body = payload.get('body') or {}
-        body_type = body.get('type')
-        if body_type == 'text':
-            return (body.get('text') or {}).get('text', ''), None, None
-        media_types = {
-            'image': 'image/*',
-            'file': 'application/octet-stream',
-            'audio': 'audio/*',
-            'video': 'video/*',
-        }
-        if body_type in media_types:
-            section = body.get(body_type) or {}
-            items = section.get('{}s'.format(body_type)) or section.get('files') or []
-            media_url = items[0].get('mediaUrl') if items else None
-            content_type = (items[0].get('contentType')
-                            if items else None) or media_types[body_type]
-            return section.get('text', ''), media_url, content_type
-        logger.info('Unhandled Bird message body type: %s', body_type)
-        return '', None, None
+        message_id = (data.get('sms_id') or data.get('whatsapp_id')
+                      or data.get('message_id') or data.get('id'))
+        from_number = data.get('from')
+        to_number = data.get('to')
+        text = data.get('text') or data.get('body') or ''
+        media = data.get('media') or []
+        media_url = None
+        media_content_type = None
+        if isinstance(media, list) and media:
+            first = media[0] if isinstance(media[0], dict) else {}
+            media_url = first.get('url')
+            media_content_type = first.get('content_type')
+        return (message_id, from_number, to_number, text,
+                media_url, media_content_type)
 
     @api.model
-    def receive_bird(self, payload, event):
-        """Create a ledger record from an inbound Bird message webhook."""
+    def receive_bird(self, data, event_type):
+        """Create a ledger record from an inbound Bird message event."""
         if not self.env['oduist.license'].check_license('connect', silent=True):
             return True
         try:
-            bird_message_id = payload.get('id')
+            (bird_message_id, from_number, to_number, text,
+             media_url, media_content_type) = \
+                self._extract_bird_message_data(data)
             if not bird_message_id:
                 logger.warning('Bird inbound message without id, ignored.')
                 return True
-            # Bird retries webhooks for up to 8 hours: dedupe by message id.
+            # Bird retries webhooks: dedupe by message id.
             if self.sudo().search(
                     [('bird_message_id', '=', bird_message_id)], limit=1):
                 return True
-            logger.info('Received Bird %s webhook data:\n%s', event, payload)
-            channel = self.env['connect.bird.channel'].sudo().search(
-                [('sid', '=', payload.get('channelId'))], limit=1)
-            sender = ((payload.get('sender') or {}).get('contact') or {})
-            from_number = sender.get('identifierValue')
-            to_number = channel.identifier or ''
+            logger.info('Received Bird %s event data:\n%s', event_type, data)
             if not from_number:
                 logger.warning('Bird inbound message without sender, ignored.')
                 return True
-            text, media_url, media_content_type = self._extract_bird_body(payload)
+            number = self.env['connect.bird.number'].sudo().search(
+                [('number', '=', to_number)], limit=1)
             values = {
                 'bird_message_id': bird_message_id,
-                'bird_channel': channel.id,
+                'bird_number': number.id,
                 'from_number': from_number,
-                'to_number': to_number,
+                'to_number': to_number or '',
                 'body': text,
                 'status': 'received',
                 'message_type': (
-                    'WhatsApp' if event.startswith('whatsapp') else 'sms'),
+                    'WhatsApp' if event_type.startswith('whatsapp')
+                    else 'sms'),
             }
             if media_url:
                 values.update({
                     'media_url': media_url,
-                    'media_content_type': media_content_type,
+                    'media_content_type': media_content_type or '',
                     'num_media': 1,
                 })
             partner = self.env['res.partner'].get_partner_by_number(from_number)
@@ -325,7 +350,7 @@ class ConnectMessage(models.Model):
                 valid_target = True
                 config = self.env[
                     'connect.bird.message_configuration'
-                ].sudo().search([('channel', '=', channel.id)], limit=1)
+                ].sudo().search([('number', '=', number.id)], limit=1)
                 dest_model = (
                     config.destination
                     if config and config.destination
@@ -392,48 +417,48 @@ class ConnectMessage(models.Model):
         return True
 
     @api.model
-    def update_bird_status(self, payload, event):
-        """Apply a *.outbound status event; upsert unknown messages
-        (sent from the Bird dashboard, or the webhook raced our commit).
+    def update_bird_status(self, data, event_type):
+        """Apply a message lifecycle event (sms.sent, sms.delivered,
+        sms.failed, ...): the status is carried by the event name itself.
+        Unknown message ids are upserted (sent outside Odoo, or the
+        webhook raced our send commit).
         """
         if not self.env['oduist.license'].check_license('connect', silent=True):
             return True
         try:
-            bird_message_id = payload.get('id')
+            (bird_message_id, from_number, to_number, text,
+             _media_url, _media_content_type) = \
+                self._extract_bird_message_data(data)
             if not bird_message_id:
                 return True
-            status = self._map_bird_message_status(payload.get('status'))
+            raw_status = event_type.split('.')[-1]
+            status = self._map_bird_message_status(raw_status)
             message = self.env['connect.message'].sudo().search(
                 [('bird_message_id', '=', bird_message_id)], limit=1)
             if not message:
-                channel = self.env['connect.bird.channel'].sudo().search(
-                    [('sid', '=', payload.get('channelId'))], limit=1)
-                receiver_contacts = (
-                    (payload.get('receiver') or {}).get('contacts') or [{}])
-                to_number = receiver_contacts[0].get('identifierValue', '')
-                text = self._extract_bird_body(payload)[0]
+                number = self.env['connect.bird.number'].sudo().search(
+                    [('number', '=', from_number)], limit=1)
                 message = self.env['connect.message'].sudo().create({
                     'bird_message_id': bird_message_id,
-                    'bird_channel': channel.id,
-                    'from_number': channel.identifier or '',
-                    'to_number': to_number,
+                    'bird_number': number.id,
+                    'from_number': from_number or '',
+                    'to_number': to_number or '',
                     'body': text,
                     'status': status,
                     'message_type': (
-                        'WhatsApp' if event.startswith('whatsapp') else 'sms'),
+                        'WhatsApp' if event_type.startswith('whatsapp')
+                        else 'sms'),
                 })
             else:
                 message.write({'status': status})
-            if payload.get('status') in BIRD_FAILED_STATUSES:
-                failure = (payload.get('failure')
-                           or payload.get('error') or {})
+            if raw_status in BIRD_FAILED_STATUSES:
+                error = data.get('error') or {}
                 message.write({
                     'has_error': True,
-                    'error_code': str(
-                        failure.get('code', '') or ''),
+                    'error_code': str(error.get('code', '') or ''),
                     'error_message': (
-                        failure.get('description')
-                        or failure.get('message') or payload.get('status')),
+                        error.get('description') or error.get('message')
+                        or raw_status),
                 })
         except Exception as e:
             logger.exception('Error handling Bird message status: %s', e)

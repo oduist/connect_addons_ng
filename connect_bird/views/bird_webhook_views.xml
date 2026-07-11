@@ -6,22 +6,22 @@
         <field name="model">connect.bird.webhook</field>
         <field name="arch" type="xml">
             <list create="false">
-                <field name="event"/>
                 <field name="url"/>
                 <field name="status"/>
+                <field name="events"/>
                 <field name="sid"/>
             </list>
         </field>
     </record>
 
     <record id="action_bird_webhooks" model="ir.actions.act_window">
-        <field name="name">Webhook Subscriptions</field>
+        <field name="name">Webhook Endpoints</field>
         <field name="res_model">connect.bird.webhook</field>
         <field name="view_mode">list</field>
     </record>
 
     <menuitem id="menu_bird_webhooks"
-              name="Webhook Subscriptions"
+              name="Webhook Endpoints"
               parent="menu_bird_config"
               action="action_bird_webhooks"
               groups="connect.group_admin"

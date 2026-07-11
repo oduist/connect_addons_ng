@@ -1,5 +1,5 @@
 from . import settings
-from . import bird_channel
+from . import bird_number
 from . import bird_webhook
 from . import message
 from . import message_template

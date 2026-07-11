@@ -16,12 +16,11 @@
                             <group>
                                 <group string="Bird Credentials" name="bird_api">
                                     <div colspan="2">
-                                        <small><strong>Create an access key in
-                                            <a href="https://app.bird.com/" target="_blank">your Bird workspace</a>
-                                            (Settings &gt; Access keys)
+                                        <small><strong>Create an access key (bk_...) in your
+                                            <a href="https://bird.com/" target="_blank">Bird workspace</a>
+                                            with sms, whatsapp, voice and webhooks scopes
                                         </strong></small>
                                     </div>
-                                    <field name="bird_workspace_id"/>
                                     <field name="display_bird_access_key" string="Access Key" password="1"/>
                                     <button colspan="2" name="sync" type="object"
                                             string="SYNC BIRD ACCOUNT" class="btn btn-primary"/>
@@ -37,6 +36,9 @@
                                 </group>
                             </group>
                             <group>
+                                <group string="Messaging">
+                                    <field name="bird_sms_category"/>
+                                </group>
                                 <group string="Voice">
                                     <field name="bird_ring_timeout"/>
                                 </group>

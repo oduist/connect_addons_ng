@@ -6,7 +6,7 @@ from odoo.exceptions import ValidationError
 
 
 class BirdWhatsappComposer(models.TransientModel):
-    """Send a WhatsApp message through a Bird channel. Free-form text only
+    """Send a WhatsApp message through a Bird number. Free-form text only
     works inside the 24-hour customer-service window; a template starts a
     conversation at any time.
     """
@@ -15,9 +15,8 @@ class BirdWhatsappComposer(models.TransientModel):
 
     res_model = fields.Char('Related Model')
     res_id = fields.Integer('Related Record')
-    channel_id = fields.Many2one(
-        'connect.bird.channel', string='Sender', required=True,
-        domain="[('platform_id', '=', 'whatsapp'), ('status', '=', 'active')]")
+    number_id = fields.Many2one(
+        'connect.bird.number', string='Sender', required=True)
     phone = fields.Char(string='To', required=True)
     template_id = fields.Many2one(
         'connect.bird.message_template', string='Template',
@@ -32,15 +31,15 @@ class BirdWhatsappComposer(models.TransientModel):
         res_model = ctx.get('active_model') or ctx.get('default_res_model')
         res_id = ctx.get('active_id') or ctx.get('default_res_id')
         vals.update({'res_model': res_model, 'res_id': res_id})
-        Channel = self.env['connect.bird.channel']
-        channel = self.env.user.connect_user.bird_message_channel
-        if not channel or channel.platform_id != 'whatsapp':
-            channel = Channel.search([
-                ('platform_id', '=', 'whatsapp'),
-                ('status', '=', 'active'),
-            ], order='is_default desc', limit=1)
-        if channel:
-            vals['channel_id'] = channel.id
+        number = self.env.user.connect_user.bird_message_number
+        if not number or not number.has_capability('whatsapp'):
+            candidates = self.env['connect.bird.number'].search(
+                [], order='is_default desc, id')
+            number = next(
+                (n for n in candidates if n.has_capability('whatsapp')),
+                self.env['connect.bird.number'])
+        if number:
+            vals['number_id'] = number.id
         phone = ctx.get('default_phone')
         try:
             if not phone and res_model and res_id and res_model in self.env:
@@ -92,5 +91,5 @@ class BirdWhatsappComposer(models.TransientModel):
             Message.send_bird(
                 self.phone, self.body,
                 res_id=self.res_id or None, res_model=self.res_model or None,
-                outgoing_callerid=self.channel_id)
+                outgoing_callerid=self.number_id)
         return {'type': 'ir.actions.act_window_close'}

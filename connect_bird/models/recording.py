@@ -18,31 +18,32 @@ class Recording(models.Model):
     def fetch_bird_call_recordings(self, call):
         """Fetch and store all recordings of a Bird call.
 
-        The pre-signed S3 URL from the Recordings API expires after 600
-        seconds, so the audio is downloaded immediately and stored as an
-        attachment. Returns the number of new recordings.
+        Download links are expected to be short-lived pre-signed URLs, so
+        the audio is downloaded immediately and stored as an attachment.
+        The endpoint path is confirmed against the live platform (the
+        voice API is present but not yet publicly documented).
+        Returns the number of new recordings.
         """
         settings = self.env['connect.settings']
         data = settings.bird_request(
-            'GET', '/calls/{}/recordings'.format(call.bird_call_id),
+            'GET', '/voice/calls/{}/recordings'.format(call.bird_call_id),
             raise_exc=False)
         if data is False:
             return 0
-        items = data.get('results', data.get('recordings', [])) or []
+        items = data.get('data', data.get('recordings', [])) or []
         fetched = 0
         for item in items:
             rec_id = item.get('id')
-            if not rec_id or item.get('status') not in ('available', 'completed'):
+            url = item.get('url') or item.get('media_url')
+            if not rec_id or not url:
+                continue
+            if item.get('status') and item['status'] not in (
+                    'available', 'completed', 'done'):
                 continue
             if self.sudo().search([('sid', '=', rec_id)], limit=1):
                 continue
-            detail = settings.bird_request(
-                'GET', '/recordings/{}'.format(rec_id), raise_exc=False)
-            if not detail or not detail.get('url'):
-                continue
             try:
-                res = httpx.get(detail['url'], timeout=30,
-                                follow_redirects=True)
+                res = httpx.get(url, timeout=30, follow_redirects=True)
                 res.raise_for_status()
                 audio = res.content
             except httpx.HTTPError as e:
@@ -58,28 +59,36 @@ class Recording(models.Model):
                 'partner': call.partner.id,
                 'caller_number': call.caller,
                 'called_number': call.called,
-                'duration': int(detail.get('duration') or 0),
-                'status': detail.get('status'),
+                'duration': int(item.get('duration') or 0),
+                'status': item.get('status'),
                 'source': 'bird',
-                'media_url': detail['url'],
+                'media_url': url,
                 'recording_attachment': base64.b64encode(audio),
                 'recording_filename': '{}.{}'.format(
-                    rec_id, detail.get('format') or 'mp3'),
+                    rec_id, item.get('format') or 'mp3'),
             })
             fetched += 1
         return fetched
 
     def get_transcript(self, fail_silently=False):
-        """Override: the stored pre-signed URL is long dead by the time a
-        deferred transcription runs — refresh it from the API first.
+        """Override: the stored pre-signed URL may be long dead by the
+        time a deferred transcription runs — refresh it from the API
+        first. Transcription itself is unaffected when the recording is
+        already stored as an attachment.
         """
         self.ensure_one()
-        if self.source == 'bird' and self.sid:
-            detail = self.env['connect.settings'].bird_request(
-                'GET', '/recordings/{}'.format(self.sid), raise_exc=False)
-            if detail and detail.get('url'):
-                self.with_context(tracking_disable=True).write(
-                    {'media_url': detail['url']})
+        if self.source == 'bird' and self.sid and self.call_sid:
+            data = self.env['connect.settings'].bird_request(
+                'GET', '/voice/calls/{}/recordings'.format(self.call_sid),
+                raise_exc=False)
+            if data:
+                for item in data.get('data', data.get('recordings', [])) or []:
+                    if item.get('id') == self.sid and (
+                            item.get('url') or item.get('media_url')):
+                        self.with_context(tracking_disable=True).write({
+                            'media_url': item.get('url')
+                            or item.get('media_url')})
+                        break
         return super().get_transcript(fail_silently=fail_silently)
 
     @api.model

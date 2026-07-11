@@ -13,17 +13,19 @@
 ## Overview
 
 The `connect_bird` module integrates Bird.com (formerly MessageBird) with the
-core `connect` module (ADR-035). Scope: SMS and WhatsApp messaging (including
-WhatsApp message templates), a voice-call ledger fed by Bird voice webhooks,
+core `connect` module (ADR-037). Scope: SMS and WhatsApp messaging (including
+WhatsApp message templates), a voice-call ledger fed by Bird voice events,
 and click-to-call via a **two-leg callback originate** (Bird dials the agent's
-phone first, then bridges to the destination). Bird has no public WebRTC SDK,
+phone first, then connects the destination). Bird has no public WebRTC SDK,
 so there is no web phone.
 
-All API access is raw HTTP against `https://api.bird.com` with
-`Authorization: AccessKey <key>`, scoped to
-`/workspaces/{bird_workspace_id}/...` — the official `bird-sdk-python`
-covers only Bird's email platform and is **not** used. The single HTTP entry
-point is `connect.settings.bird_request()`.
+All API access is raw HTTP against the **Bird developer platform**
+(`https://{region}.platform.bird.com/v1`, `Authorization: Bearer bk_...`;
+the region is inferred from the access key prefix, the workspace is
+implicit in the key) — the official `bird-sdk-python` covers only Bird's
+email product and is **not** used. The single HTTP entry point is
+`connect.settings.bird_request()`; collections iterate via
+`bird_paginate()` (cursor pagination, `data`/`next_cursor`).
 
 The shared ledger models (`connect.call`, `connect.channel`,
 `connect.message`, `connect.recording`, `connect.user`, `connect.settings`)
@@ -36,54 +38,58 @@ this module handles the message when
 through to `super()` otherwise (mirrors the click-to-call
 `originate_provider` machinery).
 
+> Voice call origination/events, WhatsApp send/template payloads and the
+> numbers listing exist on the platform but are not yet publicly
+> documented; their wire shapes are asserted and isolated in single
+> builders/mappers pending live verification (ADR-037).
+
 ---
 
 ## Models
 
 ### Provider-owned models (`connect.bird.*`)
 
-#### `connect.bird.channel` — models/bird_channel.py
+#### `connect.bird.number` — models/bird_number.py
 
-Read-only registry of Bird channels (the Channels API config anchor: every
-message send and call originate targets a channelId). Synced from
-`GET /channels` (paginated); vanished channels are deleted with a sticky
-notification.
+Read-only registry of Bird sender identities: every message send and call
+originate carries a `from` out of this registry. Synced from
+`GET /v1/numbers`; vanished numbers are deleted with a sticky
+notification. Mapping isolated in `_map_remote_number()`.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `sid` | Char | Bird channel uuid, required, indexed |
-| `name` | Char | required |
-| `platform_id` | Char | `sms` / `whatsapp` / `voice` / ... |
-| `identifier` | Char | E.164 number (or other identifier) |
-| `status` | Char | `active`, ... |
-| `is_default` | Boolean | one default per platform (constraint) |
+| `sid` | Char | Bird number id, indexed |
+| `number` | Char | E.164, alphanumeric sender ID or short code; required, indexed |
+| `name` | Char | |
+| `status` | Char | |
+| `capabilities` | Char | comma-separated: sms, whatsapp, voice, mms |
+| `is_default` | Boolean | default sender |
 
-Methods: `sync()`, `get_default_channel(platform)` (default → first active →
-`ValidationError`).
+Methods: `sync()`, `get_default_number(capability=None)` (default → first
+active with the capability → `ValidationError`), `has_capability()`
+(permissive when capabilities are unknown).
 
 #### `connect.bird.message_template` — models/message_template.py
 
-Approved templates synced read-only from the Touchpoints API
-(`GET /projects` → `GET /projects/{id}/channel-templates`). Required to
-start a WhatsApp conversation outside the 24-hour customer-service window.
-
-Fields: `sid`, `project_id`, `name`, `locale`, `status`, `platform`,
-`whatsapp_template_name`, `variables` (JSON list), `body_preview`.
-Methods: `sync()`, `get_variable_keys()`.
+Approved WhatsApp templates synced read-only from
+`GET /v1/whatsapp/templates` (tolerates a missing whatsapp scope).
+Required to start a conversation outside the 24-hour customer-service
+window. Fields: `sid`, `name`, `locale`, `status`, `category`,
+`variables` (JSON list), `body_preview`. Methods: `sync()`,
+`get_variable_keys()`, mapping isolated in `_map_remote_template()`.
 
 #### `connect.bird.message_configuration` — models/message_configuration.py
 
 Routing of inbound messages into Odoo records; deliberate full copy of the
-Twilio analog keyed by Bird channel (ADR-031: no mixins). Fields: `channel`
-(M2O `connect.bird.channel`), `destination` (Selection, `res.partner`),
+Twilio analog keyed by Bird number (ADR-031: no mixins). Fields: `number`
+(M2O `connect.bird.number`), `destination` (Selection, `res.partner`),
 `default_values` (Text, python dict literal + constraint).
 
 #### `connect.bird.webhook` — models/bird_webhook.py
 
-Registry of webhook subscriptions provisioned by
-`setup_bird_webhooks()`; makes re-runs idempotent, admin-only diagnostics.
-Fields: `sid`, `service`, `event`, `url`, `status`.
-Method: `setup_subscriptions(url, signing_key, events)`.
+Registry of the webhook endpoint registered by `setup_bird_webhooks()`;
+makes re-runs idempotent (the signing secret is returned by Bird exactly
+once). Admin-only diagnostics. Fields: `sid`, `url`, `status`, `events`.
 
 ### Ledger adapters (`_inherit`)
 
@@ -92,76 +98,71 @@ Method: `setup_subscriptions(url, signing_key, events)`.
 | Field | Type | Notes |
 |-------|------|-------|
 | `bird_access_key` | Char | `groups="base.group_erp_manager"`, masked via `display_bird_access_key` |
-| `bird_workspace_id` | Char | |
-| `bird_webhook_signing_key` | Char | protected + display mirror; generated by `setup_bird_webhooks()` |
+| `bird_webhook_signing_key` | Char | the `whsec_` secret issued once by Bird; protected + display mirror |
 | `bird_verify_requests` | Boolean | default True (dev page) |
 | `bird_signature_tolerance` | Integer | default 300 s (dev page) |
+| `bird_sms_category` | Char | default `transactional`; sent with outgoing SMS |
 | `bird_ring_timeout` | Integer | default 30 s, agent leg ring timeout |
 
 Methods:
 
 | Method | Description |
 |--------|-------------|
-| `bird_request(method, path, payload, params, timeout, raise_exc)` | Single HTTP helper: builds workspace URL, AccessKey header, `connect.debug` logging, normalizes `{"errors": [...]}` into `ValidationError` (or `False` with `raise_exc=False`). Base URL overridable via `ir.config_parameter` `connect.bird_api_url`. |
-| `sync()` | Syncs `connect.bird.channel` + `connect.bird.message_template` |
-| `setup_bird_webhooks()` | Generates the signing key when empty and provisions 6 workspace-wide subscriptions (`sms|whatsapp|voice` × `inbound|outbound`) pointing at `<api_url>/bird/webhook` |
-| `_build_bird_originate_payload(agent_number, destination, record, notification_url)` | Isolated payload builder for the two-leg originate (`callFlow: [bridge]`) |
-| `originate_call()` | Dispatcher override: handles the call when `_get_originate_provider(user) == 'bird'`; POSTs `/channels/{voice}/calls`, then pre-creates the agent leg (`technical_direction='outbound-api'`, `called=<destination>`) so voice webhooks update it |
+| `_get_bird_base_url()` | `https://{region}.platform.bird.com`, region from the `bk_{region}_` key prefix; override via `ir.config_parameter` `connect.bird_api_url` |
+| `bird_request(method, path, payload, params, timeout, raise_exc)` | Single HTTP helper: Bearer auth, `/v1` prefix, `connect.debug` logging, normalizes `{code,message}` / `{errors:[...]}` into `ValidationError` (or `False` with `raise_exc=False`) |
+| `bird_paginate(path, params)` | Cursor pagination iterator (`data` / `next_cursor` / `starting_after`) |
+| `sync()` | Syncs `connect.bird.number` + `connect.bird.message_template` |
+| `setup_bird_webhooks()` | Registers ONE endpoint (`POST /v1/webhooks {url, events}`) for `<api_url>/bird/webhook` and stores the one-time `whsec_` secret; unknown event names fall back to the published SMS subset (`_register_webhook_endpoint()`) |
+| `_build_bird_originate_payload(agent, from, destination, record, url)` | Isolated payload builder for the two-leg originate (`POST /v1/voice/calls`) |
+| `originate_call()` | Dispatcher override: handles the call when `_get_originate_provider(user) == 'bird'`; POSTs the callback originate, then pre-creates the agent leg (`technical_direction='outbound-api'`, `called=<destination>`) so voice events update it |
 | `write()` | Protected-field masking for `BIRD_PROTECTED_FIELDS` |
 
 #### `connect.message` — models/message.py
 
-Fields: `bird_message_id` (Char, indexed), `bird_channel` (M2O).
+Fields: `bird_message_id` (Char, indexed), `bird_number` (M2O).
 
 | Method | Description |
 |--------|-------------|
 | `send()` | Dispatch guard (`_get_message_provider() != 'bird'` → `super()`), then `send_bird()` |
-| `send_bird()` | Sender-channel resolution (`outgoing_callerid` → user's `bird_message_channel` → default whatsapp → default sms with WhatsApp→SMS fallback), Bird send, ledger row + chatter post |
-| `send_bird_template(recipient, template, params, ...)` | Template send (`template: {projectId, version, locale, parameters}`) |
-| `client_send(recipient, channel, body, media_url)` | `POST /channels/{sid}/messages`, `False` on failure |
-| `receive_bird(payload, event)` | Inbound webhook: dedupe by `bird_message_id` (Bird retries 8 h), body/media extraction (`_extract_bird_body`), partner match, conversation threading, `connect.bird.message_configuration` routing, chatter post |
-| `update_bird_status(payload, event)` | `*.outbound` events: status update by `bird_message_id`; unknown ids upserted (dashboard-sent messages, webhook races) |
-| `_compute_direction()` | Also checks Bird channel identifiers |
+| `send_bird()` | Sender resolution into ordered (product, number) attempts (`outgoing_callerid` → user's `bird_message_number` → default whatsapp → default sms) with WhatsApp→SMS fallback; ledger row + chatter post |
+| `send_bird_template(recipient, template, params, ...)` | WhatsApp template send (`POST /v1/whatsapp/messages` with `template: {name, locale, variables}`) |
+| `client_send(recipient, number, body, product)` | `POST /v1/sms/messages {to, from, text, category}` or `/v1/whatsapp/messages {to, from, text}`; `False` on failure |
+| `receive_bird(data, event_type)` | Inbound event: dedupe by `bird_message_id`, extraction via `_extract_bird_message_data()` (sms_id/from/to/text/media), partner match, conversation threading, `connect.bird.message_configuration` routing, chatter post |
+| `update_bird_status(data, event_type)` | Lifecycle events — the status is the event-name suffix (`sms.delivered` → delivered, `undelivered/failed/rejected/expired` → failed with `data.error`); unknown ids upserted |
+| `_compute_direction()` | Also checks Bird sender numbers |
 | `action_retry()` | Re-send failed messages through the dispatcher |
-
-Status mapping: `accepted/processing → sent`, `delivery_failed/
-sending_failed/skipped → failed`, `deleted → canceled`, inbound → `received`.
 
 #### `connect.user` — models/user.py
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `originate_provider` | Selection | `selection_add=[('bird', 'Bird')]` |
-| `message_provider` | Selection | `selection_add=[('bird', 'Bird')]` |
+| `originate_provider` / `message_provider` | Selection | `selection_add=[('bird', 'Bird')]` |
 | `bird_phone_number` | Char | agent phone for two-leg click-to-call; in `_pbx_number_fields()` |
-| `bird_voice_channel` | M2O | voice channel for originate |
-| `bird_message_channel` | M2O | default sender channel |
+| `bird_voice_number` | M2O | caller ID for originate |
+| `bird_message_number` | M2O | default sender |
 
 Method: `get_user_by_bird_number(number)` — agent matching in voice events.
 
 #### `connect.channel` — models/channel.py
 
-`on_bird_call_event(payload, event)` → `_map_bird_params()` →
-`process_channel_event()`. Status normalization via `BIRD_CALL_STATUS_MAP`
-(`accepted/starting → initiated`, `ongoing → in-progress`,
-`cancelled → canceled`). The pre-created originate leg keeps its
-`technical_direction='outbound-api'`; agent legs are matched to
-`connect.user` via `bird_phone_number`.
+`on_bird_call_event(data, event_type)` → `_map_bird_params()` →
+`process_channel_event()`. Status normalization via `BIRD_CALL_STATUS_MAP`;
+the pre-created originate leg keeps `technical_direction='outbound-api'`;
+agent legs matched via `bird_phone_number`.
 
 #### `connect.call` — models/call.py
 
-Fields: `bird_call_id` (Char, indexed), `bird_recording_pending` (Boolean),
-`bird_recording_attempts` (Integer). `on_bird_call_event()` runs the shared
-pipeline (`process_call_event`) with error data from failed calls, then
-flags ended calls for the recording cron.
+Fields: `bird_call_id`, `bird_recording_pending`,
+`bird_recording_attempts`. `on_bird_call_event()` runs the shared pipeline
+with error data from failed calls, then flags ended calls for the
+recording cron.
 
 #### `connect.recording` — models/recording.py
 
-| Method | Description |
-|--------|-------------|
-| `fetch_bird_call_recordings(call)` | `GET /calls/{id}/recordings` → `GET /recordings/{id}` → **immediate** download (pre-signed S3 URL lives 600 s) → attachment, `source='bird'` |
-| `get_transcript()` | Override: refreshes the pre-signed `media_url` before core transcription |
-| `_cron_fetch_bird_recordings(limit=20)` | Cron (2 min): processes flagged calls, retries up to 10 passes (recordings lag call completion) |
+`fetch_bird_call_recordings(call)` (`GET /v1/voice/calls/{id}/recordings`
+→ immediate download to attachment, `source='bird'`), `get_transcript()`
+override (refreshes the pre-signed URL first),
+`_cron_fetch_bird_recordings()` (2-min cron, 10-attempt cap).
 
 ---
 
@@ -173,19 +174,17 @@ Single route:
 POST /bird/webhook   (type='http', auth='public', csrf=False, readonly=False)
 ```
 
-- Signature verification (MessageBird scheme): headers
-  `messagebird-signature` + `messagebird-request-timestamp`, HMAC-SHA256
-  over `"{timestamp}\n{url}\n{sha256(body)}"`, key =
-  `bird_webhook_signing_key`. Candidate URLs: https-forced request URL and
-  the `api_url`-based reconstruction (reverse proxies). Configurable
-  timestamp tolerance; `bird_verify_requests` toggle. Failures → 401 (Bird
-  keeps retrying while a key misconfig is fixed).
-- Dispatch on the envelope `event` under
-  `connect.user_connect_webhook`: `sms|whatsapp.inbound` →
-  `receive_bird()`, `sms|whatsapp.outbound` → `update_bird_status()`,
+- **Standard Webhooks** signature verification: headers `webhook-id` /
+  `webhook-timestamp` / `webhook-signature` (`v1,<base64>`), HMAC-SHA256
+  over `"{id}.{timestamp}.{raw body}"`, key = base64-decoded payload of
+  the `whsec_` secret; configurable timestamp tolerance;
+  `bird_verify_requests` toggle. Failures → 401 (Bird keeps retrying).
+- Envelope `{type, timestamp, data}`; dispatch on `type` under
+  `connect.user_connect_webhook`: `sms|whatsapp.received` →
+  `receive_bird()`, other `sms|whatsapp.*` → `update_bird_status()`,
   `voice.*` → `connect.call.on_bird_call_event()`.
-- Processing errors are logged and answered 200 (poison-pill protection
-  against Bird's 8-hour retry storms); handlers are idempotent.
+- Processing errors are logged and answered 200 (poison-pill protection);
+  handlers are idempotent.
 
 ---
 
@@ -193,13 +192,13 @@ POST /bird/webhook   (type='http', auth='public', csrf=False, readonly=False)
 
 - `sms.composer` inherit (wizard/sms_composer.py): `outgoing_callerid`
   selection unions other providers' numbers (chained `_list_all_numbers`)
-  with Bird channel identifiers; `_action_send_sms()` routes through the
-  dispatching `connect.message.send()`.
+  with Bird numbers; `_action_send_sms()` routes through the dispatching
+  `connect.message.send()`.
 - `connect.bird.whatsapp_composer` (wizard/whatsapp_composer.py): sender
-  channel + template picker (variables JSON prefilled from the template),
-  free text inside the 24-hour window. Calls `send_bird()` /
-  `send_bird_template()` **directly** — the composer itself is the explicit
-  provider choice. Bound to the res.partner form Action menu.
+  number + template picker (variables JSON prefilled), free text inside
+  the 24-hour window. Calls `send_bird()` / `send_bird_template()`
+  **directly** — the composer itself is the explicit provider choice.
+  Bound to the res.partner form Action menu.
 
 ---
 
@@ -207,7 +206,7 @@ POST /bird/webhook   (type='http', auth='public', csrf=False, readonly=False)
 
 | Model | admin | user | webhook |
 |-------|-------|------|---------|
-| `connect.bird.channel` | CRUD | read | read |
+| `connect.bird.number` | CRUD | read | read |
 | `connect.bird.message_template` | CRUD | read | — |
 | `connect.bird.message_configuration` | CRUD | — | — |
 | `connect.bird.webhook` | CRUD | — | — |
@@ -225,7 +224,7 @@ granted to the webhook group.
 
 ```
 Connect > Bird                        (menu, seq 50)
-  ├─ Channels                         (connect.bird.channel list/form)
+  ├─ Numbers                          (connect.bird.number list/form)
   ├─ Messages > Messages              (core connect.action_connect_message)
   └─ Configuration (admin)
       ├─ Settings                     (standalone connect.settings form via
@@ -233,11 +232,11 @@ Connect > Bird                        (menu, seq 50)
       │                                Development)
       ├─ Message Templates
       ├─ Message Configuration
-      └─ Webhook Subscriptions
+      └─ Webhook Endpoints
 ```
 
 Inherited views: core user form (+Bird fields), message form
-(+`bird_message_id`/`bird_channel`), call form (+`bird_call_id`, dev only),
+(+`bird_message_id`/`bird_number`), call form (+`bird_call_id`, dev only),
 SMS composer (+`outgoing_callerid`).
 
 Data: `data/ir_cron.xml` — "Connect Bird: Fetch Call Recordings" every 2
@@ -248,9 +247,10 @@ minutes.
 ## Tests
 
 `tests_suite/connect_bird/tests/` (private submodule, conditional loader in
-`connect_bird/tests/__init__.py`): settings/API helper, webhook setup
-idempotency, signature verification (HttpCase), inbound messages
-(idempotency, media, routing, threading), outbound send (payload, fallback,
-dispatch fall-through, templates), status updates (upsert), voice event
-chains (normalization, idempotency), originate (payload, ledger pre-create),
-recordings (cron, retries, pre-signed URL refresh). All HTTP is mocked.
+`connect_bird/tests/__init__.py`): settings/API helper, webhook endpoint
+registration (one-time secret, fallback event list), Standard-Webhooks
+signature verification (HttpCase), inbound messages (idempotency, media,
+routing, threading), outbound send (payload, WhatsApp→SMS fallback,
+dispatch fall-through, templates), lifecycle status events (upsert), voice
+event chains, originate (payload, ledger pre-create), recordings (cron,
+retries, URL refresh). All HTTP is mocked.

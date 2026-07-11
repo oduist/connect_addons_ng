@@ -19,26 +19,26 @@ class Call(models.Model):
     bird_recording_attempts = fields.Integer(default=0, copy=False)
 
     @api.model
-    def on_bird_call_event(self, payload, event):
-        """Entry point of the voice webhooks: channel upsert, then the
+    def on_bird_call_event(self, data, event_type):
+        """Entry point of the voice events: channel upsert, then the
         shared call pipeline, then Bird-specific bookkeeping.
         """
         self = self.sudo()
         channel = self.env['connect.channel'].on_bird_call_event(
-            payload, event)
+            data, event_type)
         error_data = None
-        if payload.get('status') == 'failed':
-            failure = payload.get('failure') or payload.get('error') or {}
+        if channel.status == 'failed':
+            error = data.get('error') or {}
             error_data = {
-                'error_code': str(failure.get('code', '') or ''),
-                'error_message': (failure.get('description')
-                                  or failure.get('message') or 'failed'),
+                'error_code': str(error.get('code', '') or ''),
+                'error_message': (error.get('description')
+                                  or error.get('message') or 'failed'),
             }
         call_id = self.process_call_event(channel, error_data)
         call = channel.call
         if call and not call.bird_call_id:
             # The first channel's sid identifies the call towards the
-            # Recordings API.
+            # recordings endpoints.
             call.bird_call_id = channel.sid
         if (call and channel.status in CALL_END_STATUSES
                 and not call.bird_recording_pending):

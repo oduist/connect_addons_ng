@@ -6,15 +6,13 @@ from odoo.exceptions import ValidationError
 
 class MessageConfiguration(models.Model):
     """Routing of inbound Bird messages into Odoo records. Deliberate full
-    copy of the Twilio analog (ADR-031: no mixins), keyed by Bird channel.
+    copy of the Twilio analog (ADR-031: no mixins), keyed by Bird number.
     """
     _name = 'connect.bird.message_configuration'
     _description = 'Bird Message Handling Configuration'
     _rec_name = 'id'
 
-    channel = fields.Many2one(
-        'connect.bird.channel', required=True,
-        domain="[('platform_id', 'in', ('sms', 'whatsapp'))]")
+    number = fields.Many2one('connect.bird.number', required=True)
     destination = fields.Selection([
         ('res.partner', 'Partner'),
     ], required=True, default='res.partner', ondelete={'res.partner': 'set default'}, help='Destination model to create records from messages.')

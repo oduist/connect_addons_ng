@@ -9,7 +9,7 @@
         'security/access_rules.xml',
         'views/menu.xml',
         'views/settings_views.xml',
-        'views/bird_channel_views.xml',
+        'views/bird_number_views.xml',
         'views/bird_webhook_views.xml',
         'views/message_template_views.xml',
         'views/message_configuration_views.xml',

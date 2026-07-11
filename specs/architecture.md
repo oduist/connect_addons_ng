@@ -256,15 +256,15 @@ customer's dialplan), web phone preferences; originate_provider += 'asterisk'
 ### Bird models (`connect_bird`)
 
 ```
-connect.bird.channel (synced channel registry: sms/whatsapp/voice channelIds —
-the Channels API config anchor)
-connect.bird.message_template (approved WhatsApp templates, Touchpoints API)
+connect.bird.number (synced sender identity registry — every send and
+originate carries a `from` out of it)
+connect.bird.message_template (approved WhatsApp templates)
 connect.bird.message_configuration (inbound message routing)
-connect.bird.webhook (webhook subscription registry)
+connect.bird.webhook (webhook endpoint registry)
 
 connect.user gains: bird_phone_number (agent phone for the two-leg callback
-originate — Bird has no WebRTC SDK, so no web phone), bird_voice_channel,
-bird_message_channel; originate_provider += 'bird'; message_provider += 'bird'
+originate — Bird has no WebRTC SDK, so no web phone), bird_voice_number,
+bird_message_number; originate_provider += 'bird'; message_provider += 'bird'
 ```
 
 ---
@@ -287,8 +287,8 @@ FreeSWITCH > Configuration > Settings   → connect_freeswitch view (XML-RPC,
                                           domain, webhook token, firewall)
 Asterisk > Configuration > Settings     → connect_asterisk view (agent URL/token,
                                           AMI bootstrap, web phone)
-Bird > Configuration > Settings         → connect_bird view (workspace ID,
-                                          access key, webhook setup, ring
+Bird > Configuration > Settings         → connect_bird view (access key,
+                                          webhook setup, SMS category, ring
                                           timeout, signature verification)
 ```
 
@@ -538,7 +538,7 @@ connect_asterisk/                     # Asterisk integration
 
 connect_bird/                         # Bird.com (MessageBird) integration
   models/
-    bird_channel.py                   # connect.bird.channel (synced registry)
+    bird_number.py                    # connect.bird.number (synced registry)
     message_template.py               # connect.bird.message_template
     message_configuration.py          # connect.bird.message_configuration
     bird_webhook.py                   # connect.bird.webhook (subscriptions)
