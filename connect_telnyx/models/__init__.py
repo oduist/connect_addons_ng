@@ -16,3 +16,4 @@ from . import whatsapp_sender
 from . import whatsapp_template
 from . import rcs_agent
 from . import message_configuration
+from . import ai_assistant

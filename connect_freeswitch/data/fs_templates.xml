@@ -241,6 +241,9 @@ Variables:
   fs_domain       - FreeSWITCH SIP domain (unused in this template; kept for symmetry)
   ring_bridge     - Comma-separated bridge string for ring_users fallback after timeout (optional)
   fifo_number     - FS Queue extension number for IVR default branch (optional)
+  voicemail_enabled - Boolean, whether no-input fallback records callflow voicemail
+  voicemail_prompt  - Callflow voicemail prompt
+  voicemail_url     - Voicemail upload URL base ending in /voicemail/&lt;token&gt;
   invalid_regex   - Pre-built `~^[unused-digits]$` pattern for the catch-all bind (optional)
   dmachine_timeout - bind_digit_digit_timeout in ms (100 for single-digit menus, 1500 for multi-digit)</field>
         <field name="content"><![CDATA[<extension name="callflow_{{ callflow_id }}">
@@ -272,6 +275,10 @@ Variables:
     {% endif %}
     {% if fifo_number %}
     <action application="transfer" data="{{ fifo_number }} XML default"/>
+    {% elif voicemail_enabled and voicemail_prompt and voicemail_url %}
+    <action application="speak" data="piper|{{ lang }}|{{ voicemail_prompt }}"/>
+    <action application="record" data="{{ voicemail_url }}/${uuid}.wav 120 200 5"/>
+    <action application="hangup" data="NORMAL_CLEARING"/>
     {% endif %}
   </condition>
 </extension>]]></field>
@@ -304,7 +311,50 @@ Variables:
     {% endif %}
     {% if fifo_number %}
     <action application="transfer" data="{{ fifo_number }} XML default"/>
+    {% elif voicemail_enabled and voicemail_prompt and voicemail_url %}
+    <action application="speak" data="piper|{{ lang }}|{{ voicemail_prompt }}"/>
+    <action application="record" data="{{ voicemail_url }}/${uuid}.wav 120 200 5"/>
+    <action application="hangup" data="NORMAL_CLEARING"/>
     {% endif %}
+  </condition>
+</extension>]]></field>
+    </record>
+
+    <record id="fs_template_dialplan_callflow_voicemail" model="connect.freeswitch.template">
+        <field name="key">dialplan_callflow_voicemail</field>
+        <field name="name">Dialplan - Callflow Voicemail</field>
+        <field name="section">dialplan</field>
+        <field name="description">Standalone callflow voicemail recorder.
+
+Variables:
+  callflow_id       - connect.freeswitch.callflow record ID
+  number            - Extension number (escaped for regex)
+  exten_id          - connect.freeswitch.exten record ID (may be empty)
+  lang              - Piper TTS language code
+  voicemail_prompt  - Prompt spoken before recording
+  voicemail_url     - Voicemail upload URL base ending in /voicemail/&lt;token&gt;</field>
+        <field name="content"><![CDATA[<extension name="callflow_vm_{{ callflow_id }}">
+  <condition field="destination_number" expression="^{{ number }}$">
+    <action application="answer"/>
+    {% if exten_id %}
+    <action application="set" data="odoo_exten_id={{ exten_id }}"/>
+    {% endif %}
+    <action application="sleep" data="500"/>
+    <action application="speak" data="piper|{{ lang }}|{{ voicemail_prompt }}"/>
+    <action application="record" data="{{ voicemail_url }}/${uuid}.wav 120 200 5"/>
+    <action application="hangup" data="NORMAL_CLEARING"/>
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="callflow_vm_{{ callflow_id }}">
+  <condition field="destination_number" expression="^{{ number }}$">
+    <action application="answer"/>
+    {% if exten_id %}
+    <action application="set" data="odoo_exten_id={{ exten_id }}"/>
+    {% endif %}
+    <action application="sleep" data="500"/>
+    <action application="speak" data="piper|{{ lang }}|{{ voicemail_prompt }}"/>
+    <action application="record" data="{{ voicemail_url }}/${uuid}.wav 120 200 5"/>
+    <action application="hangup" data="NORMAL_CLEARING"/>
   </condition>
 </extension>]]></field>
     </record>
@@ -358,7 +408,7 @@ Variables:
         <field name="section">dialplan</field>
         <field name="description">Ring group that bridges to multiple users simultaneously.
 After a failed bridge (nobody answered), optionally transfers the caller to
-an FS Queue; otherwise falls back to the first user's voicemail if enabled.
+an FS Queue; otherwise records callflow voicemail if enabled.
 
 Variables:
   callflow_id            - connect.freeswitch.callflow record ID
@@ -368,8 +418,10 @@ Variables:
   recording_url          - URL for recording webhook (if record_calls)
   bridge_string          - Comma-separated bridge endpoints
   fifo_number            - FS Queue extension number for failover (optional)
-  voicemail_enabled      - Boolean, whether to fall back to voicemail
-  voicemail_user_number  - First ring_user extension number for voicemail (optional)
+  voicemail_enabled      - Boolean, whether to record callflow voicemail
+  voicemail_prompt       - Prompt spoken before recording
+  voicemail_url          - Voicemail upload URL base ending in /voicemail/&lt;token&gt;
+  lang                   - Piper TTS language code
 </field>
         <field name="content"><![CDATA[<extension name="callflow_ring_{{ callflow_id }}">
   <condition field="destination_number" expression="^{{ number }}$">
@@ -393,10 +445,12 @@ Variables:
     {% endif %}
     {% if fifo_number %}
     <action application="transfer" data="{{ fifo_number }} XML default"/>
-    {% elif voicemail_enabled and voicemail_user_number %}
+    {% elif voicemail_enabled and voicemail_prompt and voicemail_url %}
     <action application="answer"/>
     <action application="sleep" data="500"/>
-    <action application="voicemail" data="default ${domain_name} {{ voicemail_user_number }}"/>
+    <action application="speak" data="piper|{{ lang }}|{{ voicemail_prompt }}"/>
+    <action application="record" data="{{ voicemail_url }}/${uuid}.wav 120 200 5"/>
+    <action application="hangup" data="NORMAL_CLEARING"/>
     {% endif %}
   </condition>
 </extension>]]></field>
@@ -422,10 +476,12 @@ Variables:
     {% endif %}
     {% if fifo_number %}
     <action application="transfer" data="{{ fifo_number }} XML default"/>
-    {% elif voicemail_enabled and voicemail_user_number %}
+    {% elif voicemail_enabled and voicemail_prompt and voicemail_url %}
     <action application="answer"/>
     <action application="sleep" data="500"/>
-    <action application="voicemail" data="default ${domain_name} {{ voicemail_user_number }}"/>
+    <action application="speak" data="piper|{{ lang }}|{{ voicemail_prompt }}"/>
+    <action application="record" data="{{ voicemail_url }}/${uuid}.wav 120 200 5"/>
+    <action application="hangup" data="NORMAL_CLEARING"/>
     {% endif %}
   </condition>
 </extension>]]></field>
@@ -448,6 +504,9 @@ Variables:
   <condition field="destination_number" expression="^{{ number_regex }}$">
     <action application="set" data="odoo_call_direction=inbound"/>
     <action application="set" data="odoo_number_id={{ number_id }}"/>
+    {% if caller_name %}
+    <action application="set" data="effective_caller_id_name={{ caller_name }}"/>
+    {% endif %}
     {% if transfer_target %}
     <action application="transfer" data="{{ transfer_target }} XML default"/>
     {% else %}
@@ -459,6 +518,9 @@ Variables:
   <condition field="destination_number" expression="^{{ number_regex }}$">
     <action application="set" data="odoo_call_direction=inbound"/>
     <action application="set" data="odoo_number_id={{ number_id }}"/>
+    {% if caller_name %}
+    <action application="set" data="effective_caller_id_name={{ caller_name }}"/>
+    {% endif %}
     {% if transfer_target %}
     <action application="transfer" data="{{ transfer_target }} XML default"/>
     {% else %}
