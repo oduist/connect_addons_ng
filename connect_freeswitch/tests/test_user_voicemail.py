@@ -143,7 +143,6 @@ class TestVoicemailWebhook(HttpCase):
             'technical_direction': 'inbound',
             'duration': 12,
         })
-        self.env.cr.commit()
 
         resp = self.opener.put(
             self.base_url()
