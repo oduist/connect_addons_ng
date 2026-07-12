@@ -157,6 +157,7 @@ core `transcription_pending`), AI transcripts
 | `POST /livekit/webhook/agent/<id>/transcript` | public, readonly=False | same token → `livekit_apply_agent_transcript` |
 | `PUT /livekit/webhook/recording/<fname>` | none, readonly=False | Bearer `livekit_agent_token` → `recording_attachment` |
 | `GET /livekit/api/agent_config` | none | Bearer → `_agent_config_payload()` |
+| `POST /livekit/api/heartbeat` | none, readonly=False | Bearer → `livekit_worker_last_seen` marker; the worker posts it at startup and on every dispatched job |
 | `GET /livekit/meet/<guest_token>` | public | QWeb meet page |
 | `POST /livekit/meet/<guest_token>/join` | public, readonly=False | guest/internal join token |
 

@@ -95,6 +95,9 @@ apply to the next call. Function-call tools reach Odoo over
 `/livekit/webhook/agent/<id>/tool/<name>`, authenticated by a per-agent
 token you can rotate from the agent form. Transcripts are stored as
 recordings (`source = livekit-ai`) with the worker-supplied summary.
+The worker reports liveness to Odoo at startup and on every dispatched
+job — check **Worker Last Seen** on the LiveKit settings page to
+confirm the sidecar is connected.
 
 ## Security notes
 

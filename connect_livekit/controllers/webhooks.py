@@ -81,7 +81,7 @@ class LivekitWebhooksController(http.Controller):
         )
 
     @http.route('/livekit/webhook', methods=['POST'], type='http',
-                auth='public', csrf=False)
+                auth='public', csrf=False, readonly=False)
     def livekit_webhook(self, **kw):
         if not self._verify_webhook():
             return self._json({'error': 'invalid signature'}, status=403)
@@ -148,7 +148,8 @@ class LivekitWebhooksController(http.Controller):
         return payload, None
 
     @http.route('/livekit/webhook/agent/<int:agent_id>/tool/<string:tool_name>',
-                methods=['POST'], type='http', auth='public', csrf=False)
+                methods=['POST'], type='http', auth='public', csrf=False,
+                readonly=False)
     def agent_tool(self, agent_id, tool_name, **kw):
         agent = self._get_agent_checked(agent_id)
         if not agent:
@@ -164,7 +165,8 @@ class LivekitWebhooksController(http.Controller):
         return self._json(result)
 
     @http.route('/livekit/webhook/agent/<int:agent_id>/transcript',
-                methods=['POST'], type='http', auth='public', csrf=False)
+                methods=['POST'], type='http', auth='public', csrf=False,
+                readonly=False)
     def agent_transcript(self, agent_id, **kw):
         agent = self._get_agent_checked(agent_id)
         if not agent:
