@@ -60,8 +60,9 @@ class TestUserVoicemailDialplan(FsTestCommon):
         )
         self.assertIn('data="tone_stream://%(1000,0,640)"', xml)
         self.assertIn(
-            'record_session https://odoo.example/freeswitch/webhook/'
-            'voicemail/test-token-test-token-test-token/${uuid}.wav',
+            'application="record" data="https://odoo.example/freeswitch/'
+            'webhook/voicemail/test-token-test-token-test-token/'
+            '${uuid}.wav 120 200 5"',
             xml,
         )
         self.assertLess(

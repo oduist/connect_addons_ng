@@ -176,8 +176,7 @@ Variables:
     <action application="speak" data="piper|{{ voicemail_lang }}|{{ voicemail_prompt }}"/>
     {% endif %}
     <action application="playback" data="tone_stream://%(1000,0,640)"/>
-    <action application="record_session" data="{{ voicemail_recording_url }}/${uuid}.wav"/>
-    <action application="sleep" data="120000"/>
+    <action application="record" data="{{ voicemail_recording_url }}/${uuid}.wav 120 200 5"/>
     <action application="hangup" data="NORMAL_CLEARING"/>
     {% endif %}
   </condition>
@@ -208,8 +207,7 @@ Variables:
     <action application="speak" data="piper|{{ voicemail_lang }}|{{ voicemail_prompt }}"/>
     {% endif %}
     <action application="playback" data="tone_stream://%(1000,0,640)"/>
-    <action application="record_session" data="{{ voicemail_recording_url }}/${uuid}.wav"/>
-    <action application="sleep" data="120000"/>
+    <action application="record" data="{{ voicemail_recording_url }}/${uuid}.wav 120 200 5"/>
     <action application="hangup" data="NORMAL_CLEARING"/>
     {% endif %}
   </condition>
