@@ -46,10 +46,13 @@ class FreeSwitchRecordingController(http.Controller):
                 content_length, MAX_RECORDING_BYTES)
             return Response('Payload too large', status=413)
 
-        # Extract UUID from filename (strip extension)
-        uuid = filename.rsplit('.', 1)[0] if '.' in filename else filename
+        # Extract UUID from filename (strip extension). Runtime recording
+        # controls write segment filenames as <uuid>__<segment>.wav; keep the
+        # full segment id unique while linking it back to the base channel UUID.
+        recording_sid = filename.rsplit('.', 1)[0] if '.' in filename else filename
+        uuid = recording_sid.split('__', 1)[0]
 
-        if not uuid:
+        if not recording_sid or not uuid:
             logger.warning('Recording webhook: no UUID in filename %s', filename)
             return Response('No UUID', status=400)
 
@@ -66,12 +69,13 @@ class FreeSwitchRecordingController(http.Controller):
                 request.env.ref('connect.user_connect_webhook').id
             )
 
-            # Skip if recording for this UUID already exists (both legs
-            # may attempt to upload the same recording)
-            existing = env.sudo().search([('call_sid', '=', uuid)], limit=1)
+            # Skip only the same recording segment. Several UI-controlled
+            # segments can legitimately share one call_sid/channel UUID.
+            existing = env.sudo().search([('sid', '=', recording_sid)], limit=1)
             if existing:
-                logger.info('Recording for UUID %s already exists (id=%s), skipping',
-                    uuid, existing.id)
+                logger.info(
+                    'Recording segment %s already exists (id=%s), skipping',
+                    recording_sid, existing.id)
                 return Response('OK', status=200)
 
             # Try to find the channel, but don't fail if not found yet —
@@ -80,6 +84,7 @@ class FreeSwitchRecordingController(http.Controller):
                 [('sid', '=', uuid)], limit=1)
 
             vals = {
+                'sid': recording_sid,
                 'call_sid': uuid,
                 'status': 'completed',
                 'source': 'freeswitch',
