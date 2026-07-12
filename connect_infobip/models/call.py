@@ -33,7 +33,7 @@ class Call(models.Model):
 
     @api.model
     def on_infobip_voice_event(self, event, kind='event'):
-        """Voice webhook dispatcher (ADR-035).
+        """Voice webhook dispatcher (ADR-036).
 
         Always returns True: errors are logged, never raised, so Infobip
         gets a 200 and does not retry-storm a failing handler.
@@ -54,7 +54,7 @@ class Call(models.Model):
         if call_id:
             # Serialize all handlers of one leg: concurrent webhook workers
             # and our REST-create transactions take the same lock, so
-            # upserts by sid cannot race into duplicates (ADR-035).
+            # upserts by sid cannot race into duplicates (ADR-036).
             self.env.cr.execute(
                 'SELECT pg_advisory_xact_lock(hashtext(%s))', [call_id])
 

@@ -38,7 +38,7 @@ class Number(models.Model):
         inbound webhook and the voice forward-to-application action.
 
         Both pushes are best-effort: the Numbers API configuration schema
-        varies and must be confirmed live (ADR-035); a failure degrades to
+        varies and must be confirmed live (ADR-036); a failure degrades to
         a warning with manual portal instructions. Voice ROUTING (user vs
         external number) lives in Odoo and needs no Infobip-side change.
         """

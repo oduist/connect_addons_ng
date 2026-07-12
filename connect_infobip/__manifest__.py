@@ -7,7 +7,7 @@
     'depends': ['connect'],
     # No external_dependencies: the Infobip API is called with plain
     # requests — the official Python SDK does not cover the Voice/Calls
-    # and Numbers APIs (ADR-035).
+    # and Numbers APIs (ADR-036).
     'data': [
         'security/access_rules.xml',
         'views/menu.xml',

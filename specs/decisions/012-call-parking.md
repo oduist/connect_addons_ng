@@ -116,7 +116,7 @@ Frontend (`phone_service.js`) subscribes via `bus_service.subscribe("parking_sta
 - `connect_freeswitch/static/src/css/phone_systray.css` — tab + slot styling
 
 ### Tests
-- `tests_suite/connect_freeswitch/tests/test_parking.py` — park, unpark, webhook (incl. HTTP case)
+- `connect_freeswitch/tests/test_parking.py` — park, unpark, webhook (incl. HTTP case)
 
 ### Docs
 - `docs/user/parking.md`, `docs/admin/parking.md`, `docs/mkdocs.yml`

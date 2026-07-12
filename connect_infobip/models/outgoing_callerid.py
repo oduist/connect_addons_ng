@@ -15,7 +15,7 @@ class OutgoingCallerID(models.Model):
 
     Infobip, like Telnyx, has no Twilio-style external caller-ID
     validation API, so this model only holds numbers owned in the Infobip
-    account, synced from the Numbers API (ADR-035).
+    account, synced from the Numbers API (ADR-036).
     """
     _name = 'connect.infobip.outgoing_callerid'
     _description = 'Infobip Outgoing CallerId'
@@ -46,7 +46,7 @@ class OutgoingCallerID(models.Model):
         # recordset, so self.number would raise "Expected singleton" on a
         # batch create. The single regex also covers the +-prefix check.
         # Duplicated in connect_twilio/connect_freeswitch/connect_telnyx
-        # by design — apply fixes to all copies (ADR-031/ADR-035).
+        # by design — apply fixes to all copies (ADR-031/ADR-036).
         for rec in self:
             if rec.number and not re.match(r'^\+[0-9]+$', rec.number):
                 raise ValidationError(

@@ -31,7 +31,7 @@ class InfobipWhatsappTemplate(models.Model):
 
     Mirrors the Twilio/Telnyx template shape (ADR-033). Unlike Telnyx,
     Infobip scopes templates per sender: the API path embeds the sender
-    number, so sender_id is required (ADR-035).
+    number, so sender_id is required (ADR-036).
     """
     _name = 'connect.infobip.whatsapp_template'
     _description = 'Infobip WhatsApp Template'

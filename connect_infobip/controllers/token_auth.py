@@ -6,7 +6,7 @@ request must present the infobip_webhook_token shared secret, either
 embedded into the webhook URL (?token=) or as the password part of the
 Basic Auth credentials configured on the Infobip forwarding profile.
 Fail-closed: requests are rejected when no token is configured, unless
-verification is explicitly disabled (infobip_verify_requests). ADR-035.
+verification is explicitly disabled (infobip_verify_requests). ADR-036.
 """
 import base64
 import binascii

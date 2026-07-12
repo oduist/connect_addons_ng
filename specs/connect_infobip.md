@@ -7,14 +7,14 @@
 - **Version**: 19.0.1.0.0
 - **Depends**: `connect`
 - **Python Dependencies**: none (plain `requests`; the official Infobip
-  Python SDK does not cover the Voice/Calls and Numbers APIs — ADR-035)
+  Python SDK does not cover the Voice/Calls and Numbers APIs — ADR-036)
 - **Application**: No
 - **License**: Other proprietary
 
 ## Overview
 
 Infobip provider module built in the image of connect_twilio/connect_telnyx
-(ADR-031/ADR-032/ADR-035). Owns its PBX configuration as
+(ADR-031/ADR-032/ADR-036). Owns its PBX configuration as
 `connect.infobip.*` models and `_inherit`s the shared ledger models with
 `infobip_`-prefixed fields/methods, so it co-installs with the other
 providers.
@@ -31,7 +31,7 @@ state on the parent `connect.channel`; ring timers are the platform's
 external phone via prioritized steps) or external numbers, click-to-call,
 web phone, recordings + core transcription, SMS (send/receive/DLR),
 WhatsApp (senders/templates/composer), message routing configuration.
-**Excluded** (ADR-035): IVR/callflows, recorded voicemail, RCS, Viber,
+**Excluded** (ADR-036): IVR/callflows, recorded voicemail, RCS, Viber,
 number purchasing, call price fetch, transfers, parallel ring.
 
 **Deliberately duplicated blocks** (no mixins — ADR-031): the exten
@@ -49,7 +49,7 @@ language list is NOT copied (no IVR in v1).
 | `infobip_base_url` | Personalized API host (`https://{x}.api.infobip.com`) |
 | `infobip_api_key` | Secret (groups `base.group_erp_manager`, ADR-025) |
 | `display_infobip_api_key` | Masked twin (`INFOBIP_PROTECTED_FIELDS` + `write()` pass) |
-| `infobip_webhook_token` | Auto-generated shared webhook secret (ADR-035) |
+| `infobip_webhook_token` | Auto-generated shared webhook secret (ADR-036) |
 | `infobip_verify_requests` | Webhook auth toggle (default on, fail-closed) |
 | `infobip_auto_sync` | Push per-number config on write/sync |
 | `infobip_calls_configuration_id` | Calls application ID (auto-created as "Odoo Connect") |
@@ -108,7 +108,7 @@ debug log.
 
 ### recording.py — `_inherit connect.recording`
 
-Attachment-first (ADR-035): `on_infobip_recording(event)` creates rows
+Attachment-first (ADR-036): `on_infobip_recording(event)` creates rows
 with `infobip_file_id` + `infobip_download_pending` (created with
 `skip_transcription`); cron `infobip_fetch_pending()` downloads bytes via
 the authorized `GET /calls/1/recordings/files/{id}` into
@@ -121,7 +121,7 @@ specs/connect_core.md).
 
 `infobip_bulk_id`; `_compute_direction()` override (Infobip numbers +
 WhatsApp senders; co-installation last-loaded-wins limitation restated,
-ADR-032/ADR-035); `send()` → `infobip_client_send()` =
+ADR-032/ADR-036); `send()` → `infobip_client_send()` =
 `POST /sms/2/text/advanced` with per-send DLR `notifyUrl` (MSISDNs sent
 without `+`); `infobip_receive()` / `infobip_receive_whatsapp()` (inbound
 `{results: [...]}` envelopes) sharing `_infobip_dispatch_inbound()`
@@ -231,18 +231,17 @@ patches the core PhoneField for click-to-call + WhatsApp composer.
 
 ## Tests
 
-`connect_infobip/tests/__init__.py` is the conditional two-pass loader;
-suites live in the private `tests_suite/connect_infobip/tests/`
-(common, settings, exten, outgoing_callerid, message send/receive, voice
-events, ACL). All HTTP is mocked.
+Tests are colocated in `connect_infobip/tests/` (ADR-034: common,
+settings, exten, outgoing_callerid, message send/receive, voice events,
+ACL). All HTTP is mocked.
 
 ## Known limitations
 
 - `connect.message.send()` / `_compute_direction()` / `sms.composer`:
   last-loaded provider wins on co-installation (core dispatcher hook
-  still deferred — ADR-032/ADR-035).
+  still deferred — ADR-032/ADR-036).
 - API payload shapes flagged for live confirmation are listed in
-  ADR-035 (event envelope, dialog `connectTimeout`, customData
+  ADR-036 (event envelope, dialog `connectTimeout`, customData
   round-trip, Numbers API config schemas, WhatsApp senders listing,
   DLR vocabulary, Subscriptions API variant).
 

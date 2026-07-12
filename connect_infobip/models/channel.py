@@ -33,7 +33,7 @@ class Channel(models.Model):
     One Infobip call leg = one channel, keyed by sid = callId. Infobip has
     no parent-call concept, so parent_sid is synthesized by whoever creates
     the child leg and echoed through the leg's customData; ring-machine
-    state lives on the parent (inbound) channel (ADR-035).
+    state lives on the parent (inbound) channel (ADR-036).
     """
     _inherit = 'connect.channel'
 
@@ -52,7 +52,7 @@ class Channel(models.Model):
     @api.model
     def _infobip_event_call(self, event):
         """Extract the call object from an event envelope, defensively:
-        the exact nesting must be confirmed live (ADR-035)."""
+        the exact nesting must be confirmed live (ADR-036)."""
         properties = event.get('properties') or {}
         call = properties.get('call') or {}
         if not call and isinstance(event.get('call'), dict):
@@ -208,7 +208,7 @@ class Channel(models.Model):
         The platform keeps this leg ringing, answers it when the child
         answers, bridges media, and turns child no-answer/decline into
         CALL_FAILED + DIALOG_FAILED; the per-step timer is the platform's
-        connectTimeout — no Odoo timers (ADR-035). Returns the child
+        connectTimeout — no Odoo timers (ADR-036). Returns the child
         channel (may be empty when the response carries no child id yet).
         """
         self.ensure_one()
@@ -352,7 +352,7 @@ class Channel(models.Model):
         self._infobip_ring_step()
 
     def _infobip_ring_exhausted(self):
-        """All ring steps failed: recorded voicemail is deferred (ADR-035),
+        """All ring steps failed: recorded voicemail is deferred (ADR-036),
         so play the voicemail prompt or a generic apology and hang up."""
         self.ensure_one()
         user = self.infobip_route_user

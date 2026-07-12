@@ -13,7 +13,7 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_freeswitch`** — FreeSWITCH integration. Owns `connect.freeswitch.{exten,callflow,callflow_choice,number,endpoint,outgoing_callerid}` plus gateways/routes/FIFO/parking/firewall, Verto WebRTC client, XML dialplan generation. **FreeSWITCH** submenu under the Connect app.
 - **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). Owns `connect.asterisk.{endpoint,number}`; AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). **Asterisk** submenu under the Connect app. See ADR-026.
 - **`connect_telnyx`** — Telnyx integration (TeXML-first, ADR-032). Owns `connect.telnyx.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,texml,domain}`; SIP domain = credential connection + TeXML app SIP subdomain, per-user telephony credentials, @telnyx/webrtc phone widget, SMS/WhatsApp/RCS via messaging profile (ADR-033: `connect.telnyx.{whatsapp_sender,whatsapp_template,rcs_agent}` + composers), Ed25519 webhook validation. **Telnyx** submenu under the Connect app.
-- **`connect_infobip`** — Infobip integration (event-driven Calls API, NO TwiML analog — ADR-035). Owns `connect.infobip.{exten,number,outgoing_callerid,user_callflow,message_configuration,whatsapp_sender,whatsapp_template}`; voice = webhook events → REST actions (Dialog bridges, platform-side `connectTimeout`), per-user WebRTC identities (no per-user SIP), vendored infobip-rtc phone widget, SMS + WhatsApp, recordings downloaded into attachments. No IVR/callflows in v1. **Infobip** submenu under the Connect app.
+- **`connect_infobip`** — Infobip integration (event-driven Calls API, NO TwiML analog — ADR-036). Owns `connect.infobip.{exten,number,outgoing_callerid,user_callflow,message_configuration,whatsapp_sender,whatsapp_template}`; voice = webhook events → REST actions (Dialog bridges, platform-side `connectTimeout`), per-user WebRTC identities (no per-user SIP), vendored infobip-rtc phone widget, SMS + WhatsApp, recordings downloaded into attachments. No IVR/callflows in v1. **Infobip** submenu under the Connect app.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
 
 Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx` and `connect_infobip` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module).
@@ -213,146 +213,74 @@ When making code changes, **always** keep these in sync:
 
 If a code change adds, removes, or modifies a feature, the corresponding documentation and spec files must be updated in the same commit.
 
-# Testing — Gated Test Suite
+# Testing
 
 ## Architecture
 
-Tests live in a **private git submodule** (`tests_suite/`), separate from the business logic. Each addon ships a tracked `tests/__init__.py` that conditionally pulls `test_*.py` from the submodule at import time:
+Tests live next to the module they cover, under `<module>/tests/`, and are
+committed in the main repository with the implementation they verify.
 
 ```
-connect_addons_ng/              ← Main repo (public)
-├── connect/
-│   └── tests/__init__.py       ← conditional loader (tracked)
-├── connect_twilio/
-│   └── tests/__init__.py       ← conditional loader (tracked)
-├── connect_freeswitch/
-│   └── tests/__init__.py       ← conditional loader (tracked)
-├── connect_asterisk/
-│   └── tests/__init__.py       ← conditional loader (tracked)
-├── connect_telnyx/
-│   └── tests/__init__.py       ← conditional loader (tracked)
-├── connect_infobip/
-│   └── tests/__init__.py       ← conditional loader (tracked)
-└── tests_suite/                ← Private submodule (oduist/connect_addons_tests)
-    ├── connect/tests/test_*.py
-    ├── connect_twilio/tests/test_*.py
-    ├── connect_freeswitch/tests/test_*.py
-    ├── connect_asterisk/tests/test_*.py
-    ├── connect_telnyx/tests/test_*.py
-    └── connect_infobip/tests/test_*.py
+connect_addons_ng/
+├── connect/tests/test_*.py
+├── connect_twilio/tests/test_*.py
+├── connect_freeswitch/tests/test_*.py
+├── connect_asterisk/tests/test_*.py
+├── connect_crm/tests/test_*.py
+├── connect_telnyx/tests/
+├── connect_infobip/tests/test_*.py
+└── connect_helpdesk/tests/
 ```
 
-The loader checks `os.path.isdir("../../tests_suite/<addon>/tests")`. When present, it dynamically loads each `test_*.py` via `importlib.util.spec_from_file_location` and registers it as a submodule of `<addon>.tests`. When absent, the loader is a no-op — the addon installs cleanly with no tests.
+Every populated test package has a plain `tests/__init__.py` with explicit
+imports for each `test_*.py` file:
 
-## Operating Modes
-
-**Unprotected Mode** — The `tests_suite` submodule is not initialized. The loader sees no `tests_suite/` directory and exposes an empty `tests` package. Code can be modified but not verified. A missing `tests_suite/` is NOT an error — it means the test suite license is not active.
-
-**Safe Mode** — The `tests_suite` submodule is initialized. The loader registers all `test_*.py` files. Use tests as the primary success criterion for every task.
-
-## Submodule init policy
-
-`.gitmodules` carries `update = none` for `tests_suite`. This makes the default `git submodule update --init` (and `uv sync`'s `git submodule update --init --recursive`) silently skip the private submodule, so external users without access can clone the repo and build addons as uv dependencies.
-
-Internal developers who need tests initialize the submodule explicitly:
-
-```bash
-git -c submodule.tests_suite.update=checkout submodule update --init tests_suite
+```python
+from . import test_call
+from . import test_settings
 ```
 
-## Contributing tests to the submodule — commit direct, NO pull request
-
-The `tests_suite` submodule is a shared, append-as-you-go test space — **not**
-a pull-request-driven repo. When you add or change `test_*.py` files:
-
-- **Commit directly to the matching per-series branch** of
-  `connect_addons_tests` (`19.0` for the `19.0` main branch, `18.0` for
-  `18.0`, …) and push. Do **NOT** open a pull request and do **NOT** create a
-  feature branch for the tests. Everyone commits to the same series branch
-  from whatever workspace they are in.
-- There are **no working environments** for the tests repo — you never
-  provision or run anything "inside" it. It only holds `test_*.py` files that
-  the per-addon loaders pull in; tests run in the main module's environment.
-- After pushing the test commit, **bump the `tests_suite` gitlink** in the
-  main repo to the new series-branch commit and include that in your feature
-  branch, so the code change carries its coverage.
-
-(The per-series branch mapping is described under "Submodule init policy" and
-"Version Compatibility → Cross-branch versioning rules".)
+Helper modules such as `common.py` stay in the same `tests/` package and can be
+imported with normal relative imports (`from .common import BaseCase`).
 
 ## Agent Behavior
 
-- **Always check** if `tests_suite/` is populated before attempting to run tests.
-- **Never treat** a missing `tests_suite/` as a bug.
-- **In Safe Mode**: run tests after every code change. Tests are the gatekeeper.
-- **In Unprotected Mode**: rely on manual verification and code review.
-- **When writing new tests**: place them in `tests_suite/<module>/tests/`, not directly in the module.
+- When writing or changing tests, place them in the owning module's `tests/`
+  directory, not in a shared test repository.
+- Add every new `test_*.py` file to that module's `tests/__init__.py`.
+- Keep tests and implementation in the same feature branch and pull request.
+- Do not create test submodules, gitlinks, dynamic import loaders, or manual
+  test-copy steps.
 
-## Adding a New Module to the Test Suite
+## Adding Tests to a Module
 
-When creating a new module (e.g., `connect_crm`):
+When creating tests for a module that has no tests yet:
 
-1. Create the test scaffold in the submodule: `tests_suite/connect_crm/tests/__init__.py`
-2. Create `connect_crm/tests/__init__.py` in the main repo — copy the loader from `connect/tests/__init__.py` and change the `_SUITE` path to `connect_crm`.
-3. Commit both files.
-
-## Note on relative imports in tests
-
-The loader registers each `test_*.py` individually via `importlib.util.spec_from_file_location`. Modules are formally part of `<addon>.tests` but physically live in `tests_suite/`. As a consequence, **relative imports between test modules will not work** (e.g. `from . import helpers` inside `test_foo.py`).
-
-Today this is not a problem — `tests_suite` only contains `test_firewall.py` with no helpers. If helper modules become necessary:
-
-- **Preferred:** use absolute imports (`from tests_suite.<addon>.tests import helpers`).
-- **Alternative:** extend the loader to do a two-pass load — first non-`test_*` modules (helpers), then `test_*` ones.
+1. Create `<module>/tests/__init__.py`.
+2. Add one or more `<module>/tests/test_*.py` files.
+3. Import each test module from `<module>/tests/__init__.py`.
 
 ## Running Tests
 
-```bash
-# Setup tests (one-time, after cloning) — requires tests_suite access
-git -c submodule.tests_suite.update=checkout submodule update --init tests_suite
+Use oduflow to run Odoo tests in the target environment. In the normal
+`repo_url` workflow, commit and push the branch first, then call
+`pull_and_apply`, then run tests:
 
-# Run tests via oduflow
+```bash
 oduflow run_odoo_tests connect
 oduflow run_odoo_tests connect_twilio
 oduflow run_odoo_tests connect_freeswitch
 oduflow run_odoo_tests connect_asterisk
+oduflow run_odoo_tests connect_crm
 oduflow run_odoo_tests connect_telnyx
 oduflow run_odoo_tests connect_infobip
+oduflow run_odoo_tests connect_helpdesk
 ```
 
-## Installing as a uv dependency (external consumers)
-
-External users can install individual addons without access to `tests_suite`:
-
-```bash
-uv pip install "odoo-addon-connect @ git+https://github.com/oduist/connect_addons_ng.git@19.0#subdirectory=connect"
-uv pip install "odoo-addon-connect-twilio @ git+https://github.com/oduist/connect_addons_ng.git@19.0#subdirectory=connect_twilio"
-uv pip install "odoo-addon-connect-freeswitch @ git+https://github.com/oduist/connect_addons_ng.git@19.0#subdirectory=connect_freeswitch"
-```
-
-Replace `@19.0` with `@18.0` for the Odoo 18 series. Tests are not available in this mode.
-
-## Running tests in an oduflow environment
-
-`tests_suite` lives **only on the local workstation**. The oduflow Odoo
-environment has **no access** to the private submodule, and `pull_and_apply`
-will **not** carry the tests across: `pull_and_apply` syncs via `git push`,
-where `tests_suite` is just a gitlink whose contents are never pushed (and
-`.gitmodules` carries `update = none` anyway). So after `pull_and_apply` the
-environment still has an empty `tests/` loader and `run_odoo_tests` finds
-nothing.
-
-To run a specific test in an oduflow environment:
-
-1. Read the test locally from `tests_suite/<addon>/tests/test_<name>.py`.
-2. Copy it into the environment with the **`write_file_in_odoo`** MCP tool,
-   writing to the path the loader scans — `tests_suite/<addon>/tests/test_<name>.py`
-   (relative to the repo root inside the container).
-3. Run `run_odoo_tests <addon>`.
-
-Do **not** rely on `pull_and_apply` to deliver test files — it never will.
-Treat `write_file_in_odoo` as the only channel for getting a `test_*.py`
-into the environment.
+`run_odoo_tests` runs tests through Odoo's normal module test discovery, so the
+module must already be installed in the environment. If a module is not
+installed, install or upgrade it through the normal oduflow module workflow
+before testing.
 
 ## Self-driven verification of changes
 

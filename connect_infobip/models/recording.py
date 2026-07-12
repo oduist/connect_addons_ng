@@ -14,7 +14,7 @@ MAX_DOWNLOAD_ATTEMPTS = 10
 
 
 class Recording(models.Model):
-    """Infobip recordings are attachment-first (ADR-035): the file download
+    """Infobip recordings are attachment-first (ADR-036): the file download
     requires the App API key, so media_url stays empty and a cron pulls the
     bytes into recording_attachment. Playback, transcription and the proxy
     all ride the attachment path in core."""

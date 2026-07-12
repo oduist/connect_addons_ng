@@ -46,7 +46,7 @@ class OutgoingCallerID(models.Model):
         # recordset, so self.number would raise "Expected singleton" on a
         # batch create. The single regex also covers the +-prefix check.
         # Duplicated in connect_twilio/connect_freeswitch/connect_infobip
-        # by design — apply fixes to all copies (ADR-031/ADR-032/ADR-035).
+        # by design — apply fixes to all copies (ADR-031/ADR-032/ADR-036).
         for rec in self:
             if rec.number and not re.match(r'^\+[0-9]+$', rec.number):
                 raise ValidationError(

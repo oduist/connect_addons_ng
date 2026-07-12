@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectInfobipController(Controller):
-    """Infobip webhook endpoints (ADR-035).
+    """Infobip webhook endpoints (ADR-036).
 
     All routes are public POST JSON endpoints authenticated by the shared
     webhook token, executed as the special webhook user, and declared

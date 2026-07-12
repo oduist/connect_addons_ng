@@ -31,7 +31,7 @@ class ConnectMessage(models.Model):
         """Override: check Infobip numbers and WhatsApp senders to
         determine direction.
 
-        Known limitation (ADR-032/ADR-035): co-installing several
+        Known limitation (ADR-032/ADR-036): co-installing several
         messaging provider modules leaves the last-loaded module owning
         this compute and send() until a core dispatcher hook exists.
         """
@@ -285,7 +285,7 @@ class ConnectMessage(models.Model):
     def infobip_process_delivery_report(self, event):
         """Unified SMS + WhatsApp delivery report handler. SMS reports
         arrive via the per-send notifyUrl; WhatsApp DLR forwarding is
-        pointed at the same URL on the Infobip side (ADR-035)."""
+        pointed at the same URL on the Infobip side (ADR-036)."""
         try:
             for result in event.get('results') or []:
                 logger.info('Received Infobip delivery report:\n%s', result)
@@ -427,7 +427,7 @@ class ConnectMessage(models.Model):
 
     def infobip_client_send(self, recipient, sender, body):
         """Send one SMS via /sms/2/text/advanced. The per-message notifyUrl
-        delivers DLRs without account-level subscription setup (ADR-035).
+        delivers DLRs without account-level subscription setup (ADR-036).
         Returns the first messages[] entry (with bulkId) or False."""
         Settings = self.env['connect.settings']
         payload = {

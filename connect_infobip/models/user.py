@@ -20,7 +20,7 @@ class User(models.Model):
 
     Every field/method contributed here carries the infobip_ prefix so the
     module co-installs with the other providers, which own their own names
-    on this shared ledger model (ADR-031/ADR-035).
+    on this shared ledger model (ADR-031/ADR-036).
 
     Infobip has no per-user SIP accounts: the agent endpoints are a WebRTC
     identity (web phone) and/or an external phone number. Identities exist
@@ -148,7 +148,7 @@ class User(models.Model):
             self, 'connect.user', current_exten=self.infobip_exten)
 
     def infobip_render_voicemail_prompt(self):
-        # Recorded voicemail is deferred (ADR-035): the rendered prompt is
+        # Recorded voicemail is deferred (ADR-036): the rendered prompt is
         # spoken by the ring-exhausted say+hangup fallback.
         self.ensure_one()
         environment = jinja2.Environment()
@@ -217,7 +217,7 @@ class User(models.Model):
                 'token': resp.get('token'),
                 'identity': user.infobip_identity,
                 # callApplication() dials through the Calls configuration so
-                # Odoo keeps control of the routing (ADR-035).
+                # Odoo keeps control of the routing (ADR-036).
                 'calls_config_id': settings.sudo().get_param(
                     'infobip_calls_configuration_id'),
                 'via_rest': bool(settings.sudo().get_param(

@@ -16,7 +16,7 @@ const uid = user.userId
 // infobip-rtc Call (ApplicationCall / IncomingApplicationCall), so the
 // phone logic ported from connect_twilio stays close to the original.
 // The server-side legs carry From/CallerName/Partner/autoAnswer in the
-// call's customData (ADR-035).
+// call's customData (ADR-036).
 class InfobipSession {
     constructor(call) {
         this.call = call
@@ -733,7 +733,7 @@ export class Phone extends Component {
         const api = getInfobipRtcApi()
         if (self.viaRest || !self.callsConfigId || !api.ApplicationCallOptions
                 || typeof self.userAgent.callApplication !== 'function') {
-            // Fallback (ADR-035): originate through the REST API — the
+            // Fallback (ADR-036): originate through the REST API — the
             // agent's own phone rings first (auto-answered here) and Odoo
             // bridges the destination; the incoming leg drives the UI.
             self.state.inCall = false
@@ -749,7 +749,7 @@ export class Phone extends Component {
         }
         // Dial the Calls configuration application so the call arrives as
         // CALL_RECEIVED and Odoo keeps control of the routing
-        // (extensions, caller ID) and the ledger — ADR-035.
+        // (extensions, caller ID) and the ledger — ADR-036.
         const options = api.ApplicationCallOptions.builder()
             .setAudio(true)
             .setCustomData({dialed_number: phoneNumber.replace('+', '')})

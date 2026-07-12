@@ -36,7 +36,7 @@ class Settings(models.Model):
 
     # Personalized per-account API host, e.g. https://xxxxx.api.infobip.com.
     # Infobip publishes no fixed global endpoint for production accounts,
-    # so the base URL is configuration, not a constant (ADR-035).
+    # so the base URL is configuration, not a constant (ADR-036).
     infobip_base_url = fields.Char(string="Infobip Base URL")
     # Never grant this to connect.group_webhook: the webhook user is the
     # identity of all public webhook controllers, and get_param() returns
@@ -45,7 +45,7 @@ class Settings(models.Model):
     display_infobip_api_key = fields.Char(string="Infobip API Key")
     # Shared secret embedded as ?token= into every webhook URL configured
     # on the Infobip side. Infobip does not sign webhooks, so this token
-    # plus HTTPS is the trust boundary (ADR-035).
+    # plus HTTPS is the trust boundary (ADR-036).
     infobip_webhook_token = fields.Char(
         groups="connect.group_admin",
         default=lambda self: secrets.token_urlsafe(32))
@@ -231,7 +231,7 @@ class Settings(models.Model):
         empty. Event subscriptions (receive/event URLs) are NOT
         auto-provisioned: the Subscriptions API shape varies between
         classic and CPaaS-X accounts, so the admin wires the URLs shown in
-        the settings form in the Infobip portal instead (ADR-035). An
+        the settings form in the Infobip portal instead (ADR-036). An
         admin-entered configuration ID is authoritative and never
         overwritten.
         """
@@ -338,7 +338,7 @@ class Settings(models.Model):
                     'mark a default Infobip caller ID!')
         # customData values must be strings; they are echoed back in every
         # event for this leg and in the WebRTC SDK, carrying the ledger
-        # correlation through webhook races (ADR-035).
+        # correlation through webhook races (ADR-036).
         custom_data = {
             'technical_direction': 'outbound-api',
             'caller_pbx_user_id': str(connect_user.id),

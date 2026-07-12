@@ -18,7 +18,7 @@ class InfobipWhatsappSender(models.Model):
     """WhatsApp-enabled Infobip senders.
 
     Mirrors the Twilio/Telnyx whatsapp_sender shape (ADR-033). Senders are
-    registered in the Infobip portal and readonly-synced here (ADR-035);
+    registered in the Infobip portal and readonly-synced here (ADR-036);
     Infobip addresses WhatsApp with plain E.164 numbers — no whatsapp:
     prefix.
     """
@@ -82,7 +82,7 @@ class InfobipWhatsappSender(models.Model):
     @api.model
     def sync(self):
         # The senders listing endpoint shape must be confirmed live
-        # (ADR-035); infobip_sync() treats a failure here as non-fatal.
+        # (ADR-036); infobip_sync() treats a failure here as non-fatal.
         response = self.env['connect.settings'].infobip_api_request(
             'GET', '/whatsapp/1/senders')
         items = (response.get('senders') or response.get('results') or [])

@@ -66,6 +66,13 @@ class Number(models.Model):
         raw = self.phone_number or ''
         digits = raw[1:] if raw.startswith('+') else raw
         number_regex = r'\+?' + re.escape(digits)
+        caller_name = ''
+        caller_number = params.get('Caller-Caller-ID-Number') or params.get(
+            'caller_id_number')
+        if caller_number:
+            partner = self.env['res.partner'].get_partner_by_number(
+                caller_number)
+            caller_name = partner.display_name if partner else ''
 
         return self.env['connect.freeswitch.template'].render('dialplan_inbound_did', {
             'number_regex': number_regex,
@@ -74,4 +81,5 @@ class Number(models.Model):
             'number_id': self.id,
             'destination': self.destination,
             'transfer_target': transfer_target,
+            'caller_name': caller_name,
         })

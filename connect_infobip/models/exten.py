@@ -15,7 +15,7 @@ class Exten(models.Model):
     connect_infobip (no mixins — ADR-031). Apply fixes to all copies in
     the same commit.
 
-    v1 routes only to users (no callflow/IVR models yet, ADR-035), and
+    v1 routes only to users (no callflow/IVR models yet, ADR-036), and
     there is no XML render pipeline: extensions are resolved by the voice
     event dispatcher (connect.call._infobip_route_internal).
     """

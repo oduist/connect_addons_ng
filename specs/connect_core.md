@@ -312,7 +312,7 @@ atomic.
 - `create()` override auto-triggers transcription if `transcript_calls` setting is enabled.
 - `transcribe_recording()` prefers the stored `recording_attachment` bytes
   (providers whose downloads require API auth store the file on the record,
-  e.g. connect_infobip — ADR-035) and only falls back to downloading
+  e.g. connect_infobip — ADR-036) and only falls back to downloading
   `media_url` (which may be proxied) before sending the audio to OpenAI
   Whisper. `get_transcript()` accepts either source.
 - `make_summary()` uses the `summary_prompt` from settings with GPT-4o.
