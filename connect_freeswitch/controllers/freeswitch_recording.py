@@ -87,7 +87,8 @@ class FreeSwitchRecordingController(http.Controller):
 
             if is_voicemail:
                 # Voicemail is a single artifact for the call; both legs may
-                # attempt to upload the same recording.
+                # attempt to upload the same recording. Voicemails are a
+                # separate source so they can coexist with call recordings.
                 existing = env.sudo().search([
                     ('call_sid', '=', uuid),
                     ('source', '=', source),

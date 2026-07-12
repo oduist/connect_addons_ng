@@ -9,5 +9,6 @@ from . import test_outgoing_callerid
 from . import test_parking
 from . import test_recording_controls
 from . import test_ringback
+from . import test_user_voicemail
 from . import test_webhook_token
 from . import test_xmlrpc_tls

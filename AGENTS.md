@@ -13,9 +13,10 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_freeswitch`** — FreeSWITCH integration. Owns `connect.freeswitch.{exten,callflow,callflow_choice,number,endpoint,outgoing_callerid}` plus gateways/routes/FIFO/parking/firewall, Verto WebRTC client, XML dialplan generation. **FreeSWITCH** submenu under the Connect app.
 - **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). Owns `connect.asterisk.{endpoint,number}`; AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). **Asterisk** submenu under the Connect app. See ADR-026.
 - **`connect_telnyx`** — Telnyx integration (TeXML-first, ADR-032). Owns `connect.telnyx.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,texml,domain}`; SIP domain = credential connection + TeXML app SIP subdomain, per-user telephony credentials, @telnyx/webrtc phone widget, SMS/WhatsApp/RCS via messaging profile (ADR-033: `connect.telnyx.{whatsapp_sender,whatsapp_template,rcs_agent}` + composers), Ed25519 webhook validation. **Telnyx** submenu under the Connect app.
+- **`connect_infobip`** — Infobip integration (event-driven Calls API, NO TwiML analog — ADR-036). Owns `connect.infobip.{exten,number,outgoing_callerid,user_callflow,message_configuration,whatsapp_sender,whatsapp_template}`; voice = webhook events → REST actions (Dialog bridges, platform-side `connectTimeout`), per-user WebRTC identities (no per-user SIP), vendored infobip-rtc phone widget, SMS + WhatsApp, recordings downloaded into attachments. No IVR/callflows in v1. **Infobip** submenu under the Connect app.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
 
-Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk` and `connect_telnyx` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module).
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx` and `connect_infobip` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module).
 
 ## Architecture
 
@@ -40,11 +41,12 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - Special webhook user (`connect.user_connect_webhook`) is defined in core data, used by all integrations
 
 > **Deliberately duplicated code (no mixins — ADR-031).** The exten
-> dst-Reference mechanics, the callflow language selection list and the
-> caller-ID E.164/is_default logic exist as full copies in
-> connect_twilio, connect_freeswitch AND connect_telnyx. When you fix or
-> change one copy, apply the same change to the other modules in the
-> same commit.
+> dst-Reference mechanics and the caller-ID E.164/is_default logic exist
+> as full copies in connect_twilio, connect_freeswitch, connect_telnyx
+> AND connect_infobip; the callflow language selection list is copied in
+> connect_twilio, connect_freeswitch and connect_telnyx (connect_infobip
+> has no IVR in v1). When you fix or change one copy, apply the same
+> change to the other modules in the same commit.
 
 **Security groups:** `connect.group_user` (read), `connect.group_admin` (full CRUD), `connect.group_webhook` (webhook record creation)
 
@@ -64,6 +66,7 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_twilio.md` — Twilio module spec (models, webhooks, controllers, frontend)
 - `specs/connect_asterisk.md` — Asterisk module spec (models, agent contract, controllers, frontend)
 - `specs/connect_telnyx.md` — Telnyx module spec (models, TeXML routing, controllers, frontend)
+- `specs/connect_infobip.md` — Infobip module spec (models, event-driven voice, controllers, frontend)
 - `docs/` — User and admin documentation (MkDocs Material), see `docs/mkdocs.yml` for structure
 
 ## Development Commands
@@ -139,7 +142,8 @@ Specifically:
 - Twilio webhook routes are all under `/twilio/webhook/*` and validate `X-Twilio-Signature` when enabled
 - Asterisk webhook/API routes are under `/asterisk/webhook/*` and `/asterisk/api/*` and require `Authorization: Bearer <asterisk_agent_token>`
 - Telnyx webhook routes are all under `/telnyx/webhook/*` and validate the Ed25519 `telnyx-signature-ed25519` header when enabled
-- Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`
+- Infobip webhook routes are all under `/infobip/webhook/*` and require the shared `infobip_webhook_token` (`?token=` or Basic Auth password) when enabled — Infobip does not sign webhooks
+- Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`, Infobip WebRTC phone in `connect_infobip/static/src/`
 
 ## FreeSWITCH & Firewall Docker Images
 
@@ -224,6 +228,7 @@ connect_addons_ng/
 ├── connect_asterisk/tests/test_*.py
 ├── connect_crm/tests/test_*.py
 ├── connect_telnyx/tests/
+├── connect_infobip/tests/test_*.py
 └── connect_helpdesk/tests/
 ```
 
@@ -268,6 +273,7 @@ oduflow run_odoo_tests connect_freeswitch
 oduflow run_odoo_tests connect_asterisk
 oduflow run_odoo_tests connect_crm
 oduflow run_odoo_tests connect_telnyx
+oduflow run_odoo_tests connect_infobip
 oduflow run_odoo_tests connect_helpdesk
 ```
 
