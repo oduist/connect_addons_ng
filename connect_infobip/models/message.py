@@ -181,7 +181,7 @@ class ConnectMessage(models.Model):
             valid_target = True
             config = self.env[
                 'connect.infobip.message_configuration'
-            ].search(
+            ].sudo().search(
                 [('number.phone_number', '=', to_number)], limit=1
             )
             dest_model = (

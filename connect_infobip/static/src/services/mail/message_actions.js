@@ -71,32 +71,3 @@ messageActionsRegistry
         },
         sequence: 121,
     })
-    .add("infobip-rcs-reply", {
-        condition: (component) => component.message.message_type !== null,
-        icon: "fa fa-commenting-o",
-        title: _t("RCS Reply"),
-        onClick: async (component) => {
-            const orm = component.message.Model.env.services.orm
-            const numbers = await orm.call("mail.message", 'get_message_numbers', [component.message.id])
-            if (!numbers) {
-                const notification = component.message.Model.env.services.notification
-                notification.add(_t("You can't reply to this message!"), {type: 'danger'})
-                return
-            }
-            component.action.doAction(
-                {
-                    type: "ir.actions.act_window",
-                    target: "new",
-                    name: _t("Send RCS Message"),
-                    res_model: "connect.infobip.rcs_composer",
-                    views: [[false, "form"]],
-                    context: {
-                        default_res_model: component.message.model,
-                        default_res_id: component.message.res_id,
-                        default_phone: numbers.from_number,
-                    },
-                },
-            )
-        },
-        sequence: 122,
-    })
