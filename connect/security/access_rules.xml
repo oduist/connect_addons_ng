@@ -221,4 +221,149 @@
         <field name="perm_unlink" eval="True"/>
     </record>
 
+    <!-- connect.schedule access -->
+    <record id="access_schedule_user" model="ir.model.access">
+        <field name="name">connect.schedule user</field>
+        <field name="model_id" ref="model_connect_schedule"/>
+        <field name="group_id" ref="group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_schedule_admin" model="ir.model.access">
+        <field name="name">connect.schedule admin</field>
+        <field name="model_id" ref="model_connect_schedule"/>
+        <field name="group_id" ref="group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_schedule_webhook" model="ir.model.access">
+        <field name="name">connect.schedule webhook</field>
+        <field name="model_id" ref="model_connect_schedule"/>
+        <field name="group_id" ref="group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.schedule.special_day access -->
+    <record id="access_schedule_special_day_user" model="ir.model.access">
+        <field name="name">connect.schedule.special_day user</field>
+        <field name="model_id" ref="model_connect_schedule_special_day"/>
+        <field name="group_id" ref="group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_schedule_special_day_admin" model="ir.model.access">
+        <field name="name">connect.schedule.special_day admin</field>
+        <field name="model_id" ref="model_connect_schedule_special_day"/>
+        <field name="group_id" ref="group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_schedule_special_day_webhook" model="ir.model.access">
+        <field name="name">connect.schedule.special_day webhook</field>
+        <field name="model_id" ref="model_connect_schedule_special_day"/>
+        <field name="group_id" ref="group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.schedule.slot access (derived data managed by cron/admin) -->
+    <record id="access_schedule_slot_user" model="ir.model.access">
+        <field name="name">connect.schedule.slot user</field>
+        <field name="model_id" ref="model_connect_schedule_slot"/>
+        <field name="group_id" ref="group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_schedule_slot_admin" model="ir.model.access">
+        <field name="name">connect.schedule.slot admin</field>
+        <field name="model_id" ref="model_connect_schedule_slot"/>
+        <field name="group_id" ref="group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- resource.calendar & friends: let Connect admins manage working
+         time without HR roles; Connect users can read them -->
+    <record id="access_resource_calendar_user" model="ir.model.access">
+        <field name="name">resource.calendar connect user</field>
+        <field name="model_id" ref="resource.model_resource_calendar"/>
+        <field name="group_id" ref="group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_resource_calendar_admin" model="ir.model.access">
+        <field name="name">resource.calendar connect admin</field>
+        <field name="model_id" ref="resource.model_resource_calendar"/>
+        <field name="group_id" ref="group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_resource_calendar_attendance_user" model="ir.model.access">
+        <field name="name">resource.calendar.attendance connect user</field>
+        <field name="model_id" ref="resource.model_resource_calendar_attendance"/>
+        <field name="group_id" ref="group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_resource_calendar_attendance_admin" model="ir.model.access">
+        <field name="name">resource.calendar.attendance connect admin</field>
+        <field name="model_id" ref="resource.model_resource_calendar_attendance"/>
+        <field name="group_id" ref="group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_resource_calendar_leaves_user" model="ir.model.access">
+        <field name="name">resource.calendar.leaves connect user</field>
+        <field name="model_id" ref="resource.model_resource_calendar_leaves"/>
+        <field name="group_id" ref="group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_resource_calendar_leaves_admin" model="ir.model.access">
+        <field name="name">resource.calendar.leaves connect admin</field>
+        <field name="model_id" ref="resource.model_resource_calendar_leaves"/>
+        <field name="group_id" ref="group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
 </odoo>

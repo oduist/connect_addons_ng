@@ -193,6 +193,12 @@ connect.settings (singleton — one model, per-provider settings form views)
     +-- connect.debug
     |
     +-- connect.favorite
+    |
+    +-- connect.schedule (working hours on resource.calendar, ADR-037)
+            |
+            +-- connect.schedule.special_day (M2M)
+            |
+            +-- connect.schedule.slot (materialized availability calendar)
 
 res.partner <-- (extended with connect fields)
 res.users   <-- (extended with connect_user link)
@@ -236,6 +242,11 @@ connect.firewall.{whitelist,blacklist,event,agent}
 connect.user gains: freeswitch_exten, freeswitch_exten_number,
 freeswitch_outgoing_callerid, freeswitch_endpoint_ids, webrtc fields;
 originate_provider += 'freeswitch'
+
+connect.freeswitch.number gains (ADR-037): schedule_enabled, schedule_id
+(→ connect.schedule), closed_* after-hours destination fields,
+schedule_prompt_language. connect_freeswitch_website (separate module,
+depends website) adds the public snippets/endpoints on top.
 ```
 
 ### Asterisk models (`connect_asterisk`)

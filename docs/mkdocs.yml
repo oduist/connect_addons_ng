@@ -35,6 +35,7 @@ nav:
       - Telnyx Integration: admin/telnyx-setup.md
       - Infobip Integration: admin/infobip-setup.md
       - Call Parking: admin/parking.md
+      - Working Schedules: admin/working-schedule.md
       - Security: admin/security.md
       - SIP Firewall: admin/firewall.md
   - User Guide:

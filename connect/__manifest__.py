@@ -1,10 +1,10 @@
 {
     'name': 'Oduist Connect',
-    'version': '19.0.4.0.1',
+    'version': '19.0.4.1.0',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Communication platform for Odoo',
-    'depends': ['base', 'mail', 'contacts', 'sms'],
+    'depends': ['base', 'mail', 'contacts', 'sms', 'resource'],
     'external_dependencies': {
         'python': ['phonenumbers', 'jinja2', 'openai', 'PyJWT'],
     },
@@ -27,6 +27,7 @@
         'views/channel_views.xml',
         'views/message_views.xml',
         'views/recording_views.xml',
+        'views/schedule_views.xml',
         'views/debug_views.xml',
         'views/res_partner_views.xml',
         'views/license.xml',
