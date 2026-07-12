@@ -6,7 +6,7 @@
     'summary': 'Dograh AI voice agents for FreeSWITCH',
     'depends': ['connect', 'connect_freeswitch'],
     # No external_dependencies: Dograh is called with plain requests
-    # (inbound run webhook + health check, ADR-037).
+    # (inbound run webhook + health check, ADR-038).
     'data': [
         'security/access_rules.xml',
         'data/fs_templates.xml',

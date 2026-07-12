@@ -31,7 +31,7 @@ class Settings(models.Model):
              'Account ID of the FreeSWITCH telephony provider configured '
              'in Dograh.')
     # Shared secret for both control-plane directions: Odoo -> Dograh
-    # inbound webhooks and Dograh -> Odoo /dograh/api/* callbacks (ADR-037).
+    # inbound webhooks and Dograh -> Odoo /dograh/api/* callbacks (ADR-038).
     dograh_service_token = fields.Char(
         string='Dograh Service Token (Stored)',
         groups='connect.group_admin',

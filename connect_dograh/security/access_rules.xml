@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- connect.dograh.agent: admins manage, users read (ADR-037).
+    <!-- connect.dograh.agent: admins manage, users read (ADR-038).
          No webhook-group access: the dialplan handler and the Dograh
          control-plane endpoints operate via sudo()/settings only. -->
     <record id="access_dograh_agent_admin" model="ir.model.access">

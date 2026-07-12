@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Dograh -> Odoo control-plane endpoints (ADR-037).
+"""Dograh -> Odoo control-plane endpoints (ADR-038).
 
 Dograh's freeswitch provider package calls these to control FreeSWITCH
 channels: only Odoo holds the mod_xml_rpc credentials. All routes are

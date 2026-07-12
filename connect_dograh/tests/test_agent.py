@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for connect.dograh.agent: extension linking and dialplan
-generation against a mocked Dograh inbound-run webhook (ADR-037)."""
+generation against a mocked Dograh inbound-run webhook (ADR-038)."""
 from unittest.mock import patch
 
 from odoo.tests import tagged
