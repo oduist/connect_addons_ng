@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- connect.bird.number access rules -->
+    <record id="access_bird_number_admin" model="ir.model.access">
+        <field name="name">connect.bird.number admin</field>
+        <field name="model_id" ref="model_connect_bird_number"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_bird_number_user" model="ir.model.access">
+        <field name="name">connect.bird.number user</field>
+        <field name="model_id" ref="model_connect_bird_number"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_bird_number_webhook" model="ir.model.access">
+        <field name="name">connect.bird.number webhook</field>
+        <field name="model_id" ref="model_connect_bird_number"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.bird.message_template access rules -->
+    <record id="access_bird_message_template_admin" model="ir.model.access">
+        <field name="name">connect.bird.message_template admin</field>
+        <field name="model_id" ref="model_connect_bird_message_template"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_bird_message_template_user" model="ir.model.access">
+        <field name="name">connect.bird.message_template user</field>
+        <field name="model_id" ref="model_connect_bird_message_template"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Admin-only infrastructure models: no Connect User access. -->
+
+    <!-- connect.bird.message_configuration access rules -->
+    <record id="access_bird_message_configuration_admin" model="ir.model.access">
+        <field name="name">connect.bird.message_configuration admin</field>
+        <field name="model_id" ref="model_connect_bird_message_configuration"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- connect.bird.webhook access rules -->
+    <record id="access_bird_webhook_admin" model="ir.model.access">
+        <field name="name">connect.bird.webhook admin</field>
+        <field name="model_id" ref="model_connect_bird_webhook"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- connect.bird.whatsapp_composer access rules -->
+    <record id="access_bird_whatsapp_composer_admin" model="ir.model.access">
+        <field name="name">connect.bird.whatsapp_composer admin</field>
+        <field name="model_id" ref="model_connect_bird_whatsapp_composer"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_bird_whatsapp_composer_user" model="ir.model.access">
+        <field name="name">connect.bird.whatsapp_composer user</field>
+        <field name="model_id" ref="model_connect_bird_whatsapp_composer"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- sms.composer access (for our override) -->
+    <record id="access_sms_composer_bird_user" model="ir.model.access">
+        <field name="name">sms.composer connect bird user</field>
+        <field name="model_id" ref="sms.model_sms_composer"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+</odoo>

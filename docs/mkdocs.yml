@@ -34,6 +34,7 @@ nav:
       - Asterisk Integration: admin/asterisk-setup.md
       - Telnyx Integration: admin/telnyx-setup.md
       - Infobip Integration: admin/infobip-setup.md
+      - Bird Integration: admin/bird-setup.md
       - Call Parking: admin/parking.md
       - Security: admin/security.md
       - SIP Firewall: admin/firewall.md

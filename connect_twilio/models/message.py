@@ -291,7 +291,12 @@ class ConnectMessage(models.Model):
         res_id=None,
         res_model=None,
         outgoing_callerid=None,
+        **kwargs,
     ):
+        if self.env['connect.settings']._get_message_provider() != 'twilio':
+            return super().send(
+                recipient, body, res_id=res_id, res_model=res_model,
+                outgoing_callerid=outgoing_callerid, **kwargs)
         self.env['oduist.license'].check_license('connect', silent=False)
         sender_user = self.env.user
         message_data = {

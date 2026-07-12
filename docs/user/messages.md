@@ -2,7 +2,9 @@
 
 ## Viewing Messages
 
-Navigate to **Connect > Twilio > Messages > Messages** to see all SMS and WhatsApp messages.
+Navigate to **Connect > Twilio > Messages > Messages** (or **Connect > Bird >
+Messages > Messages** with the Bird integration) to see all SMS and WhatsApp
+messages. Both menus open the same shared message ledger.
 
 Each message shows:
 
@@ -25,15 +27,18 @@ Each message shows:
 4. Enter the message text
 5. Click **Send**
 
-The message is sent via your configured telephony provider and tracked in Connect.
+The message is sent via your configured messaging provider (Twilio or Bird —
+set per user as **Messaging Provider** when both are installed) and tracked
+in Connect.
 
-## Sending WhatsApp Messages (Twilio only)
+## Sending WhatsApp Messages (Twilio and Bird)
 
 ### From a Partner Record
 
 1. Open a partner form
-2. Use the WhatsApp composer action
-3. Select a **WhatsApp sender** number
+2. Use the WhatsApp composer action (**Send WhatsApp** for Twilio,
+   **Send WhatsApp (Bird)** for Bird)
+3. Select a **WhatsApp sender** number (a WhatsApp channel for Bird)
 4. Choose a **message template** (required for first contact or after 24-hour window)
 5. Fill in template variables if needed
 6. Click **Send**
