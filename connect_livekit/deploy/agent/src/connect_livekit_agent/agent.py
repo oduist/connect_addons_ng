@@ -52,6 +52,10 @@ def _find_sip_channel_sid(ctx: JobContext) -> str:
 
 
 async def entrypoint(ctx: JobContext, settings: AgentSettings | None = None):
+    # No settings argument when called by the worker runtime: job
+    # processes are spawned via forkserver, so the entrypoint must be a
+    # picklable module-level function and settings are rebuilt from the
+    # environment inside the child process.
     settings = settings or AgentSettings()
     odoo = OdooClient(settings.odoo_url, settings.agent_token)
 
@@ -127,11 +131,8 @@ def run(settings: AgentSettings | None = None):
     settings = settings or AgentSettings()
     logging.basicConfig(level=settings.log_level.upper())
 
-    async def _entry(ctx: JobContext):
-        await entrypoint(ctx, settings)
-
     agents.cli.run_app(WorkerOptions(
-        entrypoint_fnc=_entry,
+        entrypoint_fnc=entrypoint,
         agent_name=AGENT_NAME,
         ws_url=settings.livekit_url,
         api_key=settings.livekit_api_key,
