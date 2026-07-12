@@ -83,15 +83,15 @@ FreeSWITCH requires the following ports:
 |------|----------|---------|
 | 48082 | TCP | Verto WebSocket Secure (WSS) — browser phone signaling |
 | 16000-17000 | UDP | RTP media — voice audio packets |
-| 65060 | UDP | SIP signaling (if using SIP phones) |
-| 7443 | TCP | SIP WebSocket Secure (if using SIP over WSS) |
+| 5080 | UDP+TCP | SIP signaling (sofia `external` profile) — trunks and SIP phones |
 | 443 | TCP | XML-RPC over HTTPS (Odoo → Traefik → FreeSWITCH commands) |
 | 8080 | TCP | mod_xml_rpc plain HTTP — **internal only**, never expose; Traefik proxies to it |
 
 ```bash
 sudo ufw allow 48082/tcp
 sudo ufw allow 16000:17000/udp
-sudo ufw allow 65060/udp   # only if using SIP phones
+sudo ufw allow 5080/udp
+sudo ufw allow 5080/tcp
 ```
 
 !!! tip "RTP port range"

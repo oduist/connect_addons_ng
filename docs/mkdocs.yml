@@ -28,6 +28,7 @@ nav:
   - Home: index.md
   - Admin Guide:
       - Installation: admin/installation.md
+      - Customer Onboarding (FreeSWITCH): admin/customer-onboarding.md
       - Core Configuration: admin/core-setup.md
       - Twilio Integration: admin/twilio-setup.md
       - FreeSWITCH Integration: admin/freeswitch-setup.md
