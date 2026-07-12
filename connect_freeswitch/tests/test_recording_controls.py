@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest.mock import patch
 
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, UserError
 from odoo.tests import TransactionCase, tagged, new_test_user
 
 
@@ -66,6 +66,11 @@ class TestFreeSwitchRecordingControls(TransactionCase):
 
         def fake_api(command, args=''):
             calls.append((command, args))
+            if command == 'uuid_getvar' and args == 'uuid-1 execute_on_answer':
+                return (
+                    'record_session https://odoo.example.com/freeswitch/'
+                    'webhook/recording/fs-token-1234567890/uuid-1.wav'
+                )
             return self._api_side_effect(command, args)
 
         self.connect_user.record_calls = True
@@ -83,6 +88,71 @@ class TestFreeSwitchRecordingControls(TransactionCase):
             'uuid-1 stop https://odoo.example.com/freeswitch/webhook/'
             'recording/fs-token-1234567890/uuid-1.wav'
         ])
+
+    def test_record_calls_without_record_session_stays_off(self):
+        self.connect_user.record_calls = True
+        with patch.object(type(self.Settings), 'freeswitch_api',
+                          side_effect=self._api_side_effect):
+            result = self.env['connect.channel'].with_user(
+                self.owner_user).get_softphone_recording_state({
+                    'provider': 'freeswitch',
+                    'call_id': 'uuid-1',
+                })
+        self.assertEqual(result['state'], 'off')
+
+    def test_start_failure_resets_busy_state(self):
+        setvars = {}
+
+        def fake_api(command, args=''):
+            if command == 'uuid_setvar':
+                call_id, name, value = args.split(' ', 2)
+                setvars[(call_id, name)] = value
+                return '+OK'
+            if command == 'uuid_record':
+                return '-ERR no such channel'
+            return self._api_side_effect(command, args)
+
+        with patch.object(type(self.Settings), 'freeswitch_api',
+                          side_effect=fake_api):
+            with self.assertRaises(UserError):
+                self.env['connect.channel'].with_user(
+                    self.owner_user).start_softphone_recording({
+                        'provider': 'freeswitch',
+                        'call_id': 'uuid-1',
+                    })
+        self.assertEqual(setvars[('uuid-1', 'odoo_recording_state')], 'off')
+        self.assertIn('no such channel',
+                      setvars[('uuid-1', 'odoo_recording_error')])
+
+    def test_stop_failure_restores_on_state(self):
+        setvars = {}
+
+        def fake_api(command, args=''):
+            if command == 'uuid_getvar' \
+                    and args == 'uuid-1 odoo_recording_path':
+                return (
+                    'https://odoo.example.com/freeswitch/webhook/recording/'
+                    'fs-token-1234567890/uuid-1__seg.wav'
+                )
+            if command == 'uuid_setvar':
+                call_id, name, value = args.split(' ', 2)
+                setvars[(call_id, name)] = value
+                return '+OK'
+            if command == 'uuid_record':
+                return '-ERR no such recording'
+            return self._api_side_effect(command, args)
+
+        with patch.object(type(self.Settings), 'freeswitch_api',
+                          side_effect=fake_api):
+            with self.assertRaises(UserError):
+                self.env['connect.channel'].with_user(
+                    self.owner_user).stop_softphone_recording({
+                        'provider': 'freeswitch',
+                        'call_id': 'uuid-1',
+                    })
+        self.assertEqual(setvars[('uuid-1', 'odoo_recording_state')], 'on')
+        self.assertIn('no such recording',
+                      setvars[('uuid-1', 'odoo_recording_error')])
 
     def test_other_user_cannot_control_uuid(self):
         with patch.object(type(self.Settings), 'freeswitch_api',

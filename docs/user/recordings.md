@@ -18,6 +18,14 @@ Recording can be enabled at multiple levels (configured by your administrator):
 - **Per user** — Enable/disable recording for a specific PBX user
 - **Per call flow** — Enable/disable recording for calls through a specific callflow
 
+### In-Call Recording Control
+
+When runtime recording control is available for your phone provider, the phone
+widget shows a recording button during an active call. Use it to start or stop
+recording for that call. If your administrator enabled automatic recording, the
+button shows the active recording state and can stop the current recording when
+the provider supports it.
+
 ## AI Transcription
 
 When transcription is enabled, recordings are automatically processed:

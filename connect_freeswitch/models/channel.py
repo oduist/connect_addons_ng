@@ -83,12 +83,27 @@ class Channel(models.Model):
         return '{}/{}.wav'.format(base_url, call_id)
 
     @api.model
+    def _freeswitch_has_default_recording(self, call_id):
+        execute_on_answer = self._freeswitch_getvar(
+            call_id, 'execute_on_answer')
+        return 'record_session' in execute_on_answer
+
+    @api.model
+    def _freeswitch_recording_error(self, call_id, state, error):
+        self._freeswitch_setvar(call_id, 'odoo_recording_state', state)
+        self._freeswitch_setvar(call_id, 'odoo_recording_error', str(error))
+
+    @api.model
     def _freeswitch_recording_payload(self, call_id, state=None, path=None, error=''):
         if state is None:
             live_state = self._freeswitch_getvar(
                 call_id, 'odoo_recording_state')
             state = live_state or 'off'
-            if not live_state and self.env.user.connect_user.record_calls:
+            if (
+                not live_state
+                and self.env.user.connect_user.record_calls
+                and self._freeswitch_has_default_recording(call_id)
+            ):
                 state = 'on'
         if path is None:
             path = self._freeswitch_getvar(
@@ -123,9 +138,13 @@ class Channel(models.Model):
         path = '{}/{}__{}.wav'.format(base_url, call_id, recording_ref)
         self._freeswitch_setvar(call_id, 'odoo_recording_state', 'starting')
         self._freeswitch_setvar(call_id, 'odoo_recording_error', '')
-        result = self.env['connect.settings'].sudo().freeswitch_api(
-            'uuid_record', '{} start {}'.format(call_id, path))
-        self._freeswitch_check_result(result, 'start')
+        try:
+            result = self.env['connect.settings'].sudo().freeswitch_api(
+                'uuid_record', '{} start {}'.format(call_id, path))
+            self._freeswitch_check_result(result, 'start')
+        except Exception as e:
+            self._freeswitch_recording_error(call_id, 'off', e)
+            raise
         self._freeswitch_setvar(call_id, 'odoo_recording_state', 'on')
         self._freeswitch_setvar(call_id, 'odoo_recording_ref', recording_ref)
         self._freeswitch_setvar(call_id, 'odoo_recording_path', path)
@@ -139,15 +158,22 @@ class Channel(models.Model):
         path = (
             self._freeswitch_getvar(call_id, 'odoo_recording_path')
             or (payload or {}).get('recording_path')
-            or self._freeswitch_default_recording_path(call_id)
+            or (
+                self._freeswitch_default_recording_path(call_id)
+                if self._freeswitch_has_default_recording(call_id) else ''
+            )
         )
         if not path:
             raise UserError('No active FreeSWITCH recording path was found.')
         self._freeswitch_setvar(call_id, 'odoo_recording_state', 'stopping')
         self._freeswitch_setvar(call_id, 'odoo_recording_error', '')
-        result = self.env['connect.settings'].sudo().freeswitch_api(
-            'uuid_record', '{} stop {}'.format(call_id, path))
-        self._freeswitch_check_result(result, 'stop')
+        try:
+            result = self.env['connect.settings'].sudo().freeswitch_api(
+                'uuid_record', '{} stop {}'.format(call_id, path))
+            self._freeswitch_check_result(result, 'stop')
+        except Exception as e:
+            self._freeswitch_recording_error(call_id, 'on', e)
+            raise
         self._freeswitch_setvar(call_id, 'odoo_recording_state', 'off')
         self._freeswitch_setvar(call_id, 'odoo_recording_ref', '')
         self._freeswitch_setvar(call_id, 'odoo_recording_path', '')
