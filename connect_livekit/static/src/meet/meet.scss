@@ -19,7 +19,8 @@ body:has(#lk-meet) {
         display: flex;
         flex-direction: column;
         gap: 12px;
-        width: min(320px, 90vw);
+        width: 90vw;
+        max-width: 320px;
 
         .lk-title {
             text-align: center;
