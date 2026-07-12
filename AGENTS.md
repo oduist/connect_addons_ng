@@ -14,6 +14,7 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). Owns `connect.asterisk.{endpoint,number}`; AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). **Asterisk** submenu under the Connect app. See ADR-026.
 - **`connect_telnyx`** — Telnyx integration (TeXML-first, ADR-032). Owns `connect.telnyx.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,texml,domain}`; SIP domain = credential connection + TeXML app SIP subdomain, per-user telephony credentials, @telnyx/webrtc phone widget, SMS/WhatsApp/RCS via messaging profile (ADR-033: `connect.telnyx.{whatsapp_sender,whatsapp_template,rcs_agent}` + composers), Ed25519 webhook validation. **Telnyx** submenu under the Connect app.
 - **`connect_infobip`** — Infobip integration (event-driven Calls API, NO TwiML analog — ADR-036). Owns `connect.infobip.{exten,number,outgoing_callerid,user_callflow,message_configuration,whatsapp_sender,whatsapp_template}`; voice = webhook events → REST actions (Dialog bridges, platform-side `connectTimeout`), per-user WebRTC identities (no per-user SIP), vendored infobip-rtc phone widget, SMS + WhatsApp, recordings downloaded into attachments. No IVR/callflows in v1. **Infobip** submenu under the Connect app.
+- **`connect_dograh`** — Dograh AI voice agents on FreeSWITCH (ADR-037). Owns `connect.dograh.agent`; depends on `connect` AND `connect_freeswitch`. Inbound: per-call dialplan posts Dograh's `/inbound/run` webhook and attaches mod_audio_fork (L16/16 kHz) to the returned media WebSocket; outbound: Dograh calls `/dograh/api/originate`. Ships a vendored freeswitch provider package for Dograh under `connect_dograh/deploy/` (overlay image `oduist/dograh-api`). **Dograh** submenu under the Connect app.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
 
 Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx` and `connect_infobip` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module).
@@ -67,6 +68,7 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_asterisk.md` — Asterisk module spec (models, agent contract, controllers, frontend)
 - `specs/connect_telnyx.md` — Telnyx module spec (models, TeXML routing, controllers, frontend)
 - `specs/connect_infobip.md` — Infobip module spec (models, event-driven voice, controllers, frontend)
+- `specs/connect_dograh.md` — Dograh module spec (models, dialplan flow, controllers, vendored Dograh provider package)
 - `docs/` — User and admin documentation (MkDocs Material), see `docs/mkdocs.yml` for structure
 
 ## Development Commands
@@ -143,6 +145,7 @@ Specifically:
 - Asterisk webhook/API routes are under `/asterisk/webhook/*` and `/asterisk/api/*` and require `Authorization: Bearer <asterisk_agent_token>`
 - Telnyx webhook routes are all under `/telnyx/webhook/*` and validate the Ed25519 `telnyx-signature-ed25519` header when enabled
 - Infobip webhook routes are all under `/infobip/webhook/*` and require the shared `infobip_webhook_token` (`?token=` or Basic Auth password) when enabled — Infobip does not sign webhooks
+- Dograh control routes are all under `/dograh/api/*` and require `Authorization: Bearer <dograh_service_token>` (fail-closed; the same shared secret authenticates Odoo→Dograh inbound webhooks)
 - Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`, Infobip WebRTC phone in `connect_infobip/static/src/`
 
 ## FreeSWITCH & Firewall Docker Images
@@ -229,6 +232,7 @@ connect_addons_ng/
 ├── connect_crm/tests/test_*.py
 ├── connect_telnyx/tests/
 ├── connect_infobip/tests/test_*.py
+├── connect_dograh/tests/test_*.py
 └── connect_helpdesk/tests/
 ```
 
@@ -274,6 +278,7 @@ oduflow run_odoo_tests connect_asterisk
 oduflow run_odoo_tests connect_crm
 oduflow run_odoo_tests connect_telnyx
 oduflow run_odoo_tests connect_infobip
+oduflow run_odoo_tests connect_dograh
 oduflow run_odoo_tests connect_helpdesk
 ```
 

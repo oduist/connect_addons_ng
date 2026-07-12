@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+
+    <record id="fs_template_dialplan_dograh_agent" model="connect.freeswitch.template">
+        <field name="key">dialplan_dograh_agent</field>
+        <field name="name">Dialplan - Dograh AI Agent</field>
+        <field name="section">dialplan</field>
+        <field name="description">Routes a call into a Dograh voice-agent workflow run.
+
+Answers, attaches mod_audio_fork (bidirectional raw L16 PCM at 16 kHz)
+to the workflow run's media WebSocket returned by Dograh's inbound
+webhook, optionally starts the standard recording webhook, and parks
+the call. mod_audio_fork metadata stays an empty {} on purpose: the
+module's argument parser splits on whitespace (ADR-037, ADR-035).
+
+Variables:
+  agent_id      - connect.dograh.agent record ID
+  number        - Extension number (regex-escaped)
+  ws_url        - Media WebSocket URL from Dograh (contains run identity)
+  run_id        - Dograh workflow run ID (exported for CDR correlation)
+  record_calls  - Whether to record the session
+  recording_url - Recording webhook base URL (empty disables recording)</field>
+        <field name="content"><![CDATA[<extension name="dograh_agent_{{ agent_id }}">
+  <condition field="destination_number" expression="^{{ number }}$">
+    <action application="answer"/>
+    <action application="sleep" data="500"/>
+    <action application="export" data="odoo_dograh_agent_id={{ agent_id }}"/>
+    <action application="export" data="odoo_dograh_run_id={{ run_id }}"/>
+    <action application="set" data="api_result=${uuid_audio_fork(${uuid} start {{ ws_url }} mono 16k dograh {} true true 16000)}"/>
+    {% if record_calls and recording_url %}
+    <action application="set" data="RECORD_STEREO=true"/>
+    <action application="set" data="media_bug_answer_req=true"/>
+    <action application="record_session" data="{{ recording_url }}/${uuid}.wav"/>
+    {% endif %}
+    <action application="park"/>
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="dograh_agent_{{ agent_id }}">
+  <condition field="destination_number" expression="^{{ number }}$">
+    <action application="answer"/>
+    <action application="sleep" data="500"/>
+    <action application="export" data="odoo_dograh_agent_id={{ agent_id }}"/>
+    <action application="export" data="odoo_dograh_run_id={{ run_id }}"/>
+    <action application="set" data="api_result=${uuid_audio_fork(${uuid} start {{ ws_url }} mono 16k dograh {} true true 16000)}"/>
+    {% if record_calls and recording_url %}
+    <action application="set" data="RECORD_STEREO=true"/>
+    <action application="set" data="media_bug_answer_req=true"/>
+    <action application="record_session" data="{{ recording_url }}/${uuid}.wav"/>
+    {% endif %}
+    <action application="park"/>
+  </condition>
+</extension>]]></field>
+    </record>
+
+    <record id="fs_template_dialplan_dograh_outbound" model="connect.freeswitch.template">
+        <field name="key">dialplan_dograh_outbound</field>
+        <field name="name">Dialplan - Dograh Outbound Leg</field>
+        <field name="section">dialplan</field>
+        <field name="description">Landing extension for Dograh-initiated outbound calls.
+
+connect.settings.dograh_originate dials the destination through an
+outgoing route and hunts the answered leg here. The media WebSocket
+URL rides in the dograh_ws_url channel variable set at originate time,
+so this template needs no render variables.</field>
+        <field name="content"><![CDATA[<extension name="dograh_outbound">
+  <condition field="destination_number" expression=".*">
+    <action application="answer"/>
+    <action application="set" data="api_result=${uuid_audio_fork(${uuid} start ${dograh_ws_url} mono 16k dograh {} true true 16000)}"/>
+    <action application="park"/>
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="dograh_outbound">
+  <condition field="destination_number" expression=".*">
+    <action application="answer"/>
+    <action application="set" data="api_result=${uuid_audio_fork(${uuid} start ${dograh_ws_url} mono 16k dograh {} true true 16000)}"/>
+    <action application="park"/>
+  </condition>
+</extension>]]></field>
+    </record>
+
+</odoo>

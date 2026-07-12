@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- connect.dograh.agent: admins manage, users read (ADR-037).
+         No webhook-group access: the dialplan handler and the Dograh
+         control-plane endpoints operate via sudo()/settings only. -->
+    <record id="access_dograh_agent_admin" model="ir.model.access">
+        <field name="name">connect.dograh.agent.admin</field>
+        <field name="model_id" ref="model_connect_dograh_agent"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="access_dograh_agent_user" model="ir.model.access">
+        <field name="name">connect.dograh.agent.user</field>
+        <field name="model_id" ref="model_connect_dograh_agent"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+
+</odoo>
