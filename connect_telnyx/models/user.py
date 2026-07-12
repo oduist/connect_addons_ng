@@ -128,7 +128,7 @@ class User(models.Model):
         """Lookup connect.user by SIP URI using the Telnyx credential
         usernames (both hardphone and web client)."""
         if not userinfo:
-            return self.env['connect.user']
+            return super().get_user_by_uri(userinfo)
         re_call_uri = re.compile(r'^sip:([^@]+)@')
         found_username = re_call_uri.search(userinfo)
         if found_username:
@@ -139,8 +139,8 @@ class User(models.Model):
                 ('telnyx_client_username', '=', username)])
             if user:
                 debug(self, 'Found user: {} by {}.'.format(user.name, userinfo))
-            return user
-        return self.env['connect.user']
+                return user
+        return super().get_user_by_uri(userinfo)
 
     def get_user_by_telnyx_uri(self, userinfo):
         return self.get_user_by_uri(userinfo)

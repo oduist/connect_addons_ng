@@ -1,4 +1,4 @@
-# 034: Telnyx AI Assistants remain behind the Odoo TeXML router
+# 035: Telnyx AI Assistants remain behind the Odoo TeXML router
 
 ## Context
 

@@ -15,7 +15,7 @@ class OutgoingCallerID(models.Model):
 
     LiveKit has no caller-ID validation API, so this model only holds
     numbers the carrier allows on the linked outbound trunk; the number
-    list is pushed onto the LiveKit outbound trunk (ADR-037).
+    list is pushed onto the LiveKit outbound trunk (ADR-036).
     """
     _name = 'connect.livekit.outgoing_callerid'
     _description = 'LiveKit Outgoing CallerId'

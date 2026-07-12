@@ -81,7 +81,7 @@
               sequence="10"/>
 
     <!-- Contextual "New LiveKit Meeting" action on partners (admin-only:
-         the room model has no user-group ACLs per ADR-037). -->
+         the room model has no user-group ACLs per ADR-036). -->
     <record id="action_livekit_room_from_partner" model="ir.actions.act_window">
         <field name="name">New LiveKit Meeting</field>
         <field name="res_model">connect.livekit.room</field>

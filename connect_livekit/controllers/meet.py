@@ -2,7 +2,7 @@
 """Public meeting page.
 
 Guests authenticate purely by the unguessable guest_token in the URL
-(ADR-037); logged-in internal users join under their real identity so
+(ADR-036); logged-in internal users join under their real identity so
 their ledger channels resolve to connect.user.
 """
 import json

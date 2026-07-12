@@ -2,7 +2,7 @@
 
 Kept separate from agent.py so the model/plugin wiring can be unit
 tested without the LiveKit worker runtime. The plugin cascade mirrors
-the per-agent choices made in Odoo (ADR-037).
+the per-agent choices made in Odoo (ADR-036).
 """
 from __future__ import annotations
 

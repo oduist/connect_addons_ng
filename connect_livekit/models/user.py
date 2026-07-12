@@ -16,7 +16,7 @@ class User(models.Model):
 
     Every field/method contributed here carries the livekit_ prefix so
     the module co-installs with the other providers on this shared
-    ledger model (ADR-031/ADR-037). LiveKit has no SIP registrar, so
+    ledger model (ADR-031/ADR-036). LiveKit has no SIP registrar, so
     there is no hardphone credential pair — only the web phone, which
     joins rooms with short-TTL JWTs.
     """
@@ -78,7 +78,7 @@ class User(models.Model):
     @api.model
     def get_livekit_phone_config(self):
         """Web phone bootstrap for the systray widget (sudo inside:
-        connect_livekit models are admin-only per ADR-037)."""
+        connect_livekit models are admin-only per ADR-036)."""
         settings = self.env['connect.settings'].sudo()
         connect_user = self.env.user.connect_user
         if (not connect_user or not connect_user.sudo().livekit_client_enabled

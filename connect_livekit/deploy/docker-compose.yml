@@ -1,4 +1,4 @@
-# Self-hosted LiveKit stack paired with one Odoo instance (ADR-037).
+# Self-hosted LiveKit stack paired with one Odoo instance (ADR-036).
 # Copy .env.example to .env and fill in the secrets before starting.
 #
 # NOTE on SIP/RTP and NAT: the port-mapped setup below works when the

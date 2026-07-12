@@ -1,4 +1,4 @@
-# 037: connect_livekit — LiveKit provider module (self-hosted, rooms + SIP + AI agents)
+# 036: connect_livekit — LiveKit provider module (self-hosted, rooms + SIP + AI agents)
 
 ## Problem
 

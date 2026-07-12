@@ -23,7 +23,7 @@ class LivekitAgent(models.Model):
     Unlike Telnyx AI assistants there is no remote copy to sync: the
     worker pulls this configuration from Odoo at dispatch time
     (/livekit/api/agent_config), so edits apply to the next call
-    immediately (ADR-037).
+    immediately (ADR-036).
     """
     _name = 'connect.livekit.agent'
     _description = 'LiveKit AI Agent'
@@ -38,7 +38,7 @@ class LivekitAgent(models.Model):
         ('pipeline', 'STT → LLM → TTS'),
         ('realtime', 'OpenAI Realtime'),
     ], default='pipeline', required=True)
-    # Plugin cascade (owner decision, ADR-037): per-agent provider choice.
+    # Plugin cascade (owner decision, ADR-036): per-agent provider choice.
     stt_provider = fields.Selection([
         ('deepgram', 'Deepgram'),
         ('openai', 'OpenAI Whisper'),

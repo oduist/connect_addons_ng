@@ -8,7 +8,7 @@ from odoo.addons.connect.models.settings import debug
 
 logger = logging.getLogger(__name__)
 
-# Room-name prefixes tracked in the ledger (ADR-037). Other rooms on the
+# Room-name prefixes tracked in the ledger (ADR-036). Other rooms on the
 # same LiveKit server are ignored.
 LIVEKIT_ROOM_PREFIXES = ('meet-', 'did-', 'out-', 'ai-out-')
 

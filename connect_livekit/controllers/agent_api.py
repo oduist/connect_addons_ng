@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Bootstrap API for the oduist/livekit-agent worker.
 
-Follows the asterisk-agent pattern (ADR-026/ADR-037):
+Follows the asterisk-agent pattern (ADR-026/ADR-036):
 ``Authorization: Bearer <livekit_agent_token>`` checked with
 ``secrets.compare_digest``, then ``sudo()``.
 """

@@ -15,7 +15,7 @@ from odoo.addons.connect.models.settings import debug
 logger = logging.getLogger(__name__)
 
 # The worker registers under this agent name; dispatch is explicit only
-# (ADR-037).
+# (ADR-036).
 LIVEKIT_AGENT_NAME = 'connect-livekit-agent'
 
 

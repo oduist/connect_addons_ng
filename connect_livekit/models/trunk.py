@@ -20,7 +20,7 @@ SIP_TRANSPORTS = {
 class LivekitTrunk(models.Model):
     """A BYO carrier SIP trunk registered on the LiveKit SIP bridge.
 
-    Odoo is the source of truth (ADR-037): saving pushes the trunk to
+    Odoo is the source of truth (ADR-036): saving pushes the trunk to
     LiveKit (delete + create — trunk updates re-issue the sid, and the
     numbers re-push their dispatch rules right after in sync()).
     """

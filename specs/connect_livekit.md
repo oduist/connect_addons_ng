@@ -14,7 +14,7 @@
 
 The `connect_livekit` module integrates a **self-hosted LiveKit stack**
 (WebRTC SFU + SIP bridge + Egress recording + Agents framework) with the
-Connect platform (ADR-037). It delivers three feature levels:
+Connect platform (ADR-036). It delivers three feature levels:
 
 1. **Video rooms** (`connect.livekit.room`) — meetings created from Odoo,
    public guest links (`/livekit/meet/<guest_token>`), Egress recording
@@ -35,7 +35,7 @@ models; inbound routing is dispatch-rule based. The caller-ID
 E.164/is_default logic is a deliberate copy of the other providers
 (ADR-031 — no mixins).
 
-**Access rights (owner decision, ADR-037):** all module models are
+**Access rights (owner decision, ADR-036):** all module models are
 admin-only. `connect.group_user` has no ACLs; browser features go through
 model methods with internal sudo. `connect.group_webhook` gets read-only
 rows needed by the webhook controllers.
@@ -46,7 +46,7 @@ Room-name prefixes encode the scenario and drive the ledger mapping:
 `connect.channel` (sid = participant SID / `sip.callID`), one room = one
 `connect.call` (`livekit_room_name`, indexed).
 
-### v1 scope exclusions (ADR-037)
+### v1 scope exclusions (ADR-036)
 
 Internal user↔user calls, attended transfer, video over SIP, hardphone
 SIP registration (livekit-sip has no registrar), LiveKit Cloud phone
@@ -183,5 +183,5 @@ multi-arch amd64+arm64.
 
 All `connect.livekit.*` models: admin full CRUD, webhook read where the
 controllers need it (agent, number, room), **no user-group rows**
-(ADR-037 owner decision). Secrets (`livekit_api_secret`, AI keys,
+(ADR-036 owner decision). Secrets (`livekit_api_secret`, AI keys,
 `livekit_agent_token`, `tool_token`) never reach the webhook group.

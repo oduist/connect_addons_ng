@@ -6,7 +6,7 @@ Authorization header, signed with the API key/secret) and dispatches to
 the ledger under the core webhook user. /livekit/webhook/recording/*
 receives egress files from the uploader sidecar authenticated with
 ``Authorization: Bearer <livekit_agent_token>`` (the asterisk-agent
-pattern, ADR-037).
+pattern, ADR-036).
 """
 import base64
 import hmac

@@ -240,7 +240,6 @@ extension) with Twilio SID, webhook URLs, sync and call routing.
 |-------|------|-------|
 | `phone_number` | Char | Required, `UNIQUE` |
 | `friendly_name` | Char | |
-| `is_default` | Boolean | |
 | `destination` | Selection | `user`, `callflow`, `twiml` |
 | `callflow` | Many2one | `connect.twilio.callflow` |
 | `user` | Many2one | `connect.user` |

@@ -1,7 +1,7 @@
 # Self-hosted LiveKit stack for connect_livekit
 
 One stack pairs with exactly one Odoo instance (the webhook URL in
-`livekit.yaml` is stack-global, ADR-037).
+`livekit.yaml` is stack-global, ADR-036).
 
 ## Services
 

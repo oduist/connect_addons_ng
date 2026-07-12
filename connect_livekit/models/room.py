@@ -23,7 +23,7 @@ class LivekitRoom(models.Model):
     _order = 'id desc'
 
     name = fields.Char(required=True)
-    # LiveKit room name; the meet- prefix drives the ledger mapping (ADR-037).
+    # LiveKit room name; the meet- prefix drives the ledger mapping (ADR-036).
     room_name = fields.Char(readonly=True, copy=False, index=True)
     sid = fields.Char('SID', readonly=True, copy=False)
     state = fields.Selection([

@@ -1,7 +1,7 @@
 """LiveKit Agents worker entrypoint.
 
 Registered under the agent name ``connect-livekit-agent`` (explicit
-dispatch only, ADR-037). On dispatch it reads ``agent_id`` from the job
+dispatch only, ADR-036). On dispatch it reads ``agent_id`` from the job
 metadata, pulls the agent configuration from Odoo, builds an
 AgentSession with the per-agent plugin cascade, runs the conversation
 under a time limit and posts the transcript back to Odoo on close.

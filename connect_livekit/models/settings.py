@@ -68,7 +68,7 @@ class Settings(models.Model):
     livekit_worker_last_seen = fields.Char(readonly=True)
     # AI provider keys for the voice-agent worker. Named without the
     # livekit_ prefix on purpose: like openai_api_key in core these are
-    # vendor keys, not LiveKit resources (ADR-037).
+    # vendor keys, not LiveKit resources (ADR-036).
     deepgram_api_key = fields.Char(groups="base.group_erp_manager")
     display_deepgram_api_key = fields.Char(string="Deepgram API Key")
     elevenlabs_api_key = fields.Char(groups="base.group_erp_manager")

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- ADR-037 (owner decision): all connect_livekit models are
+    <!-- ADR-036 (owner decision): all connect_livekit models are
          admin-only. The Connect User group gets NO rows here; browser
          features (web phone tokens, guest meet join) go through model
          methods with internal sudo. Webhook handlers also run their
