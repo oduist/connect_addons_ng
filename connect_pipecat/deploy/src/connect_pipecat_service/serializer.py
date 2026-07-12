@@ -49,6 +49,7 @@ class AudioForkFrameSerializer(FrameSerializer):
 
     async def serialize(self, frame: Frame) -> str | bytes | None:
         if isinstance(frame, InterruptionFrame):
+            logger.info('Sending killAudio to FreeSWITCH for caller barge-in')
             return json.dumps({'type': 'killAudio'})
         if isinstance(frame, AudioRawFrame):
             audio = await self._output_resampler.resample(
