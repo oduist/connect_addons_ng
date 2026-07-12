@@ -33,6 +33,7 @@ nav:
       - FreeSWITCH Integration: admin/freeswitch-setup.md
       - Asterisk Integration: admin/asterisk-setup.md
       - Telnyx Integration: admin/telnyx-setup.md
+      - LiveKit Integration: admin/livekit-setup.md
       - Call Parking: admin/parking.md
       - Security: admin/security.md
       - SIP Firewall: admin/firewall.md
@@ -41,6 +42,7 @@ nav:
       - Making and Receiving Calls: user/calls.md
       - Call Parking: user/parking.md
       - Messages (SMS & WhatsApp): user/messages.md
+      - Video Meetings: user/meetings.md
       - Recordings & Transcriptions: user/recordings.md
       - Call Flows (IVR): user/callflows.md
 
