@@ -402,8 +402,7 @@ incoming. See **`specs/decisions/028-cdr-direction-from-dialplan-variable.md`**.
 
 ## Tests
 
-`tests/test_firewall.py` (gated test suite — symlinked from
-`tests_suite/connect_freeswitch/tests/`) covers:
+`connect_freeswitch/tests/test_firewall.py` covers:
 
 * whitelist / blacklist IP+CIDR validation and uniqueness;
 * token validator on `connect.settings`;
