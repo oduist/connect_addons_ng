@@ -296,14 +296,19 @@ class Schedule(models.Model):
                         'start': utc(start), 'stop': utc(stop),
                     })
                 for start, stop, leave in day['leaves']:
+                    allday = start <= day_start and stop >= day_stop
                     vals_list.append({
                         'schedule_id': rec.id,
                         'slot_type': 'holiday',
                         'name': '{}: {}'.format(
                             rec.name,
                             leave.name or self.env._('Public Holiday')),
-                        'start': utc(start), 'stop': utc(stop),
-                        'allday': start <= day_start and stop >= day_stop,
+                        'start': utc(start),
+                        # All-day events ending exactly at next midnight
+                        # would render on the next day too.
+                        'stop': utc(stop - timedelta(seconds=1))
+                        if allday else utc(stop),
+                        'allday': allday,
                     })
                 for start, stop, special in day['specials']:
                     vals_list.append({
@@ -318,7 +323,8 @@ class Schedule(models.Model):
                         'slot_type': 'closed',
                         'name': '{}: {}'.format(
                             rec.name, self.env._('Closed')),
-                        'start': utc(day_start), 'stop': utc(day_stop),
+                        'start': utc(day_start),
+                        'stop': utc(day_stop - timedelta(seconds=1)),
                         'allday': True,
                     })
             Slot.create(vals_list)

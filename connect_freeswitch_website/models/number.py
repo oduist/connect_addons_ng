@@ -9,4 +9,4 @@ class Number(models.Model):
     # reads the `name` field of the model it browses, but the number model
     # uses phone_number as _rec_name and has no `name` column. Mirror it so
     # the snippet options "Phone Number" picker works.
-    name = fields.Char(related='phone_number')
+    name = fields.Char(related='phone_number', string='Name')
