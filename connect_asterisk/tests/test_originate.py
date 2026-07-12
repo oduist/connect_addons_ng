@@ -2,7 +2,7 @@
 """Click-to-call originate tests with a mocked agent."""
 from unittest.mock import patch, MagicMock
 
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.tests import tagged
 
 from .common import AsteriskTestCommon
@@ -96,7 +96,7 @@ class TestOriginate(AsteriskTestCommon):
     def test_originate_without_pbx_user_raises(self):
         user = self.env['res.users'].create({
             'name': 'No PBX', 'login': 'ast_no_pbx'})
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(UserError):
             self.Settings.with_user(user).originate_call('15551234567')
 
     def test_originate_without_enabled_endpoint_raises(self):
