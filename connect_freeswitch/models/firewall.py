@@ -2,6 +2,7 @@
 import ipaddress
 import logging
 from datetime import timedelta
+from urllib.parse import quote
 
 import requests
 
@@ -16,15 +17,53 @@ SYNC_HTTP_TIMEOUT = 3  # seconds; reconcile cron is the safety net for misses
 _GROUP_USERS_FIELD = 'user_ids' if release.version_info[0] >= 19 else 'users'
 
 
-def _validate_ip_or_cidr(value):
+def _normalize_ip_or_cidr(value):
+    """Validate and canonicalize an IP or CIDR of either family.
+
+    Returns the same spelling ipset prints back (compressed lowercase
+    IPv6, host entries without the /32 or /128 suffix, the network
+    address for CIDRs, IPv4-mapped IPv6 unwrapped to plain IPv4) so the
+    firewall service's string-diff sync and the duplicate constraint
+    both compare canonical values. Mirrors net_utils.normalize_entry in
+    the service (deliberate copy — Odoo does not import service code).
+    """
     if not value:
         raise ValidationError("IP address or CIDR is required.")
+    text = str(value).strip()
     try:
-        ipaddress.ip_network(value, strict=False)
+        addr = ipaddress.ip_address(text)
+    except ValueError:
+        pass
+    else:
+        mapped = getattr(addr, "ipv4_mapped", None)
+        return str(mapped or addr)
+    try:
+        net = ipaddress.ip_network(text, strict=False)
     except ValueError as exc:
         raise ValidationError(
             "Invalid IP or CIDR '{}': {}".format(value, exc)
         )
+    if (
+        net.version == 6
+        and net.prefixlen >= 96
+        and net.network_address.ipv4_mapped is not None
+        and net.broadcast_address.ipv4_mapped is not None
+    ):
+        net = ipaddress.ip_network(
+            "{}/{}".format(net.network_address.ipv4_mapped, net.prefixlen - 96),
+            strict=False,
+        )
+    if net.prefixlen == net.max_prefixlen:
+        return str(net.network_address)
+    return str(net)
+
+
+def _safe_normalize(value):
+    """Best-effort normalization for stored rows; None on invalid data."""
+    try:
+        return _normalize_ip_or_cidr(value)
+    except ValidationError:
+        return None
 
 
 class FirewallWhitelist(models.Model):
@@ -36,7 +75,8 @@ class FirewallWhitelist(models.Model):
     ip_or_cidr = fields.Char(
         string="IP or CIDR",
         required=True,
-        help="Single IP (1.2.3.4) or CIDR network (1.2.3.0/24).",
+        help="Single IP (1.2.3.4 or 2001:db8::1) or CIDR network "
+             "(1.2.3.0/24 or 2001:db8::/64).",
     )
     active = fields.Boolean(default=True)
     note = fields.Text()
@@ -44,11 +84,13 @@ class FirewallWhitelist(models.Model):
     @api.constrains("ip_or_cidr")
     def _check_ip_or_cidr(self):
         for rec in self:
-            _validate_ip_or_cidr(rec.ip_or_cidr)
-            duplicates = self.search_count([
-                ("id", "!=", rec.id),
-                ("ip_or_cidr", "=", rec.ip_or_cidr),
-            ])
+            normalized = _normalize_ip_or_cidr(rec.ip_or_cidr)
+            # Compare on normalized values so textual variants of the
+            # same entry (incl. legacy pre-normalization rows) collide.
+            duplicates = [
+                other for other in self.search([("id", "!=", rec.id)])
+                if _safe_normalize(other.ip_or_cidr) == normalized
+            ]
             if duplicates:
                 raise ValidationError(
                     "{} is already in the whitelist.".format(rec.ip_or_cidr)
@@ -56,11 +98,16 @@ class FirewallWhitelist(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("ip_or_cidr"):
+                vals["ip_or_cidr"] = _normalize_ip_or_cidr(vals["ip_or_cidr"])
         recs = super().create(vals_list)
         self.env["connect.firewall.agent"]._trigger_sync("whitelist")
         return recs
 
     def write(self, vals):
+        if vals.get("ip_or_cidr"):
+            vals = dict(vals, ip_or_cidr=_normalize_ip_or_cidr(vals["ip_or_cidr"]))
         res = super().write(vals)
         self.env["connect.firewall.agent"]._trigger_sync("whitelist")
         return res
@@ -80,7 +127,8 @@ class FirewallBlacklist(models.Model):
     ip_or_cidr = fields.Char(
         string="IP or CIDR",
         required=True,
-        help="Single IP (1.2.3.4) or CIDR network (1.2.3.0/24).",
+        help="Single IP (1.2.3.4 or 2001:db8::1) or CIDR network "
+             "(1.2.3.0/24 or 2001:db8::/64).",
     )
     active = fields.Boolean(default=True)
     note = fields.Text()
@@ -88,11 +136,13 @@ class FirewallBlacklist(models.Model):
     @api.constrains("ip_or_cidr")
     def _check_ip_or_cidr(self):
         for rec in self:
-            _validate_ip_or_cidr(rec.ip_or_cidr)
-            duplicates = self.search_count([
-                ("id", "!=", rec.id),
-                ("ip_or_cidr", "=", rec.ip_or_cidr),
-            ])
+            normalized = _normalize_ip_or_cidr(rec.ip_or_cidr)
+            # Compare on normalized values so textual variants of the
+            # same entry (incl. legacy pre-normalization rows) collide.
+            duplicates = [
+                other for other in self.search([("id", "!=", rec.id)])
+                if _safe_normalize(other.ip_or_cidr) == normalized
+            ]
             if duplicates:
                 raise ValidationError(
                     "{} is already in the blacklist.".format(rec.ip_or_cidr)
@@ -100,11 +150,16 @@ class FirewallBlacklist(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("ip_or_cidr"):
+                vals["ip_or_cidr"] = _normalize_ip_or_cidr(vals["ip_or_cidr"])
         recs = super().create(vals_list)
         self.env["connect.firewall.agent"]._trigger_sync("blacklist")
         return recs
 
     def write(self, vals):
+        if vals.get("ip_or_cidr"):
+            vals = dict(vals, ip_or_cidr=_normalize_ip_or_cidr(vals["ip_or_cidr"]))
         res = super().write(vals)
         self.env["connect.firewall.agent"]._trigger_sync("blacklist")
         return res
@@ -317,7 +372,9 @@ class FirewallAgent(models.Model):
     @api.model
     def _call_service_unban(self, ip: str) -> tuple[bool, str]:
         """DELETE /firewall/api/bans/<ip> on the service."""
-        url, token = self._service_endpoint("/firewall/api/bans/" + ip)
+        url, token = self._service_endpoint(
+            "/firewall/api/bans/" + quote(str(ip), safe="")
+        )
         if not url:
             return False, _("Firewall service is not configured.")
         try:

@@ -20,7 +20,8 @@ from .config import (
     runtime_cache_keys,
     save_runtime_cache,
 )
-from .constants import IPSET_BLACKLIST, IPSET_WHITELIST
+from .constants import IPSET_BLACKLIST, IPSET_WHITELIST, IPV6_SET_SUFFIX
+from .net_utils import normalize_entry
 from .odoo_client import OdooClient
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,30 @@ def _format_comment(record: dict) -> str:
     # ipset comments cap at 255 chars; ipset rejects newlines.
     text = " — ".join(p for p in parts if p)
     return text.replace("\n", " ")[:255]
+
+
+def _split_by_family(rows: list) -> tuple[list, list]:
+    """Turn Odoo whitelist/blacklist rows into per-family (entry, comment)
+    pairs, normalized to ipset's canonical spelling. Rows that don't
+    parse as an IP or CIDR are skipped with a warning."""
+    v4, v6 = [], []
+    for record in rows:
+        raw = record.get("ip_or_cidr")
+        try:
+            entry, version = normalize_entry(raw)
+        except (TypeError, ValueError):
+            logger.warning("Skipping invalid list entry from Odoo: %r", raw)
+            continue
+        (v4 if version == 4 else v6).append((entry, _format_comment(record)))
+    return v4, v6
+
+
+def _sync_list(base_set: str, rows: list) -> tuple[int, int]:
+    """Reconcile both family sets of a whitelist/blacklist pair."""
+    v4, v6 = _split_by_family(rows)
+    a4, r4 = ipset_manager.replace_contents(base_set, v4)
+    a6, r6 = ipset_manager.replace_contents(base_set + IPV6_SET_SUFFIX, v6)
+    return a4 + a6, r4 + r6
 
 
 class Reconciler:
@@ -87,17 +112,11 @@ class Reconciler:
                 await self._apply_settings(cfg)
         if scope in ("all", "whitelist"):
             wl = await self.odoo.get("/whitelist") or []
-            added, removed = ipset_manager.replace_contents(
-                IPSET_WHITELIST,
-                ((r["ip_or_cidr"], _format_comment(r)) for r in wl),
-            )
+            added, removed = _sync_list(IPSET_WHITELIST, wl)
             logger.info("whitelist sync: +%s -%s", added, removed)
         if scope in ("all", "blacklist"):
             bl = await self.odoo.get("/blacklist") or []
-            added, removed = ipset_manager.replace_contents(
-                IPSET_BLACKLIST,
-                ((r["ip_or_cidr"], _format_comment(r)) for r in bl),
-            )
+            added, removed = _sync_list(IPSET_BLACKLIST, bl)
             logger.info("blacklist sync: +%s -%s", added, removed)
 
     async def run(self) -> None:
