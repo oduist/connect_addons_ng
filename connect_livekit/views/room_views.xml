@@ -89,7 +89,7 @@
         <field name="target">current</field>
         <field name="binding_model_id" ref="base.model_res_partner"/>
         <field name="binding_view_types">form</field>
-        <field name="groups_id" eval="[(4, ref('connect.group_admin'))]"/>
+        <field name="group_ids" eval="[(4, ref('connect.group_admin'))]"/>
         <field name="context">{'default_partner': active_id}</field>
     </record>
 </odoo>
