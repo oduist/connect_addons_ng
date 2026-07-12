@@ -3,6 +3,8 @@ import logging
 import re
 from urllib.parse import urljoin
 
+import requests
+
 from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError
 from telnyx import Telnyx
@@ -22,6 +24,8 @@ MAX_EXTEN_LEN = 4
 TELNYX_PROTECTED_FIELDS = [
     "display_telnyx_api_key",
 ]
+
+TELNYX_API_BASE = "https://api.telnyx.com/v2/"
 
 
 def format_connect_response(text):
@@ -58,6 +62,8 @@ class Settings(models.Model):
     # endpoint for it (ADR-032).
     telnyx_account_sid = fields.Char(string="Telnyx Account SID")
     telnyx_messaging_profile_id = fields.Char(readonly=True)
+    telnyx_ai_summary_insight_id = fields.Char(readonly=True)
+    telnyx_ai_summary_group_id = fields.Char(readonly=True)
     telnyx_balance = fields.Char(readonly=True)
     telnyx_auto_sync = fields.Boolean(default=True)
     telnyx_verify_requests = fields.Boolean(
@@ -79,6 +85,59 @@ class Settings(models.Model):
         public_key = self.sudo().get_param("telnyx_public_key")
         return Telnyx(api_key=api_key, public_key=public_key or None)
 
+    @api.model
+    def telnyx_api_request(self, method, path, payload=None, params=None,
+                           timeout=20):
+        """Call Telnyx v2 endpoints not consistently exposed by SDK releases.
+
+        The account key never appears in error messages or debug output.  The
+        returned value is the decoded JSON body; callers normalize the few
+        endpoints that wrap their result in ``data`` themselves.
+        """
+        api_key = self.sudo().get_param("telnyx_api_key")
+        if not api_key:
+            raise ValidationError("Set Telnyx API key first!")
+        url = urljoin(TELNYX_API_BASE, path.lstrip("/"))
+        try:
+            response = requests.request(
+                method.upper(), url,
+                headers={
+                    "Authorization": "Bearer {}".format(api_key),
+                    "Accept": "application/json",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                params=params,
+                timeout=timeout,
+            )
+        except requests.RequestException as exc:
+            raise ValidationError(
+                "Telnyx API request failed: {}".format(exc)
+            ) from exc
+        if response.status_code >= 400:
+            try:
+                body = response.json()
+                detail = (
+                    body.get("errors") or body.get("detail")
+                    or body.get("message") or body.get("error")
+                )
+            except ValueError:
+                detail = None
+            raise ValidationError(
+                "Telnyx API returned HTTP {}{}".format(
+                    response.status_code,
+                    ": {}".format(detail) if detail else "",
+                )
+            )
+        if response.status_code == 204 or not response.content:
+            return {}
+        try:
+            return response.json()
+        except ValueError as exc:
+            raise ValidationError(
+                "Telnyx API returned an invalid JSON response."
+            ) from exc
+
     def telnyx_sync(self):
         if not self.sudo().get_param("telnyx_api_key"):
             raise ValidationError("You must set the Telnyx API key!")
@@ -88,6 +147,7 @@ class Settings(models.Model):
         try:
             self._ensure_telnyx_messaging_profile()
             self.env["connect.telnyx.texml"].sync()
+            self.env["connect.telnyx.ai_assistant"].sync()
             self.env["connect.telnyx.domain"].sync()
             self.env["connect.telnyx.number"].sync()
             self.env["connect.telnyx.outgoing_callerid"].sync()

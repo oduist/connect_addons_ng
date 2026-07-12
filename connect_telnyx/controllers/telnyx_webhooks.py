@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+import hmac
 
 from odoo.http import request, Controller, route
 from telnyx.lib.webhook_verification import (
@@ -9,6 +10,8 @@ from telnyx.lib.webhook_verification import (
 )
 
 logger = logging.getLogger(__name__)
+
+MAX_AI_WEBHOOK_BYTES = 64 * 1024
 
 
 class ConnectTelnyxController(Controller):
@@ -124,3 +127,110 @@ class ConnectTelnyxController(Controller):
         message = request.env['connect.message'].with_user(request.env.ref("connect.user_connect_webhook"))
         res = message.telnyx_receive(event)
         return f'{res}'
+
+    @staticmethod
+    def _ai_json_body():
+        raw = request.httprequest.get_data() or b'{}'
+        if len(raw) > MAX_AI_WEBHOOK_BYTES:
+            return None
+        try:
+            value = json.loads(raw)
+        except (TypeError, ValueError):
+            return None
+        return value if isinstance(value, dict) else None
+
+    @route(
+        '/telnyx/webhook/assistant/<int:assistant_id>/variables',
+        methods=['POST'], type='http', auth='public', csrf=False,
+    )
+    def assistant_variables_webhook(self, assistant_id, **kw):
+        if not self.check_signature():
+            return request.make_json_response(
+                {'error': 'invalid_signature'}, status=403)
+        event = self._ai_json_body()
+        if event is None:
+            return request.make_json_response(
+                {'error': 'invalid_json'}, status=400)
+        assistant = request.env[
+            'connect.telnyx.ai_assistant'
+        ].with_user(request.env.ref('connect.user_connect_webhook')).browse(
+            assistant_id)
+        if not assistant.exists():
+            return request.make_json_response(
+                {'error': 'assistant_not_found'}, status=404)
+        payload = (event.get('data') or {}).get('payload') or event.get(
+            'payload') or {}
+        if payload.get('assistant_id') not in (None, assistant.sid):
+            return request.make_json_response(
+                {'error': 'assistant_mismatch'}, status=403)
+        call = request.env['connect.call'].with_user(
+            request.env.ref('connect.user_connect_webhook')
+        ).telnyx_link_ai_conversation(payload)
+        phone = payload.get('telnyx_end_user_target')
+        partner = request.env['res.partner'].sudo().get_partner_by_number(
+            phone) if phone else request.env['res.partner']
+        if call and partner and not call.partner:
+            call.sudo().partner = partner
+        result = {
+            'dynamic_variables': assistant._partner_values(partner),
+            'conversation': {
+                'metadata': {
+                    'odoo_assistant_id': str(assistant.id),
+                    'odoo_partner_id': str(partner.id) if partner else '',
+                }
+            },
+        }
+        if assistant.memory_enabled and phone:
+            result['memory'] = {
+                'conversation_query': (
+                    'metadata->telnyx_end_user_target=eq.{}&limit=5'
+                    '&order=last_message_at.desc'.format(phone)
+                )
+            }
+        return request.make_json_response(result)
+
+    @route(
+        '/telnyx/webhook/assistant/<int:assistant_id>/tool/<string:tool_name>',
+        methods=['POST'], type='http', auth='public', csrf=False,
+    )
+    def assistant_tool_webhook(self, assistant_id, tool_name, **kw):
+        assistant = request.env['connect.telnyx.ai_assistant'].sudo().browse(
+            assistant_id)
+        supplied = request.httprequest.headers.get(
+            'X-Odoo-Telnyx-Token', '')
+        expected = assistant.tool_token or '' if assistant.exists() else ''
+        if not expected or not hmac.compare_digest(supplied, expected):
+            return request.make_json_response(
+                {'error': 'unauthorized'}, status=403)
+        payload = self._ai_json_body()
+        if payload is None:
+            return request.make_json_response(
+                {'error': 'invalid_json'}, status=400)
+        try:
+            result = assistant.execute_tool(
+                tool_name, payload,
+                call_control_id=request.httprequest.headers.get(
+                    'x-telnyx-call-control-id'),
+            )
+        except Exception as exc:
+            logger.warning('Telnyx AI tool %s failed: %s', tool_name, exc)
+            return request.make_json_response(
+                {'ok': False, 'error': str(exc)}, status=400)
+        return request.make_json_response(result)
+
+    @route(
+        '/telnyx/webhook/assistant/insights',
+        methods=['POST'], type='http', auth='public', csrf=False,
+    )
+    def assistant_insights_webhook(self, **kw):
+        if not self.check_signature():
+            return request.make_json_response(
+                {'error': 'invalid_signature'}, status=403)
+        payload = self._ai_json_body()
+        if payload is None:
+            return request.make_json_response(
+                {'error': 'invalid_json'}, status=400)
+        request.env['connect.call'].with_user(
+            request.env.ref('connect.user_connect_webhook')
+        ).telnyx_apply_ai_insights(payload)
+        return request.make_json_response({'ok': True})
