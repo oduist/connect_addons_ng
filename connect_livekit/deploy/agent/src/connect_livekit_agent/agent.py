@@ -60,6 +60,7 @@ async def entrypoint(ctx: JobContext, settings: AgentSettings | None = None):
     odoo = OdooClient(settings.odoo_url, settings.agent_token)
 
     await ctx.connect()
+    await odoo.post_heartbeat()
     metadata = _job_metadata(ctx)
     agent_id = metadata.get("agent_id")
     if not agent_id:
@@ -130,6 +131,12 @@ async def entrypoint(ctx: JobContext, settings: AgentSettings | None = None):
 def run(settings: AgentSettings | None = None):
     settings = settings or AgentSettings()
     logging.basicConfig(level=settings.log_level.upper())
+
+    # Mark the worker alive in Odoo right away; per-job heartbeats keep
+    # the marker fresh afterwards.
+    if settings.odoo_url:
+        OdooClient(settings.odoo_url, settings.agent_token) \
+            .post_heartbeat_sync()
 
     agents.cli.run_app(WorkerOptions(
         entrypoint_fnc=entrypoint,

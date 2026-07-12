@@ -18,6 +18,28 @@ class OdooClient:
     def _bearer_headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self.agent_token}"}
 
+    def post_heartbeat_sync(self) -> None:
+        """Best-effort liveness marker (settings 'Worker Last Seen')."""
+        try:
+            httpx.post(
+                f"{self.base_url}/livekit/api/heartbeat",
+                headers=self._bearer_headers(),
+                timeout=10.0,
+            )
+        except httpx.HTTPError as exc:
+            logger.warning("Heartbeat failed: %s", exc)
+
+    async def post_heartbeat(self) -> None:
+        """Async variant used from the job entrypoint."""
+        try:
+            async with httpx.AsyncClient(timeout=self.timeout) as client:
+                await client.post(
+                    f"{self.base_url}/livekit/api/heartbeat",
+                    headers=self._bearer_headers(),
+                )
+        except httpx.HTTPError as exc:
+            logger.warning("Heartbeat failed: %s", exc)
+
     async def get_agent_config(self, agent_id: int) -> dict[str, Any]:
         """Fetch per-agent configuration from /livekit/api/agent_config."""
         async with httpx.AsyncClient(timeout=self.timeout) as client:
