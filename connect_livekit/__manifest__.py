@@ -22,13 +22,10 @@
         'wizard/ai_call_wizard_views.xml',
     ],
     'assets': {
-        # Standalone bundle for the public meeting page; the vendored
-        # livekit-client UMD build only loads there.
-        'connect_livekit.assets_meet': [
-            'connect_livekit/static/lib/livekit-client.umd.min.js',
-            'connect_livekit/static/src/meet/meet.js',
-            'connect_livekit/static/src/meet/meet.scss',
-        ],
+        # The public meeting page (static/src/meet/*) is NOT bundled: it is
+        # served outside the Odoo web client and references its script/CSS
+        # as plain static files (see views/meet_templates.xml).
+        #
         # Web phone widget: the livekit-client SDK is lazy-loaded on the
         # first call, not bundled into the backend assets.
         'web.assets_backend': [

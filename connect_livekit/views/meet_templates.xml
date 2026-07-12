@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Standalone public meeting page: no website dependency, own asset
-         bundle. Guests authenticate purely by the guest token in the URL. -->
+    <!-- Standalone public meeting page. It deliberately does NOT use an
+         Odoo asset bundle: bundled JS is wrapped in Odoo's module system,
+         which never starts on a bare public page (no web client boot), so
+         the widget would never run. Instead the vendored SDK and the page
+         script are referenced as plain static files and the styles are
+         inlined as plain CSS. -->
     <template id="meet_page" name="LiveKit Meeting">
         &lt;!DOCTYPE html&gt;
         <html>
@@ -9,7 +13,11 @@
                 <meta charset="utf-8"/>
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
                 <title><t t-esc="room_title"/></title>
-                <t t-call-assets="connect_livekit.assets_meet"/>
+                <link rel="stylesheet" href="/connect_livekit/static/src/meet/meet.css"/>
+                <script type="text/javascript"
+                        src="/connect_livekit/static/lib/livekit-client.umd.min.js"/>
+                <script type="text/javascript"
+                        src="/connect_livekit/static/src/meet/meet.js" defer="defer"/>
             </head>
             <body>
                 <div id="lk-meet"
