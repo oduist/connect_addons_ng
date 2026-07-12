@@ -164,7 +164,7 @@
                         domain="[('slot_type', '=', 'holiday')]"/>
                 <filter name="filter_special" string="Special Working Days"
                         domain="[('slot_type', '=', 'special')]"/>
-                <group expand="0" string="Group By">
+                <group>
                     <filter name="group_schedule" string="Schedule"
                             context="{'group_by': 'schedule_id'}"/>
                     <filter name="group_type" string="Type"
