@@ -7,6 +7,7 @@ from . import test_gateway_profile
 from . import test_inbound_did
 from . import test_outgoing_callerid
 from . import test_parking
+from . import test_recording_controls
 from . import test_ringback
 from . import test_user_voicemail
 from . import test_webhook_token

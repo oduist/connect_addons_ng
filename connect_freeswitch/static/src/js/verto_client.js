@@ -67,6 +67,10 @@ export class VertoClient {
         }
     }
 
+    getCallId() {
+        return this.currentCall?.callId || '';
+    }
+
     _loadOrCreateSessionId() {
         const storageKey = 'verto_session_id';
         let sessionId = null;
