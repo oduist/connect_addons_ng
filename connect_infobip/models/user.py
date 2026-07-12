@@ -14,6 +14,16 @@ logger = logging.getLogger(__name__)
 
 IDENTITY_RE = re.compile(r'^[A-Za-z0-9\-_]{3,64}$')
 
+# BCP-47 codes (connect.user.language) whose regional variant Infobip's
+# say/TTS language list distinguishes. Unmapped codes fall back to the
+# base subtag (e.g. 'fr-FR' -> 'fr').
+INFOBIP_SAY_LANGUAGE_MAP = {
+    'en-GB': 'en-gb',
+    'es-MX': 'es-mx',
+    'pt-BR': 'pt-br',
+    'zh-CN': 'zh-cn',
+}
+
 
 class User(models.Model):
     """Infobip presence of a PBX user.
@@ -29,6 +39,10 @@ class User(models.Model):
     _inherit = 'connect.user'
 
     originate_provider = fields.Selection(
+        selection_add=[('infobip', 'Infobip')],
+        ondelete={'infobip': 'set null'},
+    )
+    message_provider = fields.Selection(
         selection_add=[('infobip', 'Infobip')],
         ondelete={'infobip': 'set null'},
     )
@@ -154,6 +168,12 @@ class User(models.Model):
         environment = jinja2.Environment()
         template = environment.from_string(self.voicemail_prompt)
         return template.render({'user': self})
+
+    def infobip_say_language(self):
+        """Infobip say/TTS language code for this user's prompts."""
+        self.ensure_one()
+        code = self.language or 'en-US'
+        return INFOBIP_SAY_LANGUAGE_MAP.get(code, code.split('-')[0].lower())
 
     @api.model
     def get_user_by_uri(self, userinfo):

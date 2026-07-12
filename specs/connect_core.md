@@ -66,6 +66,7 @@ for easy access from other models.
 | `open_settings_form(view_xmlid="connect.connect_settings_form", name="General Settings")` | UI action opening the settings singleton through the given form view. Parametrized so each provider module's Settings menu opens the same record through its own standalone view (e.g. `connect_twilio.twilio_settings_form`). |
 | `originate_call(number, res_model=None, res_id=None, user=None, **kwargs)` | Click-to-call dispatcher. Resolves the provider via `_get_originate_provider()`; provider modules override and chain via `super()` — each handles the call when its key matches, otherwise falls through. The core base raises a `UserError` when no provider can handle the call. |
 | `_get_originate_provider(user=None)` | Resolve the provider key for the user: explicit `connect.user.originate_provider` → the only installed provider (single `selection_add` entry) → `UserError` (none installed, or several installed and no choice made). |
+| `_get_message_provider(user=None)` | Same resolution logic for messaging: explicit `connect.user.message_provider` → the only installed messaging provider → `UserError`. Used by provider overrides of `connect.message.send()`. |
 | `connect_notify(bus)` | Send bus notification |
 | `connect_reload_view(bus)` | Send bus reload event |
 | `set_defaults()` | Set installation defaults |
@@ -253,12 +254,13 @@ Order: `create_date DESC`
 | `_get_media_widget()` | HTML for media display (image/audio) |
 | `_reference_models()` | Dynamic selection of reference models |
 | `get_receive_message_values()` | Parse incoming webhook params into field values |
+| `send(recipient, body, res_id=None, res_model=None, outgoing_callerid=None, **kwargs)` | Messaging dispatcher terminal (mirror of `originate_call()`). Provider modules override: each handles the message when `connect.settings._get_message_provider()` returns its key, otherwise falls through to `super()`. The core base raises a `UserError` when no provider can handle the message. |
 | `action_retry()` | Retry failed message - calls `self.env['connect.message'].send()` |
 
-**Important:** The `send()` method is NOT defined in core. It is abstract and must be
-implemented by an integration module (e.g., `connect_twilio` implements it via Twilio API).
-`action_retry()` calls `send()`, which will dispatch to whichever integration module
-provides the implementation.
+**Important:** The core `send()` only dispatches — the actual transport is
+implemented by messaging provider modules (`connect_twilio`, `connect_bird`).
+The provider is resolved per user via `connect.user.message_provider` with a
+single-installed-provider fallback (see `_get_message_provider()`).
 
 ---
 
@@ -350,9 +352,12 @@ links).
 | `voicemail_prompt` | Text | Jinja2 template |
 | `missed_calls_notify` | Boolean | |
 | `greeting_message` | Char | |
+| `language` | Selection | BCP-47 TTS language for the user's prompts. Default `en-US`. List from `_get_language_selection()` — deliberate 4th copy of the provider callflow lists (ADR-031/ADR-037) |
+| `voice` | Char | Provider-specific TTS voice name; empty = provider default (`Woman` on Twilio, `Polly.Joanna` on Telnyx) |
 | `summary_prompt` | Char | Per-user override |
 | `active` | Boolean | Default: True |
 | `originate_provider` | Selection | Base selection is empty; each provider module `selection_add`s its key (`twilio`, `freeswitch`, `asterisk`). Chooses which provider handles click-to-call for this user; may stay empty when only one provider is installed. |
+| `message_provider` | Selection | Base selection is empty; messaging provider modules `selection_add` their key (`twilio`, `bird`). Chooses which provider handles `connect.message.send()` for this user; may stay empty when only one messaging provider is installed. |
 
 **Constraints:**
 - `UNIQUE(user)` - one connect.user per res.users

@@ -92,7 +92,7 @@ The service has no permission to create or modify whitelist/blacklist records â€
 
 ### IPv4 only, single instance, in-memory state
 
-- **IPv4 only.** No public IPv6 in the current installation; if added later, a parallel `ip6tables` chain and `family inet6` ipsets can be layered in without changing the model.
+- **IPv4 only.** No public IPv6 in the current installation; if added later, a parallel `ip6tables` chain and `family inet6` ipsets can be layered in without changing the model. *(Superseded by ADR-037: IPv6 landed exactly this way in service 1.2.0.)*
 - **Single instance.** One FreeSWITCH = one firewall service. No `agent_id` keys in the data model.
 - **No SQLite.** Bans live in the kernel ipset (which survives container restart â€” only host reboot wipes them). The dashboard event stream is an in-memory ring buffer (lost on service restart; full history is in Odoo). Pending outbound events to Odoo are an in-memory queue with retry (some loss possible if Odoo is unreachable while the service restarts; the kernel-level bans are unaffected). If this proves insufficient in production, a SQLite outbox is a v2 addition.
 
@@ -146,7 +146,9 @@ using the same shared Bearer token (`firewall_service_token`) that
 already authenticated the reverse direction. All other decisions in
 this ADR (six ipset tables, challenge window, kernel UA filter,
 declarative sync semantics, IPv4 single-instance, in-memory state,
-Lit dashboard, everything-in-`connect_freeswitch`) remain in force.
+Lit dashboard, everything-in-`connect_freeswitch`) remain in force,
+except "IPv4 only": ADR-037 added a parallel `family inet6` set of
+tables and an `ip6tables` chain in service 1.2.0.
 
 ## References
 

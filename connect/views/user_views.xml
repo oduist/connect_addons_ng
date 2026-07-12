@@ -26,6 +26,7 @@
                         <group string="User Info" name="user_info">
                             <field name="user"/>
                             <field name="originate_provider"/>
+                            <field name="message_provider"/>
                             <field name="active"/>
                         </group>
                         <group string="Call Settings" name="call_settings">
@@ -33,6 +34,8 @@
                             <field name="voicemail_enabled"/>
                             <field name="missed_calls_notify"/>
                             <field name="greeting_message"/>
+                            <field name="language"/>
+                            <field name="voice" placeholder="Provider default"/>
                         </group>
                     </group>
                     <notebook>

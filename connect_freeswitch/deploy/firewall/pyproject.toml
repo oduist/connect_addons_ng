@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "connect-firewall-service"
-version = "1.1.1"
+version = "1.2.0"
 description = "FreeSWITCH SIP brute-force protection service, managed from Odoo"
 requires-python = ">=3.12"
 dependencies = [
@@ -16,6 +16,9 @@ dependencies = [
     "pydantic-settings>=2.2",
     "uvicorn>=0.27",
 ]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
 
 [project.scripts]
 connect-firewall-service = "connect_firewall_service.__main__:main"
