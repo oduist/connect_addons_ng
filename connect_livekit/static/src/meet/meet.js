@@ -167,11 +167,20 @@
         input.focus();
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
+    function init() {
         const root = document.getElementById("lk-meet");
         if (!root) {
             return;
         }
         buildJoinForm(root, root.dataset.guestToken, root.dataset.roomTitle);
-    });
+    }
+
+    // The Odoo asset bundle may load this script after DOMContentLoaded
+    // has already fired, so guard on readyState instead of relying on the
+    // event alone.
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", init);
+    } else {
+        init();
+    }
 })();
