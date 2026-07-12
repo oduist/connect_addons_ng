@@ -42,7 +42,7 @@ class Call(models.Model):
                      'participant_connection_aborted'):
             channel = self.env['connect.channel'].livekit_process_event(event)
             if channel:
-                self._livekit_after_channel_event(room_name, channel)
+                self._livekit_after_channel_event(room_name, channel, event)
             return True
         if etype == 'room_started':
             self._livekit_on_room_started(event)
@@ -56,7 +56,7 @@ class Call(models.Model):
         debug(self, 'Unhandled LiveKit event: {}'.format(etype))
         return False
 
-    def _livekit_after_channel_event(self, room_name, channel):
+    def _livekit_after_channel_event(self, room_name, channel, event):
         call_id = self.process_call_event(channel)
         if not call_id:
             return
@@ -71,6 +71,42 @@ class Call(models.Model):
                     room.call = call.id
                 if room.partner and not call.partner:
                     call.partner = room.partner
+        elif room_name.startswith('did-'):
+            self._livekit_notify_did_user(room_name, channel, event)
+
+    def _livekit_notify_did_user(self, room_name, channel, event):
+        """Ring (or stop ringing) the destination user's web phone for an
+        inbound DID call."""
+        number = self.env['connect.livekit.number'].get_number_for_room(
+            room_name)
+        if not number or number.destination != 'user' or not number.user:
+            return
+        pbx_user = number.user
+        # Enrich the ledger: the trunk DID does not resolve to the user
+        # by URI lookup.
+        if not channel.called_pbx_user:
+            channel.sudo().write({
+                'called_pbx_user': pbx_user.id,
+                'called_user': pbx_user.user.id if pbx_user.user else False,
+            })
+        if not pbx_user.user:
+            return
+        participant = (event.get('participant') or {})
+        attrs = participant.get('attributes') or {}
+        is_sip = bool(attrs.get('sip.callID')) or (
+            participant.get('kind') == 'SIP')
+        if not is_sip:
+            return
+        action = 'ring' if event.get('event') == 'participant_joined' \
+            else 'hangup'
+        self.env['bus.bus']._sendone(
+            pbx_user.user.partner_id, 'connect_livekit.call', {
+                'action': action,
+                'room_name': room_name,
+                'number': channel.caller,
+                'partner_id': channel.partner.id or False,
+                'partner_name': channel.partner.name or '',
+            })
 
     def _livekit_on_room_started(self, event):
         room_data = event.get('room') or {}
@@ -98,6 +134,14 @@ class Call(models.Model):
             [('livekit_room_name', '=', room_name)], limit=1)
         if not call:
             return
+        # Stop a still-ringing web phone when the caller gave up.
+        if room_name.startswith('did-'):
+            number = self.env['connect.livekit.number'].get_number_for_room(
+                room_name)
+            if number and number.destination == 'user' and number.user.user:
+                self.env['bus.bus']._sendone(
+                    number.user.user.partner_id, 'connect_livekit.call',
+                    {'action': 'hangup', 'room_name': room_name})
         # Force-close any channel the participant events missed, then run
         # the finalization once so the call registers in the chatter.
         open_channels = call.channels.filtered(

@@ -14,6 +14,10 @@
         'views/settings_views.xml',
         'views/room_views.xml',
         'views/meet_templates.xml',
+        'views/trunk_views.xml',
+        'views/number_views.xml',
+        'views/outgoing_callerid_views.xml',
+        'views/user_views.xml',
     ],
     'assets': {
         # Standalone bundle for the public meeting page; the vendored
@@ -22,6 +26,12 @@
             'connect_livekit/static/lib/livekit-client.umd.min.js',
             'connect_livekit/static/src/meet/meet.js',
             'connect_livekit/static/src/meet/meet.scss',
+        ],
+        # Web phone widget: the livekit-client SDK is lazy-loaded on the
+        # first call, not bundled into the backend assets.
+        'web.assets_backend': [
+            'connect_livekit/static/src/components/phone/*/*',
+            'connect_livekit/static/src/js/main.js',
         ],
     },
     'installable': True,

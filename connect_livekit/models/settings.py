@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import datetime
+import json
 import logging
+import re
 import secrets
+import uuid
 from urllib.parse import urlsplit, urlunsplit
 
 from odoo import api, fields, models, release
@@ -11,10 +14,21 @@ from odoo.exceptions import ValidationError
 from livekit import api as lk_api
 
 from odoo.addons.connect.models.license import ODUIST_MODULES
+from odoo.addons.connect.models.settings import debug
 
 ODUIST_MODULES.append('connect_livekit')
 
 logger = logging.getLogger(__name__)
+
+MAX_EXTEN_LEN = 4
+
+
+def strip_number(number):
+    """Strip number formatting"""
+    if not isinstance(number, str):
+        return number
+    pattern = r"[\s\(\)\-\+]"
+    return re.sub(pattern, "", number).lstrip("0")
 
 LIVEKIT_PROTECTED_FIELDS = [
     "display_livekit_api_secret",
@@ -158,6 +172,102 @@ class Settings(models.Model):
                     'Error authenticating requests to the LiveKit API! '
                     'Check your API key and secret!')
             raise
+
+    @api.model
+    def originate_call(self, number, res_model=None, res_id=None, user=None,
+                       **kwargs):
+        # Dispatch by the user's click-to-call provider; fall through to
+        # other installed telephony modules when it is not LiveKit.
+        if self._get_originate_provider(user) != 'livekit':
+            return super().originate_call(
+                number, res_model=res_model, res_id=res_id, user=user,
+                **kwargs)
+        self.env['oduist.license'].check_license('connect', silent=False)
+        if not user:
+            user = self.env.user
+        connect_user = user.connect_user
+        if not connect_user:
+            raise ValidationError('User does not have a PBX user defined!')
+        number = strip_number(number)
+        if len(number) > MAX_EXTEN_LEN:
+            number = '+{}'.format(number)
+        partner_id = False
+        caller_name = ''
+        obj = self.env[res_model].browse(res_id) if res_model and res_id \
+            else False
+        if res_model == 'res.partner' and obj:
+            partner_id = res_id
+            caller_name = obj.display_name
+        elif obj and hasattr(obj, 'partner_id') and obj.partner_id:
+            partner_id = obj.partner_id.id
+            caller_name = obj.partner_id.display_name
+        elif obj and hasattr(obj, 'partner') and obj.partner:
+            partner_id = obj.partner.id
+            caller_name = obj.partner.display_name
+        callerid = connect_user.sudo().livekit_outgoing_callerid
+        if not callerid:
+            callerid = self.env[
+                'connect.livekit.outgoing_callerid'].sudo().search(
+                    [('is_default', '=', True)], limit=1)
+        if not callerid:
+            raise ValidationError(
+                'No LiveKit outgoing caller ID is configured!')
+        trunk = callerid.trunk
+        if not trunk.outbound_trunk_sid:
+            trunk._push_outbound()
+        if not trunk.outbound_trunk_sid:
+            raise ValidationError(
+                'The LiveKit outbound trunk is not configured (set the '
+                'outbound address on trunk "{}")!'.format(trunk.name))
+        room_name = 'out-{}'.format(uuid.uuid4().hex[:8])
+        self.livekit_api_call('room.create_room', lk_api.CreateRoomRequest(
+            name=room_name,
+            empty_timeout=300,
+            metadata=json.dumps({
+                'user_id': user.id,
+                'partner_id': partner_id or False,
+                'number': number,
+            }),
+        ))
+        # Dial the PSTN leg; the sip.callID becomes the channel sid the
+        # participant webhooks reconcile on.
+        info = self.livekit_api_call(
+            'sip.create_sip_participant',
+            lk_api.CreateSIPParticipantRequest(
+                sip_trunk_id=trunk.outbound_trunk_sid,
+                sip_call_to=number,
+                sip_number=callerid.number,
+                room_name=room_name,
+                participant_identity='sip-callee',
+                participant_name=caller_name or number,
+                krisp_enabled=trunk.krisp_enabled,
+            ))
+        sid = getattr(info, 'sip_call_id', None) or getattr(
+            info, 'participant_id', None)
+        if sid:
+            self.env['connect.channel'].sudo().create({
+                'sid': sid,
+                'technical_direction': 'outbound-api',
+                'caller_user': user.id,
+                'caller_pbx_user': connect_user.id,
+                'partner': partner_id,
+                'called': number,
+                'caller': callerid.number,
+                'status': 'in-progress',
+            })
+        else:
+            debug(self, 'LiveKit originate returned no sip_call_id; the '
+                        'participant webhook will create the channel.',
+                  level='warning')
+        # Tell the user's web phone to join the room (private channel).
+        self.env['bus.bus']._sendone(
+            user.partner_id, 'connect_livekit.call', {
+                'action': 'join',
+                'room_name': room_name,
+                'number': number,
+                'name': caller_name,
+            })
+        return True
 
     def action_generate_livekit_agent_token(self):
         self.sudo().set_param(
