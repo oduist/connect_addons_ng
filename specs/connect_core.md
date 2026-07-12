@@ -310,8 +310,11 @@ atomic.
 - Transcription and summary methods use OpenAI directly (not Twilio), so they belong
   in core. The `openai` Python package is a core dependency.
 - `create()` override auto-triggers transcription if `transcript_calls` setting is enabled.
-- `transcribe_recording()` downloads the audio from `media_url` (which may be proxied)
-  and sends it to OpenAI Whisper.
+- `transcribe_recording()` prefers the stored `recording_attachment` bytes
+  (providers whose downloads require API auth store the file on the record,
+  e.g. connect_infobip — ADR-036) and only falls back to downloading
+  `media_url` (which may be proxied) before sending the audio to OpenAI
+  Whisper. `get_transcript()` accepts either source.
 - `make_summary()` uses the `summary_prompt` from settings with GPT-4o.
 
 ---

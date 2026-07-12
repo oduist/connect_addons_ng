@@ -13,12 +13,12 @@ logger = logging.getLogger(__name__)
 class OutgoingCallerID(models.Model):
     """Outbound caller IDs.
 
-    Telnyx has no Twilio-style external caller-ID validation API, so this
-    model only holds numbers owned in the Telnyx account, synced from the
-    phone numbers list (ADR-032).
+    Infobip, like Telnyx, has no Twilio-style external caller-ID
+    validation API, so this model only holds numbers owned in the Infobip
+    account, synced from the Numbers API (ADR-036).
     """
-    _name = 'connect.telnyx.outgoing_callerid'
-    _description = 'Telnyx Outgoing CallerId'
+    _name = 'connect.infobip.outgoing_callerid'
+    _description = 'Infobip Outgoing CallerId'
     _order = 'number'
     _rec_names_search = ['number', 'friendly_name']
 
@@ -28,8 +28,8 @@ class OutgoingCallerID(models.Model):
     is_default = fields.Boolean(string='Default')
     callerid_users = fields.One2many(
         comodel_name='connect.user',
-        inverse_name='telnyx_outgoing_callerid', string='callerId Users')
-    sid = fields.Char(readonly=True)
+        inverse_name='infobip_outgoing_callerid', string='callerId Users')
+    number_key = fields.Char(readonly=True)
 
     if release.version_info[0] >= 19:
         _number_uniq = Constraint('UNIQUE(number)', 'This number is already used!')
@@ -45,8 +45,8 @@ class OutgoingCallerID(models.Model):
         # Iterate: a constraint receives a (possibly multi-record)
         # recordset, so self.number would raise "Expected singleton" on a
         # batch create. The single regex also covers the +-prefix check.
-        # Duplicated in connect_twilio/connect_freeswitch/connect_infobip
-        # by design — apply fixes to all copies (ADR-031/ADR-032/ADR-036).
+        # Duplicated in connect_twilio/connect_freeswitch/connect_telnyx
+        # by design — apply fixes to all copies (ADR-031/ADR-036).
         for rec in self:
             if rec.number and not re.match(r'^\+[0-9]+$', rec.number):
                 raise ValidationError(
@@ -65,18 +65,23 @@ class OutgoingCallerID(models.Model):
 
     @api.model
     def sync(self):
-        client = self.env['connect.settings'].get_telnyx_client()
-        numbers = list(client.phone_numbers.list())
+        numbers = self.env['connect.settings'].infobip_list_numbers()
+        seen_keys = []
         for number in numbers:
+            number_key = number.get('numberKey') or number.get('key') or ''
+            phone = number.get('number') or number.get('phoneNumber') or ''
+            if phone and not phone.startswith('+'):
+                phone = '+{}'.format(phone)
+            seen_keys.append(number_key)
             existing_number = self.env[self._name].search([
-                ('sid', '=', number.id)])
+                ('number_key', '=', number_key)])
             if not existing_number:
                 existing_number = self.env[self._name].search([
-                    ('number', '=', number.phone_number)])
+                    ('number', '=', phone)])
             data = {
-                'sid': number.id,
-                'number': number.phone_number,
-                'friendly_name': number.customer_reference or number.phone_number,
+                'number_key': number_key,
+                'number': phone,
+                'friendly_name': number.get('friendlyName') or phone,
             }
             callerid_count = self.search_count([])
             if callerid_count == 0:
@@ -84,11 +89,11 @@ class OutgoingCallerID(models.Model):
             if not existing_number:
                 self.create(data)
                 debug(self, 'CallerID {} ({}) created in Odoo.'.format(
-                    number.phone_number, data['friendly_name']))
+                    phone, data['friendly_name']))
             else:
                 existing_number.write(data)
         recs_to_remove = self.env[self._name].search(
-            [('sid', 'not in', [k.id for k in numbers])])
+            [('number_key', 'not in', seen_keys)])
         if recs_to_remove:
             debug(self, 'Removing CallerIds: {}'.format(
                 [k.number for k in recs_to_remove]))

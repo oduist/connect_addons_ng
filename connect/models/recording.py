@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 import os
@@ -57,14 +58,21 @@ class Recording(models.Model):
         temp_file_path = None
         try:
             client = self.env['connect.settings'].get_openai_client()
-            # Bounded download: media_url points at the provider's recording
-            # store; without a timeout a hung endpoint pins the worker.
-            response = requests.get(self.media_url, stream=True, timeout=30)
-            response.raise_for_status()
             with NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:
-                        temp_file.write(chunk)
+                if self.recording_attachment:
+                    # Providers whose recording downloads require API auth
+                    # store the audio bytes on the record instead of
+                    # exposing a public media_url (e.g. connect_infobip).
+                    temp_file.write(base64.b64decode(self.recording_attachment))
+                else:
+                    # Bounded download: media_url points at the provider's
+                    # recording store; without a timeout a hung endpoint
+                    # pins the worker.
+                    response = requests.get(self.media_url, stream=True, timeout=30)
+                    response.raise_for_status()
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            temp_file.write(chunk)
                 temp_file_path = temp_file.name
             with open(temp_file_path, 'rb') as audio_file:
                 transcript = client.audio.transcriptions.create(
@@ -130,7 +138,7 @@ class Recording(models.Model):
             else:
                 raise ValidationError('OpenAI key is not set!')
         summary_prompt = self.env['connect.settings'].get_param('summary_prompt')
-        if not self.media_url:
+        if not self.media_url and not self.recording_attachment:
             raise ValidationError('Recording is not available yet!')
         self.transcribe_recording(openai_key, summary_prompt)
 
