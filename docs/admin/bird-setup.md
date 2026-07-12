@@ -55,6 +55,18 @@ Click **SETUP WEBHOOKS**. Odoo registers one webhook endpoint pointing to
 (it is issued exactly once). The registered endpoint is listed under
 *Bird → Configuration → Webhook Endpoints*.
 
+If the access key lacks the webhooks scope (403), register the endpoint
+manually in the Bird dashboard with the same URL and paste the `whsec_`
+secret into the *Webhook Signing Key* field on the *Development* tab.
+
+!!! warning "Platform limitation"
+    As of mid-2026 the Bird platform delivers webhook events for the
+    **email product only** — `sms.*`/`whatsapp.*`/`voice.*` events cannot
+    be subscribed yet. Until they become available, outgoing message
+    delivery statuses are **polled** by the scheduled action
+    "Connect Bird: Poll Message Status" (every 5 minutes), and inbound
+    messages cannot be received.
+
 Requirements:
 
 - The Odoo **API URL** (Connect → Configuration → Settings) must be a

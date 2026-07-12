@@ -124,11 +124,11 @@ Fields: `bird_message_id` (Char, indexed), `bird_number` (M2O).
 | Method | Description |
 |--------|-------------|
 | `send()` | Dispatch guard (`_get_message_provider() != 'bird'` → `super()`), then `send_bird()` |
-| `send_bird()` | Sender resolution into ordered (product, number) attempts (`outgoing_callerid` → user's `bird_message_number` → default whatsapp → default sms) with WhatsApp→SMS fallback; ledger row + chatter post |
-| `send_bird_template(recipient, template, params, ...)` | WhatsApp template send (`POST /v1/whatsapp/messages` with `template: {name, locale, variables}`) |
-| `client_send(recipient, number, body, product)` | `POST /v1/sms/messages {to, from, text, category}` or `/v1/whatsapp/messages {to, from, text}`; `False` on failure |
-| `receive_bird(data, event_type)` | Inbound event: dedupe by `bird_message_id`, extraction via `_extract_bird_message_data()` (sms_id/from/to/text/media), partner match, conversation threading, `connect.bird.message_configuration` routing, chatter post |
-| `update_bird_status(data, event_type)` | Lifecycle events — the status is the event-name suffix (`sms.delivered` → delivered, `undelivered/failed/rejected/expired` → failed with `data.error`); unknown ids upserted |
+| `send_bird()` | Free-form SMS: `POST /v1/sms/messages {to, text, category [, from]}` — `from` is optional (the platform assigns a shared sender when omitted; the ledger stores the actual sender and rendered text from the response). API errors (e.g. the free-form-SMS GA gate) surface verbatim. Sender resolution: `outgoing_callerid` → user's `bird_message_number` → default number → none |
+| `send_bird_template(recipient, template, params, ...)` | Template send (the primary path — the platform is template-first): SMS `{to, template: {id|name, parameters: {key: value}}}`; WhatsApp `{to, template: {name, components: [{type: body, parameters: [{type: text, text}]}]}}` (positional params ordered by key). Live-verified payloads |
+| `receive_bird(data, event_type)` | Inbound event: dedupe by `bird_message_id`, extraction via `_extract_bird_message_data()` (sms_id/wam ids, plain from/to or WhatsApp contact/business objects, text/media), partner match, conversation threading, `connect.bird.message_configuration` routing, chatter post |
+| `update_bird_status(data, event_type)` | Lifecycle events — the status is the event-name suffix (`sms.delivered` → delivered, `undelivered/failed/rejected/expired` → failed with `data.error`/`last_error`); unknown ids upserted |
+| `_cron_poll_bird_status(limit=50)` | Cron (5 min): polls `GET /v1/sms|whatsapp/messages/{id}` for recent non-terminal outgoing messages and applies status + `last_error` (`_apply_bird_message_object()`). Needed because the platform delivers webhook events for the email product only so far |
 | `_compute_direction()` | Also checks Bird sender numbers |
 | `action_retry()` | Re-send failed messages through the dispatcher |
 

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import ast
 import logging
+from datetime import timedelta
 
 from markupsafe import Markup
 
@@ -452,6 +453,63 @@ class ConnectMessage(models.Model):
                 })
         except Exception as e:
             logger.exception('Error handling Bird message status: %s', e)
+        return True
+
+    @api.model
+    def _apply_bird_message_object(self, message, res):
+        """Apply a fetched message object (GET /v1/sms|whatsapp/messages/{id})
+        to a ledger record: status plus failure details from last_error.
+        """
+        raw_status = res.get('status')
+        if isinstance(raw_status, dict):
+            raw_status = (raw_status.get('value') or raw_status.get('state')
+                          or raw_status.get('status') or '')
+        status = self._map_bird_message_status(raw_status or '')
+        vals = {}
+        if status and status != message.status:
+            vals['status'] = status
+        error = res.get('last_error') or {}
+        if error and (raw_status in BIRD_FAILED_STATUSES
+                      or status == 'failed'):
+            vals.update({
+                'has_error': True,
+                'error_code': str(error.get('code', '') or ''),
+                'error_message': (error.get('description')
+                                  or error.get('message') or raw_status),
+            })
+        if vals:
+            message.write(vals)
+        return bool(vals)
+
+    @api.model
+    def _cron_poll_bird_status(self, limit=50):
+        """Poll delivery statuses of recent outgoing Bird messages.
+
+        The platform currently delivers webhook events for the email
+        product only (no sms.*/whatsapp.* subscriptions yet — confirmed
+        against a live dashboard-registered endpoint), so message
+        lifecycle updates are pulled until push events become available.
+        """
+        messages = self.sudo().search([
+            ('bird_message_id', '!=', False),
+            ('status', 'in', ('sent', 'queued', 'scheduled')),
+            ('direction', '=', 'outgoing'),
+            ('create_date', '>', fields.Datetime.now() - timedelta(days=1)),
+        ], limit=limit)
+        settings = self.env['connect.settings']
+        for message in messages:
+            if message.bird_message_id.startswith('wam_'):
+                path = '/whatsapp/messages/{}'.format(message.bird_message_id)
+            else:
+                path = '/sms/messages/{}'.format(message.bird_message_id)
+            res = settings.bird_request('GET', path, raise_exc=False)
+            if not res:
+                continue
+            try:
+                self._apply_bird_message_object(message, res)
+            except Exception as e:
+                logger.exception('Bird status poll failed for %s: %s',
+                                 message.bird_message_id, e)
         return True
 
     def action_retry(self):
