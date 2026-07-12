@@ -92,3 +92,39 @@ class TestBirdTemplates(BirdTestCommon):
                          {'sms', 'whatsapp'})
         wa = templates.filtered(lambda t: t.product == 'whatsapp')
         self.assertEqual(wa.get_variable_keys(), ['1'])
+
+    def test_sync_failure_keeps_existing_product_templates(self):
+        self.env['connect.bird.message_template'].create({
+            'sid': 'smt_stale',
+            'product': 'sms',
+            'name': 'old_sms',
+            'status': 'active',
+        })
+        whatsapp = self.env['connect.bird.message_template'].create({
+            'sid': 'wa:kept:en',
+            'product': 'whatsapp',
+            'name': 'kept',
+            'locale': 'en',
+            'status': 'approved',
+        })
+
+        def fake_request(method, url, json=None, params=None, headers=None,
+                         timeout=None):
+            if url.endswith('/v1/sms/templates'):
+                return FakeResponse(200, {'data': [SMS_TEMPLATE_ITEM]})
+            if url.endswith('/v1/whatsapp/templates'):
+                return FakeResponse(
+                    403, {'error': {'message': 'missing scope'}},
+                    content=b'x')
+            return FakeResponse(404, {'error': {'message': 'not found'}},
+                                content=b'x')
+
+        with patch('odoo.addons.connect_bird.models.settings.httpx.request',
+                   side_effect=fake_request):
+            self.env['connect.bird.message_template'].sync()
+
+        self.assertFalse(self.env['connect.bird.message_template'].search(
+            [('sid', '=', 'smt_stale')]))
+        self.assertTrue(self.env['connect.bird.message_template'].search(
+            [('sid', '=', 'smt_6w8134jzjbadbteeca4p9e0dtm')]))
+        self.assertTrue(whatsapp.exists())

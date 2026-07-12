@@ -110,29 +110,56 @@ class BirdMessageTemplate(models.Model):
         Tolerates missing scopes on the access key (logged, no failure).
         """
         settings = self.env['connect.settings']
-        remote_sids = []
         found_any = False
         sources = [
-            ('/sms/templates', self._map_remote_sms_template),
-            ('/whatsapp/templates', self._map_remote_whatsapp_template),
+            ('/sms/templates', self._map_remote_sms_template, 'sms'),
+            ('/whatsapp/templates', self._map_remote_whatsapp_template,
+             'whatsapp'),
         ]
-        for path, mapper in sources:
-            for item in settings.bird_paginate(path):
-                found_any = True
-                values = mapper(item)
-                if not values['sid'] or not values['name']:
-                    continue
-                remote_sids.append(values['sid'])
-                template = self.search([('sid', '=', values['sid'])], limit=1)
-                if template:
-                    template.write(values)
-                else:
-                    self.create(values)
+        for path, mapper, product in sources:
+            remote_sids = []
+            params = {'limit': 100}
+            failed = False
+            while True:
+                data = settings.bird_request(
+                    'GET', path, params=params, raise_exc=False)
+                if data is False:
+                    logger.warning(
+                        'Bird %s template sync failed; keeping existing '
+                        '%s templates.', product, product)
+                    failed = True
+                    break
+                items = data.get('data') or []
+                if items:
+                    found_any = True
+                for item in items:
+                    values = mapper(item)
+                    if not values['sid'] or not values['name']:
+                        continue
+                    remote_sids.append(values['sid'])
+                    template = self.search(
+                        [('sid', '=', values['sid'])], limit=1)
+                    if template:
+                        template.write(values)
+                    else:
+                        self.create(values)
+                cursor = data.get('next_cursor')
+                if not cursor:
+                    break
+                params['starting_after'] = cursor
+            if failed:
+                continue
+            if remote_sids:
+                stale = self.search([
+                    ('product', '=', product),
+                    ('sid', 'not in', remote_sids),
+                ])
+            else:
+                stale = self.search([('product', '=', product)])
+            if stale:
+                stale.unlink()
         if not found_any:
             logger.warning('Bird templates sync returned nothing '
                            '(missing scopes or no templates).')
             return True
-        stale = self.search([('sid', 'not in', remote_sids)])
-        if stale:
-            stale.unlink()
         return True
