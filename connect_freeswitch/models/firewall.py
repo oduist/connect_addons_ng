@@ -43,6 +43,16 @@ def _normalize_ip_or_cidr(value):
         raise ValidationError(
             "Invalid IP or CIDR '{}': {}".format(value, exc)
         )
+    if (
+        net.version == 6
+        and net.prefixlen >= 96
+        and net.network_address.ipv4_mapped is not None
+        and net.broadcast_address.ipv4_mapped is not None
+    ):
+        net = ipaddress.ip_network(
+            "{}/{}".format(net.network_address.ipv4_mapped, net.prefixlen - 96),
+            strict=False,
+        )
     if net.prefixlen == net.max_prefixlen:
         return str(net.network_address)
     return str(net)

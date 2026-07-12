@@ -20,6 +20,8 @@ from connect_firewall_service.net_utils import normalize_entry, set_for
     ("::1", ("::1", 6)),
     # IPv4-mapped IPv6 unwraps to plain IPv4
     ("::ffff:203.0.113.9", ("203.0.113.9", 4)),
+    ("::ffff:203.0.113.9/128", ("203.0.113.9", 4)),
+    ("::ffff:203.0.113.9/120", ("203.0.113.0/24", 4)),
     ("[2001:db8::1]", None),  # brackets are NOT accepted here
 ])
 def test_normalize_entry(value, expected):
@@ -46,3 +48,4 @@ def test_set_for_routes_by_family():
     assert set_for("connect_fw_whitelist", "2001:db8::/64") == "connect_fw_whitelist6"
     # IPv4-mapped source lands in the v4 set where the packets flow.
     assert set_for("connect_fw_banned", "::ffff:1.2.3.4") == "connect_fw_banned"
+    assert set_for("connect_fw_banned", "::ffff:1.2.3.4/128") == "connect_fw_banned"

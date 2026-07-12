@@ -98,6 +98,18 @@ class TestFirewallModels(TransactionCase):
         )
         self.assertEqual(rec.ip_or_cidr, "198.51.100.7")
 
+    def test_create_unwraps_ipv4_mapped_cidr(self):
+        rec = self.Whitelist.create(
+            {"name": "mapped cidr", "ip_or_cidr": "::ffff:198.51.100.7/128"}
+        )
+        self.assertEqual(rec.ip_or_cidr, "198.51.100.7")
+
+    def test_create_unwraps_ipv4_mapped_network(self):
+        rec = self.Whitelist.create(
+            {"name": "mapped net", "ip_or_cidr": "::ffff:198.51.100.7/120"}
+        )
+        self.assertEqual(rec.ip_or_cidr, "198.51.100.0/24")
+
     def test_write_normalizes_ipv6(self):
         rec = self.Whitelist.create({"name": "w", "ip_or_cidr": "41.0.0.1"})
         rec.write({"ip_or_cidr": "2001:DB8::AA/128"})
