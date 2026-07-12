@@ -16,9 +16,20 @@ def extract_messages(history) -> list[dict]:
     items = []
     if history is None:
         return items
-    raw = getattr(history, "items", None)
-    if raw is None and isinstance(history, dict):
+    # Check the dict shape first: on a dict, getattr(..., "items") finds
+    # the builtin method, not the "items" key.
+    if isinstance(history, dict):
         raw = history.get("items")
+    else:
+        raw = getattr(history, "items", None)
+        if callable(raw):
+            try:
+                raw = raw()
+            except TypeError:
+                raw = None
+    if raw is not None and not hasattr(raw, "__iter__"):
+        logger.warning("Unrecognized history shape: %r", type(history))
+        return items
     for item in raw or []:
         role = getattr(item, "role", None)
         content = getattr(item, "content", None)
