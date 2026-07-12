@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Standalone public meeting page: no website dependency, own asset
+         bundle. Guests authenticate purely by the guest token in the URL. -->
+    <template id="meet_page" name="LiveKit Meeting">
+        &lt;!DOCTYPE html&gt;
+        <html>
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <title><t t-esc="room_title"/></title>
+                <t t-call-assets="connect_livekit.assets_meet"/>
+            </head>
+            <body>
+                <div id="lk-meet"
+                     t-att-data-guest-token="guest_token"
+                     t-att-data-room-title="room_title"/>
+            </body>
+        </html>
+    </template>
+</odoo>

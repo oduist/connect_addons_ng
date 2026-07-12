@@ -1,0 +1,98 @@
+/* Minimal standalone styling for the public meeting page. */
+body:has(#lk-meet) {
+    margin: 0;
+    background: #14181d;
+    color: #f2f4f6;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+#lk-meet {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 16px;
+    box-sizing: border-box;
+
+    .lk-join {
+        margin-top: 20vh;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: min(320px, 90vw);
+
+        .lk-title {
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .lk-name {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #3a4048;
+            background: #1d232a;
+            color: inherit;
+            font-size: 16px;
+        }
+    }
+
+    .lk-btn {
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: none;
+        background: #2f6fed;
+        color: #fff;
+        font-size: 15px;
+        cursor: pointer;
+
+        &.lk-btn-leave {
+            background: #d64545;
+        }
+    }
+
+    .lk-status {
+        margin-top: 24px;
+        opacity: 0.8;
+    }
+
+    .lk-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        width: 100%;
+        max-width: 1200px;
+        margin-top: 16px;
+    }
+
+    .lk-tile {
+        position: relative;
+        background: #1d232a;
+        border-radius: 12px;
+        min-height: 180px;
+        overflow: hidden;
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .lk-tile-name {
+            position: absolute;
+            left: 8px;
+            bottom: 8px;
+            z-index: 1;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.55);
+            font-size: 13px;
+        }
+    }
+
+    .lk-controls {
+        display: flex;
+        gap: 8px;
+        margin: 12px 0;
+    }
+}
