@@ -111,6 +111,13 @@ class CallFlow(models.Model):
             return callflow.render(request=request, params={'invalid_input': True})
         return choice[0].exten.render(request=request)
 
+    def _get_gather_hints(self):
+        self.ensure_one()
+        hints = (self.gather_hints or '').strip()
+        if hints and 'speech' in (self.gather_input_type or ''):
+            return hints
+        return None
+
     def render(self, request={}, params={}):
         self.ensure_one()
         api_url = self.env['connect.settings'].sudo().get_param('api_url')
@@ -130,7 +137,8 @@ class CallFlow(models.Model):
                 timeout=self.gather_timeout,
                 numDigits=str(self.gather_digits),
                 input=self.gather_input_type,
-                language=self.language
+                language=self.language,
+                hints=self._get_gather_hints(),
             )
             self.get_prompt_message(gather)
             response.append(gather)

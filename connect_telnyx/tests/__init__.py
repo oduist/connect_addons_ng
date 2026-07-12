@@ -1,1 +1,1 @@
-# Tests for connect_telnyx module.
+from . import test_ai_assistant
