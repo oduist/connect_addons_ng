@@ -64,6 +64,8 @@ class Settings(models.Model):
     # Shared secret for the agent worker / recording uploader sidecar
     # (Bearer auth on /livekit/api/* and /livekit/webhook/recording/*).
     livekit_agent_token = fields.Char(groups="base.group_erp_manager")
+    # Written by the worker heartbeat route.
+    livekit_worker_last_seen = fields.Char(readonly=True)
     # AI provider keys for the voice-agent worker. Named without the
     # livekit_ prefix on purpose: like openai_api_key in core these are
     # vendor keys, not LiveKit resources (ADR-037).

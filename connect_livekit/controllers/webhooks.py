@@ -9,18 +9,23 @@ receives egress files from the uploader sidecar authenticated with
 pattern, ADR-037).
 """
 import base64
+import hmac
 import json
 import logging
 import secrets
 
 from odoo import http
 from odoo.http import Response, request
+from odoo.exceptions import ValidationError
 
 from livekit import api as lk_api
 
 logger = logging.getLogger(__name__)
 
 MAX_RECORDING_UPLOAD_BYTES = 512 * 1024 * 1024
+MAX_AI_WEBHOOK_BYTES = 64 * 1024
+# Transcripts of long conversations are bigger than tool calls.
+MAX_AI_TRANSCRIPT_BYTES = 2 * 1024 * 1024
 
 
 class LivekitWebhooksController(http.Controller):
@@ -111,4 +116,63 @@ class LivekitWebhooksController(http.Controller):
             webhook_user.id
         ).livekit_store_recording_file(
             filename, base64.b64encode(file_data))
+        return self._json({'status': 'ok', 'recording_id': rec_id})
+
+    # ------------------------------------------------------------------
+    # AI agent webhooks: authenticated by the per-agent tool token
+    # (X-Odoo-LiveKit-Token header, the Telnyx AI pattern).
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _get_agent_checked(agent_id):
+        agent = request.env['connect.livekit.agent'].sudo().browse(agent_id)
+        if not agent.exists():
+            return None
+        token = request.httprequest.headers.get('X-Odoo-LiveKit-Token', '')
+        expected = agent.tool_token or ''
+        if not expected or not hmac.compare_digest(token, expected):
+            return None
+        return agent
+
+    @classmethod
+    def _read_ai_payload(cls, max_bytes=MAX_AI_WEBHOOK_BYTES):
+        body = request.httprequest.get_data()
+        if len(body) > max_bytes:
+            return None, cls._json({'error': 'payload too large'}, status=413)
+        try:
+            payload = json.loads(body or b'{}')
+        except ValueError:
+            return None, cls._json({'error': 'invalid body'}, status=400)
+        if not isinstance(payload, dict):
+            return None, cls._json({'error': 'invalid body'}, status=400)
+        return payload, None
+
+    @http.route('/livekit/webhook/agent/<int:agent_id>/tool/<string:tool_name>',
+                methods=['POST'], type='http', auth='public', csrf=False)
+    def agent_tool(self, agent_id, tool_name, **kw):
+        agent = self._get_agent_checked(agent_id)
+        if not agent:
+            return self._json({'error': 'unauthorized'}, status=403)
+        payload, error = self._read_ai_payload()
+        if error:
+            return error
+        channel_sid = payload.pop('channel_sid', None)
+        try:
+            result = agent.execute_tool(tool_name, payload, channel_sid)
+        except ValidationError as e:
+            return self._json({'ok': False, 'error': str(e)}, status=400)
+        return self._json(result)
+
+    @http.route('/livekit/webhook/agent/<int:agent_id>/transcript',
+                methods=['POST'], type='http', auth='public', csrf=False)
+    def agent_transcript(self, agent_id, **kw):
+        agent = self._get_agent_checked(agent_id)
+        if not agent:
+            return self._json({'error': 'unauthorized'}, status=403)
+        payload, error = self._read_ai_payload(MAX_AI_TRANSCRIPT_BYTES)
+        if error:
+            return error
+        rec_id = request.env['connect.call'].with_user(
+            request.env.ref('connect.user_connect_webhook')
+        ).livekit_apply_agent_transcript(agent, payload)
         return self._json({'status': 'ok', 'recording_id': rec_id})

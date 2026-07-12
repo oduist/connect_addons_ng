@@ -36,6 +36,7 @@
                             <group>
                                 <group string="Agent Worker" name="livekit_agent_worker">
                                     <field name="livekit_agent_token" string="Agent Token" password="1"/>
+                                    <field name="livekit_worker_last_seen" string="Worker Last Seen" readonly="1"/>
                                     <button colspan="2" name="action_generate_livekit_agent_token"
                                             type="object" string="GENERATE AGENT TOKEN"
                                             class="btn btn-info"

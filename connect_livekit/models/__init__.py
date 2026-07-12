@@ -4,6 +4,7 @@ from . import room
 from . import trunk
 from . import number
 from . import outgoing_callerid
+from . import agent
 from . import call
 from . import channel
 from . import recording

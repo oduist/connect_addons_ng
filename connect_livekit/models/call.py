@@ -17,6 +17,8 @@ class Call(models.Model):
     _inherit = 'connect.call'
 
     livekit_room_name = fields.Char(readonly=True, index=True)
+    livekit_agent = fields.Many2one(
+        'connect.livekit.agent', readonly=True, ondelete='set null')
 
     @api.model
     def _livekit_is_tracked_room(self, room_name):
@@ -107,6 +109,64 @@ class Call(models.Model):
                 'partner_id': channel.partner.id or False,
                 'partner_name': channel.partner.name or '',
             })
+
+    @api.model
+    def livekit_apply_agent_transcript(self, agent, payload):
+        """Store an AI-agent conversation transcript delivered by the
+        worker as a connect.recording (source='livekit-ai').
+
+        The worker supplies the transcript and summary itself, so the
+        recording bypasses the core OpenAI pipeline
+        (skip_transcription, the Telnyx AI pattern)."""
+        room_name = payload.get('room_name') or ''
+        channel_sid = payload.get('channel_sid')
+        call = self.sudo().search(
+            [('livekit_room_name', '=', room_name)], limit=1) \
+            if room_name else self.sudo().browse()
+        if not call and channel_sid:
+            channel = self.env['connect.channel'].sudo().search(
+                [('sid', '=', channel_sid)], limit=1)
+            call = channel.call
+        lines = []
+        for message in (payload.get('messages') or []):
+            text = (message.get('text') or '').strip()
+            if text:
+                lines.append('{}: {}'.format(
+                    message.get('role') or 'user', text))
+        transcript = '\n'.join(lines)
+        summary = (payload.get('summary') or '').strip()
+        vals = {
+            'sid': room_name,
+            'source': 'livekit-ai',
+            'status': 'completed',
+            'transcript': transcript,
+            'duration': int(payload.get('duration_secs') or 0),
+        }
+        if summary:
+            vals['summary'] = summary
+        if call:
+            vals.update({
+                'call': call.id,
+                'channel': call.channels[:1].id,
+                'partner': call.partner.id,
+                'caller_number': call.caller,
+                'called_number': call.called,
+            })
+        Recording = self.env['connect.recording'].sudo()
+        rec = Recording.search(
+            [('sid', '=', room_name), ('source', '=', 'livekit-ai')],
+            limit=1)
+        if rec:
+            rec.with_context(tracking_disable=True).write(vals)
+        else:
+            rec = Recording.with_context(skip_transcription=True).create(
+                vals)
+        if call:
+            call_vals = {'livekit_agent': agent.id}
+            call.write(call_vals)
+            if summary:
+                call.summary = summary
+        return rec.id
 
     def _livekit_on_room_started(self, event):
         room_data = event.get('room') or {}

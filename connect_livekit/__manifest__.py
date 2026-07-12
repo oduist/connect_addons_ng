@@ -18,6 +18,8 @@
         'views/number_views.xml',
         'views/outgoing_callerid_views.xml',
         'views/user_views.xml',
+        'views/agent_views.xml',
+        'wizard/ai_call_wizard_views.xml',
     ],
     'assets': {
         # Standalone bundle for the public meeting page; the vendored

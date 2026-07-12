@@ -50,4 +50,25 @@
         <field name="perm_create" eval="True"/>
         <field name="perm_unlink" eval="True"/>
     </record>
+
+    <!-- connect.livekit.agent access rules -->
+    <record id="access_connect_livekit_agent_admin" model="ir.model.access">
+        <field name="name">connect.livekit.agent admin</field>
+        <field name="model_id" ref="model_connect_livekit_agent"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_livekit_ai_call_wizard_admin" model="ir.model.access">
+        <field name="name">connect.livekit.ai_call_wizard admin</field>
+        <field name="model_id" ref="model_connect_livekit_ai_call_wizard"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
 </odoo>
