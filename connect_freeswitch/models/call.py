@@ -481,6 +481,15 @@ class Call(models.Model):
                     'caller_number': channel.caller_number,
                     'called_number': channel.called_number,
                 })
+                if channel.call:
+                    voicemails = orphan_recordings.filtered(
+                        lambda rec: rec.source == 'freeswitch_voicemail')
+                    if voicemails:
+                        voicemail = voicemails.sorted('id')[-1]
+                        channel.call.write({
+                            'voicemail_url': voicemail._get_attachment_media_url(),
+                            'voicemail_duration': channel.duration,
+                        })
                 logger.info('Linked %d orphan recording(s) to channel %s',
                     len(orphan_recordings), cdr_data['uuid'])
 

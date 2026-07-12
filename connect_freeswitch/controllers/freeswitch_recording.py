@@ -36,6 +36,18 @@ class FreeSwitchRecordingController(http.Controller):
         The filename is expected to be <uuid>.wav where uuid is
         the FreeSWITCH channel UUID (used as channel SID in Odoo).
         """
+        return self._upload_recording(token, filename, source='freeswitch')
+
+    @http.route(
+        '/freeswitch/webhook/voicemail/<string:token>/<string:filename>',
+        type='http', auth='none', methods=['PUT', 'POST'], csrf=False,
+    )
+    def voicemail_webhook(self, token, filename, **kwargs):
+        """Receive a voicemail file recorded by the FreeSWITCH dialplan."""
+        return self._upload_recording(
+            token, filename, source='freeswitch_voicemail')
+
+    def _upload_recording(self, token, filename, source):
         if not check_fs_webhook_auth(token_from_path=token):
             return unauthorized_response()
 
@@ -67,8 +79,10 @@ class FreeSwitchRecordingController(http.Controller):
             )
 
             # Skip if recording for this UUID already exists (both legs
-            # may attempt to upload the same recording)
-            existing = env.sudo().search([('call_sid', '=', uuid)], limit=1)
+            # may attempt to upload the same recording). Voicemails are a
+            # separate source so they can coexist with call recordings.
+            duplicate_domain = [('call_sid', '=', uuid), ('source', '=', source)]
+            existing = env.sudo().search(duplicate_domain, limit=1)
             if existing:
                 logger.info('Recording for UUID %s already exists (id=%s), skipping',
                     uuid, existing.id)
@@ -82,7 +96,7 @@ class FreeSwitchRecordingController(http.Controller):
             vals = {
                 'call_sid': uuid,
                 'status': 'completed',
-                'source': 'freeswitch',
+                'source': source,
                 'recording_attachment': base64.b64encode(file_data),
                 'recording_filename': filename,
             }
@@ -95,6 +109,11 @@ class FreeSwitchRecordingController(http.Controller):
                 vals['called_number'] = channel.called_number
 
             recording = env.sudo().create(vals)
+            if source == 'freeswitch_voicemail' and channel and channel.call:
+                channel.call.sudo().write({
+                    'voicemail_url': recording._get_attachment_media_url(),
+                    'voicemail_duration': channel.duration,
+                })
 
             logger.info('Recording created: id=%s, uuid=%s, channel=%s, size=%d bytes',
                 recording.id, uuid, channel.id if channel else 'pending', len(file_data))
