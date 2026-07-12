@@ -96,7 +96,9 @@ class Call(models.Model):
         proxy_recordings = self.env['connect.settings'].sudo().get_param('proxy_recordings')
         for rec in self:
             if rec.voicemail_url:
-                if proxy_recordings:
+                if rec.voicemail_url.startswith('/'):
+                    media_url = rec.voicemail_url
+                elif proxy_recordings:
                     media_url = '/connect/voicemail/{}'.format(rec.id)
                 else:
                     media_url = rec.voicemail_url

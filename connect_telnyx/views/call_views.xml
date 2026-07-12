@@ -13,6 +13,14 @@
                         <field name="telnyx_price_unit"/>
                         <field name="telnyx_is_price_fetched"/>
                     </group>
+                    <group string="AI Assistant" invisible="not telnyx_ai_assistant">
+                        <field name="telnyx_ai_assistant"/>
+                        <field name="telnyx_ai_conversation_id"/>
+                        <field name="telnyx_ai_last_sync_at"/>
+                    </group>
+                    <group string="AI Transcript" invisible="not transcript">
+                        <field name="transcript" nolabel="1" colspan="2"/>
+                    </group>
                 </page>
             </xpath>
         </field>

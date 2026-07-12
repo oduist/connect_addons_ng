@@ -10,5 +10,14 @@
             <field name="state">code</field>
             <field name="active">True</field>
         </record>
+        <record id="telnyx_sync_ai_conversations" model="ir.cron">
+            <field name="name">Sync Telnyx AI Conversations</field>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
+            <field name="model_id" ref="connect.model_connect_call"/>
+            <field name="code">model.telnyx_sync_ai_conversations_batch()</field>
+            <field name="state">code</field>
+            <field name="active">True</field>
+        </record>
     </data>
 </odoo>
