@@ -159,7 +159,8 @@ numbers are attached to the domain's routing TeXML app
 (`phone_numbers.update(connection_id=…)`) and to the messaging profile;
 inbound calls arrive on the shared `/telnyx/webhook/number` route and
 are dispatched by `Called`/`To` (`route_call()` → `render()`).
-`destination` Selection: `user` / `callflow` / `texml`.
+`destination` Selection: `user` / `callflow` / `texml`. Numbers have no
+default flag; outbound defaults live on `connect.telnyx.outgoing_callerid`.
 
 ### outgoing_callerid.py - `connect.telnyx.outgoing_callerid`
 
