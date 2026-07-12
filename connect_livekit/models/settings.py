@@ -219,8 +219,9 @@ class Settings(models.Model):
             trunk._push_outbound()
         if not trunk.outbound_trunk_sid:
             raise ValidationError(
-                'The LiveKit outbound trunk is not configured (set the '
-                'outbound address on trunk "{}")!'.format(trunk.name))
+                'The LiveKit outbound trunk is not configured: set the '
+                'outbound address and at least one outgoing caller ID on '
+                'trunk "{}"!'.format(trunk.name))
         room_name = 'out-{}'.format(uuid.uuid4().hex[:8])
         self.livekit_api_call('room.create_room', lk_api.CreateRoomRequest(
             name=room_name,

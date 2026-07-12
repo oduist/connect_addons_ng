@@ -92,7 +92,7 @@ class LivekitTrunk(models.Model):
                 krisp_enabled=rec.krisp_enabled,
             )
             resp = self.env['connect.settings'].livekit_api_call(
-                'sip.create_sip_inbound_trunk',
+                'sip.create_inbound_trunk',
                 lk_api.CreateSIPInboundTrunkRequest(trunk=info))
             rec.with_context(skip_livekit_sync=True).write(
                 {'inbound_trunk_sid': resp.sip_trunk_id})
@@ -101,19 +101,25 @@ class LivekitTrunk(models.Model):
 
     def _push_outbound(self):
         for rec in self:
-            if not rec.outbound_address:
+            numbers = rec._outbound_numbers()
+            # LiveKit rejects outbound trunks without numbers
+            # ("no trunk numbers specified") — wait for the first
+            # outgoing caller ID; its create/write re-pushes the trunk.
+            if not rec.outbound_address or not numbers:
+                debug(self, 'LiveKit outbound trunk {} not pushed: address '
+                            'or caller IDs missing.'.format(rec.name))
                 continue
             rec._delete_remote_trunk(rec.outbound_trunk_sid)
             info = lk_api.SIPOutboundTrunkInfo(
                 name=rec.name,
                 address=rec.outbound_address,
                 transport=SIP_TRANSPORTS[rec.outbound_transport or 'udp'],
-                numbers=rec._outbound_numbers(),
+                numbers=numbers,
                 auth_username=rec.sudo().outbound_auth_username or '',
                 auth_password=rec.sudo().outbound_auth_password or '',
             )
             resp = self.env['connect.settings'].livekit_api_call(
-                'sip.create_sip_outbound_trunk',
+                'sip.create_outbound_trunk',
                 lk_api.CreateSIPOutboundTrunkRequest(trunk=info))
             rec.with_context(skip_livekit_sync=True).write(
                 {'outbound_trunk_sid': resp.sip_trunk_id})
