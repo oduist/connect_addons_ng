@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_infobip_number_tree" model="ir.ui.view">
+        <field name="name">connect.infobip.number.tree</field>
+        <field name="model">connect.infobip.number</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="phone_number"/>
+                <field name="friendly_name"/>
+                <field name="capabilities"/>
+                <field name="destination"/>
+                <field name="user"/>
+                <field name="external_number"/>
+                <field name="is_ignored"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_infobip_number_form" model="ir.ui.view">
+        <field name="name">connect.infobip.number.form</field>
+        <field name="model">connect.infobip.number</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="Number">
+                            <field name="phone_number"/>
+                            <field name="friendly_name"/>
+                            <field name="capabilities"/>
+                            <field name="is_ignored"/>
+                        </group>
+                        <group string="Routing">
+                            <field name="destination"/>
+                            <field name="user" invisible="destination != 'user'"
+                                   required="destination == 'user'"/>
+                            <field name="external_number"
+                                   invisible="destination != 'external'"
+                                   required="destination == 'external'"/>
+                            <field name="external_callerid_mode"
+                                   invisible="destination != 'external'"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_infobip_number" model="ir.actions.act_window">
+        <field name="name">Numbers</field>
+        <field name="res_model">connect.infobip.number</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_infobip_numbers"
+              name="Numbers"
+              parent="menu_connect_infobip"
+              action="action_infobip_number"
+              sequence="10"/>
+</odoo>

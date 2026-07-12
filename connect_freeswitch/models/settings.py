@@ -284,6 +284,17 @@ class Settings(models.Model):
             base_url if base_url.endswith('/') else base_url + '/', token)
 
     @api.model
+    def get_voicemail_webhook_url(self):
+        """Voicemail upload base URL including the auth token path segment."""
+        base_url = self.env['ir.config_parameter'].sudo().get_param(
+            'web.base.url') or ''
+        token = self.sudo().get_param('freeswitch_webhook_token') or ''
+        if not base_url or not token:
+            return ''
+        return '{}freeswitch/webhook/voicemail/{}'.format(
+            base_url if base_url.endswith('/') else base_url + '/', token)
+
+    @api.model
     def _freeswitch_rpc(self, command, args=''):
         """Low-level mod_xml_rpc call that classifies the failure mode.
 

@@ -175,6 +175,17 @@ Extends core recording with Twilio-specific SIDs and webhook handling.
   They live in core `connect` because OpenAI transcription is technology-agnostic.
 - This module only handles Twilio-specific recording webhook processing and SID tracking.
 
+### Runtime softphone recording control
+
+`connect.channel` is extended with Twilio handlers for the core softphone
+recording RPCs. The phone widget sends provider `twilio` and the active
+`CallSid`; the handler resolves the channel row, verifies participant/admin
+access through core helpers, and uses Twilio's Recording API to start/stop
+recording. Runtime state is stored on the shared channel control fields
+(`recording_state`, `recording_control_ref`, `recording_control_error`) while
+completed artifacts continue to enter `connect.recording` through the Twilio
+recording status webhook.
+
 ---
 
 ### 6. user.py - `_inherit = 'connect.user'`
@@ -241,7 +252,6 @@ extension) with Twilio SID, webhook URLs, sync and call routing.
 |-------|------|-------|
 | `phone_number` | Char | Required, `UNIQUE` |
 | `friendly_name` | Char | |
-| `is_default` | Boolean | |
 | `destination` | Selection | `user`, `callflow`, `twiml` |
 | `callflow` | Many2one | `connect.twilio.callflow` |
 | `user` | Many2one | `connect.user` |
@@ -648,6 +658,7 @@ The phone widget uses the Twilio Voice JavaScript SDK (`@twilio/voice-sdk`) to:
 - Show active call status (duration, caller info)
 - Transfer calls
 - Manage call hold/mute
+- Start/stop recording for the active call through the core softphone recording RPCs
 
 ---
 

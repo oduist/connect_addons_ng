@@ -61,7 +61,7 @@ firewall-related fields:
 | `firewall_authenticated_timeout` | Integer | trust TTL after a successful registration (7 days, sliding) |
 | `firewall_expire_short_timeout` | Integer | challenge-response window (30 s) |
 | `firewall_expire_long_timeout` | Integer | default-deny TTL after a challenge is sent but not answered (24 h) |
-| `freeswitch_webhook_token` / `display_freeswitch_webhook_token` | Char | shared secret authenticating every FreeSWITCH → Odoo HTTP call (`/freeswitch/xml`, `/freeswitch/webhook/*`). Masked; admin-only; auto-generated (`secrets.token_urlsafe(32)`) by the field default, `post_init_hook` and the 19.0.1.10.2 migration (`ensure_webhook_token`). Paired with the container via the `FS_WEBHOOK_TOKEN` env var. See ADR-025 |
+| `freeswitch_webhook_token` / `display_freeswitch_webhook_token` | Char | shared secret authenticating every FreeSWITCH → Odoo HTTP call (`/freeswitch/xml`, `/freeswitch/webhook/*`). Masked; admin-only; auto-generated (`secrets.token_urlsafe(32)`) by the field default, `post_init_hook` and the 19.0.1.10.6 migration (`ensure_webhook_token`). Paired with the container via the `FS_WEBHOOK_TOKEN` env var. See ADR-025 |
 
 `write()` is extended to:
 * validate the Firewall Service Token and the FreeSWITCH Webhook Token
@@ -145,6 +145,7 @@ Beyond firewall, the module contains:
 
 | Model | Purpose |
 |---|---|
+| `connect.channel` (`_inherit`) | adds FreeSWITCH runtime softphone recording control handlers on the shared channel RPC surface. Verto active calls are controlled by live UUID because channel rows are created from CDR after hangup; ownership and state are read/written through FreeSWITCH channel variables. |
 | `connect.user` (`_inherit`) | adds `freeswitch_exten` / `freeswitch_exten_number` (registered in `_pbx_number_fields()`), `freeswitch_outgoing_callerid`, `freeswitch_endpoint_ids`, WebRTC fields and dial-string generation; `originate_provider` `selection_add` `'freeswitch'` |
 | `connect.freeswitch.endpoint` (own model, ADR-031) | SIP endpoint management (formerly `connect.endpoint`). `auth_password` is auto-generated as a typeable passphrase (`models/passphrase.py`, `secrets`-based), `readonly` + `copy=False`, defaulted on create; `action_regenerate_auth_password()` issues a new one. Empty passwords on existing endpoints are backfilled non-destructively by `backfill_endpoint_passwords(env)` (post-migration). UI uses the `endpoint_password` OWL widget (mask + Show/Hide + Copy) — see ADR-022 |
 | `connect.freeswitch.exten` (own model, ADR-031) | extension routing (formerly `connect.exten`); dst Reference → `connect.user` / `connect.freeswitch.callflow` / `connect.freeswitch.endpoint` / `connect.fs_fifo` |
@@ -255,6 +256,26 @@ pushes the new `{login, password}` to the user's **private** bus channel
 `connect_freeswitch.verto_credentials`); `phone_service.js` updates the
 live `VertoClient` password in place (`updateCredentials`). Active calls
 are not interrupted. The password is never surfaced in any view.
+
+### Softphone recording controls
+
+The Verto phone widget exposes a recording toggle while a call is active. It
+calls the core `connect.channel` softphone recording RPCs with provider
+`freeswitch` and the live Verto UUID. The provider handler:
+
+* checks access from live FreeSWITCH variables (`odoo_user_id`,
+  `odoo_connect_user_id`, `odoo_caller_pbx_user_id`, `odoo_called_user_id`);
+* starts manual segments with `uuid_record <uuid> start <upload-url>/<uuid>__<segment>.wav`;
+* stops the active manual segment from `odoo_recording_path`, or the default
+  `record_session` path only when the live UUID carries an
+  `execute_on_answer=record_session ...` variable;
+* stores `odoo_recording_state`, `odoo_recording_ref`,
+  `odoo_recording_path` and `odoo_recording_error` on the live UUID.
+
+User-level `record_calls=True` is not enough to infer an active recording by
+itself, because Odoo-originated click-to-call legs do not start
+`record_session`. Failed start/stop attempts reset the live state out of
+`starting` / `stopping` so the softphone can retry.
 
 ---
 
@@ -402,8 +423,7 @@ incoming. See **`specs/decisions/028-cdr-direction-from-dialplan-variable.md`**.
 
 ## Tests
 
-`tests/test_firewall.py` (gated test suite — symlinked from
-`tests_suite/connect_freeswitch/tests/`) covers:
+`connect_freeswitch/tests/test_firewall.py` covers:
 
 * whitelist / blacklist IP+CIDR validation and uniqueness;
 * token validator on `connect.settings`;

@@ -31,6 +31,7 @@ Dial another user's extension number to make an internal call.
 | **Mute/Unmute** | Toggle your microphone. |
 | **Keypad** | Open DTMF keypad to send tones during a call (e.g., for IVR menus). |
 | **Transfer** | Transfer the active call to another number or extension. |
+| **Recording** | Start or stop recording for the active call when the provider supports runtime recording control. |
 | **Hang Up** | End the call. |
 
 ## Call Transfer

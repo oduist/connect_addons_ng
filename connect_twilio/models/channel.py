@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+from urllib.parse import urljoin
 
 from markupsafe import escape
 
 from odoo import models, api, release
+from odoo.exceptions import UserError
 
 from odoo.addons.connect.models.settings import debug
 
@@ -53,6 +55,83 @@ class Channel(models.Model):
             'call_type': call_type,
             'parent_sid': params.get('ParentCallSid'),
         }
+
+    @api.model
+    def _softphone_recording_state_twilio(self, payload):
+        channel = self._softphone_recording_channel(payload)
+        result = channel._softphone_recording_payload()
+        if result['state'] == 'off' and not result['recording_ref']:
+            pbx_user = channel.caller_pbx_user or channel.called_pbx_user
+            if pbx_user and pbx_user.record_calls:
+                result['state'] = 'on'
+        return result
+
+    @api.model
+    def _softphone_recording_start_twilio(self, payload):
+        channel = self._softphone_recording_channel(payload)
+        channel._check_softphone_recording_active()
+        channel.sudo().write({
+            'recording_state': 'starting',
+            'recording_control_error': False,
+        })
+        try:
+            settings = self.env['connect.settings'].sudo()
+            api_url = settings.get_param('api_url')
+            edge = settings.get_param('twilio_edge')
+            callback_url = urljoin(
+                api_url or '',
+                'twilio/webhook/recordingstatus#e={}'.format(edge or ''),
+            )
+            kwargs = {
+                'recording_channels': 'dual',
+            }
+            if api_url:
+                kwargs.update({
+                    'recording_status_callback': callback_url,
+                    'recording_status_callback_event': ['completed'],
+                })
+            recording = settings.get_client().calls(
+                channel.sid).recordings.create(**kwargs)
+            channel.sudo().write({
+                'recording_state': 'on',
+                'recording_control_ref': getattr(recording, 'sid', '') or '',
+                'recording_control_error': False,
+            })
+        except Exception as e:
+            logger.exception('Twilio recording start failed for %s', channel.sid)
+            channel.sudo().write({
+                'recording_state': 'error',
+                'recording_control_error': str(e),
+            })
+            raise UserError('Could not start recording: {}'.format(e))
+        return channel._softphone_recording_payload()
+
+    @api.model
+    def _softphone_recording_stop_twilio(self, payload):
+        channel = self._softphone_recording_channel(payload)
+        channel._check_softphone_recording_active()
+        channel.sudo().write({
+            'recording_state': 'stopping',
+            'recording_control_error': False,
+        })
+        recording_ref = channel.recording_control_ref or 'Twilio.CURRENT'
+        try:
+            self.env['connect.settings'].sudo().get_client().calls(
+                channel.sid).recordings(recording_ref).update(
+                    status='stopped')
+            channel.sudo().write({
+                'recording_state': 'off',
+                'recording_control_ref': 'manual-off',
+                'recording_control_error': False,
+            })
+        except Exception as e:
+            logger.exception('Twilio recording stop failed for %s', channel.sid)
+            channel.sudo().write({
+                'recording_state': 'error',
+                'recording_control_error': str(e),
+            })
+            raise UserError('Could not stop recording: {}'.format(e))
+        return channel._softphone_recording_payload()
 
     def transfer(self, to=None):
         self.ensure_one()

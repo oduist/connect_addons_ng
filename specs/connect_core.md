@@ -185,6 +185,10 @@ Order: `id desc`
 | `called_user` | Many2one | `res.users` |
 | `caller_number` | Char | Computed, stored |
 | `called_number` | Char | Computed, stored |
+| `recording_state` | Selection | Runtime softphone recording control state: `off`, `on`, `starting`, `stopping`, `error` |
+| `recording_control_ref` | Char | Provider recording reference used by runtime controls |
+| `recording_control_path` | Char | Provider recording path/URL used by runtime controls |
+| `recording_control_error` | Char | Last runtime recording control error |
 
 **Methods:**
 
@@ -192,6 +196,11 @@ Order: `id desc`
 |--------|-------------|
 | `_get_channel_numbers()` | Generic regex-based number parsing. Handles: phone numbers, whatsapp: prefix stripping, SIP/client URI parsing via `connect.user.get_user_by_uri`. |
 | `_get_duration_human()` | Human-readable duration |
+| `get_softphone_recording_state(payload)` | Provider-dispatched RPC returning runtime recording support/state for the active softphone call. |
+| `start_softphone_recording(payload)` | Provider-dispatched RPC to start recording the active softphone call. |
+| `stop_softphone_recording(payload)` | Provider-dispatched RPC to stop recording the active softphone call. |
+| `_softphone_recording_channel(payload)` | Resolve a provider channel SID and verify the requester is a participant or Connect admin. |
+| `_check_softphone_recording_active()` | Reject runtime controls for completed/busy/failed/no-answer/canceled channels. |
 
 ---
 
@@ -312,8 +321,11 @@ atomic.
 - Transcription and summary methods use OpenAI directly (not Twilio), so they belong
   in core. The `openai` Python package is a core dependency.
 - `create()` override auto-triggers transcription if `transcript_calls` setting is enabled.
-- `transcribe_recording()` downloads the audio from `media_url` (which may be proxied)
-  and sends it to OpenAI Whisper.
+- `transcribe_recording()` prefers the stored `recording_attachment` bytes
+  (providers whose downloads require API auth store the file on the record,
+  e.g. connect_infobip — ADR-036) and only falls back to downloading
+  `media_url` (which may be proxied) before sending the audio to OpenAI
+  Whisper. `get_transcript()` accepts either source.
 - `make_summary()` uses the `summary_prompt` from settings with GPT-4o.
 
 ---
