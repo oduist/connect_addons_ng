@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
+
+import pytz
 
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import tagged, new_test_user
@@ -204,9 +206,13 @@ class TestSchedule(ConnectTestCommon):
             lambda s: s.slot_type == 'closed' and s.allday))
 
     def test_slots_regenerated_on_special_day(self):
+        # A date safely inside the slot horizon, in the calendar timezone
+        # (the slots' UTC start may fall on the previous local date).
+        target = datetime.now(pytz.timezone('Europe/Zurich')).date() + \
+            timedelta(days=7)
         special = self.env['connect.schedule.special_day'].create({
             'name': 'Extra day',
-            'date': self.schedule.slot_ids[0].start.date(),
+            'date': target,
             'work_from': 20.0,
             'work_to': 22.0,
             'schedule_ids': [(4, self.schedule.id)],
