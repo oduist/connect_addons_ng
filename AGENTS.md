@@ -43,10 +43,12 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 > **Deliberately duplicated code (no mixins — ADR-031).** The exten
 > dst-Reference mechanics and the caller-ID E.164/is_default logic exist
 > as full copies in connect_twilio, connect_freeswitch, connect_telnyx
-> AND connect_infobip; the callflow language selection list is copied in
-> connect_twilio, connect_freeswitch and connect_telnyx (connect_infobip
-> has no IVR in v1). When you fix or change one copy, apply the same
-> change to the other modules in the same commit.
+> AND connect_infobip; the BCP-47 language selection list is copied in
+> the connect_twilio, connect_freeswitch and connect_telnyx callflows
+> (connect_infobip has no IVR in v1) AND in core
+> `connect.user._get_language_selection()` (ADR-037). When you fix or
+> change one copy, apply the same change to the other modules in the
+> same commit.
 
 **Security groups:** `connect.group_user` (read), `connect.group_admin` (full CRUD), `connect.group_webhook` (webhook record creation)
 

@@ -171,7 +171,7 @@ class User(models.Model):
             'fs_domain': fs_domain,
             'voicemail_enabled': bool(voicemail_recording_url),
             'voicemail_prompt': voicemail_prompt,
-            'voicemail_lang': 'en-US',
+            'voicemail_lang': self.language or 'en-US',
             'voicemail_recording_url': voicemail_recording_url,
         })
 

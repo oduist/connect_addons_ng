@@ -350,6 +350,8 @@ links).
 | `voicemail_prompt` | Text | Jinja2 template |
 | `missed_calls_notify` | Boolean | |
 | `greeting_message` | Char | |
+| `language` | Selection | BCP-47 TTS language for the user's prompts. Default `en-US`. List from `_get_language_selection()` — deliberate 4th copy of the provider callflow lists (ADR-031/ADR-037) |
+| `voice` | Char | Provider-specific TTS voice name; empty = provider default (`Woman` on Twilio, `Polly.Joanna` on Telnyx) |
 | `summary_prompt` | Char | Per-user override |
 | `active` | Boolean | Default: True |
 | `originate_provider` | Selection | Base selection is empty; each provider module `selection_add`s its key (`twilio`, `freeswitch`, `asterisk`). Chooses which provider handles click-to-call for this user; may stay empty when only one provider is installed. |

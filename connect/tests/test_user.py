@@ -85,3 +85,20 @@ class TestConnectUser(ConnectTestCommon):
     def test_default_active(self):
         """Test active defaults to True."""
         self.assertTrue(self.connect_user.active)
+
+    def test_default_prompt_language(self):
+        """TTS prompt language defaults to en-US (ADR-037)."""
+        self.assertEqual(self.connect_user.language, 'en-US')
+
+    def test_default_voice_empty(self):
+        """Voice is empty by default: providers apply their own default."""
+        self.assertFalse(self.connect_user.voice)
+
+    def test_language_selection_list(self):
+        """The BCP-47 list has the 26 agreed entries (ADR-037)."""
+        selection = self.env['connect.user']._get_language_selection()
+        codes = [code for code, _label in selection]
+        self.assertEqual(len(codes), 26)
+        self.assertIn('en-US', codes)
+        self.assertIn('de-DE', codes)
+        self.assertIn('zh-CN', codes)
