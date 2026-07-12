@@ -71,7 +71,7 @@ class LivekitTrunk(models.Model):
             return
         try:
             self.env['connect.settings'].livekit_api_call(
-                'sip.delete_sip_trunk',
+                'sip.delete_trunk',
                 lk_api.DeleteSIPTrunkRequest(sip_trunk_id=sid))
         except ValidationError as e:
             # Already gone on the server: recreate cleanly.

@@ -92,7 +92,7 @@ class LivekitNumber(models.Model):
                 continue
             try:
                 self.env['connect.settings'].livekit_api_call(
-                    'sip.delete_sip_dispatch_rule',
+                    'sip.delete_dispatch_rule',
                     lk_api.DeleteSIPDispatchRuleRequest(
                         sip_dispatch_rule_id=rec.dispatch_rule_sid))
             except ValidationError as e:
@@ -134,7 +134,7 @@ class LivekitNumber(models.Model):
                 rec.trunk._push_inbound()
             rec._delete_remote_rule()
             resp = self.env['connect.settings'].livekit_api_call(
-                'sip.create_sip_dispatch_rule', rec._dispatch_rule_request())
+                'sip.create_dispatch_rule', rec._dispatch_rule_request())
             rec.with_context(skip_livekit_sync=True).write(
                 {'dispatch_rule_sid': resp.sip_dispatch_rule_id})
             debug(self, 'LiveKit dispatch rule for {} pushed as {}.'.format(
