@@ -16,13 +16,18 @@ class BirdWhatsappComposer(models.TransientModel):
     res_model = fields.Char('Related Model')
     res_id = fields.Integer('Related Record')
     number_id = fields.Many2one(
-        'connect.bird.number', string='Sender', required=True)
+        'connect.bird.number', string='Sender',
+        help='Optional: the platform assigns the workspace WhatsApp '
+             'sender when empty.')
     phone = fields.Char(string='To', required=True)
+    # WhatsApp on the Bird platform is template-only (free-form text is
+    # rejected by the API), so a template is mandatory.
     template_id = fields.Many2one(
-        'connect.bird.message_template', string='Template',
-        domain="[('status', 'in', ('active', 'approved'))]")
+        'connect.bird.message_template', string='Template', required=True,
+        domain="[('product', '=', 'whatsapp'),"
+               " ('status', 'in', ('active', 'approved'))]")
     template_variables = fields.Text(string='Template Variables (JSON)')
-    body = fields.Text(string='Message')
+    body = fields.Text(string='Preview', readonly=True)
 
     @api.model
     def default_get(self, fields_list):
@@ -67,29 +72,21 @@ class BirdWhatsappComposer(models.TransientModel):
         self.ensure_one()
         if not self.phone:
             raise ValidationError('Recipient number is required')
-        Message = self.env['connect.message']
-        if self.template_id:
-            params = {}
-            if (self.template_variables or '').strip():
-                try:
-                    params = json.loads(self.template_variables)
-                except ValueError as e:
-                    raise ValidationError(
-                        'Template variables must be a JSON object, e.g. '
-                        '{"name": "Max"}') from e
-                if not isinstance(params, dict):
-                    raise ValidationError(
-                        'Template variables must be a JSON object!')
-            Message.send_bird_template(
-                self.phone, self.template_id, params=params,
-                res_id=self.res_id or None, res_model=self.res_model or None)
-        else:
-            if not (self.body and self.body.strip()):
-                raise ValidationError('Message body is required')
-            # Direct Bird transport: the composer itself is the explicit
-            # provider choice, no message_provider dispatch.
-            Message.send_bird(
-                self.phone, self.body,
-                res_id=self.res_id or None, res_model=self.res_model or None,
-                outgoing_callerid=self.number_id)
+        params = {}
+        if (self.template_variables or '').strip():
+            try:
+                params = json.loads(self.template_variables)
+            except ValueError as e:
+                raise ValidationError(
+                    'Template variables must be a JSON object, e.g. '
+                    '{"1": "value"}') from e
+            if not isinstance(params, dict):
+                raise ValidationError(
+                    'Template variables must be a JSON object!')
+        # Direct Bird transport: the composer itself is the explicit
+        # provider choice, no message_provider dispatch.
+        self.env['connect.message'].send_bird_template(
+            self.phone, self.template_id, params=params,
+            res_id=self.res_id or None, res_model=self.res_model or None,
+            outgoing_callerid=self.number_id or None)
         return {'type': 'ir.actions.act_window_close'}

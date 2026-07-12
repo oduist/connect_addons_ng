@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
+import re
 
 from odoo import fields, models, api
 
@@ -8,24 +9,37 @@ logger = logging.getLogger(__name__)
 
 
 class BirdMessageTemplate(models.Model):
-    """Approved WhatsApp message templates synced read-only from
-    GET /v1/whatsapp/templates. Required to start a WhatsApp conversation
-    outside the 24-hour customer-service window; templates are authored
-    and approved in the Bird dashboard.
+    """Message templates synced read-only from the Bird platform.
+
+    The platform is template-first: WhatsApp accepts ONLY template sends
+    and free-form SMS is not generally available yet, so templates are
+    the primary way to send. Two products are synced:
+
+    - SMS templates (GET /v1/sms/templates): ``smt_`` ids, named typed
+      variables ({{ code }}, {{ date_time }}, ...);
+    - WhatsApp templates (GET /v1/whatsapp/templates): identified by
+      name + language (no id), positional {{1}} placeholders in the
+      body component.
     """
     _name = 'connect.bird.message_template'
     _description = 'Bird Message Template'
     _rec_name = 'name'
-    _order = 'name, locale'
+    _order = 'product, name, locale'
 
     sid = fields.Char('Template ID', index=True, readonly=True)
+    product = fields.Selection([
+        ('sms', 'SMS'),
+        ('whatsapp', 'WhatsApp'),
+    ], required=True, readonly=True, index=True)
     name = fields.Char(required=True, readonly=True)
-    locale = fields.Char('Locale', readonly=True)
+    locale = fields.Char('Language', readonly=True)
     status = fields.Char(readonly=True)
     category = fields.Char(readonly=True)
+    scope = fields.Char(readonly=True)
     variables = fields.Text(
         readonly=True,
-        help='JSON list of template variable keys/descriptors.')
+        help='JSON list of template variable descriptors: '
+             '[{"key", "type", "required", "constraint"}].')
     body_preview = fields.Text(readonly=True)
 
     def get_variable_keys(self):
@@ -34,7 +48,7 @@ class BirdMessageTemplate(models.Model):
             keys = []
             for item in json.loads(self.variables or '[]'):
                 if isinstance(item, dict) and item.get('key'):
-                    keys.append(item['key'])
+                    keys.append(str(item['key']))
                 elif isinstance(item, str):
                     keys.append(item)
             return keys
@@ -42,44 +56,81 @@ class BirdMessageTemplate(models.Model):
             return []
 
     @api.model
-    def _map_remote_template(self, item):
-        """GET /v1/whatsapp/templates item -> field values. The exact
-        payload shape is confirmed against the live platform; all
-        assumptions live here.
-        """
+    def _map_remote_sms_template(self, item):
+        """GET /v1/sms/templates item -> field values."""
+        languages = item.get('available_languages') or []
         return {
             'sid': item.get('id'),
+            'product': 'sms',
             'name': item.get('name') or item.get('id'),
-            'locale': item.get('locale') or item.get('language'),
+            'locale': languages[0] if languages else '',
             'status': item.get('status'),
             'category': item.get('category'),
+            'scope': item.get('scope'),
             'variables': json.dumps(item.get('variables') or []),
-            'body_preview': (item.get('body') or item.get('text')
-                             or item.get('preview') or ''),
+            'body_preview': item.get('body') or '',
+        }
+
+    @api.model
+    def _map_remote_whatsapp_template(self, item):
+        """GET /v1/whatsapp/templates item -> field values.
+
+        WhatsApp templates carry no id: name + language identify them.
+        The body component uses positional {{1}} placeholders; the
+        variable descriptors are derived from them.
+        """
+        name = item.get('name')
+        language = item.get('language') or 'en'
+        body_text = ''
+        for component in item.get('components') or []:
+            if component.get('type') == 'body':
+                body_text = component.get('text') or ''
+                break
+        placeholders = sorted(
+            {int(n) for n in re.findall(r'{{\s*(\d+)\s*}}', body_text)})
+        variables = [
+            {'key': str(n), 'type': 'text', 'required': True}
+            for n in placeholders
+        ]
+        return {
+            'sid': 'wa:{}:{}'.format(name, language),
+            'product': 'whatsapp',
+            'name': name,
+            'locale': language,
+            'status': item.get('status'),
+            'category': item.get('category'),
+            'scope': item.get('scope'),
+            'variables': json.dumps(variables),
+            'body_preview': body_text,
         }
 
     @api.model
     def sync(self):
-        """Upsert templates, drop vanished ones. Tolerates a missing
-        whatsapp scope on the access key (logged, no failure).
+        """Upsert templates of both products, drop vanished ones.
+        Tolerates missing scopes on the access key (logged, no failure).
         """
         settings = self.env['connect.settings']
         remote_sids = []
         found_any = False
-        for item in settings.bird_paginate('/whatsapp/templates'):
-            found_any = True
-            values = self._map_remote_template(item)
-            if not values['sid']:
-                continue
-            remote_sids.append(values['sid'])
-            template = self.search([('sid', '=', values['sid'])], limit=1)
-            if template:
-                template.write(values)
-            else:
-                self.create(values)
+        sources = [
+            ('/sms/templates', self._map_remote_sms_template),
+            ('/whatsapp/templates', self._map_remote_whatsapp_template),
+        ]
+        for path, mapper in sources:
+            for item in settings.bird_paginate(path):
+                found_any = True
+                values = mapper(item)
+                if not values['sid'] or not values['name']:
+                    continue
+                remote_sids.append(values['sid'])
+                template = self.search([('sid', '=', values['sid'])], limit=1)
+                if template:
+                    template.write(values)
+                else:
+                    self.create(values)
         if not found_any:
-            logger.warning('Bird WhatsApp templates sync returned nothing '
-                           '(missing scope or no templates).')
+            logger.warning('Bird templates sync returned nothing '
+                           '(missing scopes or no templates).')
             return True
         stale = self.search([('sid', 'not in', remote_sids)])
         if stale:

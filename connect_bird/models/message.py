@@ -50,59 +50,36 @@ class ConnectMessage(models.Model):
 
     @api.model
     def _normalize_bird_status(self, status):
-        """The platform returns the message status either as a plain
-        string or as an object; flatten defensively.
-        """
+        """Flatten a status that may arrive as a plain string or object."""
         if isinstance(status, dict):
             status = (status.get('value') or status.get('state')
                       or status.get('status') or '')
         return self._map_bird_message_status(status or 'sent')
 
     @api.model
-    def _get_bird_sender_numbers(self, outgoing_callerid=None):
-        """Ordered (product, number) send attempts: an explicit sender
-        disables number fallback; automatic selection tries WhatsApp
-        first, then SMS (mirrors the Twilio behavior).
+    def _get_bird_sender_number(self, outgoing_callerid=None):
+        """Resolve the sender number, or None: the platform assigns a
+        shared sender (e.g. a short code) when ``from`` is omitted, so a
+        configured number is optional for sending.
         """
         Number = self.env['connect.bird.number']
         if outgoing_callerid:
             if isinstance(outgoing_callerid, models.BaseModel):
-                number = outgoing_callerid
-            else:
-                number = Number.search([
-                    '|', ('number', '=', outgoing_callerid),
-                    ('sid', '=', outgoing_callerid),
-                ], limit=1)
+                return outgoing_callerid
+            number = Number.search([
+                '|', ('number', '=', outgoing_callerid),
+                ('sid', '=', outgoing_callerid),
+            ], limit=1)
             if not number:
                 raise ValidationError(
                     'No Bird number matches sender {}!'.format(
                         outgoing_callerid))
-            numbers = [number]
-        elif self.env.user.connect_user.bird_message_number:
-            numbers = [self.env.user.connect_user.bird_message_number]
-        else:
-            numbers = []
-            for capability in ('whatsapp', 'sms'):
-                try:
-                    number = Number.get_default_number(capability)
-                except ValidationError:
-                    continue
-                if number not in numbers:
-                    numbers.append(number)
-            if not numbers:
-                raise ValidationError(
-                    'No active Bird number. Run Sync in Bird Settings '
-                    'and check your numbers!')
-        attempts = []
-        for number in numbers:
-            if number.has_capability('whatsapp'):
-                attempts.append(('whatsapp', number))
-            if number.has_capability('sms'):
-                attempts.append(('sms', number))
-        if not attempts:
-            raise ValidationError(
-                'The selected Bird number has no messaging capability!')
-        return attempts
+            return number
+        user_number = self.env.user.connect_user.bird_message_number
+        if user_number:
+            return user_number
+        return Number.search(
+            [('is_default', '=', True)], limit=1) or None
 
     def send(self, recipient, body, res_id=None, res_model=None,
              outgoing_callerid=None, **kwargs):
@@ -116,91 +93,92 @@ class ConnectMessage(models.Model):
 
     def send_bird(self, recipient, body, res_id=None, res_model=None,
                   outgoing_callerid=None):
-        """Bird transport, callable directly (bypassing the provider
-        dispatch) by the Bird composers where the provider choice is
-        explicit.
+        """Free-form SMS transport, callable directly (bypassing the
+        provider dispatch) by the Bird composers.
+
+        WhatsApp accepts only template sends on the platform (and
+        free-form SMS may still be gated for the workspace) — the API
+        error is surfaced to the user as is; templates go through
+        send_bird_template().
         """
         self.env['oduist.license'].check_license('connect', silent=False)
-        attempts = self._get_bird_sender_numbers(outgoing_callerid)
-        res = product = number = False
-        for product, number in attempts:
-            res = self.client_send(recipient, number, body, product)
-            if res:
-                break
+        settings = self.env['connect.settings']
+        number = self._get_bird_sender_number(outgoing_callerid)
+        payload = {
+            'to': recipient,
+            'text': body,
+            'category': settings.sudo().get_param(
+                'bird_sms_category') or 'transactional',
+        }
+        if number:
+            payload['from'] = number.number
+        res = settings.bird_request('POST', '/sms/messages', payload)
         if not res:
             raise ValidationError(
-                'Bird could not send the message. For WhatsApp check the '
-                '24-hour customer service window (use a template to start '
-                'a conversation) or check the Odoo log.')
+                'Bird could not send the message, check the Odoo log.')
+        logger.info('Bird sms message to %s is sent.', recipient)
         return self._register_bird_outgoing_message(
-            res, number, product, recipient, body, res_id, res_model)
+            res, number, 'sms', recipient, res.get('text') or body,
+            res_id, res_model)
 
     def send_bird_template(self, recipient, template, params=None,
-                           res_id=None, res_model=None):
-        """Send an approved WhatsApp template (the only way to start a
-        conversation outside the 24-hour window).
+                           res_id=None, res_model=None,
+                           outgoing_callerid=None):
+        """Send a message template (the primary send path on the Bird
+        platform: WhatsApp is template-only, and templates start a
+        WhatsApp conversation outside the 24-hour window).
 
         ``template`` is a connect.bird.message_template record or id,
-        ``params`` a {key: value} dict for the template variables. The
-        request shape is confirmed against the live platform
-        (POST /v1/whatsapp/messages is present but not yet publicly
-        documented).
+        ``params`` a {key: value} dict for the template variables
+        (positional '1', '2', ... keys for WhatsApp).
         """
         self.env['oduist.license'].check_license('connect', silent=False)
         if not isinstance(template, models.BaseModel):
             template = self.env['connect.bird.message_template'].browse(template)
         template.ensure_one()
-        number = self.env.user.connect_user.bird_message_number
-        if not number or not number.has_capability('whatsapp'):
-            number = self.env['connect.bird.number'].get_default_number(
-                'whatsapp')
-        payload = {
-            'to': recipient,
-            'from': number.number,
-            'template': {
-                'name': template.name,
-                'locale': template.locale or 'en',
-                'variables': {
-                    str(key): str(value)
-                    for key, value in (params or {}).items()
-                },
-            },
-        }
-        res = self.env['connect.settings'].bird_request(
-            'POST', '/whatsapp/messages', payload)
-        body = template.body_preview or 'Template: {}'.format(template.name)
-        return self._register_bird_outgoing_message(
-            res, number, 'whatsapp', recipient, body, res_id, res_model)
-
-    def client_send(self, recipient, number, body, product):
-        """POST one message to the Bird platform; False on failure."""
         settings = self.env['connect.settings']
-        if product == 'sms':
+        number = self._get_bird_sender_number(outgoing_callerid)
+        params = params or {}
+        if template.product == 'whatsapp':
+            # Meta-style components: positional parameters ordered by key.
+            parameters = [
+                {'type': 'text', 'text': str(value)}
+                for _key, value in sorted(
+                    params.items(), key=lambda kv: str(kv[0]))
+            ]
             payload = {
                 'to': recipient,
-                'from': number.number,
-                'text': body,
-                'category': settings.sudo().get_param(
-                    'bird_sms_category') or 'transactional',
-            }
-            path = '/sms/messages'
-        else:
-            # WhatsApp free-form text inside the 24h customer-service
-            # window; shape confirmed against the live platform.
-            payload = {
-                'to': recipient,
-                'from': number.number,
-                'text': body,
+                'template': {
+                    'name': template.name,
+                    'components': [{
+                        'type': 'body',
+                        'parameters': parameters,
+                    }] if parameters else [],
+                },
             }
             path = '/whatsapp/messages'
-        res = settings.bird_request('POST', path, payload, raise_exc=False)
+        else:
+            template_ref = ({'id': template.sid}
+                            if (template.sid or '').startswith('smt_')
+                            else {'name': template.name})
+            template_ref['parameters'] = {
+                str(key): str(value) for key, value in params.items()}
+            payload = {
+                'to': recipient,
+                'template': template_ref,
+            }
+            if number:
+                payload['from'] = number.number
+            path = '/sms/messages'
+        res = settings.bird_request('POST', path, payload)
         if not res:
-            logger.warning(
-                'Bird %s send from %s to %s failed.',
-                product, number.number, recipient)
-            return False
-        logger.info('Bird %s message to %s is sent.', product, recipient)
-        return res
+            raise ValidationError(
+                'Bird could not send the template, check the Odoo log.')
+        body = (res.get('text') or template.body_preview
+                or 'Template: {}'.format(template.name))
+        return self._register_bird_outgoing_message(
+            res, number, template.product, recipient, body,
+            res_id, res_model)
 
     def _register_bird_outgoing_message(self, res, number, product,
                                         recipient, body, res_id=None,
@@ -208,11 +186,14 @@ class ConnectMessage(models.Model):
         """Create the ledger record and post to the target chatter."""
         sender_user = self.env.user
         partner = self.env['res.partner'].get_partner_by_number(recipient)
+        from_number = (res.get('from')
+                       or (res.get('business') or {}).get('phone_number')
+                       or (number.number if number else ''))
         message = self.env['connect.message'].sudo().create({
             'bird_message_id': res.get('id'),
-            'bird_number': number.id,
+            'bird_number': number.id if number else False,
             'message_type': 'WhatsApp' if product == 'whatsapp' else 'sms',
-            'from_number': number.number,
+            'from_number': from_number,
             'to_number': recipient,
             'body': body,
             'sender_user': sender_user.id,
@@ -242,7 +223,7 @@ class ConnectMessage(models.Model):
                     'author_id': chatter.author_id.id,
                     'mail_message_id': chatter.id,
                     'res_partner_id': chatter.author_id.id,
-                    'sms_number': number.number,
+                    'sms_number': from_number,
                     'notification_type': message.message_type,
                     'is_read': True,
                     'notification_status': 'ready',
@@ -255,17 +236,26 @@ class ConnectMessage(models.Model):
     @api.model
     def _extract_bird_message_data(self, data):
         """(message_id, from_number, to_number, text, media_url,
-        media_content_type) from a webhook event ``data`` object.
+        media_content_type, error) from a message object or webhook
+        event ``data``.
 
-        All payload-shape assumptions are centralized here so live-traffic
-        fixes touch one place. Known keys from the published SMS events:
-        sms_id, to, from, carrier, error; inbound events additionally
-        carry the text body.
+        Handles both product shapes: SMS objects carry plain ``from`` /
+        ``to`` / ``sms_id`` / ``last_error``; WhatsApp objects carry
+        ``business.phone_number`` / ``contact.phone_number`` /
+        ``wam_...`` ids. All payload-shape assumptions are centralized
+        here so live-traffic fixes touch one place.
         """
         message_id = (data.get('sms_id') or data.get('whatsapp_id')
                       or data.get('message_id') or data.get('id'))
-        from_number = data.get('from')
-        to_number = data.get('to')
+        business = (data.get('business') or {}).get('phone_number')
+        contact = (data.get('contact') or {}).get('phone_number')
+        direction = data.get('direction') or ''
+        if direction in ('inbound', 'incoming'):
+            from_number = data.get('from') or contact
+            to_number = data.get('to') or business
+        else:
+            from_number = data.get('from') or business
+            to_number = data.get('to') or contact
         text = data.get('text') or data.get('body') or ''
         media = data.get('media') or []
         media_url = None
@@ -274,8 +264,9 @@ class ConnectMessage(models.Model):
             first = media[0] if isinstance(media[0], dict) else {}
             media_url = first.get('url')
             media_content_type = first.get('content_type')
+        error = data.get('error') or data.get('last_error') or {}
         return (message_id, from_number, to_number, text,
-                media_url, media_content_type)
+                media_url, media_content_type, error)
 
     @api.model
     def receive_bird(self, data, event_type):
@@ -284,7 +275,7 @@ class ConnectMessage(models.Model):
             return True
         try:
             (bird_message_id, from_number, to_number, text,
-             media_url, media_content_type) = \
+             media_url, media_content_type, _error) = \
                 self._extract_bird_message_data(data)
             if not bird_message_id:
                 logger.warning('Bird inbound message without id, ignored.')
@@ -427,7 +418,7 @@ class ConnectMessage(models.Model):
             return True
         try:
             (bird_message_id, from_number, to_number, text,
-             _media_url, _media_content_type) = \
+             _media_url, _media_content_type, error) = \
                 self._extract_bird_message_data(data)
             if not bird_message_id:
                 return True
@@ -452,7 +443,6 @@ class ConnectMessage(models.Model):
             else:
                 message.write({'status': status})
             if raw_status in BIRD_FAILED_STATUSES:
-                error = data.get('error') or {}
                 message.write({
                     'has_error': True,
                     'error_code': str(error.get('code', '') or ''),

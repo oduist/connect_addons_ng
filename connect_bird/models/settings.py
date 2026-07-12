@@ -146,20 +146,28 @@ class Settings(models.Model):
 
     @staticmethod
     def _format_bird_error(res):
-        """Compact human message from a Bird error response."""
+        """Compact human message from a Bird error response.
+
+        Platform errors come as {"error": {"message", "code",
+        "details": [{"param", "message"}], "remediation"}}; some
+        endpoints answer with a flat {"code", "message"}.
+        """
         try:
             data = res.json()
-            # Platform errors: {"code": "...", "message": "..."}; some
-            # endpoints return {"errors": [{...}]} lists.
             if isinstance(data, dict):
-                if data.get('message'):
-                    return '{} ({})'.format(data['message'], res.status_code)
-                errors = data.get('errors') or []
-                details = '; '.join(
-                    filter(None, [e.get('message') or e.get('code')
-                                  for e in errors if isinstance(e, dict)]))
-                if details:
-                    return '{} ({})'.format(details, res.status_code)
+                error = data.get('error') if isinstance(
+                    data.get('error'), dict) else data
+                parts = []
+                if error.get('message'):
+                    parts.append(error['message'])
+                for detail in error.get('details') or []:
+                    if isinstance(detail, dict) and detail.get('message'):
+                        parts.append('{}: {}'.format(
+                            detail.get('param', ''), detail['message']))
+                if error.get('remediation'):
+                    parts.append(error['remediation'])
+                if parts:
+                    return '{} ({})'.format(' '.join(parts), res.status_code)
         except ValueError:
             pass
         return '{} {}'.format(res.status_code, (res.text or '')[:200])

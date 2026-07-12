@@ -19,13 +19,13 @@
                     <group>
                         <field name="res_model" invisible="1"/>
                         <field name="res_id" invisible="1"/>
-                        <field name="number_id" options="{'no_create': True}" required="1"/>
+                        <field name="number_id" options="{'no_create': True}"/>
                         <field name="phone" required="1"/>
-                        <field name="template_id" options="{'no_create': True}"/>
-                        <field name="template_variables" placeholder='{"name": "Max"}'
+                        <field name="template_id" options="{'no_create': True}" required="1"/>
+                        <field name="template_variables" placeholder='{"1": "value"}'
                                invisible="not template_id"/>
-                        <field name="body" widget="text" nolabel="0" placeholder="Type your message..."
-                               readonly="template_id != False" required="not template_id"/>
+                        <field name="body" widget="text" nolabel="0"
+                               invisible="not template_id"/>
                     </group>
                 </sheet>
                 <footer>
