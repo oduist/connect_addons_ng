@@ -20,3 +20,20 @@ jambonz repositories became unavailable.
 
 Local integration changes are limited to whitespace normalization so the
 snapshot passes repository checks; there are no semantic source changes.
+
+The upstream C/C++/header sources, `Makefile.am`, `CMakeLists.txt` and
+`UPSTREAM-LICENSE` are kept byte-for-byte as snapshotted. Two integration
+artifacts were added around them (never editing the upstream files):
+
+1. `Makefile` — FreeSWITCH's in-tree module build ignores the upstream
+   `Makefile.am` entirely and, by default, compiles only `mod_audio_fork.c`.
+   This plain in-tree `Makefile` declares the extra C++ sources and the
+   external libraries (libwebsockets, boost, stdc++) via modmake.rules'
+   `LOCAL_OBJS`/`LOCAL_LDFLAGS_POST` so the whole module links correctly.
+   modmake.rules only auto-generates a stub Makefile when none exists, so this
+   file is honored.
+
+2. A `-Werror` neutralization in `connect_freeswitch/deploy/Dockerfile` (a
+   `sed` pass after `./configure`), because the vendored C source predates
+   FreeSWITCH's strict module flags (`-Werror -pedantic
+   -Wdeclaration-after-statement`).

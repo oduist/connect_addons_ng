@@ -94,6 +94,15 @@ RUN ./configure \
     --without-python \
     --without-erlang \
     --without-java
+
+# The vendored mod_audio_fork sources predate FreeSWITCH's strict in-tree
+# module CFLAGS (-Werror -pedantic -Wdeclaration-after-statement), and the
+# in-tree build ignores per-module Makefile.am CFLAGS. Neutralize bare -Werror
+# across the build files so the vendored code compiles verbatim; the warnings
+# remain visible but non-fatal. -Werror=<name> forms are left untouched.
+RUN find . \( -name Makefile -o -name '*.mk' -o -name 'modmake.rules' -o -name 'modmake.rulesam' \) -print0 \
+    | xargs -0 -r sed -i -E 's/-Werror($|[[:space:]])/-Wno-error\1/g'
+
 RUN make -j$(nproc)
 RUN make install
 
@@ -114,7 +123,7 @@ RUN mkdir -p /staging/usr/lib \
     && ldconfig -N /staging/usr/lib
 
 # ── Download piper binary ───────────────────────────────────────────────────
-RUN curl -fSL \
+RUN curl -fSL --http1.1 --retry 5 --retry-all-errors --retry-delay 2 \
     https://github.com/rhasspy/piper/releases/download/v${PIPER_VERSION}/piper_amd64.tar.gz \
     -o /tmp/piper.tar.gz \
     && mkdir -p /opt/piper \
@@ -168,8 +177,8 @@ zh:zh_CN:huayan:medium" \
          dest="/opt/piper/models/${full}-${dest_voice}-${quality}"; \
          url="${base}/${short}/${full}/${voice}/${quality}/${full}-${voice}-${quality}"; \
          echo "==> ${full}-${dest_voice}-${quality}"; \
-         curl -fSL "${url}.onnx"      -o "${dest}.onnx"; \
-         curl -fSL "${url}.onnx.json" -o "${dest}.onnx.json"; \
+         curl -fSL --http1.1 --retry 5 --retry-all-errors --retry-delay 2 "${url}.onnx"      -o "${dest}.onnx"; \
+         curl -fSL --http1.1 --retry 5 --retry-all-errors --retry-delay 2 "${url}.onnx.json" -o "${dest}.onnx.json"; \
        done
 
 ###############################################################################
