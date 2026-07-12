@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Standalone LiveKit settings form on the shared connect.settings
+         singleton: only LiveKit fields, opened from the LiveKit menu. -->
+    <record id="connect_settings_form_livekit" model="ir.ui.view">
+        <field name="name">connect.settings.form.livekit</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" eval="False"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <sheet>
+                    <notebook>
+                        <page name="livekit_server" string="LiveKit Server">
+                            <group>
+                                <group string="Connection" name="livekit_connection">
+                                    <div colspan="2">
+                                        <small><strong>Self-hosted LiveKit stack: see the
+                                            deployment guide in connect_livekit/deploy/.
+                                        </strong></small>
+                                    </div>
+                                    <field name="livekit_auto_sync" groups="base.group_no_one"/>
+                                    <field name="livekit_ws_url" placeholder="wss://livekit.example.com"/>
+                                    <field name="livekit_api_url" placeholder="https://livekit.example.com"/>
+                                    <field name="livekit_api_key" string="API Key"/>
+                                    <field name="display_livekit_api_secret" string="API Secret" password="1"/>
+                                    <button colspan="2" name="livekit_sync" type="object"
+                                            string="SYNC LIVEKIT SERVER" class="btn btn-primary"/>
+                                </group>
+                                <group string="SIP" name="livekit_sip">
+                                    <field name="livekit_sip_uri" placeholder="sip.example.com:5060"
+                                           help="Address of the livekit-sip service. Configure it as the destination of your SIP trunk at the carrier."/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Agent Worker" name="livekit_agent_worker">
+                                    <field name="livekit_agent_token" string="Agent Token" password="1"/>
+                                    <button colspan="2" name="action_generate_livekit_agent_token"
+                                            type="object" string="GENERATE AGENT TOKEN"
+                                            class="btn btn-info"
+                                            confirm="Regenerate the agent token? The worker environment must be updated with the new value."/>
+                                </group>
+                            </group>
+                        </page>
+                        <page name="livekit_ai" string="AI Providers">
+                            <group>
+                                <group string="Speech-to-Text">
+                                    <field name="display_deepgram_api_key" string="Deepgram API Key" password="1"/>
+                                </group>
+                                <group string="Text-to-Speech">
+                                    <field name="display_elevenlabs_api_key" string="ElevenLabs API Key" password="1"/>
+                                </group>
+                            </group>
+                            <group>
+                                <div colspan="2">
+                                    <small>The OpenAI key from Connect general settings is used for
+                                        the OpenAI STT/LLM/TTS and Realtime options.</small>
+                                </div>
+                            </group>
+                        </page>
+                        <page string="Development" groups="base.group_no_one" name="livekit_dev">
+                            <group>
+                                <group>
+                                    <field name="livekit_verify_webhooks"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.actions.server" id="livekit_settings_action">
+        <field name="type">ir.actions.server</field>
+        <field name="name">LiveKit Settings</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="connect.model_connect_settings"/>
+        <field name="code">action = model.open_settings_form("connect_livekit.connect_settings_form_livekit", "LiveKit Settings")</field>
+    </record>
+
+    <menuitem id="menu_livekit_settings"
+              name="Settings"
+              parent="menu_livekit_config"
+              action="livekit_settings_action"
+              groups="connect.group_admin"
+              sequence="10"/>
+
+</odoo>
