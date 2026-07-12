@@ -41,6 +41,8 @@
                                 </group>
                                 <group string="Messaging">
                                     <field name="telnyx_messaging_profile_id" readonly="1"/>
+                                    <field name="telnyx_ai_summary_insight_id" readonly="1"/>
+                                    <field name="telnyx_ai_summary_group_id" readonly="1"/>
                                 </group>
                             </group>
                         </page>

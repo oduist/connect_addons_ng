@@ -7,6 +7,7 @@ from odoo.exceptions import ValidationError
 
 from odoo.addons.connect.models.settings import debug
 from .settings import format_connect_response
+from .texml_response import Connect, VoiceResponse
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class Number(models.Model):
         ('user', 'User'),
         ('callflow', 'CallFlow'),
         ('texml', 'TeXML'),
+        ('ai_assistant', 'AI Assistant'),
     ], ondelete='set null')
     callflow = fields.Many2one('connect.telnyx.callflow', ondelete='set null')
     user = fields.Many2one('connect.user', ondelete='set null')
@@ -30,6 +32,10 @@ class Number(models.Model):
     sid = fields.Char()
     texml = fields.Many2one(
         'connect.telnyx.texml', string='TeXML', ondelete='set null'
+    )
+    ai_assistant = fields.Many2one(
+        'connect.telnyx.ai_assistant', string='AI Assistant',
+        ondelete='set null',
     )
 
     def update_telnyx_number(self, client):
@@ -74,7 +80,7 @@ class Number(models.Model):
 
     def write(self, vals):
         if 'destination' in vals:
-            for field in ['user', 'callflow', 'texml']:
+            for field in ['user', 'callflow', 'texml', 'ai_assistant']:
                 if field != vals['destination']:
                     vals.update({field: None})
         res = super().write(vals)
@@ -140,6 +146,14 @@ class Number(models.Model):
             return self.user.telnyx_render(request)
         elif self.destination == 'callflow' and self.callflow:
             return self.callflow.render(request)
+        elif self.destination == 'ai_assistant' and self.ai_assistant:
+            if not self.ai_assistant.sid:
+                return '<Response><Say>AI assistant is not synchronized.</Say></Response>'
+            response = VoiceResponse()
+            connect = Connect()
+            connect.ai_assistant(self.ai_assistant.sid)
+            response.append(connect)
+            return response.to_xml()
         else:
             return '<Response><Say>Number not configured. Goodbye!</Say></Response>'
 

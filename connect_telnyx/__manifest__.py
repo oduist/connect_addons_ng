@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Telnyx',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.1.0',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Telnyx integration for Oduist Connect',
@@ -12,6 +12,7 @@
         'security/access_rules.xml',
         'views/menu.xml',
         'views/settings_views.xml',
+        'views/ai_assistant_views.xml',
         'views/texml_views.xml',
         'views/domain_views.xml',
         'views/user_views.xml',
@@ -28,6 +29,7 @@
         'wizard/sms_composer_views.xml',
         'wizard/whatsapp_composer_views.xml',
         'wizard/rcs_composer_views.xml',
+        'wizard/ai_call_wizard_views.xml',
         'data/texml.xml',
         'data/ir_cron.xml',
     ],

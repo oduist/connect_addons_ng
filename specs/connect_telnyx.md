@@ -51,6 +51,19 @@ WhatsApp and RCS **messaging** are integrated (ADR-033).
 
 ## Models (connect_telnyx/models/)
 
+### ai_assistant.py — `connect.telnyx.ai_assistant`
+
+Manages Telnyx Voice AI Assistants through the v2 API. Stores the prompt,
+greeting, model/voice/transcription settings, recording/memory switches and
+the Odoo tool allowlist. Unknown remote assistants are imported by account
+sync; once imported, Odoo configures its signed dynamic-variables webhook and
+per-assistant tool endpoints. Phone numbers route to assistants through the
+existing TeXML application using `<Connect><AIAssistant>` (ADR-034).
+
+Completed AI conversations are linked to `connect.call` by conversation and
+Call Control IDs. Transcript and Telnyx Insight summary are stored on an
+idempotent `connect.recording` row with `source = telnyx-ai`.
+
 ### texml_response.py — TeXML builder (no Odoo model)
 
 `VoiceResponse`, `Gather`, `Dial` (+`sip()`/`number()`/`conference()`),
@@ -250,6 +263,9 @@ validation: Ed25519 over the raw body
 | `/telnyx/webhook/callaction` | Generic call action |
 | `/telnyx/webhook/texml/<id>` | TeXML app voice request |
 | `/telnyx/webhook/message` | Messaging v2 JSON events |
+| `/telnyx/webhook/assistant/<id>/variables` | Signed caller context and memory configuration |
+| `/telnyx/webhook/assistant/<id>/tool/<name>` | Token-authenticated allowlisted Odoo tool |
+| `/telnyx/webhook/assistant/insights` | Signed conversation summary delivery |
 
 ---
 
