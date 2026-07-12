@@ -58,8 +58,9 @@ class CallFlow(models.Model):
 
         Codes are BCP-47; ``mod_piper_tts`` looks them up against the
         ``<model language="...">`` entries in ``piper_tts.conf.xml``.
-        Duplicated in connect_twilio (Twilio Polly list) by design — the
-        providers are fully independent; keep both lists in sync when editing.
+        Duplicated in connect_twilio, connect_telnyx and core connect.user
+        by design — the providers are fully independent; keep all four
+        lists in sync when editing (ADR-031/ADR-037).
         """
         return [
             ('ca-ES', 'Catalan (Spain)'),

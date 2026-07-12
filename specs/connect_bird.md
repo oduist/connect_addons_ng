@@ -13,7 +13,7 @@
 ## Overview
 
 The `connect_bird` module integrates Bird.com (formerly MessageBird) with the
-core `connect` module (ADR-037). Scope: SMS and WhatsApp messaging (including
+core `connect` module (ADR-038). Scope: SMS and WhatsApp messaging (including
 WhatsApp message templates), a voice-call ledger fed by Bird voice events,
 and click-to-call via a **two-leg callback originate** (Bird dials the agent's
 phone first, then connects the destination). Bird has no public WebRTC SDK,
@@ -41,7 +41,7 @@ through to `super()` otherwise (mirrors the click-to-call
 > Voice call origination/events, WhatsApp send/template payloads and the
 > numbers listing exist on the platform but are not yet publicly
 > documented; their wire shapes are asserted and isolated in single
-> builders/mappers pending live verification (ADR-037).
+> builders/mappers pending live verification (ADR-038).
 
 ---
 

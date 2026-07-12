@@ -46,6 +46,7 @@ class Channel(models.Model):
     infobip_route_step = fields.Integer(default=0)
     infobip_originate_dest = fields.Char(readonly=True)
     infobip_pending_say = fields.Char()
+    infobip_pending_say_language = fields.Char()
     infobip_hangup_after_say = fields.Boolean()
     infobip_last_event_ts = fields.Char()
 
@@ -160,12 +161,13 @@ class Channel(models.Model):
 
     # --- REST leg actions -------------------------------------------------
 
-    def infobip_answer_say_hangup(self, text):
+    def infobip_answer_say_hangup(self, text, language='en'):
         """Answer (when needed), say the text, hang up. The chain is driven
         by CALL_ESTABLISHED -> say and SAY_FINISHED -> hangup events."""
         self.ensure_one()
         self.write({
             'infobip_pending_say': text,
+            'infobip_pending_say_language': language,
             'infobip_hangup_after_say': True,
         })
         if self.status == 'in-progress':
@@ -182,11 +184,12 @@ class Channel(models.Model):
         if not self.infobip_pending_say:
             return
         text = self.infobip_pending_say
+        language = self.infobip_pending_say_language or 'en'
         self.infobip_pending_say = False
         try:
             self.env['connect.settings'].infobip_api_request(
                 'POST', '/calls/1/calls/{}/say'.format(self.sid),
-                {'text': text, 'language': 'en'})
+                {'text': text, 'language': language})
         except Exception as e:
             logger.warning('Say failed for %s: %s', self.sid, e)
             if self.infobip_hangup_after_say:
@@ -357,12 +360,14 @@ class Channel(models.Model):
         self.ensure_one()
         user = self.infobip_route_user
         text = 'The user is unavailable. Please try again later. Goodbye!'
+        language = 'en'
         if user and user.voicemail_enabled and user.voicemail_prompt:
             try:
                 text = user.infobip_render_voicemail_prompt()
+                language = user.infobip_say_language()
             except Exception:
                 logger.exception('Voicemail prompt render error:')
-        self.infobip_answer_say_hangup(text)
+        self.infobip_answer_say_hangup(text, language=language)
 
     def _infobip_bridge_external(self, number):
         """Forward the inbound leg to the number's external destination."""

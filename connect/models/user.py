@@ -22,6 +22,15 @@ class User(models.Model):
         default="Hello, this is {{user.name}}. I'm unable to take your call right now. Please leave a message after the tone.")
     missed_calls_notify = fields.Boolean(default=False, help='Notify user on missed calls.')
     greeting_message = fields.Char()
+    language = fields.Selection(
+        selection=lambda self: self._get_language_selection(),
+        default='en-US', required=True, string='Language',
+        help='TTS language the telephony provider uses to speak this '
+             "user's greeting message and voicemail prompt.")
+    voice = fields.Char(
+        help='Provider-specific TTS voice name (e.g. "Woman" for Twilio, '
+             '"Polly.Joanna" for Twilio/Telnyx). Leave empty to use the '
+             'provider default voice.')
     summary_prompt = fields.Char()
     active = fields.Boolean(default=True)
     # Provider modules add their key via selection_add (e.g. 'twilio',
@@ -51,6 +60,44 @@ class User(models.Model):
     def _get_name(self):
         for rec in self:
             rec.name = rec.user.name if rec.user else ''
+
+    @api.model
+    def _get_language_selection(self):
+        """BCP-47 languages for the user's TTS prompts.
+
+        Deliberate copy of the provider callflow lists (ADR-031/ADR-037):
+        the same list exists in connect_twilio, connect_telnyx and
+        connect_freeswitch callflow models. Providers never import this
+        one; keep all four lists in sync when editing.
+        """
+        return [
+            ('ca-ES', 'Catalan (Spain)'),
+            ('cs-CZ', 'Czech'),
+            ('da-DK', 'Danish'),
+            ('de-DE', 'German'),
+            ('en-GB', 'English (UK)'),
+            ('en-US', 'English (US)'),
+            ('es-ES', 'Spanish (Spain)'),
+            ('es-MX', 'Spanish (Mexico)'),
+            ('fi-FI', 'Finnish'),
+            ('fr-FR', 'French'),
+            ('hu-HU', 'Hungarian'),
+            ('is-IS', 'Icelandic'),
+            ('it-IT', 'Italian'),
+            ('nl-BE', 'Dutch (Belgium)'),
+            ('nl-NL', 'Dutch (Netherlands)'),
+            ('pl-PL', 'Polish'),
+            ('pt-BR', 'Portuguese (Brazil)'),
+            ('pt-PT', 'Portuguese (Portugal)'),
+            ('ro-RO', 'Romanian'),
+            ('ru-RU', 'Russian'),
+            ('sk-SK', 'Slovak'),
+            ('sv-SE', 'Swedish'),
+            ('tr-TR', 'Turkish'),
+            ('uk-UA', 'Ukrainian'),
+            ('vi-VN', 'Vietnamese'),
+            ('zh-CN', 'Chinese (Mandarin)'),
+        ]
 
     @api.model
     def _pbx_number_fields(self):

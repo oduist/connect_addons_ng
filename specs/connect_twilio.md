@@ -230,6 +230,7 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `render_client()` | Generate TwiML `<Dial><Client>` |
 | `render_sip()` | Generate TwiML `<Dial><Sip>` |
 | `render_voicemail()` | Generate TwiML `<Record>` for voicemail |
+| `get_greeting_message()` / `get_voicemail_prompt()` | `<Say>` the user prompts with `language`/`voice` from `connect.user` (fallbacks `en-US` / `Woman`, ADR-037) |
 | `get_client_token()` | Generate JWT for Twilio Voice SDK |
 | `get_client_identity()` | Return SIP identity string |
 | `_get_sip_uri()` | Compute SIP URI |
@@ -328,7 +329,7 @@ callflow field set (name, `exten`/`exten_number` → `connect.twilio.exten`,
 | `_get_gather_action_url()` | Compute gather action webhook URL |
 | `on_call_action()` | Handle call action from gather input |
 | `create_extension()` | Create associated `connect.twilio.exten` |
-| `_get_language_selection()` | BCP-47 language list — **duplicated** with `connect.freeswitch.callflow`; changes must be applied to both (ADR-031) |
+| `_get_language_selection()` | BCP-47 language list — **duplicated** with `connect.freeswitch.callflow`, `connect.telnyx.callflow` and core `connect.user`; changes must be applied to all four (ADR-031/ADR-037) |
 
 `connect.twilio.callflow_choice`: `callflow` (required), `choice_digits`
 (required), `exten` (`connect.twilio.exten`, required), `speech`.

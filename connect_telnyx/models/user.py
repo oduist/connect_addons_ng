@@ -325,12 +325,20 @@ class User(models.Model):
 
     def get_telnyx_greeting_message(self, response):
         self.ensure_one()
-        response.say(self.greeting_message)
+        response.say(
+            self.greeting_message,
+            language=self.language or 'en-US',
+            voice=self.voice or 'Polly.Joanna',
+        )
 
     def get_telnyx_voicemail_prompt(self, response):
         self.ensure_one()
         voicemail_prompt = self.telnyx_render_voicemail_prompt()
-        response.say(voicemail_prompt)
+        response.say(
+            voicemail_prompt,
+            language=self.language or 'en-US',
+            voice=self.voice or 'Polly.Joanna',
+        )
 
     def telnyx_render_voicemail(self, response, request, params):
         api_url = self.env['connect.settings'].sudo().get_param('api_url')

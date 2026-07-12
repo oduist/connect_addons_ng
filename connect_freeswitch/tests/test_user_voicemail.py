@@ -70,6 +70,20 @@ class TestUserVoicemailDialplan(FsTestCommon):
             xml.index('/freeswitch/webhook/voicemail/'),
         )
 
+    def test_voicemail_prompt_uses_user_language(self):
+        self._set_webhook_config()
+        user = self._create_user_with_exten(
+            'fs_vm_lang', '9103',
+            record_calls=False,
+            voicemail_enabled=True,
+            voicemail_prompt='Bonjour',
+            language='fr-FR',
+        )
+
+        xml = user.generate_dialplan({})
+
+        self.assertIn('data="piper|fr-FR|Bonjour"', xml)
+
 
 @tagged('post_install', '-at_install', 'connect_freeswitch', 'voicemail')
 class TestVoicemailWebhook(HttpCase):
@@ -129,7 +143,6 @@ class TestVoicemailWebhook(HttpCase):
             'technical_direction': 'inbound',
             'duration': 12,
         })
-        self.env.cr.commit()
 
         resp = self.opener.put(
             self.base_url()

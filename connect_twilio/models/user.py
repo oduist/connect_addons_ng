@@ -527,12 +527,20 @@ class User(models.Model):
 
     def get_greeting_message(self, response):
         self.ensure_one()
-        response.say(self.greeting_message)
+        response.say(
+            self.greeting_message,
+            language=self.language or 'en-US',
+            voice=self.voice or 'Woman',
+        )
 
     def get_voicemail_prompt(self, response):
         self.ensure_one()
         voicemail_prompt = self.render_voicemail_prompt()
-        response.say(voicemail_prompt)
+        response.say(
+            voicemail_prompt,
+            language=self.language or 'en-US',
+            voice=self.voice or 'Woman',
+        )
 
     def render_voicemail(self, response, request, params):
         api_url = (

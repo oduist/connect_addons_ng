@@ -1,9 +1,9 @@
-# 037 — Bird.com provider module (`connect_bird`)
+# 038 — Bird.com provider module (`connect_bird`)
 
 ## Status
 
-Accepted (supersedes the first cut of this ADR that was numbered 035/036 and
-targeted the legacy CRM API; 035/036 are taken by connect_infobip and connect_vonage)
+Accepted (supersedes the first cut of this ADR that was numbered 035–037 and
+targeted the legacy CRM API; 035–037 are taken by parallel provider work (infobip, vonage, TTS prompts))
 
 ## Context
 
