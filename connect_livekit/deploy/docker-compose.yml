@@ -1,0 +1,96 @@
+# Self-hosted LiveKit stack paired with one Odoo instance (ADR-037).
+# Copy .env.example to .env and fill in the secrets before starting.
+#
+# NOTE on SIP/RTP and NAT: the port-mapped setup below works when the
+# carrier (or test PBX) can reach these mapped ports directly. On a
+# public server behind NAT prefer `network_mode: host` for the sip
+# service and set the external IP in sip.yaml.
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+
+  livekit:
+    image: livekit/livekit-server:v1.13.3
+    restart: unless-stopped
+    command: --config /etc/livekit.yaml
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - "7880:7880"                      # WS/HTTP API
+      - "7881:7881"                      # WebRTC over TCP
+      - "50000-50100:50000-50100/udp"    # WebRTC UDP media
+    depends_on:
+      - redis
+
+  sip:
+    image: livekit/sip:v1.6.0
+    restart: unless-stopped
+    volumes:
+      - ./sip.yaml:/config.yaml:ro
+    environment:
+      SIP_CONFIG_FILE: /config.yaml
+    ports:
+      - "5060:5060/udp"
+      - "5060:5060/tcp"
+      - "10000-10100:10000-10100/udp"   # SIP RTP media
+    depends_on:
+      - redis
+      - livekit
+
+  egress:
+    image: livekit/egress:v1.13.0
+    restart: unless-stopped
+    environment:
+      EGRESS_CONFIG_FILE: /etc/egress.yaml
+    volumes:
+      - ./egress.yaml:/etc/egress.yaml:ro
+      - egress-out:/out
+    # Room/web composite recording runs headless Chromium.
+    cap_add:
+      - SYS_ADMIN
+    depends_on:
+      - redis
+      - livekit
+
+  # Voice-AI agent worker (Level 3). The image is built from
+  # deploy/agent/ and published as oduist/livekit-agent (multi-arch);
+  # the tag tracks the short connect_livekit manifest version.
+  agent:
+    image: oduist/livekit-agent:latest
+    restart: unless-stopped
+    command: run
+    environment:
+      ODOO_URL: ${ODOO_URL}
+      AGENT_TOKEN: ${AGENT_TOKEN}
+      LIVEKIT_URL: ws://livekit:7880
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      # AI keys usually come from Odoo via the agent-config payload;
+      # these env values are the fallback.
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY:-}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+    depends_on:
+      - livekit
+
+  # Delivers finished egress files to Odoo (same image, second command).
+  uploader:
+    image: oduist/livekit-agent:latest
+    restart: unless-stopped
+    command: upload-recordings
+    environment:
+      ODOO_URL: ${ODOO_URL}
+      AGENT_TOKEN: ${AGENT_TOKEN}
+      EGRESS_OUT_DIR: /out
+      STATE_DIR: /state
+    volumes:
+      - egress-out:/out:ro
+      - uploader-state:/state
+
+volumes:
+  redis-data:
+  egress-out:
+  uploader-state:
