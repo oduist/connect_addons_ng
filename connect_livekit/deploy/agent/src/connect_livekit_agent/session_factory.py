@@ -25,11 +25,15 @@ def build_stt(config: dict, settings):
             language=language or "multi",
             api_key=_key(config, "deepgram", settings.deepgram_api_key),
         )
-    return openai.STT(
-        model=config.get("stt_model") or "whisper-1",
-        language=language,
-        api_key=_key(config, "openai", settings.openai_api_key),
-    )
+    kwargs = {
+        "model": config.get("stt_model") or "whisper-1",
+        "api_key": _key(config, "openai", settings.openai_api_key),
+    }
+    # openai.STT rejects language=None (LanguageCode(None) crashes) —
+    # only override the plugin default when the agent sets a language.
+    if language:
+        kwargs["language"] = language
+    return openai.STT(**kwargs)
 
 
 def build_llm(config: dict, settings):
