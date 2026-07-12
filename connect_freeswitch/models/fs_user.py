@@ -1,6 +1,9 @@
 import logging
 import re
 import secrets
+from xml.sax.saxutils import escape as xml_escape
+
+import jinja2
 from odoo import models, fields, api
 
 logger = logging.getLogger(__name__)
@@ -151,6 +154,13 @@ class User(models.Model):
             recording_url = self.env['connect.settings'].get_recording_webhook_url()
 
         fs_domain = self.env['connect.settings'].sudo().get_param('freeswitch_domain') or '${domain}'
+        voicemail_recording_url = ''
+        voicemail_prompt = ''
+        if self.voicemail_enabled:
+            voicemail_recording_url = (
+                self.env['connect.settings'].get_voicemail_webhook_url())
+            if voicemail_recording_url:
+                voicemail_prompt = self._render_freeswitch_voicemail_prompt()
 
         return self.env['connect.freeswitch.template'].render('dialplan_user_bridge', {
             'number': re.escape(number),
@@ -159,4 +169,16 @@ class User(models.Model):
             'record_calls': self.record_calls,
             'recording_url': recording_url,
             'fs_domain': fs_domain,
+            'voicemail_enabled': bool(voicemail_recording_url),
+            'voicemail_prompt': voicemail_prompt,
+            'voicemail_lang': 'en-US',
+            'voicemail_recording_url': voicemail_recording_url,
         })
+
+    def _render_freeswitch_voicemail_prompt(self):
+        """Render and XML-escape the prompt for use in a dialplan attribute."""
+        self.ensure_one()
+        environment = jinja2.Environment(autoescape=False)
+        template = environment.from_string(self.voicemail_prompt or '')
+        prompt = template.render({'user': self})
+        return xml_escape(prompt, {'"': '&quot;', "'": '&apos;'})

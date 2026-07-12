@@ -32,6 +32,10 @@ class TestRingback(TransactionCase):
             'number': '1001', 'user_id': 1, 'exten_id': False,
             'record_calls': False, 'recording_url': '',
             'fs_domain': 'fs.example.com',
+            'voicemail_enabled': False,
+            'voicemail_prompt': '',
+            'voicemail_lang': 'en-US',
+            'voicemail_recording_url': '',
         })
         self._assert_ringback(xml)
 

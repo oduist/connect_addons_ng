@@ -63,6 +63,10 @@ class ConnectEndpoint(models.Model):
             'record_calls': False,
             'recording_url': '',
             'fs_domain': fs_domain,
+            'voicemail_enabled': False,
+            'voicemail_prompt': '',
+            'voicemail_lang': 'en-US',
+            'voicemail_recording_url': '',
         })
 
     def action_regenerate_auth_password(self):

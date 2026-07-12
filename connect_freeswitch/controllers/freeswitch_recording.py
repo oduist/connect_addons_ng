@@ -83,7 +83,8 @@ class FreeSwitchRecordingController(http.Controller):
             )
 
             # Skip if recording for this UUID already exists (both legs
-            # may attempt to upload the same recording)
+            # may attempt to upload the same recording). Voicemails are a
+            # separate source so they can coexist with call recordings.
             existing = env.sudo().search([
                 ('call_sid', '=', uuid),
                 ('source', '=', source),

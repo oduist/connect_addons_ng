@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import requests
+from urllib.parse import quote
 from markupsafe import escape
 from tempfile import NamedTemporaryFile
 from odoo import fields, models, api, release, SUPERUSER_ID
@@ -188,12 +189,12 @@ class Recording(models.Model):
         self.ensure_one()
         if not self.recording_attachment:
             return ''
+        filename = quote(self.recording_filename or 'recording.wav')
         return (
             '/web/content?model=connect.recording'
             '&id={}&field=recording_attachment'
             '&filename_field=recording_filename'
-            '&filename={}&download=True'.format(
-                self.id, self.recording_filename or 'recording.wav'))
+            '&filename={}&download=True'.format(self.id, filename))
 
     def _get_list_view_summary(self):
         for rec in self:
