@@ -60,8 +60,9 @@ class CallFlow(models.Model):
         """Languages supported by Twilio Say (Polly).
 
         Codes are BCP-47 and are passed verbatim to Twilio Say. Duplicated
-        in connect_freeswitch (Piper TTS list) by design — the providers are
-        fully independent; keep both lists in sync when editing.
+        by design (ADR-031/ADR-037) in connect_freeswitch and
+        connect_telnyx callflows and in core connect.user — keep all four
+        lists in sync when editing.
         """
         return [
             ('ca-ES', 'Catalan (Spain)'),

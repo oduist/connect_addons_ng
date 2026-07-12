@@ -147,7 +147,9 @@ password is visible to the user for hardphone provisioning).
 Methods: `_create_telnyx_credential()` / `_ensure_telnyx_credentials()`
 / `delete_telnyx_credentials()`; `telnyx_render()` +
 `telnyx_render_sip/client/voicemail` (user_callflow chain, TeXML
-`<Dial><Sip>`); `get_telnyx_client_token()` (JWT via
+`<Dial><Sip>`; user greeting/voicemail `<Say>` carries
+`connect.user.language`/`voice`, fallbacks `en-US` / `Polly.Joanna` —
+ADR-037); `get_telnyx_client_token()` (JWT via
 `telephony_credentials.create_token` + `sip_domain` for the web phone);
 `get_user_by_telnyx_uri()`; `telnyx_on_call_action()`; callflow-managing
 constraints (`_manage_telnyx_*`).
