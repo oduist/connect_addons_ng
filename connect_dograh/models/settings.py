@@ -33,6 +33,7 @@ class Settings(models.Model):
     # Shared secret for both control-plane directions: Odoo -> Dograh
     # inbound webhooks and Dograh -> Odoo /dograh/api/* callbacks (ADR-037).
     dograh_service_token = fields.Char(
+        string='Dograh Service Token (Stored)',
         groups='connect.group_admin',
         default=lambda self: secrets.token_urlsafe(32))
     display_dograh_service_token = fields.Char(string='Dograh Service Token')

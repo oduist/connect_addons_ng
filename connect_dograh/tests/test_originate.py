@@ -20,6 +20,10 @@ class TestDograhOriginate(DograhTestCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # Template databases ship demo routes; deactivate them so route
+        # matching is deterministic in this test.
+        cls.env['connect.freeswitch.outgoing_route'].search([]).write(
+            {'active': False})
         cls.gateway = cls.env['connect.freeswitch.gateway'].create({
             'name': 'testgw',
             'proxy': 'sip.test.example.com',
@@ -99,6 +103,8 @@ class TestDograhOriginateHttp(HttpCase):
         super().setUp()
         self.settings = self.env['connect.settings'].sudo()
         self.settings.set_param('dograh_service_token', TEST_TOKEN)
+        self.env['connect.freeswitch.outgoing_route'].search([]).write(
+            {'active': False})
         gateway = self.env['connect.freeswitch.gateway'].create({
             'name': 'testgw-http',
             'proxy': 'sip.test.example.com',
