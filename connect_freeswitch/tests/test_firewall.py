@@ -52,6 +52,64 @@ class TestFirewallModels(TransactionCase):
         with self.assertRaises(ValidationError):
             self.Blacklist.create({"name": "x", "ip_or_cidr": "999.0.0.1"})
 
+    # ------------------------------------------------------------------
+    # IPv6 acceptance + canonical normalization (ADR-037)
+    # ------------------------------------------------------------------
+
+    def test_whitelist_accepts_ipv6(self):
+        rec = self.Whitelist.create(
+            {"name": "v6 host", "ip_or_cidr": "2001:db8::10"}
+        )
+        self.assertTrue(rec.id)
+
+    def test_whitelist_accepts_ipv6_cidr(self):
+        rec = self.Whitelist.create(
+            {"name": "v6 net", "ip_or_cidr": "2001:db8:1::/64"}
+        )
+        self.assertTrue(rec.id)
+
+    def test_whitelist_rejects_ipv6_garbage(self):
+        with self.assertRaises(ValidationError):
+            self.Whitelist.create({"name": "bad", "ip_or_cidr": "2001:db8::zz"})
+
+    def test_blacklist_accepts_ipv6(self):
+        rec = self.Blacklist.create(
+            {"name": "v6 attacker", "ip_or_cidr": "2001:db8::bad"}
+        )
+        self.assertTrue(rec.id)
+
+    def test_create_normalizes_ipv6_spelling(self):
+        rec = self.Whitelist.create(
+            {"name": "v6", "ip_or_cidr": "2001:DB8:0:0:0:0:0:11"}
+        )
+        self.assertEqual(rec.ip_or_cidr, "2001:db8::11")
+
+    def test_create_strips_host_prefixlen(self):
+        rec = self.Whitelist.create({"name": "host", "ip_or_cidr": "6.6.6.6/32"})
+        self.assertEqual(rec.ip_or_cidr, "6.6.6.6")
+
+    def test_create_canonicalizes_cidr_host_bits(self):
+        rec = self.Whitelist.create({"name": "net", "ip_or_cidr": "40.1.2.3/24"})
+        self.assertEqual(rec.ip_or_cidr, "40.1.2.0/24")
+
+    def test_create_unwraps_ipv4_mapped(self):
+        rec = self.Whitelist.create(
+            {"name": "mapped", "ip_or_cidr": "::ffff:198.51.100.7"}
+        )
+        self.assertEqual(rec.ip_or_cidr, "198.51.100.7")
+
+    def test_write_normalizes_ipv6(self):
+        rec = self.Whitelist.create({"name": "w", "ip_or_cidr": "41.0.0.1"})
+        rec.write({"ip_or_cidr": "2001:DB8::AA/128"})
+        self.assertEqual(rec.ip_or_cidr, "2001:db8::aa")
+
+    def test_unique_across_ipv6_spellings(self):
+        self.Whitelist.create({"name": "first", "ip_or_cidr": "2001:db8::5"})
+        with self.assertRaises(ValidationError):
+            self.Whitelist.create(
+                {"name": "dup", "ip_or_cidr": "2001:DB8:0:0:0:0:0:5"}
+            )
+
 
 @tagged("post_install", "-at_install", "connect_freeswitch", "firewall")
 class TestFirewallSettingsValidation(TransactionCase):
@@ -312,3 +370,14 @@ class TestFirewallEventUnbanAction(TransactionCase):
         patched.assert_called_once()
         # action.tag should be 'display_notification' on success.
         self.assertEqual(action.get("tag"), "display_notification")
+
+    def test_unban_url_quotes_ipv6(self):
+        """IPv6 colons must be percent-encoded in the DELETE URL path."""
+        with mock.patch(
+            "odoo.addons.connect_freeswitch.models.firewall.requests.delete",
+            return_value=mock.Mock(status_code=200),
+        ) as patched:
+            ok, message = self.Agent._call_service_unban("2001:db8::66")
+        self.assertTrue(ok, message)
+        called_url = patched.call_args[0][0]
+        self.assertIn("/firewall/api/bans/2001%3Adb8%3A%3A66", called_url)

@@ -103,8 +103,12 @@ XML-RPC connectivity to FreeSWITCH (ADR-004, ADR-027, ADR-030):
 | `connect.firewall.agent` | singleton holding service heartbeat data; backing model for the `/freeswitch/firewall/api/*` controllers the service calls |
 
 **Whitelist / Blacklist** share the same shape (`name`, `ip_or_cidr`,
-`active`, `note`). `@api.constrains` validates the address with
-`ipaddress.ip_network()` and enforces uniqueness per table. Each
+`active`, `note`). Both IPv4 and IPv6 are accepted; `create` / `write`
+canonicalize the value via `_normalize_ip_or_cidr()` (compressed
+lowercase IPv6, `/32`–`/128` stripped from host entries, network
+address for CIDRs, IPv4-mapped IPv6 unwrapped — the same spelling
+`ipset` uses, see ADR-037). `@api.constrains` validates the address
+and enforces uniqueness per table on normalized values. Each
 `create` / `write` / `unlink` schedules `connect.firewall.agent._trigger_sync()`.
 
 **Event** is read-only from the UI (`create=false edit=false`) — it is
@@ -386,8 +390,10 @@ every `bridge` so inbound callers hear ringing instead of silence
 `oduist/freeswitch-firewall` is a small Python container that:
 
 * connects to FreeSWITCH via ESL (`mod_event_socket`);
-* maintains the six-table `ipset` / `iptables` chain `connect_fw_voip`
-  on the host kernel — requires `--network host --cap-add NET_ADMIN`;
+* maintains the six-table-per-family `ipset` / `iptables` +
+  `ip6tables` chain `connect_fw_voip` on the host kernel (IPv6 sets
+  are the `6`-suffixed twins, e.g. `connect_fw_banned6`) — requires
+  `--network host --cap-add NET_ADMIN`;
 * exposes HTTP for `/firewall/sync`, `/firewall/api/*` and a Lit-based
   dashboard at `/firewall/`;
 * calls Odoo HTTP controllers at `/freeswitch/firewall/api/*`
@@ -396,7 +402,10 @@ every `bridge` so inbound callers hear ringing instead of silence
 The original six-table / iptables design is captured in
 **`specs/decisions/014-freeswitch-firewall-service.md`**; the shift
 from portal-user RPC to shared-bearer HTTP controllers (v1.1.0) is
-captured in **`specs/decisions/015-firewall-token-controllers.md`**.
+captured in **`specs/decisions/015-firewall-token-controllers.md`**;
+IPv6 support (v1.2.0: parallel `family inet6` sets, `ip6tables` chain,
+canonical entry normalization) is captured in
+**`specs/decisions/037-firewall-ipv6-support.md`**.
 
 Operational guide for admins lives in **`docs/admin/firewall.md`**.
 
