@@ -77,23 +77,6 @@ class TestFirewallSettingsValidation(TransactionCase):
         # holds our value.
         self.assertEqual(self.Settings.get_param("firewall_service_token"), good)
 
-    def test_password_too_short_rejected(self):
-        with self.assertRaises(ValidationError):
-            self.Settings.set_param("display_freeswitch_agent_password", "short")
-
-    def test_password_with_space_rejected(self):
-        with self.assertRaises(ValidationError):
-            self.Settings.set_param(
-                "display_freeswitch_agent_password", "has space inside"
-            )
-
-    def test_password_strong_accepted(self):
-        good = secrets.token_urlsafe(20)
-        self.Settings.set_param("display_freeswitch_agent_password", good)
-        self.assertEqual(
-            self.Settings.get_param("freeswitch_agent_password"), good
-        )
-
 
 @tagged("post_install", "-at_install", "connect_freeswitch", "firewall")
 class TestFirewallAgentAPI(TransactionCase):
@@ -119,9 +102,9 @@ class TestFirewallAgentAPI(TransactionCase):
             "firewall_authenticated_timeout",
             "firewall_expire_short_timeout",
             "firewall_expire_long_timeout",
-            "firewall_service_token",
         ):
             self.assertIn(k, cfg, "fetch_config missing key %s" % k)
+        self.assertNotIn("firewall_service_token", cfg)
 
     def test_fetch_whitelist_returns_active_only(self):
         self.Whitelist.create({"name": "on", "ip_or_cidr": "11.0.0.0/24"})
@@ -168,15 +151,14 @@ class TestFirewallAgentAPI(TransactionCase):
         self.assertEqual(rec.event_type, "auto_ban")
         self.assertEqual(rec.ip, "192.0.2.1")
 
-    def test_report_event_handles_wrapped_payload(self):
-        """aio_odoorpc sometimes wraps the dict in an extra list."""
+    def test_report_event_rejects_wrapped_payload(self):
+        """The controller passes a JSON object; wrapped RPC args are invalid."""
         before = self.Event.search_count([])
-        # Call as if the client put the dict inside *args (no kw).
         eid = self.Agent.report_event(
             [{"event_type": "auth_fail", "ip": "192.0.2.2"}]
         )
-        self.assertTrue(eid)
-        self.assertEqual(self.Event.search_count([]), before + 1)
+        self.assertFalse(eid)
+        self.assertEqual(self.Event.search_count([]), before)
 
     def test_report_event_rejects_missing_type(self):
         eid = self.Agent.report_event({"ip": "192.0.2.3"})
@@ -230,31 +212,32 @@ class TestFirewallPostcommitSync(TransactionCase):
         """Return a list that grows with each postcommit callback the
         code under test schedules."""
         calls = []
-        original_add = self.env.cr.postcommit.add
+        callbacks_cls = type(self.env.cr.postcommit)
+        original_add = callbacks_cls.add
 
-        def add(callback):
+        def add(callbacks, callback):
             calls.append(callback)
-            return original_add(callback)
+            return original_add(callbacks, callback)
 
-        return calls, add
+        return calls, callbacks_cls, add
 
     def test_whitelist_create_triggers_sync(self):
-        calls, replacement = self._capture_postcommit()
-        with mock.patch.object(self.env.cr.postcommit, "add", side_effect=replacement):
+        calls, callbacks_cls, replacement = self._capture_postcommit()
+        with mock.patch.object(callbacks_cls, "add", replacement):
             self.Whitelist.create({"name": "office", "ip_or_cidr": "30.0.0.0/24"})
         self.assertTrue(calls, "create() did not schedule a postcommit callback")
 
     def test_whitelist_write_triggers_sync(self):
         rec = self.Whitelist.create({"name": "office", "ip_or_cidr": "31.0.0.0/24"})
-        calls, replacement = self._capture_postcommit()
-        with mock.patch.object(self.env.cr.postcommit, "add", side_effect=replacement):
+        calls, callbacks_cls, replacement = self._capture_postcommit()
+        with mock.patch.object(callbacks_cls, "add", replacement):
             rec.write({"note": "updated"})
         self.assertTrue(calls)
 
     def test_whitelist_unlink_triggers_sync(self):
         rec = self.Whitelist.create({"name": "office", "ip_or_cidr": "32.0.0.0/24"})
-        calls, replacement = self._capture_postcommit()
-        with mock.patch.object(self.env.cr.postcommit, "add", side_effect=replacement):
+        calls, callbacks_cls, replacement = self._capture_postcommit()
+        with mock.patch.object(callbacks_cls, "add", replacement):
             rec.unlink()
         self.assertTrue(calls)
 

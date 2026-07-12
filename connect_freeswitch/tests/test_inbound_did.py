@@ -7,7 +7,7 @@ without a leading ``+``, and the record lookup must tolerate the same mismatch.
 """
 import re
 
-from odoo.tests import tagged
+from odoo.tests import tagged, new_test_user
 from odoo.tests.common import TransactionCase
 
 
@@ -95,8 +95,23 @@ class TestInboundDidCallerName(TransactionCase):
                 "name": "Ada Lovelace",
                 "phone": "079 500 09 92",
             })
-        cls.number = cls.env["connect.freeswitch.number"].create(
-            {"phone_number": "+41215121140"})
+        cls.odoo_user = new_test_user(cls.env, login="fs_did_caller_name")
+        cls.user = cls.env["connect.user"].with_context(
+            no_clear_cache=True).create({
+                "user": cls.odoo_user.id,
+                "originate_provider": "freeswitch",
+            })
+        cls.exten = cls.env["connect.freeswitch.exten"].create({
+            "number": "7010",
+            "model": "connect.user",
+            "res_id": cls.user.id,
+        })
+        cls.user.freeswitch_exten = cls.exten
+        cls.number = cls.env["connect.freeswitch.number"].create({
+            "phone_number": "+41215121140",
+            "destination": "user",
+            "user": cls.user.id,
+        })
 
     def test_matched_partner_name_injected(self):
         xml = self.number.generate_dialplan(

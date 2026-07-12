@@ -60,6 +60,8 @@ class TestRingback(TransactionCase):
             'fs_domain': 'fs.example.com',
             'ring_bridge': 'user/1001@fs.example.com',
             'fifo_number': '', 'invalid_regex': '',
+            'voicemail_enabled': False, 'voicemail_prompt': '',
+            'voicemail_url': '',
             'dmachine_timeout': 100,
         })
         self._assert_ringback(xml)

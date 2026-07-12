@@ -19,7 +19,11 @@ class AsteriskTestCommon(TransactionCase):
         cls.odoo_user = new_test_user(
             cls.env, login='ast_user_101', groups='base.group_user')
         cls.connect_user = cls.env['connect.user'].with_context(
-            no_clear_cache=True).create({'user': cls.odoo_user.id})
+            no_clear_cache=True).create({
+                'user': cls.odoo_user.id,
+                'asterisk_exten_number': '101',
+                'originate_provider': 'asterisk',
+            })
         cls.endpoint = cls.env['connect.asterisk.endpoint'].create({
             'name': 'Office phone 101',
             'connect_user_id': cls.connect_user.id,

@@ -9,7 +9,7 @@ setting must toggle certificate verification (ADR-030).
 import ssl
 from unittest import mock
 
-from odoo.tests import tagged
+from odoo.tests import tagged, new_test_user
 from odoo.tests.common import TransactionCase
 
 
@@ -94,14 +94,11 @@ class TestXmlRpcPasswordAccess(TransactionCase):
         self.assertEqual(
             Settings.sudo().get_param("freeswitch_xmlrpc_password"), "s3cr3t")
         # A plain internal user (connect.group_user, not admin) does not.
-        user = self.env["res.users"].create({
-            "name": "Plain XMLRPC User",
-            "login": "plain_xmlrpc_user",
-            "groups_id": [(6, 0, [
-                self.env.ref("base.group_user").id,
-                self.env.ref("connect.group_user").id,
-            ])],
-        })
+        user = new_test_user(
+            self.env,
+            login="plain_xmlrpc_user",
+            groups="base.group_user,connect.group_user",
+        )
         self.assertFalse(
             Settings.with_user(user).get_param("freeswitch_xmlrpc_password"))
 

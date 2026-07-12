@@ -478,6 +478,9 @@ Variables:
   <condition field="destination_number" expression="^{{ number_regex }}$">
     <action application="set" data="odoo_call_direction=inbound"/>
     <action application="set" data="odoo_number_id={{ number_id }}"/>
+    {% if caller_name %}
+    <action application="set" data="effective_caller_id_name={{ caller_name }}"/>
+    {% endif %}
     {% if transfer_target %}
     <action application="transfer" data="{{ transfer_target }} XML default"/>
     {% else %}
@@ -489,6 +492,9 @@ Variables:
   <condition field="destination_number" expression="^{{ number_regex }}$">
     <action application="set" data="odoo_call_direction=inbound"/>
     <action application="set" data="odoo_number_id={{ number_id }}"/>
+    {% if caller_name %}
+    <action application="set" data="effective_caller_id_name={{ caller_name }}"/>
+    {% endif %}
     {% if transfer_target %}
     <action application="transfer" data="{{ transfer_target }} XML default"/>
     {% else %}

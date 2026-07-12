@@ -197,7 +197,7 @@ class RecordingUrlCase(TransactionCase):
                 return_value=True), patch.object(
                     type(self.env['connect.settings']),
                     'connect_reload_view'):
-            self.env['connect.call'].on_freeswitch_cdr({
+            self.env['connect.call']._process_cdr_locked({
                 'uuid': 'vm-cdr-orphan',
                 'caller': '+15551111111',
                 'called': '+15552222222',

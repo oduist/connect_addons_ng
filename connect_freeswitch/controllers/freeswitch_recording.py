@@ -29,6 +29,7 @@ class FreeSwitchRecordingController(http.Controller):
     @http.route(
         '/freeswitch/webhook/recording/<string:token>/<string:filename>',
         type='http', auth='none', methods=['PUT', 'POST'], csrf=False,
+        readonly=False,
     )
     def recording_webhook(self, token, filename, **kwargs):
         """Receive a recording file from FreeSWITCH.
@@ -42,6 +43,7 @@ class FreeSwitchRecordingController(http.Controller):
     @http.route(
         '/freeswitch/webhook/voicemail/<string:token>/<string:filename>',
         type='http', auth='none', methods=['PUT', 'POST'], csrf=False,
+        readonly=False,
     )
     def voicemail_webhook(self, token, filename, **kwargs):
         """Receive a callflow voicemail file from FreeSWITCH."""

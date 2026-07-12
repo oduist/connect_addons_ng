@@ -35,7 +35,6 @@ class TestPhoneConfig(AsteriskTestCommon):
         self.assertFalse(result)
 
     def test_search_pbx_users_requires_group(self):
-        self.connect_user.create_extension()
         found = self.env['connect.user'].with_user(
             self.odoo_user).search_pbx_users(self.odoo_user.name)
         self.assertTrue(found)

@@ -88,7 +88,8 @@ class FirewallAPIController(http.Controller):
         )
 
     @http.route('/freeswitch/firewall/api/heartbeat',
-                type='http', auth='none', methods=['POST'], csrf=False)
+                type='http', auth='none', methods=['POST'], csrf=False,
+                readonly=False)
     def heartbeat(self, **_):
         if not self._check_token():
             return self._unauthorized()
@@ -100,7 +101,8 @@ class FirewallAPIController(http.Controller):
         return self._json({'ok': True})
 
     @http.route('/freeswitch/firewall/api/event',
-                type='http', auth='none', methods=['POST'], csrf=False)
+                type='http', auth='none', methods=['POST'], csrf=False,
+                readonly=False)
     def event(self, **_):
         if not self._check_token():
             return self._unauthorized()
@@ -112,7 +114,8 @@ class FirewallAPIController(http.Controller):
         return self._json({'ok': bool(rec_id), 'id': rec_id or False})
 
     @http.route('/freeswitch/firewall/api/applied',
-                type='http', auth='none', methods=['POST'], csrf=False)
+                type='http', auth='none', methods=['POST'], csrf=False,
+                readonly=False)
     def applied(self, **_):
         if not self._check_token():
             return self._unauthorized()
