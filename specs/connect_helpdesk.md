@@ -152,6 +152,5 @@ None in this first iteration.
 
 ## Tests
 
-Placed in `tests_suite/connect_helpdesk/tests/` (gated-test-suite submodule),
-exposed to Odoo via symlink `connect_helpdesk/tests → ../tests_suite/connect_helpdesk/tests`.
-Run via oduflow: `run_odoo_tests connect_helpdesk`.
+Placed in `connect_helpdesk/tests/` and run via oduflow:
+`run_odoo_tests connect_helpdesk`.

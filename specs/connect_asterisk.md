@@ -290,8 +290,7 @@ dialplan changes.
 
 ## Tests
 
-`connect_asterisk/tests/__init__.py` — gated loader →
-`tests_suite/connect_asterisk/tests/`:
+`connect_asterisk/tests/`:
 `test_webhook_events.py`, `test_originate.py`,
 `test_recording_webhook.py`, `test_endpoint.py`, `test_settings.py`,
 `test_agent_api.py`, `test_phone_config.py` (+ `common.py`).

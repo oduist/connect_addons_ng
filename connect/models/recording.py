@@ -159,12 +159,7 @@ class Recording(models.Model):
         proxy_recordings = self.env['connect.settings'].sudo().get_param('proxy_recordings')
         for rec in self:
             if rec.recording_attachment:
-                media_url = (
-                    '/web/content?model=connect.recording'
-                    '&id={}&field=recording_attachment'
-                    '&filename_field=recording_filename'
-                    '&filename={}&download=True'.format(
-                        rec.id, rec.recording_filename or 'recording.wav'))
+                media_url = rec.get_attachment_media_url()
             elif rec.media_url:
                 if proxy_recordings:
                     media_url = '/connect/recording/{}'.format(rec.id)
@@ -180,6 +175,17 @@ class Recording(models.Model):
                 'controls="controls"> ' \
                 '<source src="{}"/>' \
                 '</audio>'.format(escape(media_url))
+
+    def get_attachment_media_url(self):
+        self.ensure_one()
+        if not self.recording_attachment:
+            return ''
+        return (
+            '/web/content?model=connect.recording'
+            '&id={}&field=recording_attachment'
+            '&filename_field=recording_filename'
+            '&filename={}&download=True'.format(
+                self.id, self.recording_filename or 'recording.wav'))
 
     def _get_list_view_summary(self):
         for rec in self:

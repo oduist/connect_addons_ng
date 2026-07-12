@@ -87,7 +87,7 @@ class User(models.Model):
     def get_user_by_uri(self, userinfo):
         """Lookup connect.user by SIP/client URI using username."""
         if not userinfo:
-            return self.env['connect.user']
+            return super().get_user_by_uri(userinfo)
         re_call_uri = re.compile(r'^(?:sip|client):([^@]+)@')
         found_username = re_call_uri.search(userinfo)
         if found_username:
@@ -95,8 +95,8 @@ class User(models.Model):
                 ('username', '=', found_username.group(1))])
             if user:
                 debug(self, 'Found user: {} by {}.'.format(user.name, userinfo))
-            return user
-        return self.env['connect.user']
+                return user
+        return super().get_user_by_uri(userinfo)
 
     sid = fields.Char('SID', readonly=True)
     password = fields.Char(
