@@ -22,7 +22,7 @@
                                         </strong></small>
                                     </div>
                                     <field name="display_bird_access_key" string="Access Key" password="1"/>
-                                    <button colspan="2" name="sync" type="object"
+                                    <button colspan="2" name="sync_bird" type="object"
                                             string="SYNC BIRD ACCOUNT" class="btn btn-primary"/>
                                 </group>
                                 <group string="Webhooks">

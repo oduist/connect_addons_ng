@@ -111,7 +111,7 @@ Methods:
 | `_get_bird_base_url()` | `https://{region}.platform.bird.com`, region from the `bk_{region}_` key prefix; override via `ir.config_parameter` `connect.bird_api_url` |
 | `bird_request(method, path, payload, params, timeout, raise_exc)` | Single HTTP helper: Bearer auth, `/v1` prefix, `connect.debug` logging, normalizes `{code,message}` / `{errors:[...]}` into `ValidationError` (or `False` with `raise_exc=False`) |
 | `bird_paginate(path, params)` | Cursor pagination iterator (`data` / `next_cursor` / `starting_after`) |
-| `sync()` | Syncs `connect.bird.number` + `connect.bird.message_template` |
+| `sync_bird()` | Syncs `connect.bird.number` + `connect.bird.message_template` |
 | `setup_bird_webhooks()` | Registers ONE endpoint (`POST /v1/webhooks {url, events}`) for `<api_url>/bird/webhook` and stores the one-time `whsec_` secret; unknown event names fall back to the published SMS subset (`_register_webhook_endpoint()`) |
 | `_build_bird_originate_payload(agent, from, destination, record, url)` | Isolated payload builder for the two-leg originate (`POST /v1/voice/calls`) |
 | `originate_call()` | Dispatcher override: handles the call when `_get_originate_provider(user) == 'bird'`; POSTs the callback originate, then pre-creates the agent leg (`technical_direction='outbound-api'`, `called=<destination>`) so voice events update it |

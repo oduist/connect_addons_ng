@@ -189,7 +189,10 @@ class Settings(models.Model):
                 return
             params['starting_after'] = cursor
 
-    def sync(self):
+    # Deliberately NOT named sync(): other providers (connect_twilio)
+    # override connect.settings.sync() without chaining, so with
+    # co-installation the last-loaded module would shadow it.
+    def sync_bird(self):
         if not self.sudo().get_param('bird_access_key'):
             raise ValidationError('You must set the Bird access key!')
         api_url_check = self.check_api_url()
