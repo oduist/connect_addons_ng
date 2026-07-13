@@ -24,6 +24,7 @@ class TestInfobipMessageSend(InfobipTestCommon):
         # send() resolves the sender from env.user.connect_user.
         cls.env['connect.user'].with_context(no_clear_cache=True).create({
             'user': cls.env.user.id,
+            'message_provider': 'infobip',
             'infobip_outgoing_callerid': cls.callerid.id,
         })
 
