@@ -1,0 +1,43 @@
+name: Publish docs
+
+# Render the MkDocs site and push it to the `website` branch, which GitHub
+# Pages serves from. Runs on pushes to 19.0 that touch the docs, plus manual
+# dispatch.
+on:
+  push:
+    branches:
+      - "19.0"
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+# gh-deploy needs to push the built site to the `website` branch.
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-docs
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history so gh-deploy can update the orphan `website` branch.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: docs/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r docs/requirements.txt
+
+      - name: Build and deploy to website branch
+        run: mkdocs gh-deploy --force --no-history --remote-branch website

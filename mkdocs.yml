@@ -1,28 +1,39 @@
 site_name: Oduist Connect Documentation
 site_description: Telephony integration platform for Odoo
-site_url: https://docs.oduist.com
+site_url: https://oduist.github.io/connect_addons_ng/
+
+docs_dir: docs
 
 theme:
   name: material
+  custom_dir: docs/overrides
+  # Dark ("slate") is the default scheme (mirrors oduflow.dev); light stays
+  # available via the header toggle. Actual colors are overridden in
+  # stylesheets/oduflow.css via the --md-* custom properties.
   palette:
-    - scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
     - scheme: slate
-      primary: indigo
-      accent: indigo
       toggle:
-        icon: material/brightness-4
+        icon: material/weather-night
         name: Switch to light mode
+    - scheme: default
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+  font:
+    text: Outfit
+    code: Geist Mono
   features:
     - navigation.sections
     - navigation.expand
     - navigation.top
+    - navigation.tracking
     - search.highlight
+    - search.suggest
     - content.code.copy
+    - content.code.annotate
+
+extra_css:
+  - stylesheets/oduflow.css
 
 nav:
   - Home: index.md
