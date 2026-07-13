@@ -22,8 +22,9 @@ Only version-specific assets and migration entry points may differ.
 Backport the final Odoo 19 tree as a single release-oriented synchronization,
 using commit `da78cc790e5d39d9c30f2b779e20e59535c9cc66` as the complete product
 snapshot. Cross-series compatibility fixes delivered after the snapshot are
-limited to the Python parity commit
-`2597cdb212892602b0728eda462d462b6c69bb82`; later Odoo 19 product changes do
+limited to Python parity commits
+`2597cdb212892602b0728eda462d462b6c69bb82` and
+`2ccf2b21d93064f8afd5b0aae80ee3d101e5f4d0`; later Odoo 19 product changes do
 not automatically expand this backport.
 
 The Odoo 18 port will:
