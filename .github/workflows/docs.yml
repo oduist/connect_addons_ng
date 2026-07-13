@@ -26,9 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          # Full history so gh-deploy can update the orphan `website` branch.
-          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -39,5 +36,12 @@ jobs:
       - name: Install dependencies
         run: pip install -r docs/requirements.txt
 
+      # Bring the existing `website` history into this fresh checkout so
+      # gh-deploy appends a new commit on top of it (keeping the full deploy
+      # history) instead of starting a divergent branch. Skipped on the very
+      # first deploy, when the branch does not exist yet.
+      - name: Fetch existing website branch
+        run: git fetch origin website:website || echo "website branch does not exist yet (first deploy)"
+
       - name: Build and deploy to website branch
-        run: mkdocs gh-deploy --force --no-history --remote-branch website
+        run: mkdocs gh-deploy --remote-branch website
