@@ -1,6 +1,9 @@
 FROM python:3.12-alpine
 
-RUN apk add --no-cache iptables ipset curl tini
+# The iptables package ships ip6tables on Alpine >= 3.19; the assertion
+# fails the build if a future base image drops it (IPv6 support relies
+# on it, see ADR-037).
+RUN apk add --no-cache iptables ipset curl tini && command -v ip6tables
 
 WORKDIR /app
 

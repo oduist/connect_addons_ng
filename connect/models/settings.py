@@ -235,6 +235,24 @@ class Settings(models.Model):
             'provider on the Connect user (Connect > Users).')
 
     @api.model
+    def _get_message_provider(self, user=None):
+        """Resolve the provider key used to send messages for the user."""
+        odoo_user = user or self.env.user
+        connect_user = self.env['connect.user'].sudo().search(
+            [('user', '=', odoo_user.id)], limit=1)
+        provider = connect_user.message_provider
+        if provider:
+            return provider
+        options = self.env['connect.user']._fields['message_provider'].get_values(self.env)
+        if len(options) == 1:
+            return options[0]
+        if not options:
+            raise UserError('No messaging module is installed.')
+        raise UserError(
+            'Several messaging modules are installed. Select a messaging '
+            'provider on the Connect user (Connect > Users).')
+
+    @api.model
     def get_param(self, param, default=False):
         # Sudo-find the singleton so config reads do not require the caller to
         # hold connect.settings model access (the model is admin-only). Secret

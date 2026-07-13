@@ -70,6 +70,10 @@ class User(models.Model):
         selection_add=[('twilio', 'Twilio')],
         ondelete={'twilio': 'set null'},
     )
+    message_provider = fields.Selection(
+        selection_add=[('twilio', 'Twilio')],
+        ondelete={'twilio': 'set null'},
+    )
     twilio_exten = fields.Many2one('connect.twilio.exten', ondelete='set null', readonly=True, string='Twilio Extension')
     twilio_exten_number = fields.Char(
         related='twilio_exten.number', store=True,
@@ -87,7 +91,7 @@ class User(models.Model):
     def get_user_by_uri(self, userinfo):
         """Lookup connect.user by SIP/client URI using username."""
         if not userinfo:
-            return self.env['connect.user']
+            return super().get_user_by_uri(userinfo)
         re_call_uri = re.compile(r'^(?:sip|client):([^@]+)@')
         found_username = re_call_uri.search(userinfo)
         if found_username:
@@ -95,8 +99,8 @@ class User(models.Model):
                 ('username', '=', found_username.group(1))])
             if user:
                 debug(self, 'Found user: {} by {}.'.format(user.name, userinfo))
-            return user
-        return self.env['connect.user']
+                return user
+        return super().get_user_by_uri(userinfo)
 
     sid = fields.Char('SID', readonly=True)
     password = fields.Char(
@@ -523,12 +527,20 @@ class User(models.Model):
 
     def get_greeting_message(self, response):
         self.ensure_one()
-        response.say(self.greeting_message)
+        response.say(
+            self.greeting_message,
+            language=self.language or 'en-US',
+            voice=self.voice or 'Woman',
+        )
 
     def get_voicemail_prompt(self, response):
         self.ensure_one()
         voicemail_prompt = self.render_voicemail_prompt()
-        response.say(voicemail_prompt)
+        response.say(
+            voicemail_prompt,
+            language=self.language or 'en-US',
+            voice=self.voice or 'Woman',
+        )
 
     def render_voicemail(self, response, request, params):
         api_url = (

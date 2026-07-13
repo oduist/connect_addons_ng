@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_bird_webhook_tree" model="ir.ui.view">
+        <field name="name">connect.bird.webhook.tree</field>
+        <field name="model">connect.bird.webhook</field>
+        <field name="arch" type="xml">
+            <list create="false">
+                <field name="url"/>
+                <field name="status"/>
+                <field name="events"/>
+                <field name="sid"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_bird_webhooks" model="ir.actions.act_window">
+        <field name="name">Webhook Endpoints</field>
+        <field name="res_model">connect.bird.webhook</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <menuitem id="menu_bird_webhooks"
+              name="Webhook Endpoints"
+              parent="menu_bird_config"
+              action="action_bird_webhooks"
+              groups="connect.group_admin"
+              sequence="40"/>
+
+</odoo>

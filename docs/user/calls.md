@@ -31,6 +31,7 @@ Dial another user's extension number to make an internal call.
 | **Mute/Unmute** | Toggle your microphone. |
 | **Keypad** | Open DTMF keypad to send tones during a call (e.g., for IVR menus). |
 | **Transfer** | Transfer the active call to another number or extension. |
+| **Recording** | Start or stop recording for the active call when the provider supports runtime recording control. |
 | **Hang Up** | End the call. |
 
 ## Call Transfer
@@ -80,3 +81,11 @@ Click the **Redial** button on any call record to call that number again.
 ## Voicemail
 
 If voicemail is enabled for your account and you miss a call, the caller can leave a voice message. Voicemail recordings appear on the call record with an inline audio player.
+
+## Availability Calendar
+
+If your administrator configured working schedules for inbound numbers,
+**Connect → Availability** shows when each schedule is open or closed as a
+calendar: green *Available* windows, all-day *Closed* markers, plus the
+underlying working-schedule, public-holiday and special-working-day layers.
+Use the search filters to toggle the layers or focus on one schedule.

@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect FreeSWITCH
 - **Technical:** `connect_freeswitch`
-- **Version:** 19.0.2.0.0
+- **Version:** 19.0.2.1.0
 - **Depends:** `connect`, `web`
 - **Application:** False
 - **License:** Proprietary
@@ -105,8 +105,12 @@ XML-RPC connectivity to FreeSWITCH (ADR-004, ADR-027, ADR-030):
 | `connect.firewall.agent` | singleton holding service heartbeat data; backing model for the `/freeswitch/firewall/api/*` controllers the service calls |
 
 **Whitelist / Blacklist** share the same shape (`name`, `ip_or_cidr`,
-`active`, `note`). `@api.constrains` validates the address with
-`ipaddress.ip_network()` and enforces uniqueness per table. Each
+`active`, `note`). Both IPv4 and IPv6 are accepted; `create` / `write`
+canonicalize the value via `_normalize_ip_or_cidr()` (compressed
+lowercase IPv6, `/32`–`/128` stripped from host entries, network
+address for CIDRs, IPv4-mapped IPv6 unwrapped — the same spelling
+`ipset` uses, see ADR-037). `@api.constrains` validates the address
+and enforces uniqueness per table on normalized values. Each
 `create` / `write` / `unlink` schedules `connect.firewall.agent._trigger_sync()`.
 
 **Event** is read-only from the UI (`create=false edit=false`) — it is
@@ -147,11 +151,12 @@ Beyond firewall, the module contains:
 
 | Model | Purpose |
 |---|---|
-| `connect.user` (`_inherit`) | adds `freeswitch_exten` / `freeswitch_exten_number` (registered in `_pbx_number_fields()`), `freeswitch_outgoing_callerid`, `freeswitch_endpoint_ids`, WebRTC fields and dial-string generation; `originate_provider` `selection_add` `'freeswitch'` |
+| `connect.channel` (`_inherit`) | adds FreeSWITCH runtime softphone recording control handlers on the shared channel RPC surface. Verto active calls are controlled by live UUID because channel rows are created from CDR after hangup; ownership and state are read/written through FreeSWITCH channel variables. |
+| `connect.user` (`_inherit`) | adds `freeswitch_exten` / `freeswitch_exten_number` (registered in `_pbx_number_fields()`), `freeswitch_outgoing_callerid`, `freeswitch_endpoint_ids`, WebRTC fields and dial-string generation; `originate_provider` `selection_add` `'freeswitch'`; the user-bridge voicemail prompt is spoken by Piper with `voicemail_lang = connect.user.language` (ADR-037) |
 | `connect.freeswitch.endpoint` (own model, ADR-031) | SIP endpoint management (formerly `connect.endpoint`). `auth_password` is auto-generated as a typeable passphrase (`models/passphrase.py`, `secrets`-based), `readonly` + `copy=False`, defaulted on create; `action_regenerate_auth_password()` issues a new one. Empty passwords on existing endpoints are backfilled non-destructively by `backfill_endpoint_passwords(env)` (post-migration). UI uses the `endpoint_password` OWL widget (mask + Show/Hide + Copy) — see ADR-022 |
 | `connect.freeswitch.exten` (own model, ADR-031) | extension routing (formerly `connect.exten`); dst Reference → `connect.user` / `connect.freeswitch.callflow` / `connect.freeswitch.endpoint` / `connect.fs_fifo` |
 | `connect.freeswitch.callflow` + `_choice` (own models, ADR-031) | IVR configuration and FreeSWITCH destinations (formerly `connect.callflow`); `_get_piper_language()` returns the BCP-47 code used as the Piper TTS model key (must match a `<model language="...">` entry in `piper_tts.conf.xml`) |
-| `connect.freeswitch.number` (own model, ADR-031) | DID assignment (formerly `connect.number`) |
+| `connect.freeswitch.number` (own model, ADR-031) | DID assignment (formerly `connect.number`). Working schedule (issue #57, ADR-037): `schedule_enabled` + `schedule_id` (`connect.schedule`) switch the regular destination fields into the "available" route and add a `closed_destination`/`closed_user`/`closed_callflow`/`closed_fs_fifo_id` after-hours route; `generate_dialplan()` evaluates `schedule_id.get_status()` per call, and a public-holiday `prompt_message` is spoken via piper (`schedule_prompt_language`) before the after-hours transfer (see the `dialplan_inbound_did` template's `schedule_prompt`/`schedule_prompt_lang` vars; with no after-hours destination the call is hung up after the prompt instead of a 404) |
 | `connect.freeswitch.outgoing_callerid` (own model, ADR-031) | outbound caller IDs (formerly `connect.outgoing_callerid`); E.164 `+` constraint, single default |
 | `connect.freeswitch.gateway` | SIP gateway records, rendered into pjsip_wizard XML |
 | `connect.freeswitch.outgoing_route` | outbound routing rules |
@@ -257,6 +262,26 @@ pushes the new `{login, password}` to the user's **private** bus channel
 `connect_freeswitch.verto_credentials`); `phone_service.js` updates the
 live `VertoClient` password in place (`updateCredentials`). Active calls
 are not interrupted. The password is never surfaced in any view.
+
+### Softphone recording controls
+
+The Verto phone widget exposes a recording toggle while a call is active. It
+calls the core `connect.channel` softphone recording RPCs with provider
+`freeswitch` and the live Verto UUID. The provider handler:
+
+* checks access from live FreeSWITCH variables (`odoo_user_id`,
+  `odoo_connect_user_id`, `odoo_caller_pbx_user_id`, `odoo_called_user_id`);
+* starts manual segments with `uuid_record <uuid> start <upload-url>/<uuid>__<segment>.wav`;
+* stops the active manual segment from `odoo_recording_path`, or the default
+  `record_session` path only when the live UUID carries an
+  `execute_on_answer=record_session ...` variable;
+* stores `odoo_recording_state`, `odoo_recording_ref`,
+  `odoo_recording_path` and `odoo_recording_error` on the live UUID.
+
+User-level `record_calls=True` is not enough to infer an active recording by
+itself, because Odoo-originated click-to-call legs do not start
+`record_session`. Failed start/stop attempts reset the live state out of
+`starting` / `stopping` so the softphone can retry.
 
 ---
 
@@ -367,8 +392,10 @@ every `bridge` so inbound callers hear ringing instead of silence
 `oduist/freeswitch-firewall` is a small Python container that:
 
 * connects to FreeSWITCH via ESL (`mod_event_socket`);
-* maintains the six-table `ipset` / `iptables` chain `connect_fw_voip`
-  on the host kernel — requires `--network host --cap-add NET_ADMIN`;
+* maintains the six-table-per-family `ipset` / `iptables` +
+  `ip6tables` chain `connect_fw_voip` on the host kernel (IPv6 sets
+  are the `6`-suffixed twins, e.g. `connect_fw_banned6`) — requires
+  `--network host --cap-add NET_ADMIN`;
 * exposes HTTP for `/firewall/sync`, `/firewall/api/*` and a Lit-based
   dashboard at `/firewall/`;
 * calls Odoo HTTP controllers at `/freeswitch/firewall/api/*`
@@ -377,7 +404,10 @@ every `bridge` so inbound callers hear ringing instead of silence
 The original six-table / iptables design is captured in
 **`specs/decisions/014-freeswitch-firewall-service.md`**; the shift
 from portal-user RPC to shared-bearer HTTP controllers (v1.1.0) is
-captured in **`specs/decisions/015-firewall-token-controllers.md`**.
+captured in **`specs/decisions/015-firewall-token-controllers.md`**;
+IPv6 support (v1.2.0: parallel `family inet6` sets, `ip6tables` chain,
+canonical entry normalization) is captured in
+**`specs/decisions/037-firewall-ipv6-support.md`**.
 
 Operational guide for admins lives in **`docs/admin/firewall.md`**.
 
@@ -404,8 +434,7 @@ incoming. See **`specs/decisions/028-cdr-direction-from-dialplan-variable.md`**.
 
 ## Tests
 
-`tests/test_firewall.py` (gated test suite — symlinked from
-`tests_suite/connect_freeswitch/tests/`) covers:
+`connect_freeswitch/tests/test_firewall.py` covers:
 
 * whitelist / blacklist IP+CIDR validation and uniqueness;
 * token validator on `connect.settings`;
@@ -419,3 +448,9 @@ incoming. See **`specs/decisions/028-cdr-direction-from-dialplan-variable.md`**.
 extraction of `odoo_call_direction`, and `_cdr_technical_direction` preferring it
 over the native FreeSWITCH direction (the issue #43 regression) with the
 native-direction fallback.
+
+`tests/test_schedule_routing.py` covers working-schedule DID routing: the
+available/after-hours destination switch in `generate_dialplan()`, the piper
+prompt on public holidays (XML escaping, prompt-before-transfer order), the
+hangup-after-prompt fallback without an after-hours destination and the
+`closed_destination` mutual field clearing.

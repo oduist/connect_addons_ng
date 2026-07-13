@@ -26,6 +26,7 @@ class FreeSwitchParkingController(http.Controller):
     @http.route(
         '/freeswitch/webhook/parking',
         type='http', auth='none', methods=['GET', 'POST'], csrf=False,
+        readonly=False,
     )
     def parking_webhook(self, **kwargs):
         # The dialplan curl application carries the shared webhook token

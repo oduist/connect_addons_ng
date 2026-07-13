@@ -18,7 +18,7 @@ def strip_number(number):
 def format_number(self, number, country=None, format_type='e164'):
     res = False
     try:
-        phone_nbr = phonenumbers.parse(number, country)
+        phone_nbr = phonenumbers.parse(number, country or None)
         if not phonenumbers.is_possible_number(phone_nbr):
             debug(self, '{} country {} parse impossible'.format(
                 number, country
@@ -111,9 +111,15 @@ class Partner(models.Model):
             if normalized and normalized != number:
                 found = self.sudo().search(
                     [('phone_mobile_search', '=', normalized)])
+                if not found and 'phone_sanitized' in self._fields:
+                    found = self.sudo().search(
+                        [('phone_sanitized', '=', normalized)])
                 debug(self, '{} normalized to {} for partner lookup'.format(
                     number, normalized
                 ))
+            elif normalized and 'phone_sanitized' in self._fields:
+                found = self.sudo().search(
+                    [('phone_sanitized', '=', normalized)])
         debug(self, '{} belongs to partners: {}'.format(
             number, found.mapped('id')
         ))

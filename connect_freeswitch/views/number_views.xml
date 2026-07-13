@@ -21,19 +21,46 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_schedule_slots" type="object"
+                                class="oe_stat_button" icon="fa-calendar"
+                                string="Availability"
+                                invisible="not schedule_enabled or not schedule_id"/>
+                    </div>
                     <group>
                         <group string="Number">
                             <field name="phone_number"/>
                             <field name="friendly_name"/>
-                            <field name="is_default"/>
                         </group>
                         <group string="Routing">
-                            <field name="destination"/>
+                            <field name="destination"
+                                   string="Destination (Available)"/>
                             <field name="user" invisible="destination != 'user'"/>
                             <field name="callflow" invisible="destination != 'callflow'"/>
                             <field name="fs_fifo_id"
                                    invisible="destination != 'fs_fifo'"
                                    required="destination == 'fs_fifo'"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Working Schedule">
+                            <field name="schedule_enabled"/>
+                            <field name="schedule_id"
+                                   invisible="not schedule_enabled"
+                                   required="schedule_enabled"/>
+                            <field name="schedule_prompt_language"
+                                   invisible="not schedule_enabled"/>
+                        </group>
+                        <group string="After-hours Routing"
+                               invisible="not schedule_enabled">
+                            <field name="closed_destination"/>
+                            <field name="closed_user"
+                                   invisible="closed_destination != 'user'"/>
+                            <field name="closed_callflow"
+                                   invisible="closed_destination != 'callflow'"/>
+                            <field name="closed_fs_fifo_id"
+                                   invisible="closed_destination != 'fs_fifo'"
+                                   required="closed_destination == 'fs_fifo'"/>
                         </group>
                     </group>
                 </sheet>

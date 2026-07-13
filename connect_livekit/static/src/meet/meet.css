@@ -1,0 +1,100 @@
+/* Plain CSS for the standalone public meeting page (no SCSS/bundle:
+   the page is served outside the Odoo web client). */
+body:has(#lk-meet) {
+    margin: 0;
+    background: #14181d;
+    color: #f2f4f6;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+#lk-meet {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+#lk-meet .lk-join {
+    margin-top: 20vh;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 90vw;
+    max-width: 320px;
+}
+
+#lk-meet .lk-join .lk-title {
+    text-align: center;
+    font-weight: 600;
+}
+
+#lk-meet .lk-join .lk-name {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #3a4048;
+    background: #1d232a;
+    color: inherit;
+    font-size: 16px;
+}
+
+#lk-meet .lk-btn {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: none;
+    background: #2f6fed;
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+#lk-meet .lk-btn.lk-btn-leave {
+    background: #d64545;
+}
+
+#lk-meet .lk-status {
+    margin-top: 24px;
+    opacity: 0.8;
+}
+
+#lk-meet .lk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    width: 100%;
+    max-width: 1200px;
+    margin-top: 16px;
+}
+
+#lk-meet .lk-tile {
+    position: relative;
+    background: #1d232a;
+    border-radius: 12px;
+    min-height: 180px;
+    overflow: hidden;
+}
+
+#lk-meet .lk-tile video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+#lk-meet .lk-tile .lk-tile-name {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 1;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.55);
+    font-size: 13px;
+}
+
+#lk-meet .lk-controls {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+}

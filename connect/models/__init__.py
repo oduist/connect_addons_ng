@@ -7,7 +7,9 @@ from . import favorite
 from . import mail
 from . import message
 from . import recording
+from . import resource_calendar_leaves
 from . import res_partner
 from . import res_users
+from . import schedule
 from . import settings
 from . import user

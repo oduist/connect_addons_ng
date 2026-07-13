@@ -83,15 +83,15 @@ FreeSWITCH requires the following ports:
 |------|----------|---------|
 | 48082 | TCP | Verto WebSocket Secure (WSS) — browser phone signaling |
 | 16000-17000 | UDP | RTP media — voice audio packets |
-| 65060 | UDP | SIP signaling (if using SIP phones) |
-| 7443 | TCP | SIP WebSocket Secure (if using SIP over WSS) |
+| 5080 | UDP+TCP | SIP signaling (sofia `external` profile) — trunks and SIP phones |
 | 443 | TCP | XML-RPC over HTTPS (Odoo → Traefik → FreeSWITCH commands) |
 | 8080 | TCP | mod_xml_rpc plain HTTP — **internal only**, never expose; Traefik proxies to it |
 
 ```bash
 sudo ufw allow 48082/tcp
 sudo ufw allow 16000:17000/udp
-sudo ufw allow 65060/udp   # only if using SIP phones
+sudo ufw allow 5080/udp
+sudo ufw allow 5080/tcp
 ```
 
 !!! tip "RTP port range"
@@ -406,6 +406,62 @@ The following profile-level parameters handle NAT transparently:
 | `apply-nat-acl` | Applies NAT handling for RFC 1918 private IP ranges |
 
 No per-user configuration is needed — NAT handling applies automatically to all registrations on the external profile.
+
+## Operations Runbook
+
+### Rotate the SIP trunk password
+
+Use this procedure when the SIP provider forces a credential rotation or
+as routine security hygiene. The mechanics are simple: saving a new
+password on the gateway record automatically restarts the sofia
+`external` profile, FreeSWITCH re-reads the gateway XML through
+xml_curl and re-registers within a few seconds.
+
+**Coordination.** If the provider portal requires setting the new
+password manually, agree on the order with the provider first: set the
+new password on the provider side, then in Odoo. Between the two steps
+outbound registration fails with `FAIL_WAIT`, so keep the window short.
+The expected registration gap after the Odoo save is a few seconds.
+
+**Steps:**
+
+1. Obtain (or generate and set) the new trunk password in the
+   provider's portal.
+2. In Odoo open **Connect → FreeSWITCH → Gateways**, open the trunk
+   gateway and paste the new value into **Password** (the field is
+   visible to Connect admins only), then **Save**. The save schedules a
+   post-commit `sofia profile external restart reloadxml`, so the new
+   credentials are picked up without touching the container.
+
+   The same change over the API (e.g. from an Odoo shell):
+
+   ```python
+   env['connect.freeswitch.gateway'].search(
+       [('name', '=', 'mytrunk')]).write({'password': 'NEW-SECRET'})
+   ```
+
+**Verification:**
+
+1. Check the registration state — `State` must be `REGED`:
+
+   ```
+   fs_cli -x "sofia status gateway mytrunk"
+   ```
+
+2. Smoke test: one outbound call through the trunk and one inbound call
+   to a DID.
+
+**Recovery (wrong password):**
+
+- `sofia status gateway <name>` shows `FAIL_WAIT` / `TRYING` instead of
+  `REGED` and the provider rejects REGISTER with 401/403. Revert by
+  writing the previous password back on the gateway record (same flow,
+  the profile restarts again).
+- If the profile looks stuck, force the reload manually:
+
+  ```
+  fs_cli -x "sofia profile external restart reloadxml"
+  ```
 
 ## Troubleshooting
 

@@ -20,6 +20,7 @@ class FreeSwitchCDRController(http.Controller):
     @http.route(
         '/freeswitch/webhook/cdr',
         type='http', auth='public', methods=['POST'], csrf=False,
+        readonly=False,
     )
     def cdr_webhook(self, **kwargs):
         """Receive CDR from FreeSWITCH mod_xml_cdr.
