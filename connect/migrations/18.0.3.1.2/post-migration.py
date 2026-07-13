@@ -16,10 +16,16 @@ def migrate(cr, version):
     if not version:
         return
 
+    # A direct 18.0.3.1.0 -> 18.0.4.x upgrade runs the provider-separation
+    # pre-migration before this older post-migration. In that path the source
+    # table has already been archived, so normalize the archived rows that the
+    # provider migrations will consume.
+    cr.execute("SELECT to_regclass('_connect_callflow_legacy')")
+    table = '_connect_callflow_legacy' if cr.fetchone()[0] else 'connect_callflow'
     cr.execute(
-        """
+        f"""
         SELECT DISTINCT language
-          FROM connect_callflow
+          FROM "{table}"
          WHERE language IS NOT NULL
         """
     )
@@ -45,8 +51,8 @@ def migrate(cr, version):
         len(stale), sorted(stale),
     )
     cr.execute(
-        """
-        UPDATE connect_callflow
+        f"""
+        UPDATE "{table}"
            SET language = 'en-US'
          WHERE language = ANY(%s)
         """,
