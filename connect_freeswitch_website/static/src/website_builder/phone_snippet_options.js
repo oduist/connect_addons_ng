@@ -3,16 +3,17 @@
 import options from "@web_editor/js/editor/snippets.options";
 
 const PhoneScheduleOptions = options.Class.extend({
-    async willStart() {
-        const superPromise = this._super(...arguments);
-        [this.phoneNumbers] = await Promise.all([
-            this.orm.searchRead(
+    willStart() {
+        const superWillStart = this._super.bind(this);
+        return this.orm.searchRead(
                 "connect.freeswitch.number",
                 [["schedule_enabled", "=", true], ["schedule_id", "!=", false]],
                 ["display_name"]
-            ),
-            superPromise,
-        ]);
+            )
+            .then((phoneNumbers) => {
+                this.phoneNumbers = phoneNumbers;
+                return superWillStart(...arguments);
+            });
     },
 
     async _renderCustomXML(uiFragment) {
