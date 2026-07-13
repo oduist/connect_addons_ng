@@ -3,7 +3,7 @@ import json
 import logging
 from urllib.parse import urljoin
 
-from odoo import fields, models, api, release
+from odoo import fields, models, api
 from odoo.exceptions import ValidationError
 
 from odoo.addons.connect.models.settings import debug
@@ -13,8 +13,20 @@ logger = logging.getLogger(__name__)
 
 
 class Number(models.Model):
-    _inherit = 'connect.number'
+    _name = 'connect.twilio.number'
+    _description = 'Twilio Phone Number'
+    _rec_name = 'phone_number'
+    _order = 'phone_number'
 
+    phone_number = fields.Char(required=True)
+    friendly_name = fields.Char()
+    destination = fields.Selection(selection=[
+        ('user', 'User'),
+        ('callflow', 'CallFlow'),
+        ('twiml', 'TwiML'),
+    ], ondelete='set null')
+    callflow = fields.Many2one('connect.twilio.callflow', ondelete='set null')
+    user = fields.Many2one('connect.user', ondelete='set null')
     is_ignored = fields.Boolean('Ignored')
     sid = fields.Char()
     voice_url = fields.Char(
@@ -33,11 +45,7 @@ class Number(models.Model):
         compute='_get_twilio_urls', compute_sudo=True
     )
     twiml = fields.Many2one(
-        'connect.twiml', string='TwiML', ondelete='set null'
-    )
-    destination = fields.Selection(
-        selection_add=[('twiml', 'TwiML')],
-        ondelete={'twiml': 'set null'},
+        'connect.twilio.twiml', string='TwiML', ondelete='set null'
     )
 
     def _get_twilio_urls(self):

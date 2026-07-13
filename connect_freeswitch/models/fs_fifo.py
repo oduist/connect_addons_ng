@@ -11,7 +11,7 @@ class FsFifo(models.Model):
     _order = 'name'
 
     name = fields.Char(required=True)
-    exten = fields.Many2one('connect.exten', ondelete='set null', readonly=True)
+    exten = fields.Many2one('connect.freeswitch.exten', ondelete='set null', readonly=True)
     exten_number = fields.Char(related='exten.number', store=True)
     max_wait_time = fields.Integer(
         default=60,
@@ -29,7 +29,7 @@ class FsFifo(models.Model):
         string='User Agents',
     )
     member_endpoint_ids = fields.Many2many(
-        'connect.endpoint', 'fs_fifo_endpoint_rel', 'fifo_id', 'endpoint_id',
+        'connect.freeswitch.endpoint', 'fs_fifo_endpoint_rel', 'fifo_id', 'endpoint_id',
         string='Endpoint Agents',
     )
     timeout_action = fields.Selection(
@@ -44,7 +44,7 @@ class FsFifo(models.Model):
              '(required when timeout_action = voicemail).',
     )
     fallback_exten_id = fields.Many2one(
-        'connect.exten', ondelete='set null',
+        'connect.freeswitch.exten', ondelete='set null',
         help='Extension to transfer the caller after queue timeout '
              '(required when timeout_action = transfer).',
     )
@@ -52,14 +52,14 @@ class FsFifo(models.Model):
 
     def create_extension(self):
         self.ensure_one()
-        return self.env['connect.exten'].create_extension(self, 'fs_fifo')
+        return self.env['connect.freeswitch.exten'].create_extension(self, self._name)
 
     def _member_dial_string(self, fs_domain, user=None, endpoint=None):
         """Build FreeSWITCH dial-string for a queue member."""
         if user is not None:
-            if not user.exten_number:
+            if not user.freeswitch_exten_number:
                 return ''
-            return 'user/{}@{}'.format(user.exten_number, fs_domain)
+            return 'user/{}@{}'.format(user.freeswitch_exten_number, fs_domain)
         if endpoint is not None:
             target = endpoint.auth_user or endpoint.exten_number
             if not target:
@@ -75,11 +75,9 @@ class FsFifo(models.Model):
         fs_domain = self.env['connect.settings'].sudo().get_param(
             'freeswitch_domain') or '${domain}'
 
-        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url') or ''
         recording_url = ''
-        if self.record_calls and base_url:
-            recording_url = '{}freeswitch/webhook/recording'.format(
-                base_url if base_url.endswith('/') else base_url + '/')
+        if self.record_calls:
+            recording_url = self.env['connect.settings'].get_recording_webhook_url()
 
         members = []
         for user in self.member_user_ids:
@@ -98,7 +96,7 @@ class FsFifo(models.Model):
             vm_user = self.voicemail_user_id or (
                 self.member_user_ids[:1] if self.member_user_ids else False)
             if vm_user:
-                voicemail_user_number = vm_user.exten_number or ''
+                voicemail_user_number = vm_user.freeswitch_exten_number or ''
             if not voicemail_user_number:
                 timeout_action = 'hangup'
         elif timeout_action == 'transfer':

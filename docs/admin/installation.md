@@ -4,7 +4,7 @@
 
 - Odoo 17.0, 18.0, or 19.0
 - Python packages: `phonenumbers`, `jinja2`, `openai`
-- One telephony provider: Twilio account or FreeSWITCH server
+- A telephony provider: Twilio account, FreeSWITCH server, or an existing Asterisk PBX (several providers can be installed side by side)
 
 ### Provider-specific requirements
 
@@ -24,7 +24,7 @@
 
 1. Place the module directories in your Odoo addons path:
     - `connect` (required)
-    - `connect_twilio` or `connect_freeswitch` (choose one)
+    - `connect_twilio`, `connect_freeswitch` and/or `connect_asterisk`
 
 2. Install Python dependencies:
 
@@ -38,14 +38,19 @@
 
 4. Search for "Oduist Connect" in the Apps menu and install it
 
-5. Install the integration module:
+5. Install the integration module(s):
     - **Oduist Connect Twilio** for Twilio
     - **Oduist Connect FreeSWITCH** for FreeSWITCH
+    - **Oduist Connect Asterisk** for an existing Asterisk PBX
 
 ## Post-Installation
 
-After installation, navigate to **Connect > Configuration > Settings** to configure your telephony provider. See the provider-specific setup guides:
+Each installed integration adds its own submenu (**Twilio**, **FreeSWITCH**,
+**Asterisk**) inside the **Connect** app with a **Configuration > Settings**
+entry for the provider credentials; core options live in **Connect >
+Configuration > Settings**. See the provider-specific setup guides:
 
 - [Core Configuration](core-setup.md) — General settings, transcription
 - [Twilio Setup](twilio-setup.md) — Twilio account, SIP domains, WhatsApp
 - [FreeSWITCH Setup](freeswitch-setup.md) — FreeSWITCH server, gateways, endpoints
+- [Asterisk Setup](asterisk-setup.md) — Sidecar agent, endpoints, config snippets

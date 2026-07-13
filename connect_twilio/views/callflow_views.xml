@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_twilio_callflow_tree" model="ir.ui.view">
+        <field name="name">connect.twilio.callflow.tree</field>
+        <field name="model">connect.twilio.callflow</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="exten_number" string="Extension"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_twilio_callflow_form" model="ir.ui.view">
+        <field name="name">connect.twilio.callflow.form</field>
+        <field name="model">connect.twilio.callflow</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="create_extension" type="object"
+                                class="oe_stat_button" icon="fa-phone"
+                                string="Extension"/>
+                    </div>
+                    <group>
+                        <group string="General">
+                            <field name="name"/>
+                            <field name="exten" readonly="1"/>
+                            <field name="exten_number" readonly="1"/>
+                            <field name="language"/>
+                            <field name="voice"/>
+                            <field name="record_calls"/>
+                            <field name="gather_input"/>
+                        </group>
+                        <group string="Voicemail">
+                            <field name="voicemail_enabled"/>
+                            <field name="voicemail_prompt" invisible="not voicemail_enabled"/>
+                        </group>
+                    </group>
+                    <group string="Gather Settings" invisible="not gather_input">
+                        <group>
+                            <field name="gather_input_type"/>
+                            <field name="gather_timeout"/>
+                            <field name="gather_digits"/>
+                            <field name="gather_hints" invisible="gather_input_type == 'dtmf'"/>
+                        </group>
+                    </group>
+                    <group invisible="not gather_input">
+                        <group string="Prompt Message">
+                            <field name="prompt_message" nolabel="1" colspan="2"/>
+                        </group>
+                        <group string="Invalid Input Message">
+                            <field name="invalid_input_message" nolabel="1" colspan="2"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="choices" string="Choices" invisible="not gather_input">
+                            <field name="choices">
+                                <list editable="bottom">
+                                    <field name="choice_digits"/>
+                                    <field name="exten"/>
+                                    <field name="speech"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="ring_users" string="Ring Users">
+                            <field name="ring_users">
+                                <list>
+                                    <field name="user"/>
+                                    <field name="twilio_exten"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_twilio_callflow" model="ir.actions.act_window">
+        <field name="name">Call Flows</field>
+        <field name="res_model">connect.twilio.callflow</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_twilio_callflows"
+              name="Call Flows"
+              parent="menu_connect_twilio"
+              action="action_twilio_callflow"
+              sequence="30"/>
+</odoo>

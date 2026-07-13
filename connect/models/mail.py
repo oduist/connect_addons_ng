@@ -15,7 +15,6 @@ class MailMessage(models.Model):
         mail = self.browse(message_id)
         message = mail.connect_message
         if message:
-            number = self.env['connect.number'].search([('phone_number', '=', message.to_number)])
             return {'from_number': message.from_number, 'to_number': message.to_number}
         else:
             return False

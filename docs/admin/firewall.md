@@ -21,6 +21,14 @@ in front of the SIP ports consults at line rate:
 | `connect_fw_expire_short` | 30 s | ACCEPT — challenge response window after a SIP 401 |
 | `connect_fw_expire_long` | 24 h | DROP — default-deny after a challenge is sent but not answered |
 
+Both address families are covered: each table above is the IPv4
+(`family inet`) set, and a `6`-suffixed twin (`connect_fw_whitelist6`,
+`connect_fw_banned6`, …) holds the IPv6 entries, consulted by an
+identical `connect_fw_voip` chain installed via `ip6tables`. Whitelist
+and blacklist entries in Odoo accept both families and are routed to
+the right set automatically; on hosts without IPv6 (`ipv6.disable=1`)
+the service logs an error for the v6 family and keeps protecting IPv4.
+
 In addition, an `iptables -m string` filter at the bottom of the chain
 DROPs known SIP-scanner User-Agents (`friendly-scanner`, `sipvicious`,
 `sipcli`, `VaxSIPUserAgent`, `sundayddr`, `sipsak`, `sip-scan`) before
@@ -97,7 +105,7 @@ The service container must:
 | `FS_ESL_HOST` | usually `127.0.0.1` |
 | `FS_ESL_PORT` | usually `8021` |
 | `FS_ESL_PASSWORD` | password of FreeSWITCH `mod_event_socket`. The shipped FS image bakes in `ConnectNGESLPassword`; set `FS_ESL_PASSWORD` on both containers if you want a different value. |
-| `HTTP_BIND_HOST`, `HTTP_BIND_PORT` | where the service listens (default `0.0.0.0:8081`) |
+| `HTTP_BIND_HOST`, `HTTP_BIND_PORT` | where the service listens (default `0.0.0.0:8081`; set `HTTP_BIND_HOST=::` if the dashboard itself must be reachable over IPv6) |
 | `DASHBOARD_USER`, `DASHBOARD_PASSWORD` | basic-auth credentials for the dashboard / JSON API |
 
 Optionally:
@@ -111,7 +119,7 @@ Optionally:
 
 ```yaml
 firewall:
-  image: oduist/freeswitch-firewall:1.1.0
+  image: oduist/freeswitch-firewall:2.1.0
   network_mode: host
   cap_add: [NET_ADMIN]
   environment:
@@ -133,7 +141,7 @@ A ready preset for `oduflow` lives at
 1. Install or upgrade `connect_freeswitch` — `post_init_hook` (or the
    per-version migration on upgrade) generates an initial **Firewall
    Service Token** and creates the agent singleton.
-2. Open **Configuration → General Settings → Firewall** as an admin:
+2. Open **Connect → FreeSWITCH → Configuration → Settings**, page **Firewall**, as an admin:
    * Toggle **Firewall Enabled** on.
    * Set **Firewall Service URL** to where Traefik (or whichever
      reverse-proxy you use) reaches the service container.
@@ -145,11 +153,11 @@ A ready preset for `oduflow` lives at
      picks up the new token.
    * Adjust port lists and timeouts if you need to deviate from the
      defaults.
-3. Connect → PBX → Firewall → **Whitelist**: add your trunk providers,
+3. Connect → FreeSWITCH → Firewall → **Whitelist**: add your trunk providers,
    office NAT exits, anything you don't want auto-banned. Save —
    `connect.firewall.agent._trigger_sync()` will POST to
    `/firewall/sync` immediately.
-4. Connect → PBX → Firewall → **Agent Status**: should show the agent
+4. Connect → FreeSWITCH → Firewall → **Agent Status**: should show the agent
    as *online* within one heartbeat interval (default 60 s).
 
 ## Daily operations
@@ -158,13 +166,13 @@ A ready preset for `oduflow` lives at
   the service's dashboard:
   `https://<your-host>/firewall/` (basic-auth with `DASHBOARD_USER` /
   `DASHBOARD_PASSWORD`). Each row has an Unban button.
-* **From Odoo** — open `Connect → PBX → Firewall → Events`. Every row
+* **From Odoo** — open `Connect → FreeSWITCH → Firewall → Events`. Every row
   with **Event Type = Automatic Ban** gets a small unlock-icon
   button. Clicking it calls back into the service to remove the IP
   from `connect_fw_banned` and writes a `manual_unban_applied`
   audit record. The button hides itself as soon as the IP is no
   longer banned.
-* **Permanent block** — `Connect → PBX → Firewall → Blacklist`, add an
+* **Permanent block** — `Connect → FreeSWITCH → Firewall → Blacklist`, add an
   IP or CIDR. Useful for blocking entire VPS-provider subnets.
 
 ## Settings reference
@@ -204,13 +212,17 @@ curl -sk -u admin:<pw> https://<host>/firewall/api/heartbeat | jq
 # 2. Is ESL really connected?
 docker logs <firewall-container> | grep -E "ESL connected|Reconciler|AUTO-BAN"
 
-# 3. Look at the actual kernel state.
+# 3. Look at the actual kernel state (the "6"-suffixed sets and
+#    ip6tables are the IPv6 side).
 ipset list connect_fw_banned
+ipset list connect_fw_banned6
 ipset list connect_fw_authenticated
 iptables -L connect_fw_voip -v -n
+ip6tables -L connect_fw_voip -v -n
 
-# 4. Verify the chain is hooked into INPUT.
+# 4. Verify the chain is hooked into INPUT for both families.
 iptables -L INPUT -v -n | grep connect_fw_voip
+ip6tables -L INPUT -v -n | grep connect_fw_voip
 ```
 
 If the agent stays *offline* in Odoo:
@@ -231,10 +243,15 @@ If you see events arrive in Odoo but no auto-bans land in `ipset`:
   `Operation not permitted`, visible in the service logs;
 * the kernel does not have the `ip_set` / `xt_set` modules
   available — typical on hardened/minimal hosts. `modprobe ip_set`
-  on the host fixes it.
+  on the host fixes it. The IPv6 side additionally needs `ip6_tables` /
+  `ip6table_filter`; on hosts booted with `ipv6.disable=1` the service
+  logs an error for the v6 family and continues IPv4-only — that is the
+  expected degradation, not a fault.
 
 ## Architecture-level reference
 
 See `specs/decisions/014-freeswitch-firewall-service.md` for the
 design decisions behind this stack (six-table ipset model, direct
-HTTP control plane, hardcoded UA blacklist, single-instance, IPv4-only).
+HTTP control plane, hardcoded UA blacklist, single-instance) and
+`specs/decisions/037-firewall-ipv6-support.md` for how IPv6 was
+layered in (parallel `inet6` sets + `ip6tables` chain).

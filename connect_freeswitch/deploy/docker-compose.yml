@@ -28,6 +28,45 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
 
+  # TLS edge in front of FreeSWITCH. mod_xml_rpc has no native TLS, so Traefik
+  # terminates HTTPS for it (see traefik/dynamic.yml) and proxies to the
+  # internal :8080 port over host.docker.internal. Its ACME store (the
+  # traefik-acme volume) is shared with the fs container, whose entrypoint
+  # extracts the same certificate for Verto/WSS.
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--global.checknewversion=false"
+      - "--global.sendanonymoususage=false"
+      - "--log.level=INFO"
+      # HTTP → HTTPS redirect; all real traffic terminates on websecure.
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      # Let's Encrypt cert for FS_DOMAIN, served by default on websecure.
+      - "--entrypoints.websecure.http.tls.certresolver=letsencrypt"
+      - "--entrypoints.websecure.http.tls.domains[0].main=${FS_DOMAIN:?Set FS_DOMAIN in deploy/.env}"
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      - "--providers.file.watch=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?Set ACME_EMAIL in deploy/.env}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      # Defaults to production Let's Encrypt; set ACME_CASERVER to the staging
+      # URL while testing to avoid rate limits (see deploy/.env).
+      - "--certificatesresolvers.letsencrypt.acme.caserver=${ACME_CASERVER:-https://acme-v02.api.letsencrypt.org/directory}"
+    ports:
+      - "80:80"
+      - "443:443"
+    extra_hosts:
+      # Let Traefik (bridge network) reach the host-networked fs container.
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - traefik-acme:/acme
+
   fs:
     image: safarov/freeswitch:latest
     container_name: freeswitch
@@ -40,13 +79,23 @@ services:
       - EPMD=false
       - DUMPCAP=false
       - ODOO_URL=${ODOO_URL}
+      # Shared secret for FreeSWITCH -> Odoo HTTP calls; must match the
+      # FreeSWITCH Webhook Token in Odoo settings (ADR-025).
+      - FS_WEBHOOK_TOKEN=${FS_WEBHOOK_TOKEN}
+      # Domain used by the oduist/freeswitch entrypoint to extract the Traefik
+      # ACME cert for Verto. Ignored by the safarov image used here by default.
+      - FS_DOMAIN=${FS_DOMAIN:-localhost}
     volumes:
       - freeswitch-sounds:/usr/share/freeswitch/sounds
       - ./freeswitch/conf:/etc/freeswitch
       - ./freeswitch/logs:/var/log/freeswitch
       - ./freeswitch/dumpcap:/dumpcap
+      # Shared Traefik ACME store; the oduist/freeswitch entrypoint reads
+      # /etc/traefik/acme.json to reuse Traefik's certificate for Verto.
+      - traefik-acme:/etc/traefik
 
 volumes:
   freeswitch-sounds:
   odoo-data:
   postgres-data:
+  traefik-acme:

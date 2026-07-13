@@ -10,8 +10,8 @@
     <menuitem id="menu_connect_whatsapp_sender"
               name="WhatsApp Senders"
               action="action_connect_whatsapp_sender"
-              sequence="65"
-              parent="connect.menu_connect_messages_parent"
+              sequence="30"
+              parent="menu_twilio_messages"
               groups="connect.group_admin"/>
 
     <record id="view_connect_whatsapp_sender_tree" model="ir.ui.view">

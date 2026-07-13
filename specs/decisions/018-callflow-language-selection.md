@@ -79,11 +79,11 @@ config picks up the same key from `<model language="en-US" ...>`.
 
 * Existing rows with `'en-US'` / `'ru-RU'` (the only defaults ever shipped)
   are valid Selection values → no data migration of those.
-* The 18.0.3.1.2 post-migration of `connect` rewrites any other stored
+* The 19.0.3.1.2 post-migration of `connect` rewrites any other stored
   values to `'en-US'`. A warning is logged listing the original values.
 * New Odoo code requires the new FreeSWITCH image: the language token
   format changed (short → BCP-47). Image and module versions are bumped
-  together (`oduist/freeswitch:1.1.0`, `connect_freeswitch 18.0.1.9.0`).
+  together (`oduist/freeswitch:1.1.0`, `connect_freeswitch 19.0.1.9.0`).
 
 ## Consequences
 

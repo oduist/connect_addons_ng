@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_freeswitch_outgoing_callerid_tree" model="ir.ui.view">
+        <field name="name">connect.freeswitch.outgoing_callerid.tree</field>
+        <field name="model">connect.freeswitch.outgoing_callerid</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="number"/>
+                <field name="friendly_name"/>
+                <field name="callerid_type"/>
+                <field name="is_default"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_freeswitch_outgoing_callerid_form" model="ir.ui.view">
+        <field name="name">connect.freeswitch.outgoing_callerid.form</field>
+        <field name="model">connect.freeswitch.outgoing_callerid</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group string="Caller ID">
+                            <field name="number"/>
+                            <field name="friendly_name"/>
+                            <field name="callerid_type"/>
+                            <field name="is_default"/>
+                        </group>
+                        <group string="Users">
+                            <field name="callerid_users" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_freeswitch_callerid" model="ir.actions.act_window">
+        <field name="name">Outgoing Caller IDs</field>
+        <field name="res_model">connect.freeswitch.outgoing_callerid</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_freeswitch_callerids"
+              name="Outgoing Caller IDs"
+              parent="menu_freeswitch_root"
+              action="action_freeswitch_callerid"
+              sequence="50"/>
+</odoo>

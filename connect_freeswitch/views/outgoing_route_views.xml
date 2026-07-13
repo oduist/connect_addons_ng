@@ -49,9 +49,9 @@
 
     <menuitem id="menu_freeswitch_outgoing_route"
               name="Outgoing Routes"
-              parent="connect.menu_connect_pbx"
+              parent="menu_freeswitch_config"
               action="action_freeswitch_outgoing_route"
-              sequence="71"
+              sequence="20"
               groups="connect.group_admin"/>
 
 </odoo>

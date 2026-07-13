@@ -1,0 +1,41 @@
+# oduflow service preset for connect-asterisk-agent.
+#
+# Documents the recommended way to run the agent alongside an Asterisk
+# container (or a host Asterisk) in oduflow. The agent only needs TCP
+# reachability to AMI plus the monitor directory for recording upload.
+#
+# Apply by creating a service in oduflow with these values.
+
+name: asterisk-agent
+image: oduist/asterisk-agent:1.0.0
+
+# Required: copy these from Odoo (Connect Settings → Asterisk).
+# Do NOT commit the actual values — they are per-installation.
+environment:
+  # --- Odoo control plane -------------------------------------------------
+  ODOO_URL: ${ODOO_URL}                           # e.g. https://odoo.example.com
+
+  # --- Shared secret with Odoo (asterisk_agent_token) ---------------------
+  # REQUIRED. The agent refuses to start without it. The same token is
+  # used for both directions (agent → /asterisk/webhook|api/* and
+  # Odoo → /sync,/originate,/ami_action on this agent).
+  AGENT_TOKEN: ${ASTERISK_AGENT_TOKEN}
+
+  # --- Asterisk AMI --------------------------------------------------------
+  AMI_HOST: ${AMI_HOST}                           # e.g. 127.0.0.1 with network_mode: host
+  AMI_PORT: "5038"
+  AMI_USER: connect-agent
+  AMI_PASSWORD: ${AMI_PASSWORD}
+
+  # --- HTTP (Odoo → agent) -------------------------------------------------
+  HTTP_BIND_HOST: 0.0.0.0
+  HTTP_BIND_PORT: 8082
+
+  LOG_LEVEL: INFO
+
+ports:
+  - "8082:8082"
+
+volumes:
+  - asterisk-monitor:/var/spool/asterisk/monitor:ro
+  - asterisk-agent-state:/var/lib/connect-asterisk

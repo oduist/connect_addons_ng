@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_connect_call_tree_helpdesk" model="ir.ui.view">
+        <field name="name">connect.call.tree.helpdesk</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.view_connect_call_tree"/>
+        <field name="arch" type="xml">
+            <field name="partner" position="after">
+                <field name="ticket" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_connect_call_form_helpdesk" model="ir.ui.view">
+        <field name="name">connect.call.form.helpdesk</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.view_connect_call_form"/>
+        <field name="arch" type="xml">
+            <button name="create_partner_button" position="after">
+                <button string="Ticket" name="create_ticket_button" type="object"
+                        class="oe_stat_button" icon="fa-ticket"/>
+            </button>
+            <notebook position="inside">
+                <page name="helpdesk" string="Helpdesk">
+                    <group>
+                        <group>
+                            <field name="ticket"/>
+                        </group>
+                        <group>
+                            <button name="unlink_ticket" type="object" string="Unlink"
+                                    invisible="not ticket"/>
+                        </group>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+</odoo>

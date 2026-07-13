@@ -102,12 +102,9 @@ Reproduced on the `fs19` oduflow environment with template `fs19`
 
 ## Tests
 
-Lives in the private `tests_suite` submodule, not in the main repo:
-`tests_suite/connect/tests/test_get_partner_by_number_normalizes.py`.
-Covers both directions (E.164 in DB, local in caller; and local in DB,
-E.164 in caller) plus the no-match case. A separate PR in
-`oduist/connect_addons_tests` lands the test file; this PR only changes
-the runtime behavior.
+Covered by tests in `connect/tests/`. The regression should cover both
+directions (E.164 in DB, local in caller; and local in DB, E.164 in caller)
+plus the no-match case.
 
 ## Cross-branch backport
 

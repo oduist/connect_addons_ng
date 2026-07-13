@@ -71,10 +71,9 @@ provider-agnostic data model.
 
 ## Cross-branch backport
 
-Per `CLAUDE.md` versioning rules, the same change ships on both branches
-with aligned tail versions: `19.0.3.1.3` / `19.0.1.1.2` on the `19.0`
-branch (#91, merged) and `18.0.3.1.3` / `18.0.1.1.2` on the `18.0`
-branch (this PR).
+Per `CLAUDE.md` versioning rules, the same change must be ported to the
+`18.0` branch with aligned tail versions (`18.0.3.1.3` for `connect`,
+`18.0.1.1.2` for `connect_twilio`). The backport ships as a separate PR.
 
 ## Consequences
 

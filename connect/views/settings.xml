@@ -13,6 +13,7 @@
               name="Settings"
               parent="menu_connect_settings"
               action="connect_settings_action"
+              groups="connect.group_admin"
               sequence="10"/>
 
     <record id="connect_settings_form" model="ir.ui.view">

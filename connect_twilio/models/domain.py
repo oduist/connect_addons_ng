@@ -4,6 +4,8 @@ import logging
 import re
 from urllib.parse import urljoin
 from odoo import fields, models, api, release
+if release.version_info[0] >= 19:
+    from odoo.models import Constraint
 from odoo.exceptions import ValidationError
 from twilio.twiml.voice_response import Client, Dial, VoiceResponse
 from odoo.addons.connect.models.settings import debug
@@ -15,14 +17,14 @@ logger = logging.getLogger(__name__)
 
 
 class Domain(models.Model):
-    _name = "connect.domain"
+    _name = "connect.twilio.domain"
     _rec_name = "friendly_name"
     _description = "Twilio Domain"
     _order = "friendly_name"
 
     sid = fields.Char("SID", readonly=True)
     application = fields.Many2one(
-        "connect.twiml",
+        "connect.twilio.twiml",
         ondelete="restrict",
         required=True,
         default=lambda self: self.get_domain_app(),
@@ -35,9 +37,16 @@ class Domain(models.Model):
     sip_registration = fields.Boolean("SIP Registration", readonly=True, default=True)
     delete_protection = fields.Boolean(default=True)
 
-    _sql_constrains = [
-        ("uniq_subdomain", "UNIQUE(subdomain)", "This subdomain is already used!")
-    ]
+    # NB: this was misspelled `_sql_constrains` (no 't'), so the UNIQUE
+    # constraint was never registered and duplicate subdomains slipped
+    # through. Use the same version-conditional form as the other models.
+    if release.version_info[0] >= 19:
+        _uniq_subdomain = Constraint(
+            'UNIQUE(subdomain)', 'This subdomain is already used!')
+    else:
+        _sql_constraints = [
+            ("uniq_subdomain", "UNIQUE(subdomain)", "This subdomain is already used!")
+        ]
 
     def _get_domain_name(self):
         edge = self.env['connect.settings'].sudo().get_param('twilio_edge')
@@ -53,19 +62,19 @@ class Domain(models.Model):
 
     def get_domain_app(self):
         # Domain must be created.
-        app = self.env["connect.twiml"].search(
+        app = self.env["connect.twilio.twiml"].search(
             [
                 ("code_type", "=", "model_method"),
-                ("model", "=", "connect.domain"),
+                ("model", "=", "connect.twilio.domain"),
                 ("method", "=", "route_call"),
             ],
             limit=1,
         )
         if not app:
             # Who removed that!?
-            app = self.env["connect.twiml"].create(
+            app = self.env["connect.twilio.twiml"].create(
                 {
-                    "model": "connect.domain",
+                    "model": "connect.twilio.domain",
                     "method": "route_call",
                     "code_type": "model_method",
                     "name": "SIP Domains calls",
@@ -520,14 +529,14 @@ class Domain(models.Model):
             is_whatsapp = True
         else:
             found_num = to_val
-        exten = self.env["connect.exten"].sudo().search([("number", "=", found_num)])
+        exten = self.env["connect.twilio.exten"].sudo().search([("number", "=", found_num)])
         # Do not let whatsapp calls to go for external calling
         if not exten and is_whatsapp:
             return "<Response><Say>Oops</Say><Pause length='1'/><Say>Whatsapp Extension not found! Please create an extenstion for this Whatsapp number!</Say></Response>"
         if not exten:
             # Get all extensions and match by pattern.
             # TODO: Handle bad exten numbers like 70[ that cannot be used by re.match.
-            all_extensions = self.env["connect.exten"].sudo().search([])
+            all_extensions = self.env["connect.twilio.exten"].sudo().search([])
             # Handle case of extension number is defined as E1.64 (with +).
             matching_extensions = all_extensions.filtered(
                 lambda x: re.match(
@@ -562,13 +571,13 @@ class Domain(models.Model):
 
     def originate_external_call(self, number, request, params={}):
         debug(self, "Outgoing call to %s" % number)
-        default_number = self.env["connect.outgoing_callerid"].search(
+        default_number = self.env["connect.twilio.outgoing_callerid"].search(
             [("is_default", "=", True)], limit=1
         )
         # Find the user by caller.
         user = self.env["connect.user"].get_user_by_uri(request.get("Caller"))
-        if user and user.outgoing_callerid:
-            callerId = user.outgoing_callerid.number
+        if user and user.twilio_outgoing_callerid:
+            callerId = user.twilio_outgoing_callerid.number
         else:
             callerId = default_number.number if default_number else False
         if not callerId:

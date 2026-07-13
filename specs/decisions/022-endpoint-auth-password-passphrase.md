@@ -49,7 +49,7 @@ Prior art in the codebase:
 
 4. **Non-destructive backfill.** `backfill_endpoint_passwords(env)` in
    `connect_freeswitch/__init__.py`, called from
-   `migrations/18.0.1.10.0/post-migrate.py`, fills only endpoints whose
+   `migrations/19.0.1.10.0/post-migrate.py`, fills only endpoints whose
    `auth_password` is empty. Existing passwords — even weak manual ones —
    are left untouched, per the issue's acceptance criteria.
 

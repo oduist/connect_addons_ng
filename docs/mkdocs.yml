@@ -28,10 +28,16 @@ nav:
   - Home: index.md
   - Admin Guide:
       - Installation: admin/installation.md
+      - Customer Onboarding (FreeSWITCH): admin/customer-onboarding.md
       - Core Configuration: admin/core-setup.md
       - Twilio Integration: admin/twilio-setup.md
       - FreeSWITCH Integration: admin/freeswitch-setup.md
+      - Asterisk Integration: admin/asterisk-setup.md
+      - Telnyx Integration: admin/telnyx-setup.md
+      - Infobip Integration: admin/infobip-setup.md
+      - Bird Integration: admin/bird-setup.md
       - Call Parking: admin/parking.md
+      - Working Schedules: admin/working-schedule.md
       - Security: admin/security.md
       - SIP Firewall: admin/firewall.md
   - User Guide:

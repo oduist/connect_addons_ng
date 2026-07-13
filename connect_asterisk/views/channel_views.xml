@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_channel_form_asterisk" model="ir.ui.view">
+        <field name="name">connect.channel.form.asterisk</field>
+        <field name="model">connect.channel</field>
+        <field name="inherit_id" ref="connect.view_connect_channel_form"/>
+        <field name="arch" type="xml">
+            <field name="parent_sid" position="after">
+                <field name="asterisk_channel"/>
+                <field name="asterisk_answered"/>
+                <field name="asterisk_recording_file"/>
+            </field>
+        </field>
+    </record>
+</odoo>

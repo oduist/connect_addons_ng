@@ -1,4 +1,0 @@
-[submodule "tests_suite"]
-	path = tests_suite
-	url = git@github.com:oduist/connect_addons_tests.git
-	update = none

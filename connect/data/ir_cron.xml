@@ -9,5 +9,21 @@
             <field name="code">model.vacuum(hours=24)</field>
             <field name="state">code</field>
         </record>
+        <record id="cron_transcribe_recordings" model="ir.cron">
+            <field name="name">Connect: transcribe pending recordings</field>
+            <field name="interval_number">2</field>
+            <field name="interval_type">minutes</field>
+            <field name="model_id" ref="model_connect_recording"/>
+            <field name="code">model._cron_transcribe_recordings()</field>
+            <field name="state">code</field>
+        </record>
+        <record id="cron_generate_schedule_slots" model="ir.cron">
+            <field name="name">Connect: generate working schedule availability slots</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="model_id" ref="model_connect_schedule"/>
+            <field name="code">model._cron_generate_slots()</field>
+            <field name="state">code</field>
+        </record>
     </data>
 </odoo>

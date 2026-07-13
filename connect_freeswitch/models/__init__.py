@@ -1,4 +1,5 @@
 from . import call
+from . import channel
 from . import fs_parking_slot
 from . import fs_template
 from . import endpoint
@@ -9,5 +10,6 @@ from . import fs_fifo
 from . import fs_user
 from . import gateway
 from . import number
+from . import outgoing_callerid
 from . import outgoing_route
 from . import settings
