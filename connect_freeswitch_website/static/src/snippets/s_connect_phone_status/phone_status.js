@@ -7,10 +7,11 @@ const ConnectPhoneStatus = publicWidget.Widget.extend({
     disabledInEditableMode: false,
 
     async start() {
+        const superStart = this._super.bind(this);
         this.previousChildren = [...this.el.childNodes];
         const numberId = parseInt(this.el.dataset.numberId || "0", 10);
         if (!numberId) {
-            return this._super(...arguments);
+            return superStart(...arguments);
         }
         let data;
         try {
@@ -22,7 +23,7 @@ const ConnectPhoneStatus = publicWidget.Widget.extend({
             // Leave the placeholder content on network errors.
         }
         if (!data) {
-            return this._super(...arguments);
+            return superStart(...arguments);
         }
         const dataset = this.el.dataset;
         const parts = [];
@@ -56,7 +57,7 @@ const ConnectPhoneStatus = publicWidget.Widget.extend({
         }
 
         this.el.replaceChildren(...parts);
-        return this._super(...arguments);
+        return superStart(...arguments);
     },
 
     destroy() {

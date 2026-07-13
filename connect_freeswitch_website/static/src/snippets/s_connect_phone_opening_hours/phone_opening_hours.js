@@ -7,10 +7,11 @@ const ConnectPhoneOpeningHours = publicWidget.Widget.extend({
     disabledInEditableMode: false,
 
     async start() {
+        const superStart = this._super.bind(this);
         this.previousChildren = [...this.el.childNodes];
         const numberId = parseInt(this.el.dataset.numberId || "0", 10);
         if (!numberId) {
-            return this._super(...arguments);
+            return superStart(...arguments);
         }
         const days = parseInt(this.el.dataset.days || "10", 10) || 10;
         let data;
@@ -25,7 +26,7 @@ const ConnectPhoneOpeningHours = publicWidget.Widget.extend({
             // Leave the placeholder content on network errors.
         }
         if (!data) {
-            return this._super(...arguments);
+            return superStart(...arguments);
         }
         const dataset = this.el.dataset;
         const useLongDate = dataset.dateFormat !== "short";
@@ -54,7 +55,7 @@ const ConnectPhoneOpeningHours = publicWidget.Widget.extend({
         tableEl.appendChild(bodyEl);
 
         this.el.replaceChildren(tableEl);
-        return this._super(...arguments);
+        return superStart(...arguments);
     },
 
     destroy() {
