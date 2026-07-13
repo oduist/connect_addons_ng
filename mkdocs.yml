@@ -44,6 +44,7 @@ nav:
       - Core Configuration: admin/core-setup.md
       - Twilio Integration: admin/twilio-setup.md
       - FreeSWITCH Integration: admin/freeswitch-setup.md
+      - Pipecat AI Agents: admin/pipecat-setup.md
       - Asterisk Integration: admin/asterisk-setup.md
       - Telnyx Integration: admin/telnyx-setup.md
       - LiveKit Integration: admin/livekit-setup.md

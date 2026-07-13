@@ -1,30 +1,37 @@
-# AI Voice Agents (Dograh)
+# AI Voice Agents
 
-With the Dograh integration your PBX can answer calls with an AI voice
-agent built in [Dograh](https://dograh.com)'s visual workflow editor.
+An AI voice agent answers a normal phone number or internal extension and holds
+a spoken conversation in real time. Depending on its configuration, it can
+answer questions, collect information, end the call, or transfer you to a
+person.
 
-## Calling an agent
+## Calling An Agent
 
-Every AI agent has its own extension number (visible in
-**Connect → Dograh → AI Agents**). Dial the extension from any phone
-registered on the PBX — the agent answers, speaks and listens in real
-time, and you can interrupt it mid-sentence (barge-in).
+Every AI agent has its own extension number. Dial the extension from any phone
+registered on the PBX, or call a public number that an administrator has routed
+to the agent.
 
-Administrators can route a public number (DID) or an IVR choice to the
-agent's extension so external callers reach it too.
+Speak normally after the greeting. You do not need to wait for a long reply to
+finish: start speaking and the agent will stop its playback and listen to the
+new turn.
 
-## Call history and recordings
+## Transfers
 
-Calls to AI agents appear in **Connect → Calls** like any other call.
-When **Record Calls** is enabled on the agent, the conversation is
-recorded and shows up under **Recordings** on the call form, where the
-standard transcription and summarization tools apply.
+If a human transfer is configured, ask to speak with a person. The agent will
+transfer the same call to the configured extension. If transfer is unavailable,
+the agent should say so rather than disconnecting you.
 
-The full workflow-level transcript of each agent conversation is also
-available in the Dograh dashboard (ask your administrator for access).
+## Call History And Recordings
 
-## What the agent can do
+Calls to AI agents appear in **Connect -> Calls** like any other call. When
+recording is enabled, the conversation is recorded and shows up under
+**Recordings** on the call form, where the standard transcription and
+summarization tools apply.
 
-The agent's behavior — greetings, questions, business logic, API
-calls — is defined in the Dograh workflow assigned to the extension.
-Talk to your administrator to change what an agent says or does.
+Dograh agents may also expose the full workflow-level transcript in the Dograh
+dashboard. Ask your administrator for access.
+
+## What The Agent Can Do
+
+The agent's behavior, including greetings, questions, business logic and API
+calls, is controlled by the agent configuration selected by your administrator.
