@@ -2,7 +2,7 @@
 "use strict"
 import {loadJS} from "@web/core/assets"
 import {useService} from "@web/core/utils/hooks"
-import {Calls} from "@connect_asterisk/components/calls/calls"
+import {Calls} from "@connect/components/calls/calls"
 import {Favorites} from "@connect_asterisk/components/favorites/favorites"
 import {Contacts} from "@connect_asterisk/components/contacts/contacts"
 import {browser, dialTone, setFocus, maskNumber} from "@connect_asterisk/js/utils"

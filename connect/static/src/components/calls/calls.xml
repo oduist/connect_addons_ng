@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
 
     <!-- Calls detail-->
-    <t t-name="connect_asterisk.call_detail" owl="1">
+    <t t-name="connect.call_detail" owl="1">
         <div t-if="state.call" class="o_phone_call_details flex-column">
             <t t-if="state.call.called_users[0] === user">
                 <t t-set="caller_id" t-value="state.call.partner or state.call.caller_user"/>
@@ -63,7 +63,7 @@
     </t>
 
     <!-- Calls -->
-    <t t-name="connect_asterisk.calls" owl="1">
+    <t t-name="connect.calls" owl="1">
         <div t-attf-class="{{ state.call ? 'o_hide' : '' }} o_history_list">
             <t t-if="state.calls">
                 <table class="o_history_table">

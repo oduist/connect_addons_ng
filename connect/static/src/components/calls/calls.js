@@ -7,7 +7,7 @@ import {user} from "@web/core/user"
 const uid = user.userId
 
 class CallDetail extends Component {
-    static template = 'connect_telnyx.call_detail'
+    static template = 'connect.call_detail'
     static props = {
         call: Object
     }
@@ -87,7 +87,7 @@ class CallDetail extends Component {
 }
 
 export class Calls extends Component {
-    static template = 'connect_telnyx.calls'
+    static template = 'connect.calls'
     static props = {
         bus: Object,
     }

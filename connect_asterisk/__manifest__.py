@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Asterisk',
-    'version': '18.0.2.0.0',
+    'version': '18.0.2.1.0',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Asterisk integration for Oduist Connect',
