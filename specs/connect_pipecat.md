@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Pipecat
 - **Technical:** `connect_pipecat`
-- **Version:** 19.0.1.0.0
+- **Version:** 18.0.1.0.0
 - **Depends:** `connect`, `connect_freeswitch`
 - **Application:** False
 - **License:** Other proprietary
@@ -67,8 +67,7 @@ requests respectively.
 ## HTTP API
 
 All routes require `Authorization: Bearer <pipecat_service_token>` and fail
-closed when no token is configured. Mutating Odoo 19 routes set
-`readonly=False`.
+closed when no token is configured. Mutating routes set `readonly=False`.
 
 | Method and route | Purpose |
 |---|---|
