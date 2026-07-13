@@ -167,21 +167,44 @@
 /* ------------------------------------------------------------------ *
  * Navigation
  * ------------------------------------------------------------------ */
-[data-md-color-scheme="slate"] .md-nav__item .md-nav__link--active,
-[data-md-color-scheme="slate"] .md-nav__link:focus,
-[data-md-color-scheme="slate"] .md-nav__link:hover {
+/* Clickable page links: accent on hover / focus / active. Scoped away from
+   section labels (which are <label>, not links) so headers never look clickable. */
+[data-md-color-scheme="slate"]
+  .md-nav__item:not(.md-nav__item--section) > .md-nav__link--active,
+[data-md-color-scheme="slate"]
+  .md-nav__item:not(.md-nav__item--section) > .md-nav__link:focus,
+[data-md-color-scheme="slate"]
+  .md-nav__item:not(.md-nav__item--section) > .md-nav__link:hover {
   color: var(--odu-blue-light);
 }
 .md-nav__link--active {
   font-weight: 600;
 }
-/* Section labels */
-.md-nav__item--section > .md-nav__link {
+
+/* Section group labels ("Admin Guide", "User Guide") — non-clickable headers,
+   clearly set apart from the page links with a divider + spacing. */
+.md-nav__item--section > .md-nav__link,
+.md-nav__item--section > .md-nav__link:hover,
+.md-nav__item--section > .md-nav__link:focus {
   color: var(--md-default-fg-color--light);
   text-transform: uppercase;
-  font-size: 0.68rem;
-  letter-spacing: 0.08em;
-  font-weight: 600;
+  font-size: 0.66rem;
+  letter-spacing: 0.09em;
+  font-weight: 700;
+  cursor: default;
+  margin-top: 1.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--odu-border);
+  opacity: 1;
+}
+
+/* Sidebar's own title ("Oduist Connect Documentation") duplicates the header
+   brand and reads like a menu item. Hide it on desktop; keep it on the mobile
+   drawer where it's the drawer header. */
+@media screen and (min-width: 76.25em) {
+  .md-sidebar--primary .md-nav--primary > .md-nav__title {
+    display: none;
+  }
 }
 
 /* ------------------------------------------------------------------ *
