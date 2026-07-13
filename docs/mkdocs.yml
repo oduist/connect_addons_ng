@@ -37,6 +37,7 @@ nav:
       - Infobip Integration: admin/infobip-setup.md
       - Bird Integration: admin/bird-setup.md
       - Call Parking: admin/parking.md
+      - Working Schedules: admin/working-schedule.md
       - Security: admin/security.md
       - SIP Firewall: admin/firewall.md
   - User Guide:

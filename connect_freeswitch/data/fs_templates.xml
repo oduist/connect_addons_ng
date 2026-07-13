@@ -497,7 +497,9 @@ Variables:
   phone_number    - DID phone number as stored (kept for custom templates)
   number_id       - connect.freeswitch.number record ID
   destination     - Destination type: 'user' or 'callflow'
-  transfer_target - Extension/number to transfer to (or empty if no destination)</field>
+  transfer_target - Extension/number to transfer to (or empty if no destination)
+  schedule_prompt      - XML-escaped working-schedule holiday prompt (empty when none)
+  schedule_prompt_lang - Piper TTS language for the schedule prompt</field>
         <field name="content"><![CDATA[<extension name="did_{{ did_label }}">
   <condition field="destination_number" expression="^{{ number_regex }}$">
     <action application="set" data="odoo_call_direction=inbound"/>
@@ -505,10 +507,19 @@ Variables:
     {% if caller_name %}
     <action application="set" data="effective_caller_id_name={{ caller_name }}"/>
     {% endif %}
+    {% if schedule_prompt %}
+    <action application="answer"/>
+    <action application="sleep" data="500"/>
+    <action application="speak" data="piper|{{ schedule_prompt_lang }}|{{ schedule_prompt }}"/>
+    {% endif %}
     {% if transfer_target %}
     <action application="transfer" data="{{ transfer_target }} XML default"/>
     {% else %}
+    {% if schedule_prompt %}
+    <action application="hangup" data="NORMAL_CLEARING"/>
+    {% else %}
     <action application="respond" data="404"/>
+    {% endif %}
     {% endif %}
   </condition>
 </extension>]]></field>
@@ -519,10 +530,19 @@ Variables:
     {% if caller_name %}
     <action application="set" data="effective_caller_id_name={{ caller_name }}"/>
     {% endif %}
+    {% if schedule_prompt %}
+    <action application="answer"/>
+    <action application="sleep" data="500"/>
+    <action application="speak" data="piper|{{ schedule_prompt_lang }}|{{ schedule_prompt }}"/>
+    {% endif %}
     {% if transfer_target %}
     <action application="transfer" data="{{ transfer_target }} XML default"/>
     {% else %}
+    {% if schedule_prompt %}
+    <action application="hangup" data="NORMAL_CLEARING"/>
+    {% else %}
     <action application="respond" data="404"/>
+    {% endif %}
     {% endif %}
   </condition>
 </extension>]]></field>
