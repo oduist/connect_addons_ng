@@ -1,0 +1,34 @@
+# oduflow service preset for the LiveKit sidecar (two services from one
+# image). Apply by creating services in oduflow with these values.
+#
+# Do NOT commit real secrets — they are per-installation.
+
+# --- Voice-AI agent worker --------------------------------------------------
+- name: livekit-agent
+  image: oduist/livekit-agent:1.0.0
+  command: run
+  environment:
+    ODOO_URL: ${ODOO_URL}
+    AGENT_TOKEN: ${LIVEKIT_AGENT_TOKEN}       # connect.settings.livekit_agent_token
+    LIVEKIT_URL: ws://livekit:7880
+    LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+    LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+    # Fallback AI keys (Odoo supplies them per agent).
+    OPENAI_API_KEY: ${OPENAI_API_KEY}
+    DEEPGRAM_API_KEY: ${DEEPGRAM_API_KEY}
+    ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY}
+    LOG_LEVEL: INFO
+
+# --- Egress recording uploader ----------------------------------------------
+- name: livekit-uploader
+  image: oduist/livekit-agent:1.0.0
+  command: upload-recordings
+  environment:
+    ODOO_URL: ${ODOO_URL}
+    AGENT_TOKEN: ${LIVEKIT_AGENT_TOKEN}
+    EGRESS_OUT_DIR: /out
+    STATE_DIR: /state
+    LOG_LEVEL: INFO
+  volumes:
+    - egress-out:/out:ro
+    - livekit-uploader-state:/state

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_livekit_room_list" model="ir.ui.view">
+        <field name="name">connect.livekit.room.list</field>
+        <field name="model">connect.livekit.room</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="state"/>
+                <field name="user"/>
+                <field name="partner"/>
+                <field name="record"/>
+                <field name="room_name"/>
+                <field name="create_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_livekit_room_form" model="ir.ui.view">
+        <field name="name">connect.livekit.room.form</field>
+        <field name="model">connect.livekit.room</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_join" type="object"
+                            string="Join Meeting" class="btn-primary"
+                            invisible="state == 'finished'"/>
+                    <button name="action_start_recording" type="object"
+                            string="Start Recording"
+                            invisible="egress_sid or state == 'finished'"/>
+                    <button name="action_stop_recording" type="object"
+                            string="Stop Recording"
+                            invisible="not egress_sid"/>
+                    <button name="action_close" type="object"
+                            string="Close Room"
+                            invisible="state == 'finished'"
+                            confirm="Close the room and disconnect all participants?"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Meeting subject..."/></h1>
+                    </div>
+                    <group>
+                        <group string="Meeting">
+                            <field name="user"/>
+                            <field name="partner"/>
+                            <field name="record"/>
+                            <field name="public_url" widget="CopyClipboardChar"/>
+                        </group>
+                        <group string="Room">
+                            <field name="empty_timeout"/>
+                            <field name="max_participants"/>
+                            <field name="room_name"/>
+                            <field name="call"/>
+                        </group>
+                    </group>
+                    <group groups="base.group_no_one">
+                        <group string="Development">
+                            <field name="sid"/>
+                            <field name="egress_sid"/>
+                            <field name="guest_token"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_livekit_room" model="ir.actions.act_window">
+        <field name="name">Rooms</field>
+        <field name="res_model">connect.livekit.room</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_livekit_rooms"
+              name="Rooms"
+              parent="menu_connect_livekit"
+              action="action_livekit_room"
+              groups="connect.group_admin"
+              sequence="10"/>
+
+    <!-- Contextual "New LiveKit Meeting" action on partners (admin-only:
+         the room model has no user-group ACLs per ADR-036). -->
+    <record id="action_livekit_room_from_partner" model="ir.actions.act_window">
+        <field name="name">New LiveKit Meeting</field>
+        <field name="res_model">connect.livekit.room</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="binding_model_id" ref="base.model_res_partner"/>
+        <field name="binding_view_types">form</field>
+        <field name="groups_id" eval="[(4, ref('connect.group_admin'))]"/>
+        <field name="context">{'default_partner': active_id}</field>
+    </record>
+</odoo>
