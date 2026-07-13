@@ -35,11 +35,46 @@ class TestLivekitOriginate(LivekitTestCommon):
         channel = self.env['connect.channel'].search(
             [('sid', '=', 'CALL_out')])
         self.assertTrue(channel)
+        self.assertTrue(channel.call)
+        self.assertEqual(
+            channel.call.livekit_room_name, sent[0][2]['room_name'])
+        self.assertEqual(channel.call.caller_user, self.admin_user)
         self.assertEqual(channel.technical_direction, 'outbound-api')
         self.assertEqual(channel.caller, '+15550000001')
         self.assertEqual(channel.called, '+15559998877')
         self.assertTrue(any(
             p.get('action') == 'join' for _, _, p in sent))
+
+    def test_originate_reuses_webhook_created_call(self):
+        def _api(path, request=None):
+            if path == 'sip.create_sip_participant':
+                call = self.env['connect.call'].sudo().create({
+                    'livekit_room_name': request.room_name,
+                    'called': request.sip_call_to,
+                    'caller': request.sip_number,
+                    'status': 'in-progress',
+                    'direction': 'outgoing',
+                })
+                self.env['connect.channel'].sudo().create({
+                    'sid': 'CALL_race',
+                    'call': call.id,
+                    'technical_direction': 'outbound-api',
+                    'status': 'in-progress',
+                })
+                return MagicMock(sip_call_id='CALL_race')
+            return MagicMock()
+
+        with self.mock_license_check(True):
+            with self.mock_api(side_effect=_api):
+                self.env['connect.settings'].originate_call(
+                    '+15559998877', user=self.admin_user)
+        channels = self.env['connect.channel'].search(
+            [('sid', '=', 'CALL_race')])
+        calls = self.env['connect.call'].search([
+            ('livekit_room_name', '=', channels.call.livekit_room_name)])
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(channels), 1)
+        self.assertEqual(calls.caller_user, self.admin_user)
 
     def _capture_bus(self, sink):
         from contextlib import contextmanager

@@ -117,7 +117,7 @@ class LivekitRoom(models.Model):
                 audio_only=True,
                 file_outputs=[lk_api.EncodedFileOutput(
                     file_type=lk_api.EncodedFileType.OGG,
-                    filepath='{room_name}-{time}',
+                    filepath='/out/{room_name}-{time}',
                 )],
             ))
         self.write({'egress_sid': info.egress_id, 'record': True})

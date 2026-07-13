@@ -10,7 +10,7 @@ One stack pairs with exactly one Odoo instance (the webhook URL in
 | livekit  | `livekit/livekit-server` (pinned)  | WebRTC SFU + server API + webhooks |
 | redis    | `redis:7-alpine`                   | Message bus / state for sip & egress |
 | sip      | `livekit/sip` (pinned)             | SIP bridge (BYO carrier trunk) |
-| egress   | `livekit/egress` (pinned)          | Recording to the shared `egress-out` volume |
+| egress   | `livekit/egress` (pinned)          | Recording to the shared `egress-out` volume (`/out`) |
 | agent    | `oduist/livekit-agent`             | Voice-AI agent worker (LiveKit Agents) |
 | uploader | `oduist/livekit-agent`             | Delivers egress files to Odoo |
 
@@ -26,6 +26,9 @@ One stack pairs with exactly one Odoo instance (the webhook URL in
 5. In Odoo (Connect → LiveKit → Configuration → Settings): set the WS
    URL (`wss://<public-host>` or `ws://<host>:7880`), API key/secret,
    then SYNC LIVEKIT SERVER.
+
+Meeting recordings are requested with filepaths under `/out`; keep the
+`egress-out:/out` mount shared between `egress` and `uploader`.
 
 ## TLS
 

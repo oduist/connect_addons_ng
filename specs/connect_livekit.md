@@ -72,8 +72,10 @@ running one asyncio loop per call around `livekit.api.LiveKitAPI`
 (threaded workers only); `livekit_create_token(identity, ...)` — sync JWT
 mint; `livekit_sync()` — connectivity check + push of trunk/number/
 callerid resources; `originate_call()` override with the standard
-`_get_originate_provider(user) != 'livekit'` fall-through (room `out-…` +
-`CreateSIPParticipant` + bus push `connect_livekit.call`).
+`_get_originate_provider(user) != 'livekit'` fall-through. Click-to-call
+creates room `out-…`, creates the ledger call before notifying the browser,
+dials the PSTN leg with `CreateSIPParticipant`, links the returned SIP call
+id channel to that call, then pushes `connect_livekit.call` over the bus.
 
 ### user.py — `connect.user` (inherit)
 
@@ -91,7 +93,8 @@ token, sudo inside). Browser identity format: `user-<connect_user_id>`.
 `guest_token` (urlsafe, unguessable public link), `public_url` (compute),
 `record`, `egress_sid`, `empty_timeout`, `max_participants`, `call` (M2o
 ledger link). Actions: `action_join`, `action_start_recording` /
-`action_stop_recording` (RoomComposite Egress, audio OGG by default),
+`action_stop_recording` (RoomComposite Egress, audio OGG by default,
+filepath `/out/{room_name}-{time}` so the uploader sees it),
 `action_close` (DeleteRoom). `_ensure_livekit_room()` creates the LiveKit
 room on first join.
 

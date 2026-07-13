@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo.tests import tagged
 from odoo.exceptions import ValidationError
 
@@ -64,3 +66,22 @@ class TestLivekitNumber(LivekitTestCommon):
         self.assertFalse(
             self.env['connect.livekit.number'].get_number_for_room(
                 'meet-x'))
+
+    def test_reassign_trunk_pushes_old_and_new_trunks(self):
+        number = self._create()
+        new_trunk = self._create_trunk(name='New Trunk')
+        self.settings.sudo().set_param('livekit_auto_sync', True)
+        pushed = []
+
+        def _push_inbound(trunks):
+            pushed.extend(trunks.ids)
+
+        with patch.object(
+                type(self.env['connect.livekit.trunk']),
+                '_push_inbound', _push_inbound):
+            with patch.object(
+                    type(self.env['connect.livekit.number']),
+                    '_push_dispatch_rule', lambda numbers: True):
+                number.write({'trunk': new_trunk.id})
+        self.assertIn(self.trunk.id, pushed)
+        self.assertIn(new_trunk.id, pushed)

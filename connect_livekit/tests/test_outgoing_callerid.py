@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo.tests import tagged
 from odoo.exceptions import ValidationError
 
@@ -40,3 +42,19 @@ class TestLivekitCallerId(LivekitTestCommon):
         with self.assertRaises(Exception):
             self._create('+15553330000')
             self.env.flush_all()
+
+    def test_reassign_trunk_pushes_old_and_new_trunks(self):
+        cid = self._create('+15554440000')
+        new_trunk = self._create_trunk(name='New Trunk')
+        self.settings.sudo().set_param('livekit_auto_sync', True)
+        pushed = []
+
+        def _push_outbound(trunks):
+            pushed.extend(trunks.ids)
+
+        with patch.object(
+                type(self.env['connect.livekit.trunk']),
+                '_push_outbound', _push_outbound):
+            cid.write({'trunk': new_trunk.id})
+        self.assertIn(self.trunk.id, pushed)
+        self.assertIn(new_trunk.id, pushed)

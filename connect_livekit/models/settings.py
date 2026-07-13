@@ -245,11 +245,34 @@ class Settings(models.Model):
                 participant_name=caller_name or number,
                 krisp_enabled=trunk.krisp_enabled,
             ))
+        call_vals = {
+            'livekit_room_name': room_name,
+            'partner': partner_id,
+            'called': number,
+            'caller': callerid.number,
+            'status': 'initiated',
+            'caller_pbx_user': connect_user.id,
+            'caller_user': user.id,
+            'direction': 'outgoing',
+            'call_type': 'phone',
+        }
+        Call = self.env['connect.call'].sudo()
+        call = Call.search([('livekit_room_name', '=', room_name)], limit=1)
+        if call:
+            write_vals = {
+                key: value for key, value in call_vals.items()
+                if value and not call[key]
+            }
+            if write_vals:
+                call.with_context(tracking_disable=True).write(write_vals)
+        else:
+            call = Call.with_context(tracking_disable=True).create(call_vals)
         sid = getattr(info, 'sip_call_id', None) or getattr(
             info, 'participant_id', None)
         if sid:
-            self.env['connect.channel'].sudo().create({
+            channel_vals = {
                 'sid': sid,
+                'call': call.id,
                 'technical_direction': 'outbound-api',
                 'caller_user': user.id,
                 'caller_pbx_user': connect_user.id,
@@ -257,7 +280,17 @@ class Settings(models.Model):
                 'called': number,
                 'caller': callerid.number,
                 'status': 'in-progress',
-            })
+            }
+            Channel = self.env['connect.channel'].sudo()
+            channel = Channel.search([('sid', '=', sid)], limit=1)
+            if channel:
+                channel.with_context(tracking_disable=True).write({
+                    key: value for key, value in channel_vals.items()
+                    if key != 'sid'
+                })
+            else:
+                Channel.with_context(tracking_disable=True).create(
+                    channel_vals)
         else:
             debug(self, 'LiveKit originate returned no sip_call_id; the '
                         'participant webhook will create the channel.',

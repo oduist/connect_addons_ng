@@ -79,12 +79,14 @@ class OutgoingCallerID(models.Model):
         return recs
 
     def write(self, vals):
+        old_trunks = self.mapped('trunk') if 'trunk' in vals else self.env[
+            'connect.livekit.trunk']
         res = super().write(vals)
         if (vals.get('number') or vals.get('trunk')) and (
                 self.env['connect.settings'].sudo().get_param(
                     'livekit_auto_sync')
                 and not self.env.context.get('skip_livekit_sync')):
-            self.mapped('trunk')._push_outbound()
+            (old_trunks | self.mapped('trunk'))._push_outbound()
         return res
 
     def unlink(self):

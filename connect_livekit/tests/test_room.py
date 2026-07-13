@@ -29,8 +29,11 @@ class TestLivekitRoom(LivekitTestCommon):
     def test_start_recording_stores_egress(self):
         room = self.env['connect.livekit.room'].create(
             {'name': 'Demo', 'state': 'active'})
-        with self.mock_api(return_value=MagicMock(egress_id='EG_1')):
+        with self.mock_api(return_value=MagicMock(egress_id='EG_1')) as api:
             room.action_start_recording()
+        request = api.call_args[0][1]
+        self.assertEqual(
+            request.file_outputs[0].filepath, '/out/{room_name}-{time}')
         self.assertEqual(room.egress_sid, 'EG_1')
         self.assertTrue(room.record)
 

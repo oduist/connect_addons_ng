@@ -158,10 +158,12 @@ class LivekitNumber(models.Model):
 
     def write(self, vals):
         self._clean_destination_vals(vals)
+        old_trunks = self.mapped('trunk') if 'trunk' in vals else self.env[
+            'connect.livekit.trunk']
         res = super().write(vals)
         if (self.env['connect.settings'].sudo().get_param('livekit_auto_sync')
                 and not self.env.context.get('skip_livekit_sync')):
-            self.mapped('trunk')._push_inbound()
+            (old_trunks | self.mapped('trunk'))._push_inbound()
             self._push_dispatch_rule()
         return res
 
