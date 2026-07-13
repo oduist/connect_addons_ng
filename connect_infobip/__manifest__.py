@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Infobip',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.2.0',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Infobip integration for Oduist Connect',
@@ -33,7 +33,6 @@
             'connect_infobip/static/src/js/utils.js',
             'connect_infobip/static/src/widgets/phone_field/*',
             'connect_infobip/static/src/services/actions/*',
-            'connect_infobip/static/src/services/active_calls/*',
             'connect_infobip/static/src/services/mail/*',
         ],
     },

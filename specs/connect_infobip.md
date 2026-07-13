@@ -73,8 +73,8 @@ advisory lock).
 
 Fields: `infobip_leg`, `infobip_dialog_id`, `infobip_route_number`,
 `infobip_route_user`, `infobip_route_step`, `infobip_originate_dest`,
-`infobip_pending_say`, `infobip_hangup_after_say`,
-`infobip_last_event_ts`.
+`infobip_pending_say`, `infobip_pending_say_language`,
+`infobip_hangup_after_say`, `infobip_last_event_ts`.
 
 Methods: `_map_infobip_params(event)` (event → `process_channel_event`
 dict; statuses: RECEIVED/RINGING/PRE_ESTABLISHED→ringing,
@@ -82,8 +82,12 @@ ESTABLISHED→in-progress, FINISHED→completed, FAILED→by error code:
 NO_ANSWER→no-answer, BUSY/REJECTED/DECLINED→busy, CANCELED→canceled,
 else failed; duration only on terminal events; WEBRTC endpoints render as
 `client:{identity}@infobip`), `on_infobip_event()` (ledger feed with
-terminal-status and stale-timestamp guards), `infobip_answer_say_hangup()`
-(answer → say → SAY_FINISHED → hangup chain), `_infobip_create_dialog()`
+terminal-status and stale-timestamp guards),
+`infobip_answer_say_hangup(text, language='en')` (answer → say →
+SAY_FINISHED → hangup chain; the language is persisted in
+`infobip_pending_say_language` and sent with the flushed `/say` — the
+user voicemail prompt uses `connect.user.infobip_say_language()`,
+system apologies stay `'en'`, ADR-037), `_infobip_create_dialog()`
 (Dialog bridge with `childCallRequest`, `connectTimeout`, correlation
 customData, optional recording, eager child upsert),
 `_infobip_start_user_ring()` / `_infobip_ring_step()` /
@@ -145,7 +149,9 @@ matching `client:{identity}@infobip`, `get_user_by_infobip_identity()`,
 `get_infobip_client_token()` (`POST /webrtc/1/token`; returns
 `{token, identity, calls_config_id, via_rest, expiration}`),
 `create_infobip_extension()`, `infobip_render_voicemail_prompt()`
-(jinja2, spoken by the say fallback).
+(jinja2, spoken by the say fallback), `infobip_say_language()`
+(BCP-47 `connect.user.language` → Infobip say code via
+`INFOBIP_SAY_LANGUAGE_MAP`, fallback = base subtag, ADR-037).
 
 ### Owned config models
 
@@ -227,7 +233,10 @@ audio from the `established` event stream; component-played ringtone
 with a REST-originate fallback (`infobip_webphone_via_rest`); token
 refresh by re-init, proactively at ~90% TTL. Other components/services/
 widgets are mechanical renames of the Telnyx tree; `phone_field.js`
-patches the core PhoneField for click-to-call + WhatsApp composer.
+patches the core PhoneField for click-to-call + WhatsApp composer. The
+**Calls history tab** and the **active-calls systray widget** are imported
+from / registered by core `connect` rather than copied here
+(`@connect/components/calls/calls`, `connect/services/active_calls`).
 
 ## Tests
 

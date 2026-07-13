@@ -59,9 +59,9 @@ class CallFlow(models.Model):
         """Languages supported by Telnyx TeXML Say (AWS Polly voices).
 
         Codes are BCP-47 and are passed verbatim to TeXML Say. Duplicated
-        in connect_twilio and connect_freeswitch by design — the providers
-        are fully independent; keep the lists in sync when editing
-        (ADR-031/ADR-032).
+        in connect_twilio, connect_freeswitch and core connect.user by
+        design — the providers are fully independent; keep all four lists
+        in sync when editing (ADR-031/ADR-032/ADR-037).
         """
         return [
             ('ca-ES', 'Catalan (Spain)'),

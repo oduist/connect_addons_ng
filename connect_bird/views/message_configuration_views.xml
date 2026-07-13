@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_bird_message_configuration_tree" model="ir.ui.view">
+        <field name="name">connect.bird.message_configuration.tree</field>
+        <field name="model">connect.bird.message_configuration</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="number"/>
+                <field name="destination"/>
+                <field name="default_values"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_bird_message_configuration_form" model="ir.ui.view">
+        <field name="name">connect.bird.message_configuration.form</field>
+        <field name="model">connect.bird.message_configuration</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="number"/>
+                        <field name="destination"/>
+                        <field name="default_values"
+                               placeholder="{'field': 'value'}"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_bird_message_configurations" model="ir.actions.act_window">
+        <field name="name">Message Configuration</field>
+        <field name="res_model">connect.bird.message_configuration</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_bird_message_configuration"
+              name="Message Configuration"
+              parent="menu_bird_config"
+              action="action_bird_message_configurations"
+              groups="connect.group_admin"
+              sequence="30"/>
+
+</odoo>

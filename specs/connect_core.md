@@ -4,8 +4,8 @@
 
 - **Name:** Oduist Connect
 - **Technical:** `connect`
-- **Version:** 19.0.4.0.0
-- **Depends:** `base`, `mail`, `contacts`, `sms`
+- **Version:** 19.0.4.1.0
+- **Depends:** `base`, `mail`, `contacts`, `sms`, `resource`
 - **Python deps:** `phonenumbers`, `jinja2`, `openai` (for transcription - not Twilio-specific), `PyJWT`
 - **Application:** True
 - **License:** LGPL-3
@@ -66,6 +66,7 @@ for easy access from other models.
 | `open_settings_form(view_xmlid="connect.connect_settings_form", name="General Settings")` | UI action opening the settings singleton through the given form view. Parametrized so each provider module's Settings menu opens the same record through its own standalone view (e.g. `connect_twilio.twilio_settings_form`). |
 | `originate_call(number, res_model=None, res_id=None, user=None, **kwargs)` | Click-to-call dispatcher. Resolves the provider via `_get_originate_provider()`; provider modules override and chain via `super()` — each handles the call when its key matches, otherwise falls through. The core base raises a `UserError` when no provider can handle the call. |
 | `_get_originate_provider(user=None)` | Resolve the provider key for the user: explicit `connect.user.originate_provider` → the only installed provider (single `selection_add` entry) → `UserError` (none installed, or several installed and no choice made). |
+| `_get_message_provider(user=None)` | Same resolution logic for messaging: explicit `connect.user.message_provider` → the only installed messaging provider → `UserError`. Used by provider overrides of `connect.message.send()`. |
 | `connect_notify(bus)` | Send bus notification |
 | `connect_reload_view(bus)` | Send bus reload event |
 | `set_defaults()` | Set installation defaults |
@@ -253,12 +254,13 @@ Order: `create_date DESC`
 | `_get_media_widget()` | HTML for media display (image/audio) |
 | `_reference_models()` | Dynamic selection of reference models |
 | `get_receive_message_values()` | Parse incoming webhook params into field values |
+| `send(recipient, body, res_id=None, res_model=None, outgoing_callerid=None, **kwargs)` | Messaging dispatcher terminal (mirror of `originate_call()`). Provider modules override: each handles the message when `connect.settings._get_message_provider()` returns its key, otherwise falls through to `super()`. The core base raises a `UserError` when no provider can handle the message. |
 | `action_retry()` | Retry failed message - calls `self.env['connect.message'].send()` |
 
-**Important:** The `send()` method is NOT defined in core. It is abstract and must be
-implemented by an integration module (e.g., `connect_twilio` implements it via Twilio API).
-`action_retry()` calls `send()`, which will dispatch to whichever integration module
-provides the implementation.
+**Important:** The core `send()` only dispatches — the actual transport is
+implemented by messaging provider modules (`connect_twilio`, `connect_bird`).
+The provider is resolved per user via `connect.user.message_provider` with a
+single-installed-provider fallback (see `_get_message_provider()`).
 
 ---
 
@@ -350,9 +352,12 @@ links).
 | `voicemail_prompt` | Text | Jinja2 template |
 | `missed_calls_notify` | Boolean | |
 | `greeting_message` | Char | |
+| `language` | Selection | BCP-47 TTS language for the user's prompts. Default `en-US`. List from `_get_language_selection()` — deliberate 4th copy of the provider callflow lists (ADR-031/ADR-037) |
+| `voice` | Char | Provider-specific TTS voice name; empty = provider default (`Woman` on Twilio, `Polly.Joanna` on Telnyx) |
 | `summary_prompt` | Char | Per-user override |
 | `active` | Boolean | Default: True |
 | `originate_provider` | Selection | Base selection is empty; each provider module `selection_add`s its key (`twilio`, `freeswitch`, `asterisk`). Chooses which provider handles click-to-call for this user; may stay empty when only one provider is installed. |
+| `message_provider` | Selection | Base selection is empty; messaging provider modules `selection_add` their key (`twilio`, `bird`). Chooses which provider handles `connect.message.send()` for this user; may stay empty when only one messaging provider is installed. |
 
 **Constraints:**
 - `UNIQUE(user)` - one connect.user per res.users
@@ -484,6 +489,56 @@ Order: `id desc`
 | `user` | Many2one | `res.users` |
 | `partner` | Many2one | `res.partner` |
 
+### 12. schedule.py - working schedules (issue #57, ADR-037)
+
+Provider-agnostic working-hours engine on top of `resource.calendar`.
+Provider modules attach a schedule to their number models and query it per
+call; core owns the evaluation, the availability slots and the UI.
+
+**`connect.schedule`**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `name` | Char | Required |
+| `calendar_id` | Many2one | `resource.calendar`, required, restrict; global leaves act as public holidays |
+| `tz` | Selection | Related `calendar_id.tz` |
+| `special_day_ids` | Many2many | `connect.schedule.special_day` |
+| `holiday_ids` | One2many | Related `calendar_id.global_leave_ids`, editable |
+| `slot_ids` | One2many | `connect.schedule.slot` |
+| `preview_html` | Html | Computed 14-day availability table |
+
+Methods:
+- `get_status(at_dt=None)` — availability at a naive-UTC moment. Evaluation
+  order: special working days for the local date (they fully define the day
+  and can extend hours) → global leaves (closed, optional `prompt_message`)
+  → weekly attendances (`_attendance_intervals_batch`/`_leave_intervals_batch`,
+  two-week calendars supported). Returns `available`, `source`
+  (`special`/`holiday`/`schedule`), `label`, `prompt_message`, `until`,
+  `next_open` (naive UTC).
+- `get_day_data(date_start, days)` — per-day effective windows plus the raw
+  attendance/leave/special layers (feeds the preview, the slots and the
+  website widgets).
+- `generate_slots()` / `_cron_generate_slots()` — materialize
+  `connect.schedule.slot` over a rolling horizon
+  (`connect.schedule_slot_horizon_days` system parameter, default 60).
+  Regenerated by a daily cron and on any write to schedules, special days or
+  leaves.
+
+**`connect.schedule.special_day`** — `name`, `date`, `work_from`/`work_to`
+(floats, `from < to` enforced; full-day closures are leaves, not special
+days), M2M `schedule_ids`. Constraint: windows of special days sharing a
+schedule must not overlap on the same date; several non-overlapping windows
+per date are allowed.
+
+**`connect.schedule.slot`** — derived calendar events: `schedule_id`,
+`name`, `start`/`stop`, `allday`, `slot_type`
+(`available`/`schedule`/`holiday`/`special`/`closed`). Rendered by the
+first `<calendar>` view in the product (Connect → Availability).
+
+**resource_calendar_leaves.py** — `_inherit = 'resource.calendar.leaves'`:
+adds `prompt_message` (Text, played to callers during the leave) and slot
+regeneration hooks.
+
 ---
 
 ## Controllers (connect/controllers/)
@@ -550,6 +605,10 @@ All models get access rules for the three groups:
 | `connect.settings` | - | Full | - |
 | `connect.favorite` | Read+Write | Full | - |
 | `connect.transfer_wizard` | Full | Full | - |
+| `connect.schedule` | Read | Full | Read |
+| `connect.schedule.special_day` | Read | Full | Read |
+| `connect.schedule.slot` | Read | Full | - |
+| `resource.calendar` (+attendance, +leaves) | Read | Full | - |
 
 Access rules for the PBX configuration models live in the provider modules
 next to the models themselves (ADR-031).
@@ -594,6 +653,7 @@ non-sudo (configuration writes remain manager-only). The `debug()` helper writes
 |------|----------|-------------|
 | Debug vacuum | Daily | Delete debug entries older than 24 hours |
 | Usage tracking | Daily | Report usage statistics to API |
+| Schedule slots | Daily | Regenerate working-schedule availability slots over the rolling horizon |
 
 ---
 
@@ -629,12 +689,42 @@ Connect (root, seq 10)
   |   +-- Recordings (seq 30)
   |   +-- Channels (admin)
   +-- Users (seq 20)
+  +-- Availability (seq 25, slot calendar, group_user)
   +-- <provider submenus> (seq 50, installation order)
   +-- Configuration (seq 100)
       +-- Settings (admin)
       +-- Debug Log (admin)
+      +-- Working Schedules (admin, seq 40)
+      +-- Special Working Days (admin, seq 41)
+      +-- Working Times (admin, seq 42, resource.calendar)
       +-- License (admin)
 ```
+
+---
+
+## Frontend (connect/static/src/)
+
+Core owns the provider-agnostic phone-widget pieces that read the shared
+ledger, so they are defined once instead of being copy-pasted per provider
+(`web.assets_backend`):
+
+- `components/license_banner/` — license banner systray item.
+- `components/calls/` — shared **Calls history tab** (`Calls` / `CallDetail`,
+  templates `connect.calls` / `connect.call_detail`). Provider phone panels
+  import it (`import {Calls} from "@connect/components/calls/calls"`) and mount
+  it as a child; it reads `connect.call.get_widget_calls` and `connect.favorite`
+  and triggers `busPhoneMakeCall` on the provider bus for click-to-call.
+- `services/active_calls/` — shared **active-calls systray widget**
+  (`ConnectActiveCallsTray` + `ConnectActiveCallsPopup`, service
+  `connect_active_calls`). Registered **once**, gated on
+  `connect.group_user`; clicking the `fa-server` "Toggle Calls" tray icon shows
+  in-progress calls (`connect.call.get_widget_calls`, domain
+  `status = in-progress`). Previously duplicated in each of connect_twilio /
+  connect_telnyx / connect_infobip.
+
+The provider-specific WebRTC dialer (its own systray icon + `Phone` main
+component per SDK) stays in each provider module and is out of scope for this
+sharing.
 
 ---
 
@@ -642,6 +732,6 @@ Connect (root, seq 10)
 
 ```
 connect (core)
-  depends: ['base', 'mail', 'contacts', 'sms']
+  depends: ['base', 'mail', 'contacts', 'sms', 'resource']
   python:  ['phonenumbers', 'jinja2', 'openai', 'PyJWT']
 ```

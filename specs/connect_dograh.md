@@ -1,8 +1,8 @@
 # connect_dograh — Dograh AI voice agents for FreeSWITCH
 
-Design decision record: `specs/decisions/038-connect-dograh-freeswitch-provider.md`.
+Design decision record: `specs/decisions/041-connect-dograh-freeswitch-provider.md`.
 
-Two-part integration (ADR-038):
+Two-part integration (ADR-041):
 
 1. This Odoo module (depends `connect`, `connect_freeswitch`) — config,
    dialplan routing, Dograh→Odoo control plane.

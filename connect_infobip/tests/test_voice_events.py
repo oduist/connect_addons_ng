@@ -158,6 +158,50 @@ class TestInfobipVoiceEvents(InfobipTestCommon):
         # A benign NO_ANSWER never marks the call as errored.
         self.assertFalse(channel.call.has_error)
 
+    def test_ring_exhausted_voicemail_prompt_language(self):
+        """The user's prompt language is persisted on the channel and sent
+        with the flushed /say request (ADR-037)."""
+        self.connect_user.write({
+            'voicemail_enabled': True,
+            'voicemail_prompt': 'Deixe uma mensagem.',
+            'language': 'pt-BR',
+        })
+        with patch(REQUESTS_PATH) as mock_request:
+            mock_request.return_value = make_response(
+                json_data={'id': 'dlg-1', 'childCallId': 'child-1'},
+                content=b'{"id": "dlg-1"}')
+            self.env['connect.call'].on_infobip_voice_event(
+                call_received_event(), 'received')
+            self.env['connect.call'].on_infobip_voice_event(
+                call_status_event(
+                    'child-1', 'CALL_FAILED', direction='OUTBOUND',
+                    error_name='NO_ANSWER',
+                    custom={'parent_sid': 'call-1', 'route_step': '0',
+                            'technical_direction': 'outbound-dial'}),
+                'event')
+        channel = self.env['connect.channel'].search(
+            [('sid', '=', 'call-1')], limit=1)
+        self.assertEqual(channel.infobip_pending_say, 'Deixe uma mensagem.')
+        self.assertEqual(channel.infobip_pending_say_language, 'pt-br')
+        with patch(REQUESTS_PATH) as mock_request:
+            mock_request.return_value = make_response()
+            channel._infobip_flush_pending_say()
+        args, kwargs = mock_request.call_args
+        self.assertTrue(args[1].endswith('/calls/1/calls/call-1/say'))
+        self.assertEqual(
+            kwargs['json'],
+            {'text': 'Deixe uma mensagem.', 'language': 'pt-br'})
+
+    def test_infobip_say_language_mapping(self):
+        """Regional codes Infobip distinguishes are mapped; the rest fall
+        back to the base subtag."""
+        self.connect_user.language = 'en-GB'
+        self.assertEqual(self.connect_user.infobip_say_language(), 'en-gb')
+        self.connect_user.language = 'uk-UA'
+        self.assertEqual(self.connect_user.infobip_say_language(), 'uk')
+        self.connect_user.language = 'en-US'
+        self.assertEqual(self.connect_user.infobip_say_language(), 'en')
+
     def test_terminal_status_not_downgraded(self):
         self.env['connect.call'].on_infobip_voice_event(
             call_status_event('call-5', 'CALL_FINISHED', duration=42),

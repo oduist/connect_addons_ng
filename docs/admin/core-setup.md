@@ -43,6 +43,9 @@ Navigate to **Connect > Users** to create PBX user accounts.
 | **Record Calls** | Enable call recording for this user. Default: enabled. |
 | **Voicemail Enabled** | Allow callers to leave voicemail when user is unavailable. |
 | **Voicemail Prompt** | Custom voicemail greeting (supports Jinja2 templates). |
+| **Greeting Message** | Message spoken to the caller before ringing the user. |
+| **Language** | TTS language used to speak the greeting and voicemail prompt. Default: English (US). |
+| **Voice** | Provider-specific TTS voice name (e.g. `Woman` for Twilio, `Polly.Joanna` for Twilio/Telnyx). Leave empty to use the provider default. |
 | **Missed Call Notifications** | Send notifications for missed calls. |
 | **Click-to-call Provider** | Which installed telephony module originates calls for this user. Leave empty when only one provider module is installed. |
 

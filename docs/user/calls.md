@@ -81,3 +81,11 @@ Click the **Redial** button on any call record to call that number again.
 ## Voicemail
 
 If voicemail is enabled for your account and you miss a call, the caller can leave a voice message. Voicemail recordings appear on the call record with an inline audio player.
+
+## Availability Calendar
+
+If your administrator configured working schedules for inbound numbers,
+**Connect → Availability** shows when each schedule is open or closed as a
+calendar: green *Available* windows, all-day *Closed* markers, plus the
+underlying working-schedule, public-holiday and special-working-day layers.
+Use the search filters to toggle the layers or focus on one schedule.

@@ -11,7 +11,7 @@ Answers, attaches mod_audio_fork (bidirectional raw L16 PCM at 16 kHz)
 to the workflow run's media WebSocket returned by Dograh's inbound
 webhook, optionally starts the standard recording webhook, and parks
 the call. mod_audio_fork metadata stays an empty {} on purpose: the
-module's argument parser splits on whitespace (ADR-038, ADR-035).
+module's argument parser splits on whitespace (ADR-041, ADR-035).
 
 Variables:
   agent_id      - connect.dograh.agent record ID
