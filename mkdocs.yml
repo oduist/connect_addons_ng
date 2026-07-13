@@ -46,6 +46,7 @@ nav:
       - Asterisk Integration: admin/asterisk-setup.md
       - Telnyx Integration: admin/telnyx-setup.md
       - Infobip Integration: admin/infobip-setup.md
+      - Dograh Integration (AI Agents): admin/dograh-setup.md
       - Bird Integration: admin/bird-setup.md
       - Call Parking: admin/parking.md
       - Working Schedules: admin/working-schedule.md
@@ -58,6 +59,7 @@ nav:
       - Messages (SMS & WhatsApp): user/messages.md
       - Recordings & Transcriptions: user/recordings.md
       - Call Flows (IVR): user/callflows.md
+      - AI Voice Agents: user/ai-agents.md
 
 markdown_extensions:
   - admonition
