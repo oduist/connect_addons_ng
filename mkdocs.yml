@@ -1,6 +1,7 @@
 site_name: Oduist Connect Documentation
 site_description: Telephony integration platform for Odoo
 site_url: https://oduist.github.io/connect_addons_ng/
+copyright: Copyright &copy; Oduist OÜ
 
 docs_dir: docs
 
@@ -62,6 +63,10 @@ nav:
       - Recordings & Transcriptions: user/recordings.md
       - Call Flows (IVR): user/callflows.md
       - AI Voice Agents: user/ai-agents.md
+
+extra:
+  # Remove the "Made with Material for MkDocs" footer notice.
+  generator: false
 
 markdown_extensions:
   - admonition
