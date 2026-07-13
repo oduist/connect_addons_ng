@@ -1,4 +1,36 @@
 services:
+  odoo:
+    image: odoo:19.0
+    depends_on:
+      - db
+    ports:
+      - "8069:8069"
+    restart: unless-stopped
+    extra_hosts:
+      # Lets the local Odoo container reach host-networked services such as
+      # Traefik during all-in-one development.
+      - "host.docker.internal:host-gateway"
+    environment:
+      - HOST=db
+      - USER=odoo
+      - PASSWORD=odoo
+      - ODOO_HTTP_SOCKET_TIMEOUT=20
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - ../..:/mnt/extra-addons
+      - ./odoo.conf:/etc/odoo/odoo.conf
+    command: odoo -d connect_fs_19 --dev=xml --workers=2
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=odoo
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
   # TLS edge for XML-RPC (/RPC2) and the firewall dashboard/API
   # (/firewall). Traefik runs on the host network so it can reach the
   # loopback-only FreeSWITCH and firewall HTTP listeners directly.
@@ -84,4 +116,6 @@ services:
 volumes:
   freeswitch-sounds:
   firewall-cache:
+  odoo-data:
+  postgres-data:
   traefik-acme:

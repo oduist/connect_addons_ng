@@ -1,10 +1,44 @@
-# FreeSWITCH Docker Image
+# FreeSWITCH Deploy Assets
 
-FreeSWITCH built from source (`v1.10.12`) with only the modules needed for Odoo integration.
+This directory contains the production FreeSWITCH host stack and the
+Docker image sources for `oduist/freeswitch`.
 
-Includes [mod_piper_tts](https://github.com/aks-devs/mod_piper_tts) for local neural text-to-speech via [Piper](https://github.com/rhasspy/piper) with English and Russian voice models.
+## Compose files
 
-## What's Inside
+Use the default compose file for customer hosts:
+
+```bash
+cd connect_freeswitch/deploy
+docker compose up -d
+```
+
+`docker-compose.yml` starts only the services that belong on the
+FreeSWITCH host:
+
+- `traefik` — TLS edge for XML-RPC (`/RPC2`) and the firewall dashboard/API (`/firewall`).
+- `fs` — `oduist/freeswitch:2.1.0`.
+- `firewall` — `oduist/freeswitch-firewall:2.1.0`.
+
+Use `docker-compose.full.yml` for a local all-in-one stack that also
+starts Odoo 19 and PostgreSQL:
+
+```bash
+docker compose -f docker-compose.full.yml up -d
+```
+
+Both compose files expect installation-specific values in `.env`. The
+secret values must be generated per deployment and stored outside git.
+
+## FreeSWITCH image
+
+FreeSWITCH is built from source (`v1.10.12`) with only the modules needed
+for Odoo integration.
+
+Includes [mod_piper_tts](https://github.com/aks-devs/mod_piper_tts) for
+local neural text-to-speech via [Piper](https://github.com/rhasspy/piper)
+with English and Russian voice models.
+
+## What's inside
 
 Built from source with a minimal module set:
 
@@ -19,66 +53,58 @@ Built from source with a minimal module set:
 | File Formats | mod_sndfile, mod_native_file, mod_tone_stream |
 | TTS | mod_piper_tts |
 
-To add a module: edit `modules.conf` in the Dockerfile, add config in `freeswitch/conf/autoload_configs/`, rebuild.
+To add a module: edit `modules.conf` in the Dockerfile, add config in
+`freeswitch/conf/autoload_configs/`, rebuild, and publish a new image tag.
 
-## Building the Image
+## Building the FreeSWITCH image
 
 ```bash
 cd connect_freeswitch/deploy
-docker build --platform linux/amd64 -t oduist/freeswitch:1.0.3 -t oduist/freeswitch:latest .
+docker build --platform linux/amd64 --provenance=false --sbom=false \
+  -t oduist/freeswitch:2.1.0 -t oduist/freeswitch:latest .
 ```
 
-## Running the Container
+## Running only the FreeSWITCH container
 
 ```bash
 docker run -d \
   --name freeswitch \
   --net host \
   -e ODOO_URL=http://localhost:8069 \
-  oduist/freeswitch:latest
+  -e FS_WEBHOOK_TOKEN=<token> \
+  -e FS_DOMAIN=fs.example.com \
+  -e FS_ESL_PASSWORD=<esl-password> \
+  oduist/freeswitch:2.1.0
 ```
 
-## Checking Status
+## Checking status
 
 ```bash
 docker logs freeswitch
 docker exec freeswitch fs_cli -x "status"
 ```
 
-## Publishing the Image
+## Publishing the FreeSWITCH image
 
 ```bash
-docker push oduist/freeswitch:1.0.3
+docker push oduist/freeswitch:2.1.0
 docker push oduist/freeswitch:latest
 ```
 
-## Environment Variables
+## Environment variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ODOO_URL` | `http://localhost:8069` | URL of Odoo server for webhooks |
+| `FS_WEBHOOK_TOKEN` | *(unset)* | Shared secret for FreeSWITCH → Odoo HTTP calls |
 | `SOUND_RATES` | `8000:16000` | Supported sound frequencies |
 | `SOUND_TYPES` | `music:en-us-callie` | Sound types and languages |
 | `FS_LOG_LEVEL` | `info` | FreeSWITCH core log level |
 | `FS_SOFIA_LOG_LEVEL` | `0` | Sofia SIP log level |
-| `FS_ESL_PASSWORD` | `ConnectNGESLPassword` (baked into `autoload_configs/event_socket.conf.xml`) | Password for mod_event_socket. When set, the entrypoint substitutes it into the config before FreeSWITCH starts. Use the same value in any ESL client (e.g. the firewall service). |
+| `FS_ESL_PASSWORD` | `ConnectNGESLPassword` (baked into `autoload_configs/event_socket.conf.xml`) | Password for mod_event_socket. When set, the entrypoint substitutes it into the config before FreeSWITCH starts. Use the same value in any ESL client, including the firewall service. |
 | `FS_DOMAIN` | — | SIP / WSS domain; used to extract TLS certs from Traefik ACME and as `force-register-domain` in sofia. |
-
-## Usage with docker-compose
-
-```yaml
-services:
-  freeswitch:
-    image: oduist/freeswitch:latest
-    container_name: freeswitch
-    hostname: freeswitch
-    network_mode: host
-    restart: unless-stopped
-    environment:
-      - ODOO_URL=http://odoo:8069
-```
 
 ## Documentation
 
 - [FreeSWITCH Official Docs](https://freeswitch.org/confluence/display/FREESWITCH/FreeSWITCH+Explained)
-- [Odoo Connect FreeSWITCH Module](../specs/connect_freeswitch.md)
+- [Odoo Connect FreeSWITCH Module](../../specs/connect_freeswitch.md)

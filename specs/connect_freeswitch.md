@@ -371,6 +371,19 @@ module with a data migration (connect_twilio / connect_asterisk ship none):
 
 ## Deploy
 
+`deploy/docker-compose.yml` is the default production FreeSWITCH host
+stack. It starts only Traefik, `oduist/freeswitch:2.1.0` and
+`oduist/freeswitch-firewall:2.1.0`; Odoo and Postgres are deliberately
+not part of that file. `deploy/docker-compose.full.yml` is the
+standalone local all-in-one variant that also starts Odoo 19 and
+Postgres.
+
+Traefik runs with `network_mode: host` and is the public TLS edge for
+both XML-RPC (`/RPC2` → `127.0.0.1:8080`) and the firewall
+dashboard/API (`/firewall` → `127.0.0.1:8081`). The firewall service
+also runs on the host network but binds HTTP to loopback; SIP/RTP and
+kernel firewall handling stay on the host network.
+
 ### FreeSWITCH image (`deploy/`)
 
 `oduist/freeswitch` is built from source (`v1.10.12`) with a curated
