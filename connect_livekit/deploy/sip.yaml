@@ -1,0 +1,14 @@
+# LiveKit SIP bridge configuration.
+# api_key/api_secret must match a key from livekit.yaml.
+api_key: APIconnect
+api_secret: "change-this-to-a-long-random-secret"
+ws_url: ws://livekit:7880
+redis:
+  address: redis:6379
+sip_port: 5060
+rtp_port: 10000-10100
+# Discover the public IP via STUN. Behind NAT prefer network_mode: host
+# for this service and set nat_1_to_1_ip instead.
+use_external_ip: true
+logging:
+  level: info

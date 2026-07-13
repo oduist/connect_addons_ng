@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inherit core user list to add LiveKit-specific columns -->
+    <record id="view_connect_user_tree_livekit" model="ir.ui.view">
+        <field name="name">connect.user.tree.livekit</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user']" position="after">
+                <field name="livekit_exten_number" optional="hide"/>
+                <field name="livekit_outgoing_callerid" optional="hide"/>
+                <field name="livekit_client_enabled" string="LiveKit Web"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit core user form to add LiveKit-specific fields -->
+    <record id="view_connect_user_form_livekit" model="ir.ui.view">
+        <field name="name">connect.user.form.livekit</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="livekit_outgoing_callerid"/>
+            </xpath>
+            <xpath expr="//page[@name='organization']" position="before">
+                <page name="livekit_phone" string="LiveKit Phone">
+                    <group>
+                        <group string="Web Phone">
+                            <field name="livekit_client_enabled" string="Enabled"/>
+                            <field name="livekit_exten_number" string="Extension Number"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

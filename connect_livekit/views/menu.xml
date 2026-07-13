@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- LiveKit submenu of the Connect app. All provider submenus share the
+         same sequence so they appear after Calls in installation order (equal
+         sequence falls back to id order); the core Configuration menu
+         (seq 100) always stays last. The whole submenu is admin-only: the
+         Connect User group has no access to any connect_livekit model. -->
+    <menuitem id="menu_connect_livekit"
+              name="LiveKit"
+              parent="connect.menu_connect_root"
+              groups="connect.group_admin"
+              sequence="50"/>
+
+    <menuitem id="menu_livekit_config"
+              name="Configuration"
+              parent="menu_connect_livekit"
+              groups="connect.group_admin"
+              sequence="100"/>
+</odoo>
