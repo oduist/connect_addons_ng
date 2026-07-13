@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://oduist.github.io/connect_addons_ng/user/meetings/">
+        <link rel="canonical" href="https://oduist.github.io/connect_addons_ng/admin/pipecat-setup/">
       
       
-        <link rel="prev" href="../messages/">
+        <link rel="prev" href="../freeswitch-setup/">
       
       
-        <link rel="next" href="../recordings/">
+        <link rel="next" href="../asterisk-setup/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Video Meetings - Oduist Connect Documentation</title>
+        <title>Pipecat AI Agents - Oduist Connect Documentation</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#video-meetings" class="md-skip">
+        <a href="#pipecat-ai-agent-setup" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Video Meetings
+              Pipecat AI Agents
             
           </span>
         </div>
@@ -264,8 +264,10 @@
       
   
   
+    
   
   
+  
     
     
     
@@ -276,13 +278,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
@@ -303,7 +303,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -321,7 +321,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -349,7 +349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/customer-onboarding/" class="md-nav__link">
+      <a href="../customer-onboarding/" class="md-nav__link">
         
   
   
@@ -377,7 +377,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/core-setup/" class="md-nav__link">
+      <a href="../core-setup/" class="md-nav__link">
         
   
   
@@ -405,7 +405,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/twilio-setup/" class="md-nav__link">
+      <a href="../twilio-setup/" class="md-nav__link">
         
   
   
@@ -433,7 +433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/freeswitch-setup/" class="md-nav__link">
+      <a href="../freeswitch-setup/" class="md-nav__link">
         
   
   
@@ -458,10 +458,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../admin/pipecat-setup/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipecat AI Agents
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -477,6 +504,70 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-build-the-images" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Build the images
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-pair-odoo-and-the-sidecar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Pair Odoo and the sidecar
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-configure-an-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Configure an agent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verification
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -489,7 +580,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/asterisk-setup/" class="md-nav__link">
+      <a href="../asterisk-setup/" class="md-nav__link">
         
   
   
@@ -517,7 +608,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/telnyx-setup/" class="md-nav__link">
+      <a href="../telnyx-setup/" class="md-nav__link">
         
   
   
@@ -545,7 +636,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/livekit-setup/" class="md-nav__link">
+      <a href="../livekit-setup/" class="md-nav__link">
         
   
   
@@ -573,7 +664,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/infobip-setup/" class="md-nav__link">
+      <a href="../infobip-setup/" class="md-nav__link">
         
   
   
@@ -601,7 +692,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/dograh-setup/" class="md-nav__link">
+      <a href="../dograh-setup/" class="md-nav__link">
         
   
   
@@ -629,7 +720,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/bird-setup/" class="md-nav__link">
+      <a href="../bird-setup/" class="md-nav__link">
         
   
   
@@ -637,235 +728,6 @@
     
   
     Bird Integration
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../admin/parking/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Call Parking
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../admin/working-schedule/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Working Schedules
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../admin/security/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Security
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../admin/firewall/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    SIP Firewall
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-    
-    
-      
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    User Guide
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    User Guide
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../getting-started/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Getting Started
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../calls/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Making and Receiving Calls
   
 
     
@@ -914,7 +776,236 @@
   
   
     <li class="md-nav__item">
-      <a href="../messages/" class="md-nav__link">
+      <a href="../working-schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Working Schedules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../firewall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SIP Firewall
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/calls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Making and Receiving Calls
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/parking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Call Parking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/messages/" class="md-nav__link">
         
   
   
@@ -939,37 +1030,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Video Meetings
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../user/meetings/" class="md-nav__link">
         
   
   
@@ -985,81 +1049,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#start-a-meeting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Start a meeting
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#invite-guests" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Invite guests
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#in-the-meeting" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        In the meeting
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#recordings" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Recordings
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#notes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Notes
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1072,7 +1061,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../recordings/" class="md-nav__link">
+      <a href="../../user/recordings/" class="md-nav__link">
         
   
   
@@ -1100,7 +1089,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../callflows/" class="md-nav__link">
+      <a href="../../user/callflows/" class="md-nav__link">
         
   
   
@@ -1128,7 +1117,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ai-agents/" class="md-nav__link">
+      <a href="../../user/ai-agents/" class="md-nav__link">
         
   
   
@@ -1183,10 +1172,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#start-a-meeting" class="md-nav__link">
+  <a href="#1-build-the-images" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Start a meeting
+        1. Build the images
       
     </span>
   </a>
@@ -1194,10 +1183,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#invite-guests" class="md-nav__link">
+  <a href="#2-pair-odoo-and-the-sidecar" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Invite guests
+        2. Pair Odoo and the sidecar
       
     </span>
   </a>
@@ -1205,10 +1194,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#in-the-meeting" class="md-nav__link">
+  <a href="#3-configure-an-agent" class="md-nav__link">
     <span class="md-ellipsis">
       
-        In the meeting
+        3. Configure an agent
       
     </span>
   </a>
@@ -1216,21 +1205,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#recordings" class="md-nav__link">
+  <a href="#verification" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Recordings
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#notes" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Notes
+        Verification
       
     </span>
   </a>
@@ -1254,42 +1232,63 @@
 
 
 
-<h1 id="video-meetings">Video Meetings</h1>
-<p>When the LiveKit integration is installed, you can host video meetings
-straight from Odoo and invite people who do not have an Odoo account.</p>
-<h2 id="start-a-meeting">Start a meeting</h2>
+<h1 id="pipecat-ai-agent-setup">Pipecat AI Agent Setup</h1>
+<p>The Pipecat integration requires the <code>connect_pipecat</code> addon, a FreeSWITCH
+image containing <code>mod_audio_fork</code>, and the <code>oduist/pipecat-agent:1.0.0</code>
+sidecar. Pipecat does not run inside Odoo.</p>
+<h2 id="1-build-the-images">1. Build the images</h2>
+<p>Build the FreeSWITCH image after the <code>connect_freeswitch</code> 19.0.2.1.0 update:</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>--platform<span class="w"> </span>linux/amd64<span class="w"> </span>--provenance<span class="o">=</span><span class="nb">false</span><span class="w"> </span>--sbom<span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-t<span class="w"> </span>oduist/freeswitch:2.1.0<span class="w"> </span>connect_freeswitch/deploy
+</code></pre></div>
+<p>Build the sidecar:</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>--platform<span class="w"> </span>linux/amd64<span class="w"> </span>--provenance<span class="o">=</span><span class="nb">false</span><span class="w"> </span>--sbom<span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-t<span class="w"> </span>oduist/pipecat-agent:1.0.0<span class="w"> </span>connect_pipecat/deploy
+</code></pre></div>
+<p><code>connect_pipecat/deploy/oduflow-preset.yaml</code> contains the service variables and
+WSS routing shape.</p>
+<h2 id="2-pair-odoo-and-the-sidecar">2. Pair Odoo and the sidecar</h2>
+<p>Open <strong>Connect → FreeSWITCH → Configuration → Settings → Pipecat AI</strong>.</p>
 <ol>
-<li>Go to <strong>Connect &gt; LiveKit &gt; Rooms</strong> and create a room (or use the <strong>New
-   LiveKit Meeting</strong> action on a contact).</li>
-<li>Give it a subject and, if you want a recording, tick <strong>Record Meeting</strong>.</li>
-<li>Click <strong>Join Meeting</strong> to open the meeting page in a new tab.</li>
+<li>Set <strong>Pipecat Sidecar URL</strong> to its externally reachable base URL, for
+   example <code>wss://voice.example.com</code>. Do not append <code>/ws</code>.</li>
+<li>Generate a URL-safe token of at least 24 characters and enter it as the
+   Pipecat service token.</li>
+<li>Set exactly the same value as <code>PIPECAT_SERVICE_TOKEN</code> in the sidecar.</li>
+<li>Set <code>ODOO_URL</code> in the sidecar to Odoo's HTTPS base URL.</li>
+<li>Enter API keys for every provider used by an agent.</li>
+<li>Restart the sidecar and click <strong>CHECK STATUS</strong>. A healthy service reports
+   <code>UP (1.0.0)</code>.</li>
 </ol>
-<h2 id="invite-guests">Invite guests</h2>
-<p>Each room has a <strong>Public URL</strong>. Copy it and send it to anyone — colleagues
-or external participants. Guests open the link, type a display name and
-join; no account or password is needed. The link is unique and unguessable,
-so treat it like the meeting key.</p>
-<h2 id="in-the-meeting">In the meeting</h2>
+<p>The token authenticates both directions: FreeSWITCH uses Basic auth to open
+the media WebSocket; the sidecar uses Bearer auth for Odoo and <code>/health</code>.</p>
+<h2 id="3-configure-an-agent">3. Configure an agent</h2>
+<p>Go to <strong>Connect → FreeSWITCH → AI Agents</strong>, create an agent, and configure:</p>
 <ul>
-<li>Grant the browser access to your microphone and camera when asked.</li>
-<li>Use the on-screen buttons to <strong>mute</strong>, turn the <strong>camera off/on</strong>, and
-  <strong>leave</strong>.</li>
-<li>A recording indicator shows when the meeting is being recorded.</li>
+<li>system prompt and optional greeting;</li>
+<li>STT, LLM and TTS providers/models;</li>
+<li>language, voice and maximum duration;</li>
+<li>optional human transfer extension;</li>
+<li>call recording if transcript audio should also be retained.</li>
 </ul>
-<h2 id="recordings">Recordings</h2>
-<p>If <strong>Record Meeting</strong> was enabled, the recording appears under <strong>Connect &gt;
-Recordings</strong> shortly after the meeting ends. When transcription is turned on
-for your workspace, the recording is transcribed and summarized
-automatically.</p>
-<h2 id="notes">Notes</h2>
+<p>Use the <strong>Extension</strong> button to assign a unique extension number. A DID may then
+route to that extension using the normal Connect routing controls.</p>
+<h2 id="verification">Verification</h2>
+<p>Call the extension and confirm the greeting is heard. Speak over a long agent
+reply: playback should stop immediately (<code>killAudio</code>) and the caller's new turn
+should be processed. Ask for a human and verify the configured extension rings.
+After hangup, open the call in Connect and verify summary and transcript.</p>
+<p>Check these logs when diagnosing failures:</p>
 <ul>
-<li>Meetings are audio + video in the browser; nothing to install.</li>
-<li>The organizer can end the meeting for everyone with <strong>Close Room</strong> on the
-  room form.</li>
-<li>If you don't see the LiveKit menu, ask your administrator — meeting
-  administration is limited to Connect admins, but meeting links work for
-  anyone you share them with.</li>
+<li><code>mod_audio_fork::connect_failed</code> in FreeSWITCH: WSS, certificate or Basic
+  token mismatch;</li>
+<li>sidecar <code>401</code>: Odoo/service token mismatch;</li>
+<li>provider initialization error: missing key or unsupported model/voice;</li>
+<li>call result <code>404</code>: CDR creation was delayed beyond the sidecar retry window.</li>
 </ul>
+<p>The acceptance target is first agent audio in under 1.4 seconds with working
+barge-in. Measure this in the deployment because provider and network latency
+dominate the result.</p>
 
 
 

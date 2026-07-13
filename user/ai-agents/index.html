@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ai-voice-agents-dograh" class="md-skip">
+        <a href="#ai-voice-agents" class="md-skip">
           Skip to content
         </a>
       
@@ -439,6 +439,34 @@
     
   
     FreeSWITCH Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin/pipecat-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipecat AI Agents
   
 
     
@@ -1059,7 +1087,18 @@
   <a href="#calling-an-agent" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Calling an agent
+        Calling An Agent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transfers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transfers
       
     </span>
   </a>
@@ -1070,7 +1109,7 @@
   <a href="#call-history-and-recordings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Call history and recordings
+        Call History And Recordings
       
     </span>
   </a>
@@ -1081,7 +1120,7 @@
   <a href="#what-the-agent-can-do" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What the agent can do
+        What The Agent Can Do
       
     </span>
   </a>
@@ -1134,7 +1173,18 @@
   <a href="#calling-an-agent" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Calling an agent
+        Calling An Agent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transfers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transfers
       
     </span>
   </a>
@@ -1145,7 +1195,7 @@
   <a href="#call-history-and-recordings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Call history and recordings
+        Call History And Recordings
       
     </span>
   </a>
@@ -1156,7 +1206,7 @@
   <a href="#what-the-agent-can-do" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What the agent can do
+        What The Agent Can Do
       
     </span>
   </a>
@@ -1180,27 +1230,32 @@
 
 
 
-<h1 id="ai-voice-agents-dograh">AI Voice Agents (Dograh)</h1>
-<p>With the Dograh integration your PBX can answer calls with an AI voice
-agent built in <a href="https://dograh.com">Dograh</a>'s visual workflow editor.</p>
-<h2 id="calling-an-agent">Calling an agent</h2>
-<p>Every AI agent has its own extension number (visible in
-<strong>Connect → Dograh → AI Agents</strong>). Dial the extension from any phone
-registered on the PBX — the agent answers, speaks and listens in real
-time, and you can interrupt it mid-sentence (barge-in).</p>
-<p>Administrators can route a public number (DID) or an IVR choice to the
-agent's extension so external callers reach it too.</p>
-<h2 id="call-history-and-recordings">Call history and recordings</h2>
-<p>Calls to AI agents appear in <strong>Connect → Calls</strong> like any other call.
-When <strong>Record Calls</strong> is enabled on the agent, the conversation is
-recorded and shows up under <strong>Recordings</strong> on the call form, where the
-standard transcription and summarization tools apply.</p>
-<p>The full workflow-level transcript of each agent conversation is also
-available in the Dograh dashboard (ask your administrator for access).</p>
-<h2 id="what-the-agent-can-do">What the agent can do</h2>
-<p>The agent's behavior — greetings, questions, business logic, API
-calls — is defined in the Dograh workflow assigned to the extension.
-Talk to your administrator to change what an agent says or does.</p>
+<h1 id="ai-voice-agents">AI Voice Agents</h1>
+<p>An AI voice agent answers a normal phone number or internal extension and holds
+a spoken conversation in real time. Depending on its configuration, it can
+answer questions, collect information, end the call, or transfer you to a
+person.</p>
+<h2 id="calling-an-agent">Calling An Agent</h2>
+<p>Every AI agent has its own extension number. Dial the extension from any phone
+registered on the PBX, or call a public number that an administrator has routed
+to the agent.</p>
+<p>Speak normally after the greeting. You do not need to wait for a long reply to
+finish: start speaking and the agent will stop its playback and listen to the
+new turn.</p>
+<h2 id="transfers">Transfers</h2>
+<p>If a human transfer is configured, ask to speak with a person. The agent will
+transfer the same call to the configured extension. If transfer is unavailable,
+the agent should say so rather than disconnecting you.</p>
+<h2 id="call-history-and-recordings">Call History And Recordings</h2>
+<p>Calls to AI agents appear in <strong>Connect -&gt; Calls</strong> like any other call. When
+recording is enabled, the conversation is recorded and shows up under
+<strong>Recordings</strong> on the call form, where the standard transcription and
+summarization tools apply.</p>
+<p>Dograh agents may also expose the full workflow-level transcript in the Dograh
+dashboard. Ask your administrator for access.</p>
+<h2 id="what-the-agent-can-do">What The Agent Can Do</h2>
+<p>The agent's behavior, including greetings, questions, business logic and API
+calls, is controlled by the agent configuration selected by your administrator.</p>
 
 
 
