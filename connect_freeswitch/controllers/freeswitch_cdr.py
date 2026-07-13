@@ -6,6 +6,8 @@ from xml.etree import ElementTree as ET
 from odoo import http
 from odoo.http import request, Response
 
+from .token_auth import check_fs_webhook_auth, unauthorized_response
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,14 +19,18 @@ class FreeSwitchCDRController(http.Controller):
 
     @http.route(
         '/freeswitch/webhook/cdr',
-        type='http', auth='none', methods=['POST'], csrf=False,
+        type='http', auth='public', methods=['POST'], csrf=False,
+        readonly=False,
     )
     def cdr_webhook(self, **kwargs):
         """Receive CDR from FreeSWITCH mod_xml_cdr.
 
         mod_xml_cdr sends URL-encoded POST with 'cdr' parameter
-        containing XML CDR data.
+        containing XML CDR data. Authenticated with the shared webhook
+        token via mod_xml_cdr's cred/auth-scheme params (ADR-025).
         """
+        if not check_fs_webhook_auth():
+            return unauthorized_response()
         cdr_xml = kwargs.get('cdr', '')
         if not cdr_xml:
             # Try raw body (if encode=false in mod_xml_cdr config)
@@ -114,7 +120,9 @@ class FreeSwitchCDRController(http.Controller):
         caller_pbx_user_id = None
         called_pbx_user_id = None
         other_leg_uuid = None
+        chain_id = None
         odoo_number_id = None
+        odoo_call_direction = None
 
         if variables is not None:
             # Click-to-call originates `user/<login>@<domain>` and the
@@ -169,6 +177,7 @@ class FreeSwitchCDRController(http.Controller):
                 or self._xml_text(variables, 'Other-Leg-Unique-ID')
                 or originator_uuid
             )
+            chain_id = self._xml_text(variables, 'odoo_chain_id')
 
             odoo_user = self._xml_text(variables, 'odoo_connect_user_id')
             odoo_called_user = self._xml_text(
@@ -188,6 +197,16 @@ class FreeSwitchCDRController(http.Controller):
 
             odoo_number_id = self._xml_text(variables, 'odoo_number_id')
 
+            # The dialplan stamps the business-logic call direction on the
+            # channel (`odoo_call_direction`: 'inbound' on inbound DID
+            # routes, 'outgoing' on outgoing routes). It is a plain word,
+            # so no URL-decoding is needed. Prefer it downstream over
+            # FreeSWITCH's native per-leg direction, which marks the UA /
+            # originate leg of an outbound call as 'inbound' and mislabels
+            # such calls as incoming (issue #43).
+            odoo_call_direction = self._xml_text(
+                variables, 'odoo_call_direction') or None
+
         return {
             'uuid': uuid,
             'caller': caller,
@@ -198,6 +217,8 @@ class FreeSwitchCDRController(http.Controller):
             'caller_pbx_user_id': caller_pbx_user_id,
             'called_pbx_user_id': called_pbx_user_id,
             'other_leg_uuid': other_leg_uuid,
+            'chain_id': chain_id,
+            'odoo_call_direction': odoo_call_direction,
             'odoo_number_id': int(odoo_number_id) if odoo_number_id else None,
         }
 

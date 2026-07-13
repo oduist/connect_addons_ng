@@ -53,9 +53,17 @@ Call flows can chain together. An IVR choice can route to another call flow, cre
 
 ## Voicemail
 
-Call flows can have voicemail enabled. If no one answers (ring group) or the caller doesn't make a valid choice (IVR), they can leave a voicemail message.
+Call flows can have voicemail enabled. When enabled with a voicemail prompt, the caller can leave a callflow-level voicemail after the callflow cannot connect them:
 
-The voicemail greeting can be customized per call flow.
+- **Standalone callflow** — if the callflow has no gather choices, ring users, or queue fallback, the voicemail prompt is played and the caller is recorded.
+- **Ring group** — if no ring user answers, the callflow can play its voicemail prompt and record the caller.
+- **IVR menu** — if the caller does not make a choice before the timeout, the callflow can record voicemail after any configured ring-user or queue fallback.
+
+Invalid IVR input still follows the invalid-input message and retry flow. It does not immediately trigger voicemail.
+
+Callflow voicemail takes precedence inside callflows. Direct calls to a user keep that user's voicemail behavior. In FreeSWITCH, FS Queue voicemail is configured separately on the queue timeout settings.
+
+The voicemail greeting can be customized per call flow. The voicemail prompt must be set for callflow voicemail to trigger.
 
 ## FS Queues (FreeSWITCH-only)
 
@@ -77,7 +85,7 @@ A queue can be used three ways:
 
 ### Admin configuration summary
 
-FS Queues are configured under **PBX → FS Queues**. Each queue defines:
+FS Queues are configured under **Connect → FreeSWITCH → FIFO Queues**. Each queue defines:
 
 - member users and/or endpoint agents,
 - max wait time,

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "connect-asterisk-agent"
+version = "1.0.0"
+description = "Asterisk AMI sidecar agent for Oduist Connect, managed from Odoo"
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.1",
+    "fastapi>=0.110",
+    "httpx>=0.27",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "uvicorn>=0.27",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[project.scripts]
+connect-asterisk-agent = "connect_asterisk_agent.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"

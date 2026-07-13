@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inherit core user list to add Telnyx-specific columns -->
+    <record id="view_connect_user_tree_telnyx" model="ir.ui.view">
+        <field name="name">connect.user.tree.telnyx</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user']" position="after">
+                <field name="telnyx_exten" optional="show"/>
+                <field name="telnyx_outgoing_callerid" optional="hide"/>
+                <field name="telnyx_sip_enabled" string="Telnyx SIP"/>
+                <field name="telnyx_client_enabled" string="Telnyx Web"/>
+                <field name="telnyx_domain" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit core user form to add Telnyx-specific fields -->
+    <record id="view_connect_user_form_telnyx" model="ir.ui.view">
+        <field name="name">connect.user.form.telnyx</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_form"/>
+        <field name="arch" type="xml">
+            <!-- Telnyx extension stat button -->
+            <xpath expr="//header" position="inside">
+                <button name="create_telnyx_extension" type="object"
+                        string="Telnyx Extension" class="btn btn-primary"/>
+            </xpath>
+
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="telnyx_domain"/>
+                <field name="telnyx_exten" readonly="1"/>
+                <field name="telnyx_outgoing_callerid"/>
+                <field name="telnyx_whatsapp_sender_id"/>
+            </xpath>
+
+            <!-- Add Phone tab with SIP/Client settings to notebook -->
+            <xpath expr="//page[@name='organization']" position="before">
+                <page name="telnyx_phone" string="Telnyx Phone">
+                    <group>
+                        <group string="SIP Phone">
+                            <field name="telnyx_sip_enabled" string="Enabled"/>
+                            <field name="telnyx_sip_priority" string="Priority"/>
+                            <field name="telnyx_sip_ring_timeout" string="Ring Timeout"
+                                   invisible="telnyx_sip_enabled == False"
+                                   required="telnyx_sip_enabled == True"/>
+                            <field name="telnyx_sip_username" string="SIP Username"
+                                   invisible="telnyx_sip_enabled == False"/>
+                            <field name="telnyx_sip_password" string="SIP Password" password="1"
+                                   invisible="telnyx_sip_enabled == False"/>
+                        </group>
+                        <group string="Web Phone">
+                            <field name="telnyx_client_enabled" string="Enabled"/>
+                            <field name="telnyx_client_priority" string="Priority"/>
+                            <field name="telnyx_client_ring_timeout" string="Ring Timeout"
+                                   invisible="telnyx_client_enabled == False"/>
+                            <field name="telnyx_client_username" string="Client Username"
+                                   invisible="telnyx_client_enabled == False"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

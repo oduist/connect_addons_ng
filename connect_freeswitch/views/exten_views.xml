@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_freeswitch_exten_tree" model="ir.ui.view">
+        <field name="name">connect.freeswitch.exten.tree</field>
+        <field name="model">connect.freeswitch.exten</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="number"/>
+                <field name="dst"/>
+                <field name="model_friendly" string="Type"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_freeswitch_exten_form" model="ir.ui.view">
+        <field name="name">connect.freeswitch.exten.form</field>
+        <field name="model">connect.freeswitch.exten</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="number"/>
+                            <field name="dst"/>
+                            <field name="model_friendly" string="Type" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_freeswitch_exten" model="ir.actions.act_window">
+        <field name="name">Extensions</field>
+        <field name="res_model">connect.freeswitch.exten</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_freeswitch_extens"
+              name="Extensions"
+              parent="menu_freeswitch_root"
+              action="action_freeswitch_exten"
+              sequence="20"/>
+</odoo>

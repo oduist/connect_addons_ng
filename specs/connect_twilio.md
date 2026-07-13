@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Twilio
 - **Technical:** `connect_twilio`
-- **Version:** 19.0.1.0.0
+- **Version:** 19.0.2.0.0
 - **Depends:** `connect`
 - **Python deps:** `twilio`
 - **Application:** False
@@ -13,21 +13,32 @@
 ## Overview
 
 The `connect_twilio` module extends the core `connect` module with Twilio-specific
-functionality. All models use `_inherit` to add Twilio fields and methods to the
-core models. It also introduces three new models that are 100% Twilio-specific:
-`connect.twiml`, `connect.domain`, and `connect.whatsapp_sender`.
+functionality. The shared ledger models (`connect.call`, `connect.channel`,
+`connect.message`, `connect.recording`, `connect.user`, `connect.settings`) are
+extended via `_inherit`; since ADR-031 the module also **owns its PBX configuration
+models** as independent `connect.twilio.*` models: `connect.twilio.exten`,
+`connect.twilio.callflow` (+`_choice`), `connect.twilio.number`,
+`connect.twilio.outgoing_callerid`, `connect.twilio.user_callflow` (+`_call`) and
+`connect.twilio.message_configuration`. The formerly-core `connect.twiml` and
+`connect.domain` models were renamed `connect.twilio.twiml` and
+`connect.twilio.domain` for naming consistency. `connect.whatsapp_sender` and
+`connect.message_content_template` keep their names.
+
+The exten dst-Reference mechanics, the callflow language list and the E.164
+caller-ID constraint are deliberate copies of the FreeSWITCH counterparts —
+**no shared mixin**; fixes must be applied in both modules (ADR-031).
 
 This module handles: Twilio REST API client, webhook handlers for calls/messages/recordings,
 TwiML generation, SIP domain management, WhatsApp integration, Twilio Voice SDK (frontend),
 and Twilio number/callerID synchronization.
 
 OpenAI transcription is NOT in this module - it lives in core `connect` because it is
-technology-agnostic. The SMS composer also lives in core, with this module implementing
-the abstract `send()` method.
+technology-agnostic. The SMS composer (`sms.composer` inherit) lives HERE since
+ADR-031, implementing the core abstract `connect.message.send()` contract.
 
 ---
 
-## Models (connect_twilio/models/) - all use _inherit unless noted
+## Models (connect_twilio/models/) - ledger models use _inherit; PBX configuration models are own `connect.twilio.*` models
 
 ### 1. settings.py - `_inherit = 'connect.settings'`
 
@@ -38,7 +49,7 @@ Extends core settings with Twilio API credentials, client management, and sync.
 | Field | Type | Notes |
 |-------|------|-------|
 | `account_sid` | Char | Twilio Account SID |
-| `auth_token` | Char | Groups: `base.group_erp_manager` |
+| `auth_token` | Char | Groups: `base.group_erp_manager` — never grant `connect.group_webhook` (the public-webhook identity); signature validation reads it via `sudo()` (ADR-025) |
 | `display_auth_token` | Char | Masked display |
 | `twilio_api_key` | Char | |
 | `twilio_api_secret` | Char | Groups: `base.group_erp_manager` |
@@ -56,11 +67,16 @@ Extends core settings with Twilio API credentials, client management, and sync.
 |--------|-------------|
 | `get_client()` | Create and return Twilio REST client instance |
 | `sync()` | Full sync of all Twilio resources (numbers, callerIDs, domains, etc.) |
-| `originate_call()` | Click-to-call: initiate outbound call via Twilio API |
+| `originate_call()` | Override of the core dispatcher: when `_get_originate_provider(user)` is not `'twilio'`, falls through to `super()`; otherwise initiates the outbound call via the Twilio API |
 | `get_external_call_route()` | Return TwiML route for external calls |
 | `get_twilio_balance()` | Fetch account balance from Twilio API |
 | `_reset_twilio_edge()` | Onchange: reset edge when region changes |
 | `write()` | Override: handle protected field masking for auth_token and api_secret |
+
+The Twilio settings are edited through the module's **own standalone settings
+form view** (menu Twilio → Configuration → Settings), opened via the core
+parametrized `open_settings_form()` — no notebook pages are injected into the
+core settings form.
 
 ---
 
@@ -128,7 +144,7 @@ Extends core message with Twilio message handling - implements the abstract `sen
 | Method | Description |
 |--------|-------------|
 | `receive()` | Twilio webhook: process incoming SMS/WhatsApp messages |
-| `send()` | **Implements abstract:** Send message via Twilio API |
+| `send()` | **Implements abstract:** Send message via Twilio API. Dispatch guard: when `connect.settings._get_message_provider()` is not `'twilio'`, falls through to `super()` (co-installation with other messaging providers, e.g. `connect_bird`). |
 | `client_send()` | Low-level: `client.messages.create()` wrapper |
 | `_compute_direction()` | Override: check against Twilio-owned numbers to determine direction |
 
@@ -159,6 +175,17 @@ Extends core recording with Twilio-specific SIDs and webhook handling.
   They live in core `connect` because OpenAI transcription is technology-agnostic.
 - This module only handles Twilio-specific recording webhook processing and SID tracking.
 
+### Runtime softphone recording control
+
+`connect.channel` is extended with Twilio handlers for the core softphone
+recording RPCs. The phone widget sends provider `twilio` and the active
+`CallSid`; the handler resolves the channel row, verifies participant/admin
+access through core helpers, and uses Twilio's Recording API to start/stop
+recording. Runtime state is stored on the shared channel control fields
+(`recording_state`, `recording_control_ref`, `recording_control_error`) while
+completed artifacts continue to enter `connect.recording` through the Twilio
+recording status webhook.
+
 ---
 
 ### 6. user.py - `_inherit = 'connect.user'`
@@ -169,18 +196,24 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 
 | Field | Type | Notes |
 |-------|------|-------|
+| `username` | Char | PBX username, `UNIQUE`, alphanumeric. **Not field-level required** (co-installation fix): a constraint on `sip_enabled`/`client_enabled`/`username`/`domain` requires username+domain only when the Twilio SIP or web phone is enabled |
+| `originate_provider` | Selection | `selection_add=[('twilio', 'Twilio')]` on the core field |
+| `message_provider` | Selection | `selection_add=[('twilio', 'Twilio')]` on the core field |
+| `twilio_exten` | Many2one | `connect.twilio.exten`, readonly |
+| `twilio_exten_number` | Char | Related `twilio_exten.number`, stored; registered in `_pbx_number_fields()` |
+| `twilio_outgoing_callerid` | Many2one | `connect.twilio.outgoing_callerid` |
 | `sid` | Char | Twilio SIP credential SID |
 | `password` | Char | SIP password, groups restricted |
-| `domain` | Many2one | `connect.domain` |
+| `domain` | Many2one | `connect.twilio.domain` (guarded default: first non-BYOC domain, skipped while the table does not exist yet during install) |
 | `sip_enabled` | Boolean | |
 | `sip_priority` | Selection | `1` or `2` |
 | `sip_ring_timeout` | Integer | Seconds |
-| `client_enabled` | Boolean | Default: True |
+| `client_enabled` | Boolean | Default: `_twilio_is_only_provider()` — True only when Twilio is the sole installed telephony module; in multi-provider databases the admin enables the Twilio web phone explicitly per user |
 | `client_priority` | Selection | `1` or `2` |
 | `client_ring_timeout` | Integer | Seconds |
 | `uri` | Char | Computed: `user@domain` |
 | `connect_uri` | Char | Computed: with edge prefix |
-| `application` | Many2one | `connect.twiml` |
+| `application` | Many2one | `connect.twilio.twiml` |
 | `whatsapp_sender_id` | Many2one | `connect.whatsapp_sender` |
 | `twilio_edge` | Selection | Twilio edge location |
 
@@ -197,6 +230,7 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `render_client()` | Generate TwiML `<Dial><Client>` |
 | `render_sip()` | Generate TwiML `<Dial><Sip>` |
 | `render_voicemail()` | Generate TwiML `<Record>` for voicemail |
+| `get_greeting_message()` / `get_voicemail_prompt()` | `<Say>` the user prompts with `language`/`voice` from `connect.user` (fallbacks `en-US` / `Woman`, ADR-037) |
 | `get_client_token()` | Generate JWT for Twilio Voice SDK |
 | `get_client_identity()` | Return SIP identity string |
 | `_get_sip_uri()` | Compute SIP URI |
@@ -208,25 +242,29 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 
 ---
 
-### 7. number.py - `_inherit = 'connect.number'`
+### 7. number.py - `connect.twilio.number` (own model, ADR-031)
 
-Extends core number with Twilio SID, webhook URLs, and sync.
+Twilio inbound DIDs — full standalone model (formerly a `connect.number`
+extension) with Twilio SID, webhook URLs, sync and call routing.
 
-**Additional Fields:**
+**Fields:**
 
 | Field | Type | Notes |
 |-------|------|-------|
+| `phone_number` | Char | Required, `UNIQUE` |
+| `friendly_name` | Char | |
+| `destination` | Selection | `user`, `callflow`, `twiml` |
+| `callflow` | Many2one | `connect.twilio.callflow` |
+| `user` | Many2one | `connect.user` |
+| `twiml` | Many2one | `connect.twilio.twiml` |
 | `sid` | Char | Twilio Phone Number SID |
 | `voice_url` | Char | Computed webhook URL |
 | `voice_fallback_url` | Char | Computed |
 | `voice_status_url` | Char | Computed |
 | `message_url` | Char | Computed |
 | `message_fallback_url` | Char | Computed |
-| `twiml` | Many2one | `connect.twiml` |
 
-**Extends destination selection:** Adds `twiml` option to the `destination` field.
-
-**Additional Methods:**
+**Methods:**
 
 | Method | Description |
 |--------|-------------|
@@ -234,18 +272,25 @@ Extends core number with Twilio SID, webhook URLs, and sync.
 | `update_twilio_number()` | Push webhook configuration to Twilio |
 | `_get_twilio_urls()` | Compute webhook URLs for this number |
 | `write()` | Override: push changes to Twilio on save |
-| `route_call()` | Override: Twilio-specific call routing (TwiML response) |
+| `render()` / `route_call()` | Route inbound call to the destination (TwiML response) |
 
 ---
 
-### 8. outgoing_callerid.py - `_inherit = 'connect.outgoing_callerid'`
+### 8. outgoing_callerid.py - `connect.twilio.outgoing_callerid` (own model, ADR-031)
 
-Extends core caller ID with Twilio validation and sync.
+Outbound caller IDs — full standalone model (formerly a
+`connect.outgoing_callerid` extension) with Twilio validation and sync.
 
-**Additional Fields:**
+**Fields:**
 
 | Field | Type | Notes |
 |-------|------|-------|
+| `name` | Char | Computed: friendly_name + number |
+| `friendly_name` | Char | Required |
+| `number` | Char | Required, `UNIQUE`, must start with `+` (E.164 constraint — duplicated in connect_freeswitch, fix both) |
+| `status` | Char | |
+| `is_default` | Boolean | Only one default allowed |
+| `callerid_users` | One2many | `connect.user` via `twilio_outgoing_callerid` |
 | `sid` | Char | Twilio OutgoingCallerID SID |
 | `validation_code` | Char | Twilio validation code |
 
@@ -263,17 +308,19 @@ Extends core caller ID with Twilio validation and sync.
 
 ---
 
-### 9. callflow.py - `_inherit = 'connect.callflow'`
+### 9. callflow.py - `connect.twilio.callflow` + `connect.twilio.callflow_choice` (own models, ADR-031)
 
-Extends core callflow with TwiML Gather rendering and webhook handling.
-
-**Additional Fields:**
+IVR configuration and TwiML Gather rendering — full standalone models (formerly
+`connect.callflow`/`connect.callflow_choice` extensions). Carry the full
+callflow field set (name, `exten`/`exten_number` → `connect.twilio.exten`,
+`language` Selection from `_get_language_selection()`, voice, gather config,
+`choices`, `ring_users`, voicemail) plus:
 
 | Field | Type | Notes |
 |-------|------|-------|
 | `gather_action_url` | Char | Computed webhook URL for gather results |
 
-**Additional Methods:**
+**Key Methods:**
 
 | Method | Description |
 |--------|-------------|
@@ -281,10 +328,47 @@ Extends core callflow with TwiML Gather rendering and webhook handling.
 | `gather_action()` | Webhook: process DTMF/speech input, route to extension |
 | `_get_gather_action_url()` | Compute gather action webhook URL |
 | `on_call_action()` | Handle call action from gather input |
+| `create_extension()` | Create associated `connect.twilio.exten` |
+| `_get_language_selection()` | BCP-47 language list — **duplicated** with `connect.freeswitch.callflow`, `connect.telnyx.callflow` and core `connect.user`; changes must be applied to all four (ADR-031/ADR-037) |
+
+`connect.twilio.callflow_choice`: `callflow` (required), `choice_digits`
+(required), `exten` (`connect.twilio.exten`, required), `speech`.
 
 ---
 
-### 10. twiml.py - `connect.twiml` (NEW model, 100% Twilio)
+### 10. exten.py - `connect.twilio.exten` (own model, ADR-031)
+
+Extension routing — full standalone model (formerly `connect.exten`).
+`number` (required, `UNIQUE` within Twilio), `model`/`res_id` with the computed
+`dst` Reference (+inverse) pointing at `connect.user` /
+`connect.twilio.callflow` / `connect.twilio.twiml`, `dst_name`, TwiML preview.
+The dst-Reference mechanics are **duplicated** with
+`connect.freeswitch.exten`; fixes must be applied to both (ADR-031).
+Extension uniqueness is per provider — cross-provider uniqueness disappeared by
+design.
+
+---
+
+### 11. user_callflow.py - `connect.twilio.user_callflow` + `connect.twilio.user_callflow_call` (own models, ADR-031)
+
+Per-user call delivery steps (SIP/client legs), formerly
+`connect.user_callflow`/`connect.user_callflow_call`. Same shape: `user`
+(`connect.user`), `prio`, `callflow_type`, `method`; the `_call` model links a
+`connect.call` to the step.
+
+---
+
+### 12. message_configuration.py - `connect.twilio.message_configuration` (own model, ADR-031)
+
+Incoming-message routing, formerly core `connect.message_configuration`:
+`number` (Many2one `connect.twilio.number`, required), `destination` Selection
+(`res.partner`), `default_values` (JSON, validated by constraint). The CRM
+extension of this model lives in the auto-installed bridge module
+`connect_crm_twilio` (depends on `connect_crm` + `connect_twilio`).
+
+---
+
+### 13. twiml.py - `connect.twilio.twiml` (renamed from `connect.twiml`, 100% Twilio)
 
 TwiML application management. Stores TwiML code or Python code that generates TwiML.
 
@@ -304,7 +388,7 @@ TwiML application management. Stores TwiML code or Python code that generates Tw
 | `voice_url` | Char | Computed |
 | `voice_fallback_url` | Char | Computed |
 | `voice_status_url` | Char | Computed |
-| `exten` | Many2one | `connect.exten` |
+| `exten` | Many2one | `connect.twilio.exten` |
 | `exten_number` | Char | Related |
 
 **Methods:**
@@ -318,14 +402,14 @@ TwiML application management. Stores TwiML code or Python code that generates Tw
 | `render_twiml()` | Render TwiML via Jinja2 template |
 | `render_python()` | Execute Python code (exec) to generate TwiML |
 | `_get_twilio_urls()` | Compute webhook URLs |
-| `create_extension()` | Create associated `connect.exten` |
+| `create_extension()` | Create associated `connect.twilio.exten` |
 | `create()` | Override: create Twilio app on record creation |
 | `write()` | Override: update Twilio app on change |
 | `unlink()` | Override: delete Twilio app on removal |
 
 ---
 
-### 11. domain.py - `connect.domain` (NEW model, 100% Twilio)
+### 14. domain.py - `connect.twilio.domain` (renamed from `connect.domain`, 100% Twilio)
 
 Twilio SIP domain management for SIP trunking.
 
@@ -334,7 +418,7 @@ Twilio SIP domain management for SIP trunking.
 | Field | Type | Notes |
 |-------|------|-------|
 | `sid` | Char | Twilio SIP Domain SID |
-| `application` | Many2one | `connect.twiml` |
+| `application` | Many2one | `connect.twilio.twiml` |
 | `cred_list_sid` | Char | Twilio Credential List SID |
 | `subdomain` | Char | SIP subdomain |
 | `domain_name` | Char | Computed full domain |
@@ -361,7 +445,7 @@ Twilio SIP domain management for SIP trunking.
 
 ---
 
-### 12. whatsapp_sender.py - `connect.whatsapp_sender` (NEW model, 100% Twilio)
+### 15. whatsapp_sender.py - `connect.whatsapp_sender` (100% Twilio)
 
 Twilio WhatsApp sender/business account management.
 
@@ -374,7 +458,7 @@ Twilio WhatsApp sender/business account management.
 | `status` | Char | |
 | `url` | Char | |
 | `offline_reasons` | Char | |
-| `number_id` | Many2one | `connect.number` |
+| `number_id` | Many2one | `connect.twilio.number` |
 | `profile_name` | Char | |
 | `profile_about` | Char | |
 | `profile_address` | Char | |
@@ -386,7 +470,7 @@ Twilio WhatsApp sender/business account management.
 | `status_callback_url` | Char | Computed |
 | `messaging_limit` | Char | |
 | `quality_rating` | Char | |
-| `voice_application` | Many2one | `connect.twiml` |
+| `voice_application` | Many2one | `connect.twilio.twiml` |
 | `no_sync` | Boolean | Skip during sync |
 | `is_default` | Boolean | |
 
@@ -404,7 +488,7 @@ Twilio WhatsApp sender/business account management.
 
 ---
 
-### 13. message_content_template.py (NEW model, 100% Twilio)
+### 16. message_content_template.py - `connect.message_content_template` (100% Twilio)
 
 Twilio WhatsApp content/message templates. Pre-approved templates for WhatsApp Business API.
 
@@ -437,6 +521,19 @@ in settings.
 
 ## Wizards (connect_twilio/wizard/)
 
+### sms_composer.py - inherits `sms.composer` (moved from core, ADR-031)
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `outgoing_callerid` | Selection | List of available outgoing numbers (raw SQL over the `connect_twilio_number` table) |
+
+**Methods:**
+
+| Method | Description |
+|--------|-------------|
+| `_list_all_numbers()` | Return available outgoing numbers for selection |
+| `_action_send_sms()` | Override: send SMS via `connect.message.send()` (Twilio implementation) |
+
 ### whatsapp_composer.py - `connect.whatsapp_composer` (TransientModel)
 
 WhatsApp message sending wizard. Uses `whatsapp_sender.send_whatsapp()` to send messages.
@@ -461,10 +558,21 @@ Uses core `group_webhook` for webhook access to Twilio-created records.
 
 | Model | User | Admin | Webhook |
 |-------|------|-------|---------|
-| `connect.twiml` | Read | Full | - |
-| `connect.domain` | Read | Full | - |
-| `connect.whatsapp_sender` | Read | Full | - |
+| `connect.twilio.exten` | Read | Full | Read |
+| `connect.twilio.callflow` | Read | Full | Read |
+| `connect.twilio.callflow_choice` | Read | Full | Read |
+| `connect.twilio.number` | Read | Full | Read |
+| `connect.twilio.outgoing_callerid` | Read | Full | Read+Write (validation status callback) |
+| `connect.twilio.user_callflow` | Read | Full | - |
+| `connect.twilio.user_callflow_call` | Read | Full | - |
+| `connect.twilio.message_configuration` | - | Full | - |
+| `connect.twilio.twiml` | Read | Full | Read |
+| `connect.twilio.domain` | Read | Full | Read |
+| `connect.whatsapp_sender` | Read | Full | Read+Write+Create |
 | `connect.message_content_template` | Read | Full | - |
+
+`connect.twilio.message_configuration` is admin-only (infrastructure/config
+model), mirroring the old core rule.
 
 ### Record Rules
 
@@ -486,30 +594,49 @@ Default WhatsApp content template: `voice_call_request` - used for voice call co
 
 | File | Inherits | Changes |
 |------|----------|---------|
-| `views/settings_views.xml` | `connect.connect_settings_form` | Add Twilio balance group, API keys page, development page, fetch_call_prices |
-| `views/user_views.xml` | `connect.view_connect_user_form`, `connect.view_connect_user_tree` | Add SIP/Client phone tab, domain, edge, whatsapp_sender, application; list adds sip_enabled/client_enabled columns |
-| `views/number_views.xml` | `connect.view_connect_number_form`, `connect.view_connect_number_tree` | Add twiml routing option and twiml column |
-| `views/outgoing_callerid_views.xml` | `connect.view_connect_outgoing_callerid_form` | Add Validate button and validation_code field |
+| `views/user_views.xml` | `connect.view_connect_user_form`, `connect.view_connect_user_tree` | Add SIP/Client phone tab, username, domain, edge, whatsapp_sender, application, twilio_exten; list adds sip_enabled/client_enabled columns |
 
 ### New Views
 
 | File | Description |
 |------|-------------|
+| `views/settings_views.xml` | **Standalone** Twilio settings form (credentials, API keys, region/edge, sync, balance, fetch_call_prices) opened via the parametrized `open_settings_form()` — not a notebook page in the core form |
+| `views/number_views.xml` | List + form for `connect.twilio.number` (destination routing incl. twiml) |
+| `views/exten_views.xml` | List + form for `connect.twilio.exten` (destination reference) |
+| `views/callflow_views.xml` | Form for `connect.twilio.callflow` (choices, gather config, ring users) |
+| `views/outgoing_callerid_views.xml` | List + form for `connect.twilio.outgoing_callerid` (Validate button, validation_code) |
+| `views/message_configuration_views.xml` | List + form for `connect.twilio.message_configuration` |
+| `views/message_views.xml` | Menu entry for the core `connect.message` action under the Twilio app |
 | `views/twiml_views.xml` | List + form + search for TwiML apps (ACE code editor, extension, code_type) |
 | `views/domain_views.xml` | List + form for SIP domains (subdomain, application, edge_domains) |
 | `views/whatsapp_sender_views.xml` | List + form for WhatsApp senders (profile, status, sync) |
 | `views/message_content_template_views.xml` | List + form + search for WhatsApp templates (approval workflow) |
+| `wizard/sms_composer_views.xml` | SMS composer form (moved from core) |
 | `wizard/whatsapp_composer_views.xml` | WhatsApp message sending wizard form (sender, phone, template, body) |
 
 ### Menu Items
 
-Added under PBX menu:
-- TwiML (sequence 60)
-- Domains (sequence 70)
+`connect_twilio` owns the **Twilio** submenu of the Connect app (ADR-031).
+All provider submenus share sequence 50 under `connect.menu_connect_root`,
+so they appear after Calls/Users in installation order and before the core
+Configuration menu (seq 100).
 
-Added under Messages menu:
-- WhatsApp Templates (sequence 64)
-- WhatsApp Senders (sequence 65)
+```
+Connect > Twilio (seq 50)
+  +-- Numbers (seq 10)
+  +-- Extensions (seq 20)
+  +-- Call Flows (seq 30)
+  +-- Outgoing Caller IDs (seq 40)
+  +-- TwiML Apps (seq 50)
+  +-- SIP Domains (seq 60)
+  +-- Messages (seq 70)
+  |   +-- Messages (seq 10, core connect.message action)
+  |   +-- WhatsApp Senders (seq 30, admin)
+  |   +-- WhatsApp Templates (seq 40, admin)
+  |   +-- Message Configuration (admin)
+  +-- Configuration (seq 100, admin)
+      +-- Settings
+```
 
 ---
 
@@ -532,6 +659,7 @@ The phone widget uses the Twilio Voice JavaScript SDK (`@twilio/voice-sdk`) to:
 - Show active call status (duration, caller info)
 - Transfer calls
 - Manage call hold/mute
+- Start/stop recording for the active call through the core softphone recording RPCs
 
 ---
 

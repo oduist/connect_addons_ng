@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import logging
 import re
+import secrets
+import socket
+import ssl
 import xml.etree.ElementTree as ET
 import xmlrpc.client
 
@@ -13,6 +16,14 @@ ODUIST_MODULES.append('connect_freeswitch')
 # Mask the firewall service token the same way the core module masks openai_api_key.
 if "display_firewall_service_token" not in PROTECTED_FIELDS:
     PROTECTED_FIELDS.append("display_firewall_service_token")
+if "display_freeswitch_webhook_token" not in PROTECTED_FIELDS:
+    PROTECTED_FIELDS.append("display_freeswitch_webhook_token")
+
+# Same masking for the mod_xml_rpc password: the stored field is admin-only, and
+# the displayed field is masked back to **** so the secret never reaches the
+# browser or a non-admin get_param() over RPC.
+if "display_freeswitch_xmlrpc_password" not in PROTECTED_FIELDS:
+    PROTECTED_FIELDS.append("display_freeswitch_xmlrpc_password")
 
 logger = logging.getLogger(__name__)
 
@@ -74,20 +85,53 @@ class Settings(models.Model):
     )
     freeswitch_xmlrpc_host = fields.Char(
         string="XML-RPC Host",
-        help="FreeSWITCH XML-RPC host (e.g. fs.example.com)",
+        help="Public host of the Traefik TLS endpoint that fronts FreeSWITCH "
+             "mod_xml_rpc (e.g. fs.example.com). Odoo connects to it over HTTPS.",
     )
     freeswitch_xmlrpc_port = fields.Integer(
         string="XML-RPC Port",
-        default=8080,
-        help="FreeSWITCH mod_xml_rpc port (default: 8080)",
+        default=443,
+        help="HTTPS port of the Traefik endpoint in front of mod_xml_rpc "
+             "(default: 443). mod_xml_rpc itself listens on a fixed internal "
+             "port behind Traefik and is never exposed directly.",
     )
     freeswitch_xmlrpc_user = fields.Char(
         string="XML-RPC User",
-        help="FreeSWITCH mod_xml_rpc username",
+        help="FreeSWITCH mod_xml_rpc username (HTTP Basic Auth, sent over TLS)",
     )
     freeswitch_xmlrpc_password = fields.Char(
+        string="XML-RPC Password (stored)",
+        groups="connect.group_admin",
+        help="FreeSWITCH mod_xml_rpc password (HTTP Basic Auth, sent over TLS)",
+    )
+    display_freeswitch_xmlrpc_password = fields.Char(
         string="XML-RPC Password",
-        help="FreeSWITCH mod_xml_rpc password",
+        help="FreeSWITCH mod_xml_rpc password (HTTP Basic Auth, sent over TLS). "
+             "Masked to **** after saving; visible only to administrators.",
+    )
+    freeswitch_xmlrpc_tls_verify = fields.Boolean(
+        string="Verify TLS Certificate",
+        default=True,
+        help="Verify the TLS certificate of the XML-RPC endpoint. Keep enabled "
+             "in production (Traefik serves a CA-signed certificate). Disable "
+             "only for development behind a self-signed certificate.",
+    )
+    # Shared secret authenticating every FreeSWITCH -> Odoo HTTP call
+    # (/freeswitch/xml, /freeswitch/webhook/*). Auto-generated so the
+    # endpoints are locked by default (fail-closed); see ADR-025.
+    freeswitch_webhook_token = fields.Char(
+        string="FreeSWITCH Webhook Token (stored)",
+        groups="connect.group_admin",
+        default=lambda self: secrets.token_urlsafe(32),
+    )
+    display_freeswitch_webhook_token = fields.Char(
+        string="FreeSWITCH Webhook Token",
+        help="Shared secret used by FreeSWITCH to authenticate against the "
+             "Odoo XML curl / CDR / recording / parking endpoints. Generate "
+             "a fresh value (≥24 chars, [A-Za-z0-9_-]) and copy it into the "
+             "FS_WEBHOOK_TOKEN env var of the FreeSWITCH container before "
+             "saving — the value is masked back to **** immediately "
+             "afterwards. Visible only to administrators.",
     )
 
     # Status fields (populated by check_freeswitch_status button)
@@ -169,8 +213,8 @@ class Settings(models.Model):
     )
 
     @api.model
-    def _validate_firewall_secret(self, value):
-        """Raise ValidationError on weak / malformed Firewall Service Token."""
+    def _validate_firewall_secret(self, value, label="Firewall Service Token"):
+        """Raise ValidationError on a weak / malformed shared-secret token."""
         from odoo.exceptions import ValidationError
         if value in (False, None):
             return
@@ -179,15 +223,15 @@ class Settings(models.Model):
             return
         if len(value) < self._TOKEN_MIN_LEN:
             raise ValidationError(
-                "Firewall Service Token must be at least {} characters long.".format(
-                    self._TOKEN_MIN_LEN
+                "{} must be at least {} characters long.".format(
+                    label, self._TOKEN_MIN_LEN
                 )
             )
         bad = sorted({c for c in value if c not in self._TOKEN_ALLOWED_CHARS})
         if bad:
             raise ValidationError(
-                "Firewall Service Token can only contain letters, digits, '_' and '-'; "
-                "remove: {}".format(" ".join(bad))
+                "{} can only contain letters, digits, '_' and '-'; "
+                "remove: {}".format(label, " ".join(bad))
             )
 
     def write(self, vals):
@@ -200,6 +244,11 @@ class Settings(models.Model):
                 self._validate_firewall_secret(
                     vals["display_firewall_service_token"]
                 )
+            if "display_freeswitch_webhook_token" in vals:
+                self._validate_firewall_secret(
+                    vals["display_freeswitch_webhook_token"],
+                    label="FreeSWITCH Webhook Token",
+                )
         res = super().write(vals)
         # Notify the firewall service that settings changed.
         if any(k.startswith("firewall_") or k == "display_firewall_service_token"
@@ -208,43 +257,123 @@ class Settings(models.Model):
         return res
 
     @api.model
+    def originate_call(self, number, res_model=None, res_id=None, user=None, **kwargs):
+        # Dispatch by the user's click-to-call provider; fall through to
+        # other installed telephony modules when it is not FreeSWITCH.
+        if self._get_originate_provider(user) != 'freeswitch':
+            return super().originate_call(
+                number, res_model=res_model, res_id=res_id, user=user, **kwargs)
+        return self.env['connect.call'].originate_call(
+            number, res_model=res_model, res_id=res_id)
+
+    @api.model
+    def get_recording_webhook_url(self):
+        """Recording upload base URL including the auth token path segment.
+
+        record_session derives the file format from the URL extension, so
+        the token rides as a path segment instead of a query string
+        (ADR-025). Returns '' when web.base.url or the token is missing —
+        callers then leave recording disabled (fail-closed).
+        """
+        base_url = self.env['ir.config_parameter'].sudo().get_param(
+            'web.base.url') or ''
+        token = self.sudo().get_param('freeswitch_webhook_token') or ''
+        if not base_url or not token:
+            return ''
+        return '{}freeswitch/webhook/recording/{}'.format(
+            base_url if base_url.endswith('/') else base_url + '/', token)
+
+    @api.model
+    def get_voicemail_webhook_url(self):
+        """Voicemail upload base URL including the auth token path segment."""
+        base_url = self.env['ir.config_parameter'].sudo().get_param(
+            'web.base.url') or ''
+        token = self.sudo().get_param('freeswitch_webhook_token') or ''
+        if not base_url or not token:
+            return ''
+        return '{}freeswitch/webhook/voicemail/{}'.format(
+            base_url if base_url.endswith('/') else base_url + '/', token)
+
+    @api.model
+    def _freeswitch_rpc(self, command, args=''):
+        """Low-level mod_xml_rpc call that classifies the failure mode.
+
+        Returns a ``(result, error)`` tuple:
+        - on success ``(response_string, None)``;
+        - on failure ``(None, error)`` where ``error`` is one of
+          ``NOT CONFIGURED`` / ``UNREACHABLE`` / ``AUTH FAILED`` /
+          ``INVALID RESPONSE``.
+
+        Errors are logged but never raised, so callers are never blocked
+        by FS connectivity issues.
+        """
+        host = self.get_param('freeswitch_xmlrpc_host')
+        port = self.get_param('freeswitch_xmlrpc_port') or 443
+        user = self.get_param('freeswitch_xmlrpc_user')
+        password = self.sudo().get_param('freeswitch_xmlrpc_password')
+        verify_tls = self.get_param('freeswitch_xmlrpc_tls_verify')
+        if not host:
+            logger.warning("FreeSWITCH XML-RPC host not configured")
+            return None, 'NOT CONFIGURED'
+        # mod_xml_rpc has no native TLS: Traefik terminates HTTPS in front of
+        # it and proxies to the internal plain-HTTP port. Always connect over
+        # https so the Basic Auth credential never travels in cleartext.
+        url = "https://{}:{}@{}:{}/RPC2".format(user, password, host, port)
+        context = ssl.create_default_context()
+        if not verify_tls:
+            # Self-signed development certificate: skip verification on request.
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        try:
+            server = xmlrpc.client.ServerProxy(url, context=context)
+            result = server.freeswitch.api(command, args)
+            logger.info("FreeSWITCH API %s %s: %s", command, args, result)
+            return result, None
+        except xmlrpc.client.ProtocolError as e:
+            # HTTP-level error from mod_xml_rpc; 401 means bad credentials.
+            error = 'AUTH FAILED' if e.errcode == 401 else 'INVALID RESPONSE'
+            logger.error("FreeSWITCH XML-RPC protocol error (%s): %s",
+                         e.errcode, e.errmsg)
+            return None, error
+        except OSError as e:
+            # socket.timeout, ConnectionError, ConnectionRefusedError,
+            # socket.gaierror (DNS) — host configured but not reachable.
+            logger.error("FreeSWITCH XML-RPC unreachable: %s", e)
+            return None, 'UNREACHABLE'
+        except Exception as e:
+            # xmlrpc.client.Fault, malformed XML, parse errors, etc.
+            logger.error("FreeSWITCH XML-RPC invalid response: %s", e)
+            return None, 'INVALID RESPONSE'
+
+    @api.model
     def freeswitch_api(self, command, args=''):
         """Execute a FreeSWITCH API command via mod_xml_rpc.
 
         Returns the command response string, or False on failure.
         Errors are logged but never raised to avoid blocking callers.
+        Use :meth:`_freeswitch_rpc` directly when the specific failure
+        mode is needed (e.g. to surface it in the status field).
         """
-        host = self.get_param('freeswitch_xmlrpc_host')
-        port = self.get_param('freeswitch_xmlrpc_port') or 8080
-        user = self.get_param('freeswitch_xmlrpc_user')
-        password = self.sudo().get_param('freeswitch_xmlrpc_password')
-        if not host:
-            logger.warning("FreeSWITCH XML-RPC host not configured")
-            return False
-        url = "http://{}:{}@{}:{}/RPC2".format(user, password, host, port)
-        try:
-            server = xmlrpc.client.ServerProxy(url)
-            result = server.freeswitch.api(command, args)
-            logger.info("FreeSWITCH API %s %s: %s", command, args, result)
-            return result
-        except Exception as e:
-            logger.error("FreeSWITCH XML-RPC error: %s", e)
-            return False
+        result, error = self._freeswitch_rpc(command, args)
+        return result if error is None else False
 
     def check_freeswitch_status(self):
         """Fetch live status from FreeSWITCH and update display fields."""
         self.ensure_one()
         down_vals = {
-            'freeswitch_status': 'DOWN (unreachable)',
+            'freeswitch_status': '',
             'freeswitch_uptime': '',
             'freeswitch_calls': '',
             'freeswitch_registrations': '',
             'freeswitch_gateway_statuses': '',
         }
 
-        # 1. Basic status
-        status_response = self.freeswitch_api('status')
-        if not status_response:
+        # 1. Basic status — surface the specific failure mode (NOT
+        # CONFIGURED / UNREACHABLE / AUTH FAILED / INVALID RESPONSE)
+        # instead of a single misleading "DOWN" string.
+        status_response, status_error = self._freeswitch_rpc('status')
+        if status_error is not None:
+            down_vals['freeswitch_status'] = status_error
             self.write(down_vals)
             return
 
@@ -364,14 +493,20 @@ class Settings(models.Model):
         # makes the login globally unique even when two res.users share the
         # same email local part across domains. See
         # specs/decisions/016-verto-login-uses-user-id.md.
+        #
+        # Rotate the WebRTC password on every config issuance so a leaked
+        # password self-invalidates on the next softphone boot. The returned
+        # value (not a re-read of the field) is delivered to the client, which
+        # immediately registers with it against FreeSWITCH. See ADR-026.
+        password = connect_user._rotate_webrtc_password()
         return {
             'enabled': True,
             'socketUrl': socket_url,
             'domain': domain,
             'login': connect_user._get_verto_login(),
-            'password': connect_user.webrtc_password,
+            'password': password,
             'callerName': connect_user.name,
-            'callerNumber': connect_user.exten_number or user.login,
+            'callerNumber': connect_user.freeswitch_exten_number or user.login,
             'displayMode': connect_user.phone_display_mode or 'dropdown',
             'iceServers': ice_servers,
         }

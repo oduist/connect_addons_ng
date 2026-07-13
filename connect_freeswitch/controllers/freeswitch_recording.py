@@ -4,7 +4,13 @@ import logging
 from odoo import http
 from odoo.http import request, Response
 
+from .token_auth import check_fs_webhook_auth, unauthorized_response
+
 logger = logging.getLogger(__name__)
+
+# Upper bound for a single recording upload. A multi-hour stereo WAV at
+# 16 kHz / 16 bit stays well below this; anything larger is abuse.
+MAX_RECORDING_BYTES = 256 * 1024 * 1024
 
 
 class FreeSwitchRecordingController(http.Controller):
@@ -14,27 +20,62 @@ class FreeSwitchRecordingController(http.Controller):
     The upload (PUT) may arrive before the CDR webhook creates the channel
     record, so we save the recording with just the UUID (call_sid) and
     link it to the channel later when processing the CDR.
+
+    The webhook token travels as a path segment because record_session
+    derives the file format from the URL extension — a query string after
+    ``.wav`` would break it (ADR-025).
     """
 
     @http.route(
-        '/freeswitch/webhook/recording/<string:filename>',
+        '/freeswitch/webhook/recording/<string:token>/<string:filename>',
         type='http', auth='none', methods=['PUT', 'POST'], csrf=False,
+        readonly=False,
     )
-    def recording_webhook(self, filename, **kwargs):
+    def recording_webhook(self, token, filename, **kwargs):
         """Receive a recording file from FreeSWITCH.
 
         The filename is expected to be <uuid>.wav where uuid is
         the FreeSWITCH channel UUID (used as channel SID in Odoo).
         """
-        # Extract UUID from filename (strip extension)
-        uuid = filename.rsplit('.', 1)[0] if '.' in filename else filename
+        return self._upload_audio(
+            token, filename, source='freeswitch', is_voicemail=False)
 
-        if not uuid:
+    @http.route(
+        '/freeswitch/webhook/voicemail/<string:token>/<string:filename>',
+        type='http', auth='none', methods=['PUT', 'POST'], csrf=False,
+        readonly=False,
+    )
+    def voicemail_webhook(self, token, filename, **kwargs):
+        """Receive a callflow voicemail file from FreeSWITCH."""
+        return self._upload_audio(
+            token, filename, source='freeswitch_voicemail', is_voicemail=True)
+
+    def _upload_audio(self, token, filename, source, is_voicemail=False):
+        """Store an uploaded FreeSWITCH audio file as a connect.recording."""
+        if not check_fs_webhook_auth(token_from_path=token):
+            return unauthorized_response()
+
+        content_length = request.httprequest.content_length or 0
+        if content_length > MAX_RECORDING_BYTES:
+            logger.warning(
+                'Recording webhook: upload of %d bytes exceeds the %d limit',
+                content_length, MAX_RECORDING_BYTES)
+            return Response('Payload too large', status=413)
+
+        # Extract UUID from filename (strip extension). Runtime recording
+        # controls write segment filenames as <uuid>__<segment>.wav; keep the
+        # full segment id unique while linking it back to the base channel UUID.
+        recording_sid = filename.rsplit('.', 1)[0] if '.' in filename else filename
+        uuid = recording_sid.split('__', 1)[0]
+
+        if not recording_sid or not uuid:
             logger.warning('Recording webhook: no UUID in filename %s', filename)
             return Response('No UUID', status=400)
 
         # Get the raw file data
         file_data = request.httprequest.get_data()
+        if len(file_data) > MAX_RECORDING_BYTES:
+            return Response('Payload too large', status=413)
         if not file_data:
             logger.warning('Recording webhook: empty file data for %s', uuid)
             return Response('No file data', status=400)
@@ -44,12 +85,27 @@ class FreeSwitchRecordingController(http.Controller):
                 request.env.ref('connect.user_connect_webhook').id
             )
 
-            # Skip if recording for this UUID already exists (both legs
-            # may attempt to upload the same recording)
-            existing = env.sudo().search([('call_sid', '=', uuid)], limit=1)
+            if is_voicemail:
+                # Voicemail is a single artifact for the call; both legs may
+                # attempt to upload the same recording. Voicemails are a
+                # separate source so they can coexist with call recordings.
+                existing = env.sudo().search([
+                    ('call_sid', '=', uuid),
+                    ('source', '=', source),
+                ], limit=1)
+            else:
+                # Runtime controls can create multiple recording segments for
+                # one call UUID; only skip the same segment id.
+                existing = env.sudo().search([
+                    ('sid', '=', recording_sid),
+                    ('source', '=', source),
+                ], limit=1)
             if existing:
-                logger.info('Recording for UUID %s already exists (id=%s), skipping',
-                    uuid, existing.id)
+                logger.info(
+                    'Recording %s for UUID %s already exists (id=%s), skipping',
+                    source, uuid, existing.id)
+                if is_voicemail:
+                    self._sync_voicemail_url(existing)
                 return Response('OK', status=200)
 
             # Try to find the channel, but don't fail if not found yet —
@@ -58,9 +114,10 @@ class FreeSwitchRecordingController(http.Controller):
                 [('sid', '=', uuid)], limit=1)
 
             vals = {
+                'sid': recording_sid,
                 'call_sid': uuid,
                 'status': 'completed',
-                'source': 'freeswitch',
+                'source': source,
                 'recording_attachment': base64.b64encode(file_data),
                 'recording_filename': filename,
             }
@@ -73,6 +130,8 @@ class FreeSwitchRecordingController(http.Controller):
                 vals['called_number'] = channel.called_number
 
             recording = env.sudo().create(vals)
+            if is_voicemail:
+                self._sync_voicemail_url(recording)
 
             logger.info('Recording created: id=%s, uuid=%s, channel=%s, size=%d bytes',
                 recording.id, uuid, channel.id if channel else 'pending', len(file_data))
@@ -82,3 +141,13 @@ class FreeSwitchRecordingController(http.Controller):
             return Response('Processing error', status=500)
 
         return Response('OK', status=200)
+
+    def _sync_voicemail_url(self, recording):
+        """Expose an attachment-backed FreeSWITCH voicemail on its call."""
+        recording = recording.sudo()
+        if not recording.call or not recording.recording_attachment:
+            return
+        recording.call.write({
+            'voicemail_url': recording.get_attachment_media_url(),
+            'voicemail_duration': recording.duration or 0,
+        })

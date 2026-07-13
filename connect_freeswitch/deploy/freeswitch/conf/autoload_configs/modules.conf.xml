@@ -3,7 +3,7 @@
     <!-- Loggers (stdout via mod_logfile → /dev/stdout) -->
     <load module="mod_logfile"/>
 
-    <!-- XML Interfaces - для получения конфига из Odoo -->
+    <!-- XML Interfaces - to fetch config from Odoo -->
     <load module="mod_xml_curl"/>
     <load module="mod_xml_cdr"/>
     <load module="mod_xml_rpc"/>

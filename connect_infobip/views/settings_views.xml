@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Standalone Infobip settings form on the shared connect.settings
+         singleton: only Infobip fields, opened from the Infobip menu. -->
+    <record id="connect_settings_form_infobip" model="ir.ui.view">
+        <field name="name">connect.settings.form.infobip</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" eval="False"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <sheet>
+                    <notebook>
+                        <page name="infobip_api" string="Infobip API">
+                            <group>
+                                <group string="Infobip Credentials" name="infobip_api">
+                                    <div colspan="2">
+                                        <small><strong>You can find your personalized base URL and API key in
+                                            <a href="https://portal.infobip.com/" target="_blank">your Infobip portal</a>
+                                        </strong></small>
+                                    </div>
+                                    <field name="infobip_auto_sync" groups="base.group_no_one"/>
+                                    <field name="infobip_base_url" string="Base URL"
+                                           placeholder="https://xxxxx.api.infobip.com"/>
+                                    <field name="display_infobip_api_key" string="API Key" password="1"/>
+                                    <button colspan="2" name="infobip_sync" type="object"
+                                            string="SYNC INFOBIP ACCOUNT" class="btn btn-primary"/>
+                                </group>
+                                <group string="Voice">
+                                    <field name="infobip_calls_configuration_id"/>
+                                    <field name="infobip_webrtc_application_id"/>
+                                    <field name="infobip_webphone_via_rest" groups="base.group_no_one"/>
+                                </group>
+                            </group>
+                            <group string="Webhooks">
+                                <field name="infobip_webhook_token" readonly="1"/>
+                                <div colspan="2">
+                                    <small>Configure these URLs on the Infobip side (Calls
+                                    configuration webhooks, number SMS forwarding, WhatsApp
+                                    inbound/report forwarding). The token in the URL
+                                    authenticates the requests — Infobip does not sign
+                                    webhooks.</small>
+                                </div>
+                                <field name="infobip_webhook_urls" nolabel="1" colspan="2" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Development" groups="base.group_no_one" name="infobip_dev">
+                            <group>
+                                <group>
+                                    <field name="infobip_verify_requests"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.actions.server" id="infobip_settings_action">
+        <field name="type">ir.actions.server</field>
+        <field name="name">Infobip Settings</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="connect.model_connect_settings"/>
+        <field name="code">action = model.open_settings_form("connect_infobip.connect_settings_form_infobip", "Infobip Settings")</field>
+    </record>
+
+    <menuitem id="menu_infobip_settings"
+              name="Settings"
+              parent="menu_infobip_config"
+              action="infobip_settings_action"
+              groups="connect.group_admin"
+              sequence="10"/>
+
+</odoo>

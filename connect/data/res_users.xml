@@ -10,7 +10,7 @@
         <field name="partner_id" ref="partner_connect_webhook"/>
         <field name="active" eval="False"/>
     </record>
-    <!-- Assign webhook user to webhook group -->
+    <!-- Assign webhook user to webhook group. -->
     <record id="group_webhook" model="res.groups">
         <field name="users" eval="[(4, ref('user_connect_webhook'))]"/>
     </record>

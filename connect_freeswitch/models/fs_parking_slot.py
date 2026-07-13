@@ -228,9 +228,16 @@ class FreeSwitchParkingSlot(models.Model):
         if not endpoint_parts:
             raise UserError("You don't have any ringable endpoints.")
 
-        cid_name = (self.parked_caller_name or self.parked_caller_number or
-                    'Slot %s' % self.exten).replace("'", "")
-        cid_num = self.parked_caller_number or self.exten
+        # parked_caller_name / parked_caller_number originate from the
+        # parking webhook (the inbound caller's SIP caller-id) and are
+        # interpolated into the FreeSWITCH originate dialstring, so strip
+        # originate metacharacters before use (ADR-026). The number keeps
+        # only dialable characters; the name drops {}[]<>,&|'"\ entirely.
+        raw_name = (self.parked_caller_name or self.parked_caller_number or
+                    'Slot %s' % self.exten)
+        cid_name = re.sub(r"""[{}\[\]<>,&|'"\\]""", '', raw_name)
+        cid_num = re.sub(r'[^0-9+*#]', '', self.parked_caller_number or '') \
+            or self.exten
         variables = [
             "origination_caller_id_name='{}'".format(cid_name),
             "origination_caller_id_number={}".format(cid_num),

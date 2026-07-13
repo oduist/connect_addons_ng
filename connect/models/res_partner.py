@@ -18,7 +18,7 @@ def strip_number(number):
 def format_number(self, number, country=None, format_type='e164'):
     res = False
     try:
-        phone_nbr = phonenumbers.parse(number, country)
+        phone_nbr = phonenumbers.parse(number, country or None)
         if not phonenumbers.is_possible_number(phone_nbr):
             debug(self, '{} country {} parse impossible'.format(
                 number, country
@@ -79,29 +79,11 @@ class Partner(models.Model):
                 call.partner = res[0]
         except Exception as e:
             logger.exception(e)
-        if res and not self.env.context.get('no_clear_cache'):
-            if release.version_info[0] >= 17:
-                self.env.registry.clear_cache()
-            else:
-                self.clear_caches()
-        return res
-
-    def write(self, values):
-        res = super().write(values)
-        if res and not self.env.context.get('no_clear_cache'):
-            if release.version_info[0] >= 17:
-                self.env.registry.clear_cache()
-            else:
-                self.clear_caches()
-        return res
-
-    def unlink(self):
-        res = super().unlink()
-        if res and not self.env.context.get('no_clear_cache'):
-            if release.version_info[0] >= 17:
-                self.env.registry.clear_cache()
-            else:
-                self.clear_caches()
+        # NB: no registry.clear_cache() here. There is no ormcache keyed on
+        # partner data in this addon (connect_*_count are non-stored computes,
+        # get_partner_by_number does a live search), so clearing the whole
+        # ORM cache on every partner create/write/unlink was pure overhead
+        # on a hot path. Removed; the ORM invalidates its own field caches.
         return res
 
     def _normalize_phone(self, number):
@@ -129,9 +111,15 @@ class Partner(models.Model):
             if normalized and normalized != number:
                 found = self.sudo().search(
                     [('phone_mobile_search', '=', normalized)])
+                if not found and 'phone_sanitized' in self._fields:
+                    found = self.sudo().search(
+                        [('phone_sanitized', '=', normalized)])
                 debug(self, '{} normalized to {} for partner lookup'.format(
                     number, normalized
                 ))
+            elif normalized and 'phone_sanitized' in self._fields:
+                found = self.sudo().search(
+                    [('phone_sanitized', '=', normalized)])
         debug(self, '{} belongs to partners: {}'.format(
             number, found.mapped('id')
         ))

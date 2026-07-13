@@ -40,12 +40,18 @@ class WebRTCController(http.Controller):
         # Strips '@' (mod_verto splits on '@' to derive the realm) and stays
         # unique across users that share an email local part. See
         # specs/decisions/016-verto-login-uses-user-id.md.
+        #
+        # Rotate the WebRTC password on issuance, same as
+        # connect.settings.get_webrtc_config (the path the current JS uses), so
+        # this parallel route never hands out a stale, non-rotating password.
+        # See ADR-026.
+        password = connect_user._rotate_webrtc_password()
         return {
             'enabled': True,
             'socketUrl': socket_url,
             'domain': domain,
             'login': connect_user._get_verto_login(),
-            'password': connect_user.webrtc_password,
+            'password': password,
             'callerName': connect_user.name,
-            'callerNumber': connect_user.exten_number or user.login,
+            'callerNumber': connect_user.freeswitch_exten_number or user.login,
         }

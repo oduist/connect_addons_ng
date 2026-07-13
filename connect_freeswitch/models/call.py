@@ -99,6 +99,13 @@ class Call(models.Model):
         number = re.sub(r'[\s()\-]', '', number or '')
         if not number:
             raise UserError("No phone number provided.")
+        # The number is interpolated into the FreeSWITCH originate
+        # dialstring (channel variables and bridge data) via str.format,
+        # so it must not carry originate metacharacters ({}[]<>,&'|" etc.).
+        # Restrict to an optional leading '+' followed by digits and the
+        # DTMF feature-code characters '*'/'#' (ADR-026).
+        if not re.fullmatch(r'\+?[0-9*#]{1,20}', number):
+            raise UserError("Invalid phone number: {}".format(number))
 
         domain = settings.get_param('freeswitch_domain')
         if not domain:
@@ -137,7 +144,7 @@ class Call(models.Model):
         display_number = number
 
         # SIP endpoints with originate_ring enabled
-        endpoints = self.env['connect.endpoint'].search([
+        endpoints = self.env['connect.freeswitch.endpoint'].search([
             ('connect_user_id', '=', connect_user.id),
             ('active', '=', True),
             ('originate_ring', '=', True),
@@ -181,17 +188,23 @@ class Call(models.Model):
         a_leg = ','.join(a_leg_parts)
 
         # Check if target is an internal extension
-        exten = self.env['connect.exten'].search(
+        exten = self.env['connect.freeswitch.exten'].search(
             [('number', '=', number)], limit=1)
 
         # Caller ID for b-leg (what the called party sees)
         first_ep = endpoints[:1]
         if exten:
-            caller_number = connect_user.exten_number or (first_ep.auth_user if first_ep else '')
+            caller_number = connect_user.freeswitch_exten_number or (first_ep.auth_user if first_ep else '')
         else:
+            # Per-user outgoing CallerID, else the system-wide default DID
+            # (is_default), else the extension — symmetric with the Twilio
+            # path and the UA-originated dialplan override (ADR-027, #96).
+            default_cid = self.env['connect.freeswitch.outgoing_callerid'].sudo().search(
+                [('is_default', '=', True)], limit=1)
             caller_number = (
-                connect_user.outgoing_callerid.number
-                or connect_user.exten_number
+                connect_user.freeswitch_outgoing_callerid.number
+                or default_cid.number
+                or connect_user.freeswitch_exten_number
                 or (first_ep.auth_user if first_ep else '')
             )
 
@@ -244,8 +257,14 @@ class Call(models.Model):
         # the directory-seeded extension. Override on the B-leg itself
         # so the called party sees `caller_number` (extension for
         # internal, outgoing_callerid for external).
+        #
+        # For external (PSTN) calls the display NAME is blanked so the
+        # internal caller's name is never disclosed to the outside world;
+        # only the number is sent. Internal calls keep the name so the
+        # colleague sees who is ringing. See ADR-026.
+        b_leg_name = cid_name if exten else ''
         b_leg_vars = [
-            "origination_caller_id_name='{}'".format(cid_name),
+            "origination_caller_id_name='{}'".format(b_leg_name),
             "origination_caller_id_number={}".format(caller_number),
         ]
         # For external calls via gateway, force standard codecs on b-leg
@@ -275,8 +294,8 @@ class Call(models.Model):
                 return self._build_user_bridge(target_user, domain)
 
         # Check if extension points to a standalone endpoint
-        if exten.model == 'connect.endpoint' and exten.res_id:
-            target_ep = self.env['connect.endpoint'].browse(exten.res_id)
+        if exten.model == 'connect.freeswitch.endpoint' and exten.res_id:
+            target_ep = self.env['connect.freeswitch.endpoint'].browse(exten.res_id)
             if target_ep.exists() and target_ep.active and target_ep.auth_user:
                 return 'user/{}@{}'.format(target_ep.auth_user, domain)
 
@@ -288,7 +307,7 @@ class Call(models.Model):
         b_parts = []
 
         # SIP endpoints (all active, not just originate_ring)
-        target_endpoints = self.env['connect.endpoint'].search([
+        target_endpoints = self.env['connect.freeswitch.endpoint'].search([
             ('connect_user_id', '=', target_user.id),
             ('active', '=', True),
             ('auth_user', '!=', False),
@@ -308,7 +327,7 @@ class Call(models.Model):
 
         # Fallback
         return 'user/{}@{}'.format(
-            target_user.exten_number or '', domain)
+            target_user.freeswitch_exten_number or '', domain)
 
     @api.model
     def on_freeswitch_cdr(self, cdr_data):
@@ -325,6 +344,9 @@ class Call(models.Model):
                 caller_pbx_user_id (int): connect.user ID from channel variable (optional)
                 called_pbx_user_id (int): connect.user ID (optional)
                 other_leg_uuid (str): Other leg UUID for linking (optional)
+                odoo_call_direction (str): dialplan-stamped business
+                    direction, 'inbound' or 'outgoing' (optional; preferred
+                    over the native FreeSWITCH `direction` when present)
 
         Returns:
             call id or False
@@ -332,15 +354,64 @@ class Call(models.Model):
         self = self.sudo()
         debug(self, 'FreeSWITCH CDR: %s' % cdr_data)
 
+        # Serialize sibling legs of the same bridge. odoo_chain_id is
+        # exported in the dialplan (no `nolocal:`) so both legs share the
+        # same value — the A-leg's uuid at bridge time.
+        #
+        # Session-scoped pg_advisory_lock (not xact-scoped): Odoo runs under
+        # REPEATABLE READ, and the snapshot is taken when the acquiring
+        # SELECT starts, *before* it blocks. Session-scoped lets us commit
+        # after acquiring (refreshing the snapshot) while the lock persists.
+        #
+        # Critical: we must commit *our own* work before releasing the lock,
+        # otherwise the sibling acquires the lock and snapshots before the
+        # http handler's outer commit has flushed our writes.
+        chain_key = cdr_data.get('chain_id') or cdr_data['uuid']
+        self.env.cr.commit()  # drop stale snapshot from controller entry
+        self.env.cr.execute(
+            "SELECT pg_advisory_lock(hashtext(%s))", [chain_key])
+        self.env.cr.commit()  # end the acquire-tx so the next read is fresh
+        self.env.invalidate_all()  # flush ORM caches tied to the old snapshot
+        try:
+            result = self._process_cdr_locked(cdr_data)
+            self.env.cr.commit()  # commit BEFORE unlocking so sibling sees our writes
+            return result
+        finally:
+            self.env.cr.execute(
+                "SELECT pg_advisory_unlock(hashtext(%s))", [chain_key])
+
+    @api.model
+    def _cdr_technical_direction(self, cdr_data):
+        """Resolve the Twilio-compatible technical_direction for a CDR.
+
+        Prefer the business-logic direction the dialplan stamps on the
+        channel (`odoo_call_direction`) over FreeSWITCH's per-leg native
+        direction. originate-launched legs and the UA leg of an outgoing
+        call are `inbound` from FreeSWITCH's own perspective and would
+        otherwise be mislabelled as incoming (issue #43). Fall back to the
+        native direction when the variable is absent (e.g. a raw originate
+        that bypasses the dialplan).
+        """
+        odoo_direction = cdr_data.get('odoo_call_direction')
+        if odoo_direction == 'outgoing':
+            return 'outbound-api'
+        if odoo_direction == 'inbound':
+            return 'inbound'
+        return (
+            'outbound-api'
+            if cdr_data.get('direction') == 'outbound'
+            else 'inbound'
+        )
+
+    @api.model
+    def _process_cdr_locked(self, cdr_data):
+        """Inner CDR processing, called while holding the chain lock."""
         status = HANGUP_CAUSE_MAP.get(
             cdr_data.get('hangup_cause', ''), 'failed')
 
-        # Map FreeSWITCH direction to Twilio-compatible technical_direction
-        fs_direction = cdr_data.get('direction', '')
-        if fs_direction == 'outbound':
-            technical_direction = 'outbound-api'
-        else:
-            technical_direction = 'inbound'
+        # Map the call direction to a Twilio-compatible technical_direction,
+        # preferring the dialplan-stamped odoo_call_direction (issue #43).
+        technical_direction = self._cdr_technical_direction(cdr_data)
 
         generic_params = {
             'sid': cdr_data['uuid'],
@@ -356,7 +427,7 @@ class Call(models.Model):
         # Override called with DID number for inbound calls
         odoo_number_id = cdr_data.get('odoo_number_id')
         if odoo_number_id:
-            number = self.env['connect.number'].browse(odoo_number_id).exists()
+            number = self.env['connect.freeswitch.number'].browse(odoo_number_id).exists()
             if number:
                 generic_params['called'] = number.phone_number
 
@@ -410,6 +481,16 @@ class Call(models.Model):
                     'caller_number': channel.caller_number,
                     'called_number': channel.called_number,
                 })
+                voicemail_recordings = orphan_recordings.filtered(
+                    lambda rec: rec.source == 'freeswitch_voicemail'
+                    and rec.recording_attachment
+                    and rec.call)
+                if voicemail_recordings:
+                    recording = max(voicemail_recordings, key=lambda rec: rec.id)
+                    recording.call.write({
+                        'voicemail_url': recording.get_attachment_media_url(),
+                        'voicemail_duration': recording.duration or 0,
+                    })
                 logger.info('Linked %d orphan recording(s) to channel %s',
                     len(orphan_recordings), cdr_data['uuid'])
 

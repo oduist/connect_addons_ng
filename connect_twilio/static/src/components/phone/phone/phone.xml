@@ -127,6 +127,9 @@
                     <button t-if="state.phone_status === status.accepted" aria-label="Mute Microphone" t-attf-class="flex-item" t-attf-title="{{ state.isMicrophoneMute ? 'Unmute Microphone' : 'Mute Microphone' }}" t-on-click="_onClickMicrophoneMute">
                         <i t-attf-class="fa {{ state.isMicrophoneMute ? 'icon-mic_off' : 'icon-mic' }}"/>
                     </button>
+                    <button t-if="state.phone_status === status.accepted" aria-label="Recording" t-attf-class="flex-item {{ isRecordingOn() ? 'active' : '' }}" t-att-title="getRecordingTitle()" t-att-disabled="isRecordingButtonDisabled()" t-on-click="_onClickRecordingToggle">
+                        <i t-att-class="getRecordingIconClass()"/>
+                    </button>
                 </div>
 
                 <!--Call buttons-->

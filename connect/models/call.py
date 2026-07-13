@@ -1,4 +1,5 @@
 import logging
+from markupsafe import escape
 from odoo import fields, models, api, release, SUPERUSER_ID
 from .settings import debug
 
@@ -95,14 +96,18 @@ class Call(models.Model):
         proxy_recordings = self.env['connect.settings'].sudo().get_param('proxy_recordings')
         for rec in self:
             if rec.voicemail_url:
-                if proxy_recordings:
+                if rec.voicemail_url.startswith('/'):
+                    media_url = rec.voicemail_url
+                elif proxy_recordings:
                     media_url = '/connect/voicemail/{}'.format(rec.id)
                 else:
                     media_url = rec.voicemail_url
+                # voicemail_url is webhook-supplied; escape it before it
+                # lands in the sanitize=False Html field (stored XSS).
                 rec.voicemail_widget = '<audio id="sound_file" preload="auto" ' \
                     'controls="controls"> ' \
                     '<source src="{}"/>' \
-                    '</audio>'.format(media_url)
+                    '</audio>'.format(escape(media_url))
             else:
                 rec.voicemail_widget = ''
 
@@ -258,7 +263,11 @@ class Call(models.Model):
             if channel.call.called_users:
                 message.append('dialed users: {}, '.format(', '.join(k.name for k in channel.call.called_users)))
                 for user in channel.call.called_users:
-                    if user.connect_user[0].missed_calls_notify:
+                    # A dialed res.users may have no linked connect.user;
+                    # slice to [:1] so an empty recordset reads as False
+                    # instead of raising IndexError and aborting the whole
+                    # chatter + missed-call notification block.
+                    if user.connect_user[:1].missed_calls_notify:
                         notify_users.append(user)
             if channel.call.partner:
                 message.insert(3, 'partner: {}, '.format(channel.call.partner.name))
@@ -280,8 +289,11 @@ class Call(models.Model):
                     body=final_message,
                     partner_ids=[k.partner_id.id for k in notify_users]
                 )
-        except Exception as e:
-            logger.exception('Register call error:', e)
+        except Exception:
+            # logger.exception already attaches the traceback; passing the
+            # exception as a % arg to a placeholder-free string raised a
+            # logging error and hid the real one.
+            logger.exception('Register call error')
 
     def register_call_post_message(self, obj, **kwargs):
         try:

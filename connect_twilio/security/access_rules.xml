@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
-    <!-- connect.twiml access rules -->
+    <!-- connect.twilio.twiml access rules -->
     <record id="access_connect_twiml_admin" model="ir.model.access">
-        <field name="name">connect.twiml admin</field>
-        <field name="model_id" ref="model_connect_twiml"/>
+        <field name="name">connect.twilio.twiml admin</field>
+        <field name="model_id" ref="model_connect_twilio_twiml"/>
         <field name="group_id" ref="connect.group_admin"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="True"/>
@@ -13,8 +13,8 @@
     </record>
 
     <record id="access_connect_twiml_user" model="ir.model.access">
-        <field name="name">connect.twiml user</field>
-        <field name="model_id" ref="model_connect_twiml"/>
+        <field name="name">connect.twilio.twiml user</field>
+        <field name="model_id" ref="model_connect_twilio_twiml"/>
         <field name="group_id" ref="connect.group_user"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
@@ -23,8 +23,8 @@
     </record>
 
     <record id="access_connect_twiml_webhook" model="ir.model.access">
-        <field name="name">connect.twiml webhook</field>
-        <field name="model_id" ref="model_connect_twiml"/>
+        <field name="name">connect.twilio.twiml webhook</field>
+        <field name="model_id" ref="model_connect_twilio_twiml"/>
         <field name="group_id" ref="connect.group_webhook"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
@@ -32,10 +32,10 @@
         <field name="perm_unlink" eval="False"/>
     </record>
 
-    <!-- connect.domain access rules -->
+    <!-- connect.twilio.domain access rules -->
     <record id="access_connect_domain_admin" model="ir.model.access">
-        <field name="name">connect.domain admin</field>
-        <field name="model_id" ref="model_connect_domain"/>
+        <field name="name">connect.twilio.domain admin</field>
+        <field name="model_id" ref="model_connect_twilio_domain"/>
         <field name="group_id" ref="connect.group_admin"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="True"/>
@@ -44,8 +44,8 @@
     </record>
 
     <record id="access_connect_domain_user" model="ir.model.access">
-        <field name="name">connect.domain user</field>
-        <field name="model_id" ref="model_connect_domain"/>
+        <field name="name">connect.twilio.domain user</field>
+        <field name="model_id" ref="model_connect_twilio_domain"/>
         <field name="group_id" ref="connect.group_user"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
@@ -54,13 +54,221 @@
     </record>
 
     <record id="access_connect_domain_webhook" model="ir.model.access">
-        <field name="name">connect.domain webhook</field>
-        <field name="model_id" ref="model_connect_domain"/>
+        <field name="name">connect.twilio.domain webhook</field>
+        <field name="model_id" ref="model_connect_twilio_domain"/>
         <field name="group_id" ref="connect.group_webhook"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="False"/>
         <field name="perm_create" eval="False"/>
         <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.twilio.exten access rules -->
+    <record id="access_twilio_exten_user" model="ir.model.access">
+        <field name="name">connect.twilio.exten user</field>
+        <field name="model_id" ref="model_connect_twilio_exten"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_twilio_exten_admin" model="ir.model.access">
+        <field name="name">connect.twilio.exten admin</field>
+        <field name="model_id" ref="model_connect_twilio_exten"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_twilio_exten_webhook" model="ir.model.access">
+        <field name="name">connect.twilio.exten webhook</field>
+        <field name="model_id" ref="model_connect_twilio_exten"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.twilio.callflow access rules -->
+    <record id="access_twilio_callflow_user" model="ir.model.access">
+        <field name="name">connect.twilio.callflow user</field>
+        <field name="model_id" ref="model_connect_twilio_callflow"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_twilio_callflow_admin" model="ir.model.access">
+        <field name="name">connect.twilio.callflow admin</field>
+        <field name="model_id" ref="model_connect_twilio_callflow"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_twilio_callflow_webhook" model="ir.model.access">
+        <field name="name">connect.twilio.callflow webhook</field>
+        <field name="model_id" ref="model_connect_twilio_callflow"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.twilio.callflow_choice access rules -->
+    <record id="access_twilio_callflow_choice_user" model="ir.model.access">
+        <field name="name">connect.twilio.callflow_choice user</field>
+        <field name="model_id" ref="model_connect_twilio_callflow_choice"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_twilio_callflow_choice_admin" model="ir.model.access">
+        <field name="name">connect.twilio.callflow_choice admin</field>
+        <field name="model_id" ref="model_connect_twilio_callflow_choice"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_twilio_callflow_choice_webhook" model="ir.model.access">
+        <field name="name">connect.twilio.callflow_choice webhook</field>
+        <field name="model_id" ref="model_connect_twilio_callflow_choice"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.twilio.number access rules -->
+    <record id="access_twilio_number_user" model="ir.model.access">
+        <field name="name">connect.twilio.number user</field>
+        <field name="model_id" ref="model_connect_twilio_number"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_twilio_number_admin" model="ir.model.access">
+        <field name="name">connect.twilio.number admin</field>
+        <field name="model_id" ref="model_connect_twilio_number"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_twilio_number_webhook" model="ir.model.access">
+        <field name="name">connect.twilio.number webhook</field>
+        <field name="model_id" ref="model_connect_twilio_number"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.twilio.outgoing_callerid access rules -->
+    <record id="access_twilio_outgoing_callerid_user" model="ir.model.access">
+        <field name="name">connect.twilio.outgoing_callerid user</field>
+        <field name="model_id" ref="model_connect_twilio_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_twilio_outgoing_callerid_admin" model="ir.model.access">
+        <field name="name">connect.twilio.outgoing_callerid admin</field>
+        <field name="model_id" ref="model_connect_twilio_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_twilio_outgoing_callerid_webhook" model="ir.model.access">
+        <field name="name">connect.twilio.outgoing_callerid webhook</field>
+        <field name="model_id" ref="model_connect_twilio_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.twilio.user_callflow access rules -->
+    <record id="access_twilio_user_callflow_user" model="ir.model.access">
+        <field name="name">connect.twilio.user_callflow user</field>
+        <field name="model_id" ref="model_connect_twilio_user_callflow"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_twilio_user_callflow_admin" model="ir.model.access">
+        <field name="name">connect.twilio.user_callflow admin</field>
+        <field name="model_id" ref="model_connect_twilio_user_callflow"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- connect.twilio.user_callflow_call access rules -->
+    <record id="access_twilio_user_callflow_call_user" model="ir.model.access">
+        <field name="name">connect.twilio.user_callflow_call user</field>
+        <field name="model_id" ref="model_connect_twilio_user_callflow_call"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_twilio_user_callflow_call_admin" model="ir.model.access">
+        <field name="name">connect.twilio.user_callflow_call admin</field>
+        <field name="model_id" ref="model_connect_twilio_user_callflow_call"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- connect.twilio.message_configuration access (admin-only) -->
+    <record id="access_twilio_message_configuration_admin" model="ir.model.access">
+        <field name="name">connect.twilio.message_configuration admin</field>
+        <field name="model_id" ref="model_connect_twilio_message_configuration"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
     </record>
 
     <!-- connect.whatsapp_sender access rules -->
@@ -129,6 +337,17 @@
     <record id="access_connect_whatsapp_composer_user" model="ir.model.access">
         <field name="name">connect.whatsapp_composer user</field>
         <field name="model_id" ref="model_connect_whatsapp_composer"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- sms.composer access (for our override) -->
+    <record id="access_sms_composer_user" model="ir.model.access">
+        <field name="name">sms.composer connect user</field>
+        <field name="model_id" ref="sms.model_sms_composer"/>
         <field name="group_id" ref="connect.group_user"/>
         <field name="perm_read" eval="True"/>
         <field name="perm_write" eval="True"/>

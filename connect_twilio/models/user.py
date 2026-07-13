@@ -27,7 +27,10 @@ SIP_TWILIO_EDGES.insert(0, ['roaming', 'Global Low-latency Roaming'])
 class User(models.Model):
     _inherit = 'connect.user'
 
-    username = fields.Char(required=True)
+    # Not field-level required: with several telephony modules installed a
+    # user may have no Twilio account at all. Username/domain become
+    # mandatory only when a Twilio phone (SIP or web client) is enabled.
+    username = fields.Char()
 
     if release.version_info[0] >= 19:
         _username_uniq = Constraint('UNIQUE(username)', 'This PBX username is already defined!')
@@ -42,11 +45,53 @@ class User(models.Model):
             if rec.username and not rec.username.isalnum():
                 raise ValidationError('Username must be alphanumeric!')
 
+    @api.constrains('sip_enabled', 'client_enabled', 'username', 'domain')
+    def _check_twilio_account(self):
+        for rec in self:
+            if (rec.sip_enabled or rec.client_enabled) and not (rec.username and rec.domain):
+                raise ValidationError(
+                    'Username and SIP domain are required to enable the '
+                    'Twilio SIP or web phone for user {}!'.format(rec.name))
+
+    @api.model
+    def _twilio_is_only_provider(self):
+        """True when connect_twilio is the only telephony module installed."""
+        other = self.env['ir.module.module'].sudo().search_count([
+            ('name', 'in', ['connect_freeswitch', 'connect_asterisk']),
+            ('state', '=', 'installed'),
+        ])
+        return not other
+
+    @api.model
+    def _pbx_number_fields(self):
+        return super()._pbx_number_fields() + ['twilio_exten_number']
+
+    originate_provider = fields.Selection(
+        selection_add=[('twilio', 'Twilio')],
+        ondelete={'twilio': 'set null'},
+    )
+    message_provider = fields.Selection(
+        selection_add=[('twilio', 'Twilio')],
+        ondelete={'twilio': 'set null'},
+    )
+    twilio_exten = fields.Many2one('connect.twilio.exten', ondelete='set null', readonly=True, string='Twilio Extension')
+    twilio_exten_number = fields.Char(
+        related='twilio_exten.number', store=True,
+        string='Twilio Extension Number')
+    twilio_outgoing_callerid = fields.Many2one(
+        'connect.twilio.outgoing_callerid', ondelete='set null',
+        string='Twilio Outgoing CallerID')
+
+    def create_twilio_extension(self):
+        self.ensure_one()
+        return self.env['connect.twilio.exten'].create_extension(
+            self, 'connect.user', current_exten=self.twilio_exten)
+
     @api.model
     def get_user_by_uri(self, userinfo):
         """Lookup connect.user by SIP/client URI using username."""
         if not userinfo:
-            return self.env['connect.user']
+            return super().get_user_by_uri(userinfo)
         re_call_uri = re.compile(r'^(?:sip|client):([^@]+)@')
         found_username = re_call_uri.search(userinfo)
         if found_username:
@@ -54,26 +99,41 @@ class User(models.Model):
                 ('username', '=', found_username.group(1))])
             if user:
                 debug(self, 'Found user: {} by {}.'.format(user.name, userinfo))
-            return user
-        return self.env['connect.user']
+                return user
+        return super().get_user_by_uri(userinfo)
 
     sid = fields.Char('SID', readonly=True)
     password = fields.Char(
         groups="connect.group_admin,connect.group_user"
     )
     domain = fields.Many2one(
-        'connect.domain',
-        required=True,
+        'connect.twilio.domain',
         ondelete='cascade',
-        default=lambda x: x.env['connect.domain'].search(
-            [('subdomain', 'not like', 'byoc')], limit=1
-        ),
+        default=lambda self: self._default_twilio_domain(),
     )
+
+    @api.model
+    def _default_twilio_domain(self):
+        # During module installation on a database with existing
+        # connect.user rows the new column is initialized before the
+        # domain table exists — return no default in that case.
+        self.env.cr.execute(
+            "SELECT 1 FROM information_schema.tables"
+            " WHERE table_name = 'connect_twilio_domain'")
+        if not self.env.cr.fetchone():
+            return False
+        return self.env['connect.twilio.domain'].search(
+            [('subdomain', 'not like', 'byoc')], limit=1)
     sip_enabled = fields.Boolean('SIP Phone Enabled')
     sip_priority = fields.Selection(
         [('1', '1'), ('2', '2')], required=True, default='2'
     )
-    client_enabled = fields.Boolean('Web Phone Enabled', default=True)
+    # Enabled out of the box only when Twilio is the sole telephony module;
+    # in multi-provider databases the admin enables the Twilio web phone
+    # explicitly per user.
+    client_enabled = fields.Boolean(
+        'Web Phone Enabled',
+        default=lambda self: self._twilio_is_only_provider())
     client_priority = fields.Selection(
         [('1', '1'), ('2', '2')], required=True, default='1'
     )
@@ -87,7 +147,7 @@ class User(models.Model):
     connect_uri = fields.Char(
         'SIP Connect URI', compute='_get_sip_uri'
     )
-    application = fields.Many2one('connect.twiml')
+    application = fields.Many2one('connect.twilio.twiml')
     whatsapp_sender_id = fields.Many2one(
         'connect.whatsapp_sender',
         string='WhatsApp Sender',
@@ -313,7 +373,8 @@ class User(models.Model):
         if self.env.context.get('skip_sync'):
             res = super().write(vals)
             return res
-        if 'username' in vals:
+        if 'username' in vals and any(
+                rec.username and rec.username != vals['username'] for rec in self):
             raise ValidationError('Username cannot be changed!')
         for rec in self:
             if vals.get('password'):
@@ -466,12 +527,20 @@ class User(models.Model):
 
     def get_greeting_message(self, response):
         self.ensure_one()
-        response.say(self.greeting_message)
+        response.say(
+            self.greeting_message,
+            language=self.language or 'en-US',
+            voice=self.voice or 'Woman',
+        )
 
     def get_voicemail_prompt(self, response):
         self.ensure_one()
         voicemail_prompt = self.render_voicemail_prompt()
-        response.say(voicemail_prompt)
+        response.say(
+            voicemail_prompt,
+            language=self.language or 'en-US',
+            voice=self.voice or 'Woman',
+        )
 
     def render_voicemail(self, response, request, params):
         api_url = (
@@ -505,7 +574,7 @@ class User(models.Model):
         response = VoiceResponse()
         if call:
             done_callflow_ids = (
-                self.env['connect.user_callflow_call']
+                self.env['connect.twilio.user_callflow_call']
                 .sudo()
                 .search([('call', '=', call.id)])
                 .mapped('callflow')
@@ -514,7 +583,7 @@ class User(models.Model):
             if not done_callflow_ids and self.greeting_message:
                 self.get_greeting_message(response)
             next_call_flow = (
-                self.env['connect.user_callflow']
+                self.env['connect.twilio.user_callflow']
                 .sudo()
                 .search(
                     [
@@ -526,7 +595,7 @@ class User(models.Model):
                 )
             )
             if next_call_flow:
-                self.env['connect.user_callflow_call'].sudo().create(
+                self.env['connect.twilio.user_callflow_call'].sudo().create(
                     {
                         'call': call.id,
                         'callflow': next_call_flow.id,
@@ -539,7 +608,7 @@ class User(models.Model):
                 return response.to_xml()
             else:
                 callflows = (
-                    self.env['connect.user_callflow_call']
+                    self.env['connect.twilio.user_callflow_call']
                     .sudo()
                     .search([('call', '=', call.id)])
                 )
@@ -548,7 +617,7 @@ class User(models.Model):
                 return response.to_xml()
         else:
             all_flows = (
-                self.env['connect.user_callflow']
+                self.env['connect.twilio.user_callflow']
                 .sudo()
                 .search(
                     [('user', '=', self.id)], order='prio'
@@ -585,6 +654,12 @@ class User(models.Model):
             if not user.client_enabled:
                 logger.info(
                     "Client for user %s not enabled!",
+                    self.env.user.id,
+                )
+                return {'token': False}
+            if not (user.username and user.domain):
+                logger.info(
+                    "Twilio username/domain not set for user %s!",
                     self.env.user.id,
                 )
                 return {'token': False}
@@ -641,7 +716,7 @@ class User(models.Model):
             request.get('Caller')
         )
         if caller_user:
-            callerId = caller_user.exten.number or ''
+            callerId = caller_user.twilio_exten.number or ''
             if not callerId:
                 logger.warning(
                     'Exten not set for user %s', caller_user.name
@@ -676,30 +751,30 @@ class User(models.Model):
     @api.constrains('voicemail_enabled')
     def _manage_voicemail_enabled(self):
         if self.voicemail_enabled:
-            if not self.env['connect.user_callflow'].search(
+            if not self.env['connect.twilio.user_callflow'].search(
                     [('user', '=', self.id),
                      ('callflow_type', '=', 'voicemail')]):
-                self.env['connect.user_callflow'].create({
+                self.env['connect.twilio.user_callflow'].create({
                     'user': self.id,
                     'prio': 10,
                     'callflow_type': 'voicemail',
                     'method': 'render_voicemail'
                 })
         else:
-            self.env['connect.user_callflow'].search(
+            self.env['connect.twilio.user_callflow'].search(
                 [('user', '=', self.id),
                  ('callflow_type', '=', 'voicemail')]).unlink()
 
     def _manage_channel_callflow(self, channel, enable):
         if enable:
-            callflow = self.env['connect.user_callflow'].search(
+            callflow = self.env['connect.twilio.user_callflow'].search(
                 [
                     ('user', '=', self.id),
                     ('callflow_type', '=', channel),
                 ]
             )
             if not callflow:
-                self.env['connect.user_callflow'].create(
+                self.env['connect.twilio.user_callflow'].create(
                     {
                         'user': self.id,
                         'callflow_type': channel,
@@ -716,7 +791,7 @@ class User(models.Model):
                     self, '{}_priority'.format(channel)
                 )
         else:
-            self.env['connect.user_callflow'].search(
+            self.env['connect.twilio.user_callflow'].search(
                 [
                     ('user', '=', self.id),
                     ('callflow_type', '=', channel),

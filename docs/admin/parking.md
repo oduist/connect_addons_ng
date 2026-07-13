@@ -24,7 +24,7 @@ out of the box after upgrading the `connect_freeswitch` module to
 
 ## Managing slots
 
-Navigate to **Admin → PBX → Parking Slots**. Admins can:
+Navigate to **Connect → FreeSWITCH → Parking Slots**. Admins can:
 
 - Create new slots with any dialable extension.
 - Rename, re-order (`sequence` field) or deactivate slots.

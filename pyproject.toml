@@ -4,14 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "connect-addons-ng"
-version = "18.0.1.1.0"
+version = "19.0.1.1.0"
 dynamic = ["dependencies"]
 
 [tool.hatch.metadata.hooks.odoo-addons-dependencies]
 [tool.hatch.build.hooks.odoo-addons-dirs]
 
 [tool.hatch.build.targets.wheel]
-only-include = ["connect", "connect_twilio", "connect_freeswitch"]
+only-include = ["connect", "connect_twilio", "connect_freeswitch", "connect_telnyx"]
 
 [tool.hatch-odoo]
 addons_dirs = ["."]

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <div t-name="connect_telnyx.menu" owl="1">
+        <button type="button" t-attf-class="o-dropdown dropdown-toggle dropdown toggle-phone {{state.inCall ? 'busy' : 'available'}}" aria-expanded="false" title="Toggle Connect Phone" t-on-click="_onClick">
+            <i aria-label="Toggle Phone" class="fa fa-lg icon-call" role="img"/>
+        </button>
+
+        <button t-if="!state.isDisplay and state.inCall" class="hang-up-popup" title="HangUp" t-on-click="_onClickHangUp">
+            <i aria-label="HangUp" class="icon-call_end reject-call"/>
+        </button>
+    </div>
+
+</templates>
