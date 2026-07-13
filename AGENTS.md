@@ -80,13 +80,45 @@ Use oduflow to manage module development and deployment.
 
 ## Version Compatibility
 
-Code includes `release.version_info[0]` checks to support Odoo 17.0, 18.0, and 19.0 differences (Html field sanitize, check_access methods, Constraint class, user_ids attribute).
+**Python source is identical across series branches — this is an invariant, not
+a preference.** A module's `.py` files must be byte-for-byte the same on `17.0`,
+`18.0` and `19.0`. This is the whole point: it turns a backport into a
+near-empty diff (a clean cherry-pick instead of a manual merge), keeps review
+trivial (only non-Python assets change between branches), and stops the two
+series from silently drifting into two different products. Holding this
+invariant is worth far more than avoiding the occasional version check.
+
+Where Odoo genuinely behaves differently between versions, branch **inside the
+same file** on `release.version_info[0]` — never fork the file per series and
+never keep a series-specific copy of a `.py` file. The existing checks cover
+Html field sanitize, `check_access` methods, the `Constraint` class, and the
+`user_ids` attribute. On the `18.0` branch the `>= 19` arm is simply dead code
+that never runs; that is expected and acceptable noise — the price you pay to
+keep the file identical.
+
+If version branching in one file grows past a couple of spots and starts to
+dominate the real logic, do **not** relieve the pressure by forking the file.
+Concentrate all the version-specific code in one thin compat helper/adapter that
+branches internally, and have the business logic call it uniformly — the file
+stays identical across branches.
+
+**Only non-Python assets may differ between branches:** XML views, QWeb/HTML
+templates, and per-series `migrations/` entry points. Everything else — models,
+controllers, wizards, business logic, tests — stays identical across series.
 
 ### Cross-branch versioning rules
 
 The same product ships on each Odoo branch; only the leading series prefix
 differs. Concretely:
 
+- **Python source is byte-identical across branches (see
+  [Version Compatibility](#version-compatibility) above).** A backport touches
+  only XML/HTML views and per-series `migrations/` entry points — never the
+  `.py` files, which must match the source branch exactly. Version-specific
+  behavior is handled by `release.version_info[0]` branching inside the shared
+  file, not by forking it. If a diff between the same module on `18.0` and
+  `19.0` shows differing `.py` files (beyond the manifest version string), treat
+  that as drift to be reconciled, not as normal state.
 - **Manifest versions are aligned across branches.** If a module is at
   `19.0.1.8.13` on the `19.0` branch, the same module on the `18.0`
   branch must be at `18.0.1.8.13` once the corresponding change is
