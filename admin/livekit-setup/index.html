@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://oduist.github.io/connect_addons_ng/admin/security/">
+        <link rel="canonical" href="https://oduist.github.io/connect_addons_ng/admin/livekit-setup/">
       
       
-        <link rel="prev" href="../working-schedule/">
+        <link rel="prev" href="../telnyx-setup/">
       
       
-        <link rel="next" href="../firewall/">
+        <link rel="next" href="../infobip-setup/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Security - Oduist Connect Documentation</title>
+        <title>LiveKit Integration - Oduist Connect Documentation</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#security" class="md-skip">
+        <a href="#livekit-integration-setup" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Security
+              LiveKit Integration
             
           </span>
         </div>
@@ -514,10 +514,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../livekit-setup/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LiveKit Integration
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -533,6 +560,103 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deploy-the-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deploy the stack
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#account-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Account Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#level-1-meetings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Level 1 — Meetings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#level-2-sip-telephony" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Level 2 — SIP telephony
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#level-3-ai-voice-agents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Level 3 — AI voice agents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -682,37 +806,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Security
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
         
   
   
@@ -728,148 +825,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#security-groups" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Security Groups
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Security Groups">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#assigning-groups" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Assigning Groups
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#access-control-matrix" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Access Control Matrix
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#protected-fields" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Protected Fields
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#webhook-security" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Webhook Security
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Webhook Security">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#twilio" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Twilio
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#freeswitch" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FreeSWITCH
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#webhook-user" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Webhook User
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#record-rules" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Record Rules
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#best-practices" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Best Practices
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1222,38 +1177,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#security-groups" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Security Groups
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Security Groups">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#assigning-groups" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Assigning Groups
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#access-control-matrix" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Access Control Matrix
+        Prerequisites
       
     </span>
   </a>
@@ -1261,10 +1188,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#protected-fields" class="md-nav__link">
+  <a href="#deploy-the-stack" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Protected Fields
+        Deploy the stack
       
     </span>
   </a>
@@ -1272,60 +1199,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#webhook-security" class="md-nav__link">
+  <a href="#account-configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Webhook Security
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Webhook Security">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#twilio" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Twilio
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#freeswitch" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FreeSWITCH
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#webhook-user" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Webhook User
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#record-rules" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Record Rules
+        Account Configuration
       
     </span>
   </a>
@@ -1333,10 +1210,43 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#best-practices" class="md-nav__link">
+  <a href="#level-1-meetings" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Best Practices
+        Level 1 — Meetings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#level-2-sip-telephony" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Level 2 — SIP telephony
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#level-3-ai-voice-agents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Level 3 — AI voice agents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security notes
       
     </span>
   </a>
@@ -1360,167 +1270,127 @@
 
 
 
-<h1 id="security">Security</h1>
-<h2 id="security-groups">Security Groups</h2>
-<p>Connect defines three security groups:</p>
-<table>
-<thead>
-<tr>
-<th>Group</th>
-<th>XML ID</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Connect User</strong></td>
-<td><code>connect.group_user</code></td>
-<td>Read access to calls, messages, recordings. Can make calls and send messages.</td>
-</tr>
-<tr>
-<td><strong>Connect Admin</strong></td>
-<td><code>connect.group_admin</code></td>
-<td>Full CRUD on all Connect models. Can configure settings, users, callflows.</td>
-</tr>
-<tr>
-<td><strong>Connect Webhook</strong></td>
-<td><code>connect.group_webhook</code></td>
-<td>Create and read access for webhook-created records. Used by the system webhook user.</td>
-</tr>
-</tbody>
-</table>
-<h3 id="assigning-groups">Assigning Groups</h3>
-<p>When you create a PBX user and link it to an Odoo user, the Connect User group is automatically assigned. Admins must be assigned the Connect Admin group manually via Odoo user settings.</p>
-<h2 id="access-control-matrix">Access Control Matrix</h2>
-<table>
-<thead>
-<tr>
-<th>Model</th>
-<th>User</th>
-<th>Admin</th>
-<th>Webhook</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Calls</td>
-<td>Read, Write, Create</td>
-<td>Full</td>
-<td>Read, Write, Create</td>
-</tr>
-<tr>
-<td>Channels</td>
-<td>Read</td>
-<td>Full</td>
-<td>Read, Write, Create</td>
-</tr>
-<tr>
-<td>Messages</td>
-<td>Read, Write, Create</td>
-<td>Full</td>
-<td>Read, Write, Create</td>
-</tr>
-<tr>
-<td>Recordings</td>
-<td>Read</td>
-<td>Full</td>
-<td>Read, Write, Create</td>
-</tr>
-<tr>
-<td>PBX Users</td>
-<td>Read</td>
-<td>Full</td>
-<td>—</td>
-</tr>
-<tr>
-<td>Numbers (per provider)</td>
-<td>Read</td>
-<td>Full</td>
-<td>—</td>
-</tr>
-<tr>
-<td>Caller IDs (per provider)</td>
-<td>Read</td>
-<td>Full</td>
-<td>—</td>
-</tr>
-<tr>
-<td>Extensions (per provider)</td>
-<td>Read</td>
-<td>Full</td>
-<td>—</td>
-</tr>
-<tr>
-<td>Call Flows (per provider)</td>
-<td>Read</td>
-<td>Full</td>
-<td>—</td>
-</tr>
-<tr>
-<td>Endpoints (per provider)</td>
-<td>Read, Write (own)</td>
-<td>Full</td>
-<td>—</td>
-</tr>
-<tr>
-<td>Settings</td>
-<td>—</td>
-<td>Full</td>
-<td>—</td>
-</tr>
-<tr>
-<td>Favorites</td>
-<td>Full</td>
-<td>Full</td>
-<td>—</td>
-</tr>
-<tr>
-<td>Debug Log</td>
-<td>—</td>
-<td>Full</td>
-<td>Create</td>
-</tr>
-</tbody>
-</table>
-<p>Numbers, caller IDs, extensions, call flows and endpoints are per-provider
-models owned by <code>connect_twilio</code>, <code>connect_freeswitch</code> and <code>connect_asterisk</code>;
-their access rules ship with those modules and follow the same pattern.</p>
-<h2 id="protected-fields">Protected Fields</h2>
-<p>Sensitive fields are masked in the UI for non-managers (<code>base.group_erp_manager</code>):</p>
+<h1 id="livekit-integration-setup">LiveKit Integration Setup</h1>
+<p><code>connect_livekit</code> integrates a <strong>self-hosted LiveKit stack</strong> (WebRTC SFU +
+SIP bridge + Egress recording + AI agents) with Connect. It delivers three
+levels: video meetings, SIP telephony, and AI voice agents. One LiveKit
+stack pairs with exactly one Odoo instance.</p>
+<h2 id="prerequisites">Prerequisites</h2>
 <ul>
-<li><strong>OpenAI API Key</strong> — displays <code>****</code> unless user is an ERP Manager</li>
-<li><strong>Twilio Auth Token</strong> — displays <code>****</code> unless user is an ERP Manager</li>
-<li><strong>Twilio API Secret</strong> — displays <code>****</code> unless user is an ERP Manager</li>
+<li>A host to run the LiveKit stack (Docker + Docker Compose).</li>
+<li>The <code>livekit-api</code> Python package installed in the Odoo environment.</li>
+<li>For telephony: a BYO SIP trunk from a carrier (Telnyx, Twilio, Plivo, …).
+  LiveKit is a media layer <em>on top of</em> your carrier, not a replacement.</li>
+<li>For AI agents: an OpenAI key (LLM), plus optionally Deepgram (STT) and
+  ElevenLabs (TTS) keys.</li>
 </ul>
-<h2 id="webhook-security">Webhook Security</h2>
-<h3 id="twilio">Twilio</h3>
-<p>When <strong>Verify Requests</strong> is enabled in settings, all incoming Twilio webhooks are validated using the <code>X-Twilio-Signature</code> header. This ensures requests genuinely come from Twilio.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Always enable request verification in production. Disable only for development/debugging.</p>
-</div>
-<h3 id="freeswitch">FreeSWITCH</h3>
-<p>FreeSWITCH webhooks (<code>/freeswitch/xml</code>, <code>/freeswitch/webhook/*</code>) do not have signature verification. Ensure FreeSWITCH and Odoo communicate over a trusted network or use firewall rules to restrict access.</p>
-<h3 id="webhook-user">Webhook User</h3>
-<p>A special inactive Odoo user (<code>connect.user_connect_webhook</code>) is defined in core data. All webhook handlers use this user's context (via <code>sudo()</code>) to create and update records with proper permissions. This user belongs to the Connect Webhook group.</p>
-<h2 id="record-rules">Record Rules</h2>
-<ul>
-<li><strong>Users</strong> see only calls, messages, and recordings associated with their PBX user account</li>
-<li><strong>Admins</strong> see all records across all users</li>
-<li>PBX user records are restricted: each user can only see their own PBX user record</li>
-</ul>
-<h2 id="best-practices">Best Practices</h2>
+<h2 id="deploy-the-stack">Deploy the stack</h2>
+<p>The compose stack and config templates live in
+<code>connect_livekit/deploy/</code>. See <code>deploy/README.md</code> for the full walkthrough.</p>
 <ol>
-<li><strong>Use HTTPS</strong> — Both Twilio and Verto WebRTC require secure connections</li>
-<li><strong>Enable request verification</strong> for Twilio webhooks in production</li>
-<li><strong>Restrict FreeSWITCH access</strong> — Use firewall rules to limit which IPs can reach <code>/freeswitch/*</code> endpoints</li>
-<li><strong>Rotate API keys</strong> regularly</li>
-<li><strong>Limit admin access</strong> — Only grant Connect Admin to users who need to configure the system</li>
-<li><strong>Deploy the SIP firewall</strong> — for any FreeSWITCH host exposed to the
-   public Internet, run the <a href="../firewall/">SIP Firewall service</a>. It
-   blocks brute-force registrations at the kernel level and gives you
-   an audit trail of every authentication attempt inside Odoo.</li>
+<li>Generate one long random API secret and put the same key/secret into
+   <code>livekit.yaml</code>, <code>sip.yaml</code> and <code>egress.yaml</code>.</li>
+<li>Set the webhook URL in <code>livekit.yaml</code> to
+   <code>https://&lt;your-odoo&gt;/livekit/webhook</code>.</li>
+<li><code>cp deploy/.env.example deploy/.env</code> and fill it in. <code>AGENT_TOKEN</code>
+   comes from the Odoo settings form (below).</li>
+<li><code>docker compose up -d</code>.</li>
 </ol>
+<p>Browsers require <code>wss://</code>; terminate TLS in front of port 7880 with your
+existing reverse proxy and point Odoo at the TLS endpoint.</p>
+<h2 id="account-configuration">Account Configuration</h2>
+<p>Navigate to <strong>Connect &gt; LiveKit &gt; Configuration &gt; Settings</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>WS URL</strong></td>
+<td><code>wss://livekit.example.com</code> — what browsers and the worker connect to.</td>
+</tr>
+<tr>
+<td><strong>API URL</strong></td>
+<td>Optional HTTP(S) server API URL; derived from the WS URL when empty.</td>
+</tr>
+<tr>
+<td><strong>API Key / API Secret</strong></td>
+<td>Match a key from <code>livekit.yaml</code>. The secret is masked for non-managers.</td>
+</tr>
+<tr>
+<td><strong>SIP URI</strong></td>
+<td>Address of the livekit-sip service; configure it as your trunk destination at the carrier.</td>
+</tr>
+<tr>
+<td><strong>Agent Token</strong></td>
+<td>Bearer secret shared with the agent/uploader sidecar. Use <strong>GENERATE AGENT TOKEN</strong>, then copy it into the stack <code>.env</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>On the <strong>AI Providers</strong> page set the Deepgram and ElevenLabs keys (the
+OpenAI key from Connect general settings is reused).</p>
+<p>Press <strong>SYNC LIVEKIT SERVER</strong> to verify connectivity and push the trunks,
+numbers and dispatch rules.</p>
+<h2 id="level-1-meetings">Level 1 — Meetings</h2>
+<p><strong>Connect &gt; LiveKit &gt; Rooms</strong> → create a room. <strong>Join Meeting</strong> opens the
+public page; share the copyable <strong>Public URL</strong> with external guests (they
+authenticate purely by the unguessable link). Enable <strong>Record Meeting</strong> to
+capture an Egress recording — it lands in <strong>Recordings</strong> and is transcribed
+by the core OpenAI pipeline when transcription is enabled.</p>
+<h2 id="level-2-sip-telephony">Level 2 — SIP telephony</h2>
+<ol>
+<li><strong>Configuration &gt; Trunks</strong> — create a trunk. Fill <strong>Outbound Address</strong>
+   (carrier SIP host) and, for inbound, the carrier signaling IPs in
+   <strong>Inbound Addresses</strong>. Odoo pushes the trunk to LiveKit on save.</li>
+<li><strong>Numbers</strong> — add each DID, pick the trunk, and route it to a <strong>User</strong>,
+   an <strong>AI Agent</strong> or a <strong>Room</strong>. Odoo creates the matching LiveKit
+   dispatch rule.</li>
+<li><strong>Configuration &gt; Outgoing CallerIDs</strong> — add the numbers the carrier
+   lets you present; mark one <strong>Default</strong>.</li>
+<li>Per user (<strong>Connect &gt; Users &gt; LiveKit Phone</strong>), enable the web phone and
+   set the outgoing caller ID. Set the user's <strong>Click-to-call Provider</strong> to
+   <strong>LiveKit</strong>.</li>
+</ol>
+<p>At the carrier, point the trunk at the livekit-sip service (the <strong>SIP URI</strong>
+shown in settings). Inbound DID calls ring the destination user's systray
+phone; click-to-call dials out through the outbound trunk.</p>
+<h2 id="level-3-ai-voice-agents">Level 3 — AI voice agents</h2>
+<ol>
+<li>Build the sidecar image and run it (see <code>deploy/agent/README.md</code>):
+   <div class="highlight"><pre><span></span><code>docker buildx build --platform linux/amd64,linux/arm64 \
+  --provenance=false --sbom=false \
+  -t oduist/livekit-agent:&lt;short-version&gt; --push \
+  connect_livekit/deploy/agent/
+</code></pre></div></li>
+<li><strong>Connect &gt; LiveKit &gt; AI Agents</strong> — create an agent. Choose the <strong>Mode</strong>
+   (STT→LLM→TTS pipeline or OpenAI Realtime), the STT/LLM/TTS providers and
+   models, the instructions and greeting, the time limit, and which Odoo
+   tools it may call (contact / CRM / helpdesk).</li>
+<li>Route an inbound number to the agent (<strong>Numbers</strong>, destination <strong>AI
+   Agent</strong>), or start an outbound AI call with <strong>Call with Agent</strong>.</li>
+</ol>
+<p>The worker pulls the agent config from Odoo at dispatch time, so edits
+apply to the next call. Function-call tools reach Odoo over
+<code>/livekit/webhook/agent/&lt;id&gt;/tool/&lt;name&gt;</code>, authenticated by a per-agent
+token you can rotate from the agent form. Transcripts are stored as
+recordings (<code>source = livekit-ai</code>) with the worker-supplied summary.
+The worker reports liveness to Odoo at startup and on every dispatched
+job — check <strong>Worker Last Seen</strong> on the LiveKit settings page to
+confirm the sidecar is connected.</p>
+<h2 id="security-notes">Security notes</h2>
+<ul>
+<li>All <code>connect.livekit.*</code> models are <strong>admin-only</strong>. Regular Connect users
+  only get the web phone and the meeting links, through server methods.</li>
+<li>LiveKit webhooks are verified with the API key/secret (JWT) — keep
+  <strong>Verify LiveKit Webhooks</strong> on in production.</li>
+<li>The agent token and per-agent tool tokens are secrets; regenerate them if
+  exposed and update the worker environment.</li>
+<li>livekit-sip has <strong>no SIP registrar</strong> — hardphones cannot register; the web
+  phone and mobile SDKs are the endpoints.</li>
+</ul>
 
 
 
