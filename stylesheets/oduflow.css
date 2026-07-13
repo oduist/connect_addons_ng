@@ -8,6 +8,12 @@
  * palette. The header/footer stay dark in BOTH schemes as a brand bar.
  */
 
+/* Material loads Outfit only in 300/400/700, so our font-weight:600 (h2/h3,
+   active nav, table headers, buttons) collapsed to 700 — no true semibold
+   tier. Supplement the missing medium/semibold weights. Must stay at the very
+   top: @import has to precede all other rules. */
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600&display=fallback");
+
 /* ------------------------------------------------------------------ *
  * Shared brand accents (scheme-independent)
  * ------------------------------------------------------------------ */
