@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Twilio',
-    'version': '19.0.2.0.1',
+    'version': '19.0.2.2.0',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Twilio integration for Oduist Connect',
@@ -38,7 +38,6 @@
             'connect_twilio/static/src/js/utils.js',
             'connect_twilio/static/src/widgets/phone_field/*',
             'connect_twilio/static/src/services/actions/*',
-            'connect_twilio/static/src/services/active_calls/*',
             'connect_twilio/static/src/services/mail/*',
         ],
     },

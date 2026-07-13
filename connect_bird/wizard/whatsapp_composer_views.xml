@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="action_bird_whatsapp_composer" model="ir.actions.act_window">
+        <field name="name">Send WhatsApp (Bird)</field>
+        <field name="res_model">connect.bird.whatsapp_composer</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="base.model_res_partner"/>
+        <field name="binding_view_types">form</field>
+    </record>
+
+    <record id="view_bird_whatsapp_composer_form" model="ir.ui.view">
+        <field name="name">connect.bird.whatsapp_composer.form</field>
+        <field name="model">connect.bird.whatsapp_composer</field>
+        <field name="arch" type="xml">
+            <form string="Send WhatsApp Message">
+                <sheet>
+                    <group>
+                        <field name="res_model" invisible="1"/>
+                        <field name="res_id" invisible="1"/>
+                        <field name="number_id" options="{'no_create': True}"/>
+                        <field name="phone" required="1"/>
+                        <field name="template_id" options="{'no_create': True}" required="1"/>
+                        <field name="template_variables" placeholder='{"1": "value"}'
+                               invisible="not template_id"/>
+                        <field name="body" widget="text" nolabel="0"
+                               invisible="not template_id"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Send" type="object" name="action_send_whatsapp" class="btn-primary oe_highlight"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

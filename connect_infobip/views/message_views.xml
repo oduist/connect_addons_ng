@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- The core message form already shows message_sid; no extra Infobip
+         fields are needed. This file is kept for the menu wiring parity
+         with connect_twilio (Messages menu lives in menu.xml). -->
+</odoo>

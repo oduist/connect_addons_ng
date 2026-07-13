@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import requests
+from urllib.parse import quote
 from markupsafe import escape
 from tempfile import NamedTemporaryFile
 from odoo import fields, models, api, release, SUPERUSER_ID
@@ -62,20 +63,21 @@ class Recording(models.Model):
             # keep the original one when the filename is known.
             suffix = os.path.splitext(self.recording_filename or '')[1] or '.mp3'
             with NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-                if self.media_url:
+                if self.recording_attachment:
+                    # Providers whose recording downloads require API auth
+                    # store the audio bytes on the record instead of
+                    # exposing a public media_url (e.g. connect_infobip,
+                    # Asterisk or LiveKit sidecars).
+                    temp_file.write(base64.b64decode(self.recording_attachment))
+                else:
                     # Bounded download: media_url points at the provider's
-                    # recording store; without a timeout a hung endpoint pins
-                    # the worker.
-                    response = requests.get(
-                        self.media_url, stream=True, timeout=30)
+                    # recording store; without a timeout a hung endpoint
+                    # pins the worker.
+                    response = requests.get(self.media_url, stream=True, timeout=30)
                     response.raise_for_status()
                     for chunk in response.iter_content(chunk_size=8192):
                         if chunk:
                             temp_file.write(chunk)
-                else:
-                    # Attachment-stored recordings (uploaded by the Asterisk
-                    # or LiveKit sidecars) have no external URL.
-                    temp_file.write(base64.b64decode(self.recording_attachment))
                 temp_file_path = temp_file.name
             with open(temp_file_path, 'rb') as audio_file:
                 transcript = client.audio.transcriptions.create(
@@ -191,12 +193,12 @@ class Recording(models.Model):
         self.ensure_one()
         if not self.recording_attachment:
             return ''
+        filename = quote(self.recording_filename or 'recording.wav')
         return (
             '/web/content?model=connect.recording'
             '&id={}&field=recording_attachment'
             '&filename_field=recording_filename'
-            '&filename={}&download=True'.format(
-                self.id, self.recording_filename or 'recording.wav'))
+            '&filename={}&download=True'.format(self.id, filename))
 
     def _get_list_view_summary(self):
         for rec in self:

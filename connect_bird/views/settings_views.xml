@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Standalone Bird settings form on the shared connect.settings
+         singleton: only Bird fields, opened from the Bird menu. -->
+    <record id="connect_settings_form_bird" model="ir.ui.view">
+        <field name="name">connect.settings.form.bird</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" eval="False"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <sheet>
+                    <notebook>
+                        <page name="bird_api" string="Bird API">
+                            <group>
+                                <group string="Bird Credentials" name="bird_api">
+                                    <div colspan="2">
+                                        <small><strong>Create an access key (bk_...) in your
+                                            <a href="https://bird.com/" target="_blank">Bird workspace</a>
+                                            with sms, whatsapp, voice and webhooks scopes
+                                        </strong></small>
+                                    </div>
+                                    <field name="display_bird_access_key" string="Access Key" password="1"/>
+                                    <button colspan="2" name="sync_bird" type="object"
+                                            string="SYNC BIRD ACCOUNT" class="btn btn-primary"/>
+                                </group>
+                                <group string="Webhooks">
+                                    <div colspan="2">
+                                        <small>Registers workspace subscriptions for inbound and
+                                        status events (SMS, WhatsApp, Voice) pointing to this
+                                        Odoo instance.</small>
+                                    </div>
+                                    <button colspan="2" name="setup_bird_webhooks" type="object"
+                                            string="SETUP WEBHOOKS" class="btn btn-primary"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Messaging">
+                                    <field name="bird_sms_category"/>
+                                </group>
+                                <group string="Voice">
+                                    <field name="bird_ring_timeout"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Development" groups="base.group_no_one" name="bird_dev">
+                            <group>
+                                <group>
+                                    <field name="bird_verify_requests"/>
+                                    <field name="bird_signature_tolerance"/>
+                                    <field name="display_bird_webhook_signing_key"
+                                           string="Webhook Signing Key" password="1"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.actions.server" id="bird_settings_action">
+        <field name="type">ir.actions.server</field>
+        <field name="name">Bird Settings</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="connect.model_connect_settings"/>
+        <field name="code">action = model.open_settings_form("connect_bird.connect_settings_form_bird", "Bird Settings")</field>
+    </record>
+
+    <menuitem id="menu_bird_settings"
+              name="Settings"
+              parent="menu_bird_config"
+              action="bird_settings_action"
+              groups="connect.group_admin"
+              sequence="10"/>
+
+</odoo>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="cron_infobip_fetch_recordings" model="ir.cron">
+            <field name="name">Connect Infobip: Fetch Recordings</field>
+            <field name="model_id" ref="connect.model_connect_recording"/>
+            <field name="state">code</field>
+            <field name="code">model.infobip_fetch_pending()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">minutes</field>
+            <field name="active" eval="True"/>
+        </record>
+        <record id="cron_infobip_close_stale_channels" model="ir.cron">
+            <field name="name">Connect Infobip: Close Stale Channels</field>
+            <field name="model_id" ref="connect.model_connect_channel"/>
+            <field name="state">code</field>
+            <field name="code">model.infobip_close_stale()</field>
+            <field name="interval_number">10</field>
+            <field name="interval_type">minutes</field>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+</odoo>

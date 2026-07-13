@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_call_form_bird" model="ir.ui.view">
+        <field name="name">connect.call.form.bird</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.view_connect_call_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='caller']" position="after">
+                <field name="bird_call_id" groups="base.group_no_one"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

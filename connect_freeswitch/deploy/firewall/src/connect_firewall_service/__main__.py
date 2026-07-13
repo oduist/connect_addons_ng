@@ -32,6 +32,7 @@ from .constants import (
     IPSET_EXPIRE_LONG,
     IPSET_EXPIRE_SHORT,
     IPSET_WHITELIST,
+    IPV6_SET_SUFFIX,
 )
 from . import iptables_manager, ipset_manager
 from .esl import ESLClient
@@ -69,20 +70,31 @@ def setup_logging(level: str) -> None:
 
 
 def install_firewall_baseline(settings: ServiceSettings) -> None:
-    ipset_manager.ensure_set(IPSET_WHITELIST, set_type="hash:net")
-    ipset_manager.ensure_set(IPSET_BLACKLIST, set_type="hash:net")
-    ipset_manager.ensure_set(
-        IPSET_AUTHENTICATED, timeout=settings.firewall_authenticated_timeout,
-    )
-    ipset_manager.ensure_set(
-        IPSET_BANNED, timeout=settings.firewall_banned_timeout,
-    )
-    ipset_manager.ensure_set(
-        IPSET_EXPIRE_SHORT, timeout=settings.firewall_expire_short_timeout,
-    )
-    ipset_manager.ensure_set(
-        IPSET_EXPIRE_LONG, timeout=settings.firewall_expire_long_timeout,
-    )
+    # Every set exists per address family: base name = IPv4 (inet),
+    # "6"-suffixed twin = IPv6 (inet6).
+    for family, suffix in (("inet", ""), ("inet6", IPV6_SET_SUFFIX)):
+        ipset_manager.ensure_set(
+            IPSET_WHITELIST + suffix, family=family, set_type="hash:net",
+        )
+        ipset_manager.ensure_set(
+            IPSET_BLACKLIST + suffix, family=family, set_type="hash:net",
+        )
+        ipset_manager.ensure_set(
+            IPSET_AUTHENTICATED + suffix, family=family,
+            timeout=settings.firewall_authenticated_timeout,
+        )
+        ipset_manager.ensure_set(
+            IPSET_BANNED + suffix, family=family,
+            timeout=settings.firewall_banned_timeout,
+        )
+        ipset_manager.ensure_set(
+            IPSET_EXPIRE_SHORT + suffix, family=family,
+            timeout=settings.firewall_expire_short_timeout,
+        )
+        ipset_manager.ensure_set(
+            IPSET_EXPIRE_LONG + suffix, family=family,
+            timeout=settings.firewall_expire_long_timeout,
+        )
     iptables_manager.apply_baseline(
         settings.firewall_tcp_ports, settings.firewall_udp_ports,
     )
@@ -111,8 +123,8 @@ async def heartbeat_loop(settings: ServiceSettings, odoo: OdooClient,
                          started_at: float) -> None:
     while True:
         try:
-            bans = ipset_manager.list_entries(IPSET_BANNED)
-            auth = ipset_manager.list_entries(IPSET_AUTHENTICATED)
+            bans = ipset_manager.list_entries_all_families(IPSET_BANNED)
+            auth = ipset_manager.list_entries_all_families(IPSET_AUTHENTICATED)
             await odoo.post("/heartbeat", {
                 "version": __version__,
                 "esl_connected": esl_client.is_connected,

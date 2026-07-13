@@ -1,7 +1,11 @@
+from odoo import release
 from odoo.tests import tagged
 from odoo.exceptions import ValidationError
 
 from .common import ConnectTestCommon
+
+
+GROUP_USERS_FIELD = 'user_ids' if release.version_info[0] >= 19 else 'users'
 
 
 @tagged('at_install', '-post_install')
@@ -36,21 +40,21 @@ class TestConnectUser(ConnectTestCommon):
     def test_group_assignment_admin(self):
         """Admin Odoo users get connect.group_admin on create."""
         group_admin = self.env.ref('connect.group_admin')
-        self.assertIn(self.admin_user, group_admin.user_ids)
+        self.assertIn(self.admin_user, group_admin[GROUP_USERS_FIELD])
 
     def test_group_assignment_basic_user(self):
         """Basic Odoo users get connect.group_user on create."""
         self._create_connect_user('basicpbx', self.basic_user)
         group_user = self.env.ref('connect.group_user')
-        self.assertIn(self.basic_user, group_user.user_ids)
+        self.assertIn(self.basic_user, group_user[GROUP_USERS_FIELD])
 
     def test_group_removal_on_unlink(self):
         """Groups are removed when connect user is deleted."""
         user = self._create_connect_user('tempuser', self.basic_user)
         group_user = self.env.ref('connect.group_user')
-        self.assertIn(self.basic_user, group_user.user_ids)
+        self.assertIn(self.basic_user, group_user[GROUP_USERS_FIELD])
         user.unlink()
-        self.assertNotIn(self.basic_user, group_user.user_ids)
+        self.assertNotIn(self.basic_user, group_user[GROUP_USERS_FIELD])
 
     def test_get_user_by_uri_no_op_in_core(self):
         """Core get_user_by_uri returns empty (overridden by provider modules)."""
@@ -85,3 +89,20 @@ class TestConnectUser(ConnectTestCommon):
     def test_default_active(self):
         """Test active defaults to True."""
         self.assertTrue(self.connect_user.active)
+
+    def test_default_prompt_language(self):
+        """TTS prompt language defaults to en-US (ADR-037)."""
+        self.assertEqual(self.connect_user.language, 'en-US')
+
+    def test_default_voice_empty(self):
+        """Voice is empty by default: providers apply their own default."""
+        self.assertFalse(self.connect_user.voice)
+
+    def test_language_selection_list(self):
+        """The BCP-47 list has the 26 agreed entries (ADR-037)."""
+        selection = self.env['connect.user']._get_language_selection()
+        codes = [code for code, _label in selection]
+        self.assertEqual(len(codes), 26)
+        self.assertIn('en-US', codes)
+        self.assertIn('de-DE', codes)
+        self.assertIn('zh-CN', codes)

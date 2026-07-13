@@ -4,9 +4,10 @@ from urllib.parse import urljoin
 
 from markupsafe import escape
 
-from odoo import api, fields, models
+from odoo import api, fields, models, release
 from odoo.exceptions import ValidationError
-from odoo.models import Constraint
+if release.version_info[0] >= 19:
+    from odoo.models import Constraint
 
 REMOTE_FIELDS = {
     "name", "description", "instructions", "greeting", "model",
@@ -55,9 +56,18 @@ class TelnyxAIAssistant(models.Model):
         groups="connect.group_admin,base.group_erp_manager",
     )
 
-    _sid_unique = Constraint(
-        "UNIQUE(sid)", "A Telnyx AI Assistant ID must be unique."
-    )
+    if release.version_info[0] >= 19:
+        _sid_unique = Constraint(
+            "UNIQUE(sid)", "A Telnyx AI Assistant ID must be unique."
+        )
+    else:
+        _sql_constraints = [
+            (
+                "sid_unique",
+                "UNIQUE(sid)",
+                "A Telnyx AI Assistant ID must be unique.",
+            )
+        ]
 
     @api.constrains("time_limit_secs")
     def _check_time_limit(self):
