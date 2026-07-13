@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="s_phone_status" name="Phone Current Status">
-        <div class="s_connect_phone_status d-inline-block"
-             data-number-id=""
-             data-show-time="true"
-             data-link-phone=""
-             data-link-page="">
+        <section class="s_connect_phone_status d-inline-block"
+                 data-number-id=""
+                 data-show-time="true"
+                 data-link-phone=""
+                 data-link-page="">
             <i class="fa fa-phone me-1" role="presentation"/>
             <span class="text-muted">Phone status</span>
-        </div>
+        </section>
     </template>
 </odoo>
