@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://oduist.github.io/connect_addons_ng/admin/installation/">
+        <link rel="canonical" href="https://oduist.github.io/connect_addons_ng/admin/dograh-setup/">
       
       
-        <link rel="prev" href="../..">
+        <link rel="prev" href="../infobip-setup/">
       
       
-        <link rel="next" href="../customer-onboarding/">
+        <link rel="next" href="../bird-setup/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Installation - Oduist Connect Documentation</title>
+        <title>Dograh Integration (AI Agents) - Oduist Connect Documentation</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#installation" class="md-skip">
+        <a href="#dograh-integration-ai-voice-agents" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Installation
+              Dograh Integration (AI Agents)
             
           </span>
         </div>
@@ -318,37 +318,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Installation
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -364,76 +337,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#requirements" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Requirements
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Requirements">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#provider-specific-requirements" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Provider-specific requirements
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#installing-the-modules" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Installing the Modules
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#post-installation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Post-Installation
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -639,10 +542,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../dograh-setup/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dograh Integration (AI Agents)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -658,6 +588,103 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-deploy-dograh-with-the-freeswitch-provider" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Deploy Dograh with the FreeSWITCH provider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-configure-the-provider-in-dograh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Configure the provider in Dograh
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-configure-odoo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Configure Odoo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-create-an-ai-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Create an AI agent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outbound-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outbound calls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1094,38 +1121,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#requirements" class="md-nav__link">
+  <a href="#architecture" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Requirements
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Requirements">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#provider-specific-requirements" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Provider-specific requirements
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#installing-the-modules" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Installing the Modules
+        Architecture
       
     </span>
   </a>
@@ -1133,10 +1132,65 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#post-installation" class="md-nav__link">
+  <a href="#1-deploy-dograh-with-the-freeswitch-provider" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Post-Installation
+        1. Deploy Dograh with the FreeSWITCH provider
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-configure-the-provider-in-dograh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Configure the provider in Dograh
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-configure-odoo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Configure Odoo
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-create-an-ai-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Create an AI agent
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outbound-calls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outbound calls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
       
     </span>
   </a>
@@ -1160,73 +1214,126 @@
 
 
 
-<h1 id="installation">Installation</h1>
-<h2 id="requirements">Requirements</h2>
-<ul>
-<li>Odoo 17.0, 18.0, or 19.0</li>
-<li>Python packages: <code>phonenumbers</code>, <code>jinja2</code>, <code>openai</code></li>
-<li>A telephony provider: Twilio account, FreeSWITCH server, or an existing Asterisk PBX (several providers can be installed side by side)</li>
-</ul>
-<h3 id="provider-specific-requirements">Provider-specific requirements</h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Twilio</label><label for="__tabbed_1_2">FreeSWITCH</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<ul>
-<li>Python package: <code>twilio</code></li>
-<li>Twilio account with Account SID, Auth Token, and API Key/Secret</li>
-<li>At least one Twilio phone number</li>
-</ul>
-</div>
-<div class="tabbed-block">
-<ul>
-<li>FreeSWITCH server (Docker deployment provided)</li>
-<li>SIP trunk provider (for PSTN calls)</li>
-<li>Open ports: WSS (48082/tcp), RTP media (16000-17000/udp)</li>
-</ul>
-</div>
-</div>
-</div>
-<h2 id="installing-the-modules">Installing the Modules</h2>
-<ol>
-<li>
-<p>Place the module directories in your Odoo addons path:</p>
-<ul>
-<li><code>connect</code> (required)</li>
-<li><code>connect_twilio</code>, <code>connect_freeswitch</code> and/or <code>connect_asterisk</code></li>
-</ul>
-</li>
-<li>
-<p>Install Python dependencies:</p>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>phonenumbers<span class="w"> </span>jinja2<span class="w"> </span>openai
-<span class="c1"># For Twilio:</span>
-pip<span class="w"> </span>install<span class="w"> </span>twilio
+<h1 id="dograh-integration-ai-voice-agents">Dograh Integration (AI Voice Agents)</h1>
+<p>The <code>connect_dograh</code> module connects FreeSWITCH to
+<a href="https://github.com/dograh-hq/dograh">Dograh</a> — an open-source,
+self-hostable voice-AI platform with a drag-and-drop workflow builder.
+Calls to a dedicated extension are answered by a Dograh voice agent;
+Dograh can also place outbound calls (campaigns, test calls) through
+your FreeSWITCH trunks.</p>
+<h2 id="architecture">Architecture</h2>
+<div class="highlight"><pre><span></span><code>Caller ──&gt; FreeSWITCH ──mod_audio_fork (WSS, L16/16 kHz)──&gt; Dograh API
+              ▲                                                  │
+              │ XML-RPC (originate / uuid_kill)                  │
+            Odoo &lt;──────── /dograh/api/* (Bearer token) ─────────┘
 </code></pre></div>
-</li>
-<li>
-<p>Update the Odoo module list: <strong>Settings &gt; Apps &gt; Update Apps List</strong></p>
-</li>
-<li>
-<p>Search for "Oduist Connect" in the Apps menu and install it</p>
-</li>
-<li>
-<p>Install the integration module(s):</p>
 <ul>
-<li><strong>Oduist Connect Twilio</strong> for Twilio</li>
-<li><strong>Oduist Connect FreeSWITCH</strong> for FreeSWITCH</li>
-<li><strong>Oduist Connect Asterisk</strong> for an existing Asterisk PBX</li>
+<li>Odoo renders a per-call dialplan that first registers the call with
+  Dograh (inbound webhook) and then streams audio to the returned
+  media WebSocket via <code>mod_audio_fork</code>.</li>
+<li>Dograh runs the voice pipeline (STT, LLM, TTS, workflow logic) and
+  calls back into Odoo to hang up or originate calls.</li>
+<li>The FreeSWITCH image must include <code>mod_audio_fork</code>
+  (<code>oduist/freeswitch</code> 2.1.0 and later).</li>
 </ul>
-</li>
-</ol>
-<h2 id="post-installation">Post-Installation</h2>
-<p>Each installed integration adds its own submenu (<strong>Twilio</strong>, <strong>FreeSWITCH</strong>,
-<strong>Asterisk</strong>) inside the <strong>Connect</strong> app with a <strong>Configuration &gt; Settings</strong>
-entry for the provider credentials; core options live in <strong>Connect &gt;
-Configuration &gt; Settings</strong>. See the provider-specific setup guides:</p>
+<h2 id="1-deploy-dograh-with-the-freeswitch-provider">1. Deploy Dograh with the FreeSWITCH provider</h2>
+<p>Dograh does not ship a FreeSWITCH telephony provider yet. Oduist
+publishes an overlay image that adds it on top of the official
+release:</p>
+<div class="highlight"><pre><span></span><code>oduist/dograh-api:&lt;dograh-version&gt;-&lt;module-version&gt;   # e.g. 1.41.0-1.0.0
+</code></pre></div>
+<p>In Dograh's <code>docker-compose.yaml</code>, replace the API image:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">services</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">api</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oduist/dograh-api:1.41.0-1.0.0</span>
+</code></pre></div>
+<p>and start the stack as usual (<code>./scripts/start_docker.sh</code>). Sources
+for the overlay live in <code>connect_dograh/deploy/</code> (the provider package
+plus a registration script that fails the build if the Dograh base
+image is incompatible).</p>
+<div class="admonition note">
+<p class="admonition-title">Network requirements</p>
 <ul>
-<li><a href="../core-setup/">Core Configuration</a> — General settings, transcription</li>
-<li><a href="../twilio-setup/">Twilio Setup</a> — Twilio account, SIP domains, WhatsApp</li>
-<li><a href="../freeswitch-setup/">FreeSWITCH Setup</a> — FreeSWITCH server, gateways, endpoints</li>
-<li><a href="../asterisk-setup/">Asterisk Setup</a> — Sidecar agent, endpoints, config snippets</li>
+<li><strong>Odoo → Dograh API</strong> over HTTP(S) (<code>/api/v1/telephony/inbound/run</code>,
+  health check).</li>
+<li><strong>FreeSWITCH → Dograh</strong> over WSS — the media WebSocket URL is
+  built from Dograh's <code>BACKEND_API_ENDPOINT</code> setting, so that URL
+  must be reachable from the FreeSWITCH host.</li>
+<li><strong>Dograh → Odoo</strong> over HTTPS (<code>/dograh/api/*</code>).</li>
+</ul>
+</div>
+<h2 id="2-configure-the-provider-in-dograh">2. Configure the provider in Dograh</h2>
+<p>In the Dograh UI open <strong>Settings → Telephony</strong> and add the
+<strong>FreeSWITCH (Oduist Connect)</strong> provider:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Account ID</td>
+<td>Must equal <em>Dograh Account ID</em> in Odoo (default <code>odoo</code>)</td>
+</tr>
+<tr>
+<td>Odoo URL</td>
+<td>Your Odoo base URL, e.g. <code>https://odoo.example.com</code></td>
+</tr>
+<tr>
+<td>Service Token</td>
+<td>Copy from Odoo (Connect → Dograh → Settings)</td>
+</tr>
+<tr>
+<td>From Numbers</td>
+<td>Optional caller IDs for outbound calls</td>
+</tr>
+</tbody>
+</table>
+<p>Then add your agent extensions on the <strong>Phone Numbers</strong> page and
+assign each one an inbound workflow. The phone number entered in
+Dograh must exactly match the FreeSWITCH extension number created in
+Odoo (e.g. <code>9001</code>).</p>
+<h2 id="3-configure-odoo">3. Configure Odoo</h2>
+<p>Open <strong>Connect → Dograh → Configuration → Settings</strong>:</p>
+<ul>
+<li><strong>Dograh API URL</strong> — base URL of the Dograh API, e.g.
+  <code>https://dograh-api.example.com</code>.</li>
+<li><strong>Dograh Account ID</strong> — same value as the provider's Account ID in
+  Dograh.</li>
+<li><strong>Dograh Service Token</strong> — generated automatically; copy it into the
+  provider configuration in Dograh.</li>
+</ul>
+<p>Use <strong>CHECK STATUS</strong> to verify Odoo can reach Dograh.</p>
+<h2 id="4-create-an-ai-agent">4. Create an AI agent</h2>
+<ol>
+<li>Build and publish a workflow in Dograh.</li>
+<li>In Odoo open <strong>Connect → Dograh → AI Agents</strong>, create an agent and
+   click <strong>Create Extension</strong> to assign it an extension number.</li>
+<li>Add the same number on Dograh's Phone Numbers page and select the
+   inbound workflow.</li>
+<li>Call the extension — the Dograh agent answers. Route a DID or IVR
+   choice to the extension to expose it externally.</li>
+</ol>
+<p>Enable <strong>Record Calls</strong> on the agent to record sessions through the
+standard recording webhook; recordings appear on the call form and can
+be transcribed/summarized by the core OpenAI integration. Dograh keeps
+its own run history and transcript independently.</p>
+<h2 id="outbound-calls">Outbound calls</h2>
+<p>Dograh campaigns and test calls use the same provider: Dograh calls
+<code>POST /dograh/api/originate</code>, Odoo dials the destination through the
+matching <strong>outgoing route</strong> (Connect → FreeSWITCH → Outgoing Routes),
+applies the default outgoing CallerID when Dograh does not send one,
+and attaches the answered leg to the workflow's media WebSocket.</p>
+<h2 id="limitations">Limitations</h2>
+<ul>
+<li>Transfer-to-human from a Dograh workflow is not supported yet
+  (<code>supports_transfers</code> is false); the workflow engine reports this
+  gracefully if a transfer node is reached.</li>
+<li>The number → workflow mapping lives in Dograh, so extension numbers
+  are configured in both systems (same model as Dograh's Asterisk ARI
+  provider).</li>
 </ul>
 
 
