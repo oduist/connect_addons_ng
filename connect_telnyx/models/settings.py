@@ -185,7 +185,8 @@ class Settings(models.Model):
         if profile_id:
             try:
                 client.messaging_profiles.update(
-                    profile_id, webhook_url=webhook_url)
+                    profile_id, webhook_url=webhook_url,
+                    whitelisted_destinations=['*'])
                 return profile_id
             except Exception as e:
                 if 'not found' not in str(e).lower() and '404' not in str(e):
@@ -197,7 +198,8 @@ class Settings(models.Model):
                 self.sudo().set_param(
                     'telnyx_messaging_profile_id', profile.id)
                 client.messaging_profiles.update(
-                    profile.id, webhook_url=webhook_url)
+                    profile.id, webhook_url=webhook_url,
+                    whitelisted_destinations=['*'])
                 return profile.id
         profile = client.messaging_profiles.create(
             name='Odoo Connect',
