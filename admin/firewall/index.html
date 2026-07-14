@@ -1547,7 +1547,7 @@ var on the service). There is no dedicated Odoo user for the service.</p>
 </tr>
 <tr>
 <td><code>HTTP_BIND_HOST</code>, <code>HTTP_BIND_PORT</code></td>
-<td>where the service listens (default <code>0.0.0.0:8081</code>; set <code>HTTP_BIND_HOST=::</code> if the dashboard itself must be reachable over IPv6)</td>
+<td>where the service listens. The production compose binds <code>127.0.0.1:8081</code> and exposes <code>/firewall</code> through Traefik.</td>
 </tr>
 <tr>
 <td><code>DASHBOARD_USER</code>, <code>DASHBOARD_PASSWORD</code></td>
@@ -1584,6 +1584,7 @@ var on the service). There is no dedicated Odoo user for the service.</p>
 <span class="w">    </span><span class="nt">AGENT_TOKEN</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;copy from Firewall Service Token in Odoo settings&gt;</span>
 <span class="w">    </span><span class="nt">FS_ESL_HOST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1</span>
 <span class="w">    </span><span class="nt">FS_ESL_PASSWORD</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ConnectNGESLPassword</span>
+<span class="w">    </span><span class="nt">HTTP_BIND_HOST</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1</span>
 <span class="w">    </span><span class="nt">DASHBOARD_USER</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">admin</span>
 <span class="w">    </span><span class="nt">DASHBOARD_PASSWORD</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">&lt;pick a strong password&gt;</span>
 <span class="w">  </span><span class="nt">volumes</span><span class="p">:</span>
@@ -1647,8 +1648,8 @@ var on the service). There is no dedicated Odoo user for the service.</p>
 </tr>
 <tr>
 <td>Firewall Service URL</td>
-<td><code>http://host.docker.internal:8081</code></td>
-<td>Odoo posts <code>/firewall/sync</code> here.</td>
+<td>See deployment</td>
+<td>Odoo posts <code>/firewall/sync</code> here. In production set this to <code>https://&lt;freeswitch-host&gt;</code>; Traefik routes the <code>/firewall</code> prefix to the loopback-only service on <code>127.0.0.1:8081</code>.</td>
 </tr>
 <tr>
 <td>Firewall Service Token</td>

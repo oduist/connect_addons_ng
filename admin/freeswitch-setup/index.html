@@ -2169,15 +2169,30 @@ SIP Phone ─────────────────►│
 PSTN (via SIP Gateway) ────►│
 </code></pre></div>
 <h2 id="docker-deployment">Docker Deployment</h2>
-<p>The module includes a ready-to-use Docker setup in <code>connect_freeswitch/deploy/</code>.</p>
+<p>The module includes a ready-to-use Docker setup in <code>connect_freeswitch/deploy/</code>.
+The default <code>docker-compose.yml</code> is the production FreeSWITCH host stack
+(<code>traefik</code>, <code>fs</code>, <code>firewall</code>). <code>docker-compose.full.yml</code> is a standalone
+local stack that also starts Odoo 19 and PostgreSQL.</p>
 <h3 id="docker-compose">Docker Compose</h3>
 <div class="highlight"><pre><span></span><code><span class="nt">services</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">freeswitch</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">build</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./connect_freeswitch/deploy</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oduist/freeswitch:2.1.0</span>
 <span class="w">    </span><span class="nt">network_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">host</span>
 <span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ODOO_URL=http://localhost:8069</span>
 <span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FS_WEBHOOK_TOKEN=&lt;value of the FreeSWITCH Webhook Token&gt;</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FS_DOMAIN=fs.example.com</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FS_ESL_PASSWORD=&lt;shared ESL password&gt;</span>
+<span class="w">  </span><span class="nt">firewall</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">oduist/freeswitch-firewall:2.1.0</span>
+<span class="w">    </span><span class="nt">network_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">host</span>
+<span class="w">    </span><span class="nt">cap_add</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">NET_ADMIN</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">environment</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ODOO_URL=http://localhost:8069</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">AGENT_TOKEN=&lt;value of the Firewall Service Token&gt;</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FS_ESL_HOST=127.0.0.1</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">FS_ESL_PASSWORD=&lt;shared ESL password&gt;</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HTTP_BIND_HOST=127.0.0.1</span>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Network mode</p>
@@ -2202,6 +2217,26 @@ PSTN (via SIP Gateway) ────►│
 <td><code>FS_WEBHOOK_TOKEN</code></td>
 <td><em>(unset)</em></td>
 <td>Shared secret authenticating every FreeSWITCH → Odoo HTTP call (XML cURL, CDR, recordings, parking). <strong>Required</strong>: Odoo rejects the requests with 401 while it is unset or wrong.</td>
+</tr>
+<tr>
+<td><code>FS_DOMAIN</code></td>
+<td><em>(unset)</em></td>
+<td>Public FreeSWITCH host name used for SIP/WSS domain and Traefik ACME certificate extraction.</td>
+</tr>
+<tr>
+<td><code>FS_ESL_PASSWORD</code></td>
+<td><code>ConnectNGESLPassword</code></td>
+<td>Password for FreeSWITCH ESL. Set the same value on <code>fs</code> and <code>firewall</code>.</td>
+</tr>
+<tr>
+<td><code>FIREWALL_AGENT_TOKEN</code></td>
+<td><em>(unset)</em></td>
+<td>Shared secret for Odoo ↔ firewall service calls. Must match Firewall Service Token in Odoo settings.</td>
+</tr>
+<tr>
+<td><code>FIREWALL_DASHBOARD_PASSWORD</code></td>
+<td><em>(unset)</em></td>
+<td>Basic-auth password for the firewall dashboard.</td>
 </tr>
 <tr>
 <td><code>SOUND_RATES</code></td>
@@ -2232,8 +2267,10 @@ which <strong>locks the endpoints until you pair the container</strong>:</p>
 recording uploads all fail with HTTP 401 (fail-closed by design).</p>
 <h3 id="build-and-run">Build and Run</h3>
 <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>connect_freeswitch/deploy
-docker<span class="w"> </span>compose<span class="w"> </span>build
 docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
+</code></pre></div>
+<p>For the local all-in-one stack:</p>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.full.yml<span class="w"> </span>up<span class="w"> </span>-d
 </code></pre></div>
 <p>Verify FreeSWITCH is running:</p>
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>freeswitch<span class="w"> </span>fs_cli<span class="w"> </span>-x<span class="w"> </span><span class="s2">&quot;status&quot;</span>
@@ -2273,6 +2310,11 @@ docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> 
 <td>8080</td>
 <td>TCP</td>
 <td>mod_xml_rpc plain HTTP — <strong>internal only</strong>, never expose; Traefik proxies to it</td>
+</tr>
+<tr>
+<td>8081</td>
+<td>TCP</td>
+<td>firewall service plain HTTP — <strong>internal only</strong>, bound to loopback; Traefik proxies <code>/firewall</code> to it</td>
 </tr>
 </tbody>
 </table>
@@ -2781,7 +2823,8 @@ not select the number itself.</p>
 <p>FreeSWITCH is always deployed behind <strong>Traefik</strong>, which is the single TLS edge for the stack (<code>deploy/docker-compose.yml</code> → <code>traefik</code> service, config in <code>deploy/traefik/</code>):</p>
 <ul>
 <li><strong>Verto WSS / DTLS-SRTP</strong> — FreeSWITCH terminates these itself. The <code>oduist/freeswitch</code> entrypoint extracts the freshest certificate from Traefik's ACME store (<code>acme.json</code>, shared via the <code>traefik-acme</code> volume) into <code>tls/wss.pem</code> and <code>tls/dtls-srtp.pem</code>. With no ACME cert available (local development) it falls back to a self-signed certificate.</li>
-<li><strong>XML-RPC</strong> — <code>mod_xml_rpc</code> has no native TLS, so Traefik terminates HTTPS in front of it (<code>deploy/traefik/dynamic.yml</code>) and proxies to the internal <code>8080</code> port. The same certificate Traefik manages secures this control-plane channel; Odoo connects over <code>https://</code>.</li>
+<li><strong>XML-RPC</strong> — <code>mod_xml_rpc</code> has no native TLS, so Traefik terminates HTTPS in front of it (<code>deploy/traefik/dynamic.yml</code>) and proxies to the internal <code>127.0.0.1:8080</code> port. The same certificate Traefik manages secures this control-plane channel; Odoo connects over <code>https://</code>.</li>
+<li><strong>Firewall dashboard/API</strong> — Traefik routes <code>/firewall</code> to the firewall service on <code>127.0.0.1:8081</code>; the service itself remains loopback-only.</li>
 </ul>
 <p>Traefik requests a <strong>Let's Encrypt</strong> certificate out of the box. Set <code>FS_DOMAIN</code> (the public FQDN of the FreeSWITCH host) and <code>ACME_EMAIL</code> in <code>deploy/.env</code>; while testing, point <code>ACME_CASERVER</code> at the Let's Encrypt staging URL to avoid rate limits. In local development (<code>FS_DOMAIN=localhost</code>, no public domain) ACME cannot validate, so Traefik serves its built-in self-signed certificate — turn <strong>Verify TLS Certificate</strong> off in the XML-RPC settings.</p>
 <h2 id="freeswitch-configuration-files">FreeSWITCH Configuration Files</h2>
