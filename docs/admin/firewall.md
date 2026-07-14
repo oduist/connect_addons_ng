@@ -119,7 +119,7 @@ Optionally:
 
 ```yaml
 firewall:
-  image: oduist/freeswitch-firewall:2.1.0
+  image: oduist/freeswitch-firewall:2.1.1
   network_mode: host
   cap_add: [NET_ADMIN]
   environment:
