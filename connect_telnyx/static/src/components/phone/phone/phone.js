@@ -513,6 +513,10 @@ export class Phone extends Component {
                 break
             case 'hangup':
             case 'destroy':
+                // TEMP DIAG: surface the SIP hangup cause for debugging
+                console.log('[connect] call ended:', call.state,
+                    'cause:', call.cause, 'causeCode:', call.causeCode,
+                    'sipCode:', call.sipCode, 'sipReason:', call.sipReason)
                 if (session && !session.ended) {
                     session.ended = true
                     delete this.telnyxSessions[call.id]
