@@ -249,7 +249,12 @@ class Domain(models.Model):
         # Iterate over records and update Telnyx.
         try:
             for rec in self:
-                rec.update_telnyx_domain(client)
+                # Skip records not yet created in Telnyx: an update needs a
+                # credential-connection sid. During create() the required
+                # `application` default is written before the connection
+                # exists, so syncing here would call the API with sid=False.
+                if rec.sid:
+                    rec.update_telnyx_domain(client)
         except Exception as e:
             raise ValidationError(format_connect_response(e))
         return res
