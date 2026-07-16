@@ -16,7 +16,7 @@
         <field name="model">connect.recording</field>
         <field name="inherit_id" ref="connect.view_connect_recording_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//group[@string='Summary']" position="after">
+            <xpath expr="//sheet" position="inside">
                 <group string="Agent Summary" invisible="not elevenlabs_summary">
                     <field name="elevenlabs_summary" nolabel="1" colspan="2"/>
                 </group>
