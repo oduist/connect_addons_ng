@@ -62,13 +62,17 @@ placeholders and inline rules.
    `<module>/static/description/index.html`.
 5. **Images & manifest wiring** (do NOT invent PNGs):
    - **`icon.png` is shared across ALL connect addons — present and future.**
-     The canonical file is `connect/static/description/icon.png` (repo root).
-     If the module's `static/description/icon.png` is missing, **copy the
-     canonical one** into it; never fabricate or reuse a different icon:
-     `cp connect/static/description/icon.png <module>/static/description/icon.png`
-   - The manifest needs `logo.png` in `static/description/`. If missing, tell
-     the user to add it (do not fabricate).
-   - Ensure `__manifest__.py` has `'images': ['static/description/logo.png']`.
+     The canonical file ships **inside this skill** as `icon.png`. Every
+     module's `static/description/icon.png` must be a byte-for-byte copy of it;
+     never fabricate or reuse a different icon. Copy it in:
+     `cp "$SKILL_DIR/icon.png" <module>/static/description/icon.png`
+     (`$SKILL_DIR` = this skill's directory). It is identical to
+     `connect/static/description/icon.png`.
+   - The manifest `'images'` preview should point at
+     `static/description/logo.png` when a dedicated store banner exists. When
+     there is no `logo.png` (the common case in this repo), reuse the shared
+     icon instead: `'images': ['static/description/icon.png']`. Never fabricate
+     a `logo.png`.
 
 ## Common Mistakes
 
@@ -78,5 +82,6 @@ placeholders and inline rules.
 - Keeping the trial banner on a free (`price: 0`) module.
 - Regenerating `doc/index.rst` (that's the changelog) when asked for the
   description.
-- Using a per-module or fabricated `icon.png` — always copy the shared
-  canonical `connect/static/description/icon.png`. Flag a missing `logo.png`.
+- Using a per-module or fabricated `icon.png` — always copy the canonical
+  `icon.png` bundled in this skill. Never fabricate a `logo.png`; point
+  `'images'` at `icon.png` when no `logo.png` exists.
