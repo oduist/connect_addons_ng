@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="elevenlabs_recording_list" model="ir.ui.view">
+        <field name="name">elevenlabs_recording_list</field>
+        <field name="model">connect.recording</field>
+        <field name="inherit_id" ref="connect.view_connect_recording_tree"/>
+        <field name="arch" type="xml">
+            <field name="list_view_summary" position="replace">
+                <field name="list_summary" widget="html" optional="show" string="Summary"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="elevenlabs_recording_form" model="ir.ui.view">
+        <field name="name">elevenlabs_recording_form</field>
+        <field name="model">connect.recording</field>
+        <field name="inherit_id" ref="connect.view_connect_recording_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@string='Summary']" position="after">
+                <group string="Agent Summary" invisible="not elevenlabs_summary">
+                    <field name="elevenlabs_summary" nolabel="1" colspan="2"/>
+                </group>
+                <group string="Agent Recording" invisible="not elevenlabs_transcript">
+                    <field name="elevenlabs_recording_widget" nolabel="1" colspan="2"/>
+                </group>
+                <group string="Agent Transcript" invisible="not elevenlabs_transcript">
+                    <field name="elevenlabs_transcript" nolabel="1" colspan="2"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
