@@ -334,6 +334,46 @@ class Settings(models.Model):
                 level='warning',
             )
 
+    @api.model
+    def telnyx_check_call_failure(self, cause=None, sip_code=None):
+        """Confirm whether a failed web-phone call was caused by an
+        exhausted Telnyx balance (ADR-040).
+
+        Telnyx rejects every origination on a billing-blocked account with
+        404 UNALLOCATED_NUMBER ("Not found D19"), which is indistinguishable
+        from a wrong number on the client. The web phone calls this method
+        for such failures; it verifies the balance against the API and
+        returns a trustworthy message. Only members of the Connect groups
+        get an answer, and only admins see the actual amount.
+        """
+        has_admin_group = self.env.user.has_group('connect.group_admin')
+        if not (has_admin_group or self.env.user.has_group('connect.group_user')):
+            return {'balance_blocked': False}
+        try:
+            client = self.sudo().get_telnyx_client()
+            data = client.balance.retrieve().data
+            available = float(getattr(data, 'available_credit', 0) or 0)
+            if available > 0:
+                return {'balance_blocked': False}
+            debug(self, 'Call failure (cause: {}, SIP {}) matches blocked '
+                  'balance: {}'.format(cause, sip_code, available))
+            if has_admin_group:
+                message = (
+                    'The Telnyx account balance is exhausted (available '
+                    'credit: {} {}). Calls are blocked until the account '
+                    'is topped up.'.format(
+                        getattr(data, 'available_credit', available),
+                        getattr(data, 'currency', 'USD')))
+            else:
+                message = (
+                    'The telephony provider account is out of balance and '
+                    'calls are blocked. Please contact your administrator.')
+            return {'balance_blocked': True, 'message': message}
+        except Exception as e:
+            debug(self, 'telnyx_check_call_failure: {}'.format(e),
+                  level='error')
+            return {'balance_blocked': False}
+
     def get_telnyx_balance(self):
         """Fetch current Telnyx account balance"""
         try:

@@ -24,6 +24,15 @@ Click any phone number field on a partner form, lead, or other record to dial it
 
 Dial another user's extension number to make an internal call.
 
+### Failed Calls
+
+When an outgoing call cannot be connected, the phone widget shows a
+notification with the reason (busy, rejected, number not found, ...).
+On Telnyx, if the call was blocked because the account balance is
+exhausted, a persistent red notification says so explicitly —
+administrators also see the current balance and should top up the
+Telnyx account to restore calling.
+
 ## In-Call Controls
 
 | Control | Description |
