@@ -49,6 +49,7 @@ nav:
       - Pipecat AI Agents: admin/pipecat-setup.md
       - Asterisk Integration: admin/asterisk-setup.md
       - Telnyx Integration: admin/telnyx-setup.md
+      - 3CX Integration: admin/3cx-setup.md
       - LiveKit Integration: admin/livekit-setup.md
       - Infobip Integration: admin/infobip-setup.md
       - Dograh Integration (AI Agents): admin/dograh-setup.md
