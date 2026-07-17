@@ -18,7 +18,8 @@ import hashlib
 import json
 import logging
 import secrets
-from datetime import datetime, timezone
+import base64
+from datetime import datetime, timedelta, timezone
 
 from markupsafe import escape
 
@@ -157,7 +158,17 @@ class ThreeCXWebhooksController(http.Controller):
         if not number:
             return self._json({'error': 'no_number'}, status=400)
         try:
-            result = self._process_journal(payload, call_type, number)
+            result = None
+            # Deep tier (ADR-035): live events own channel creation —
+            # the journal merges its 3CX-AI-only data (transcript,
+            # summary, recording URL) into the agent-created call
+            # instead of duplicating it.
+            if request.env['connect.settings'].sudo().get_param(
+                    'threecx_agent_enabled'):
+                result = self._merge_into_agent_channel(
+                    payload, call_type, number)
+            if result is None:
+                result = self._process_journal(payload, call_type, number)
         except Exception:
             logger.exception('Error processing 3CX call journal:')
             return self._json({'error': 'processing_error'}, status=500)
@@ -226,6 +237,114 @@ class ThreeCXWebhooksController(http.Controller):
         settings = request.env['connect.settings'].sudo()
         settings.set_param('threecx_last_journal', fields.Datetime.now())
         return {'ok': True, 'sid': sid}
+
+    # Window for matching a journal record to an agent-created channel:
+    # both describe the same call, but the journal carries no call id.
+    MERGE_WINDOW_SECONDS = 180
+
+    @classmethod
+    def _merge_into_agent_channel(cls, payload, call_type, number):
+        """Attach the journal data to a recent agent-created channel.
+
+        Match: same leg shape (agent extension vs external number, per
+        call direction), SID created by the agent (``3cxcc-``), start
+        time within MERGE_WINDOW_SECONDS. Returns the result dict, or
+        None when nothing matches (the caller falls back to the phase-1
+        creation path).
+        """
+        kind, _status = CALL_TYPE_MAP[call_type]
+        exten = _clean(payload.get('agent')) \
+            or _clean(payload.get('queue_extension'))
+        if not exten:
+            return None
+        Channel = request.env['connect.channel'].sudo()
+        domain = [('sid', 'like', '3cxcc-%')]
+        if kind == 'inbound':
+            domain += [('caller_number', '=', number),
+                       ('called_number', '=', exten)]
+        else:
+            domain += [('caller_number', '=', exten),
+                       ('called_number', '=', number)]
+        start_millis = _to_int(payload.get('start_utc_millis'))
+        if start_millis:
+            start_dt = datetime.fromtimestamp(
+                start_millis / 1000.0, tz=timezone.utc).replace(tzinfo=None)
+            domain += [
+                ('create_date', '>=', start_dt - timedelta(
+                    seconds=cls.MERGE_WINDOW_SECONDS)),
+                ('create_date', '<=', start_dt + timedelta(
+                    seconds=cls.MERGE_WINDOW_SECONDS)),
+            ]
+        channel = Channel.search(domain, order='id desc', limit=1)
+        if not channel:
+            return None
+        # Partner backfill from our own lookup output.
+        if not channel.partner:
+            entity_id = _to_int(_clean(payload.get('entity_id')))
+            if entity_id:
+                partner = request.env['res.partner'].sudo().browse(
+                    entity_id).exists()
+                if partner:
+                    channel.partner = partner.id
+                    if channel.call and not channel.call.partner:
+                        channel.call.partner = partner.id
+        cls._attach_journal_artifacts(channel, payload)
+        request.env['connect.settings'].sudo().set_param(
+            'threecx_last_journal', fields.Datetime.now())
+        return {'ok': True, 'merged': True, 'sid': channel.sid}
+
+    @staticmethod
+    def _attach_journal_artifacts(channel, payload):
+        """3CX AI transcript/summary/recording URL from the journal →
+        the channel's recording (fill-if-empty), or a reference
+        recording when the poller has not produced one."""
+        recording_url = _clean(payload.get('recording_url'))
+        transcript = _clean(payload.get('transcription'))
+        summary = _clean(payload.get('summary'))
+        sentiment = _clean(payload.get('sentiment'))
+        if not (recording_url or transcript or summary):
+            return
+        summary_html = False
+        parts = [escape(p) for p in (summary,) if p]
+        if sentiment:
+            parts.append(escape('Sentiment: {}'.format(sentiment)))
+        if parts:
+            summary_html = '<p>{}</p>'.format('<br/>'.join(
+                str(p) for p in parts))
+        Recording = request.env['connect.recording'].sudo()
+        recording = Recording.search(
+            [('channel', '=', channel.id)], order='id desc', limit=1)
+        if recording:
+            updates = {}
+            if transcript and not recording.transcript:
+                updates['transcript'] = transcript
+            if summary_html and not recording.summary:
+                updates['summary'] = summary_html
+            if recording_url and not recording.media_url:
+                updates['media_url'] = recording_url
+            if updates:
+                recording.write(updates)
+        else:
+            webhook_user = request.env.ref('connect.user_connect_webhook')
+            request.env['connect.recording'].with_user(
+                webhook_user.id).with_context(skip_transcription=True
+                                              ).create({
+                    'call_sid': channel.sid,
+                    'call': channel.call.id if channel.call else False,
+                    'channel': channel.id,
+                    'partner': channel.partner.id
+                               if channel.partner else False,
+                    'status': 'completed',
+                    'source': '3cx',
+                    'media_url': recording_url or False,
+                    'transcript': transcript or False,
+                    'summary': summary_html,
+                    'duration': channel.duration,
+                    'caller_number': channel.caller_number,
+                    'called_number': channel.called_number,
+                })
+        if channel.call and summary_html and not channel.call.summary:
+            channel.call.sudo().summary = summary_html
 
     @staticmethod
     def _journal_duration(payload, status):
@@ -334,6 +453,139 @@ class ThreeCXWebhooksController(http.Controller):
             logger.exception('Error creating partner from 3CX:')
             return self._json({'error': 'processing_error'}, status=500)
         return self._json(self._partner_payload(partner))
+
+    # ------------------------------------------------------------------
+    # Deep tier: sidecar agent webhooks (ADR-035)
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _check_agent_token(cls):
+        """Agent routes additionally require the deep tier toggle, so a
+        stale agent stops writing the moment the admin disables it."""
+        if not cls._check_token():
+            return False
+        return bool(request.env['connect.settings'].sudo().get_param(
+            'threecx_agent_enabled'))
+
+    @http.route('/3cx/webhook/events',
+                type='http', auth='none', methods=['POST'], csrf=False,
+                readonly=False)
+    def agent_events(self, **_):
+        """Batch of normalized participant events from the agent."""
+        if not self._check_agent_token():
+            return self._unauthorized()
+        try:
+            payload = self._read_payload()
+        except ValueError:
+            return self._json({'error': 'bad_json'}, status=400)
+        if isinstance(payload, dict):
+            payload = [payload]
+        if not isinstance(payload, list):
+            return self._json({'error': 'bad_payload'}, status=400)
+        webhook_user = request.env.ref('connect.user_connect_webhook')
+        Channel = request.env['connect.channel'].with_user(webhook_user.id)
+        processed = 0
+        for event in payload:
+            if not isinstance(event, dict):
+                continue
+            try:
+                if Channel.on_threecx_participant_event(event):
+                    processed += 1
+            except Exception:
+                logger.exception(
+                    'Error processing 3CX participant event (%s):',
+                    event.get('entity'))
+        return self._json({'ok': True, 'processed': processed})
+
+    @http.route('/3cx/webhook/recording/<string:filename>',
+                type='http', auth='none', methods=['PUT', 'POST'],
+                csrf=False, readonly=False)
+    def agent_recording(self, filename, **params):
+        """Receive a recording audio file from the agent's XAPI poller.
+
+        The filename is ``<recid>.<ext>``; call metadata (callid,
+        numbers, duration) arrives as query parameters and is matched
+        to the agent-created channel by ``threecx_callid``. Unlike the
+        phase-1 URL references, this carries real audio, so core
+        transcription applies (no skip_transcription).
+        """
+        if not self._check_agent_token():
+            return self._unauthorized()
+        rec_id = filename.rsplit('.', 1)[0] if '.' in filename else filename
+        if not rec_id:
+            return Response('No recording id', status=400)
+        file_data = request.httprequest.get_data()
+        if not file_data:
+            return Response('No file data', status=400)
+        try:
+            webhook_user = request.env.ref('connect.user_connect_webhook')
+            Recording = request.env['connect.recording'].with_user(
+                webhook_user.id)
+            existing = Recording.sudo().search(
+                [('sid', '=', rec_id), ('source', '=', '3cx')], limit=1)
+            if existing:
+                logger.info(
+                    '3CX recording %s already exists (id=%s), skipping.',
+                    rec_id, existing.id)
+                return Response('OK', status=200)
+            channel = request.env['connect.channel'].sudo()
+            callid = _clean(params.get('callid'))
+            if callid:
+                channel = channel.search(
+                    [('threecx_callid', '=', callid)],
+                    order='id desc', limit=1)
+            vals = {
+                'sid': rec_id,
+                'call_sid': channel.sid if channel
+                            else '3cxrec-{}'.format(rec_id),
+                'status': 'completed',
+                'source': '3cx',
+                'recording_attachment': base64.b64encode(file_data),
+                'recording_filename': filename,
+                'caller_number': _clean(params.get('caller')),
+                'called_number': _clean(params.get('called')),
+            }
+            if channel:
+                vals.update({
+                    'call': channel.call.id if channel.call else False,
+                    'channel': channel.id,
+                    'partner': channel.partner.id
+                               if channel.partner else False,
+                    'duration': channel.duration,
+                    'caller_number': channel.caller_number,
+                    'called_number': channel.called_number,
+                })
+            recording = Recording.create(vals)
+            logger.info(
+                '3CX recording created: id=%s, recid=%s, channel=%s, '
+                '%d bytes', recording.id, rec_id,
+                channel.id if channel else 'orphan', len(file_data))
+        except Exception as e:
+            logger.exception('Failed to process 3CX recording %s: %s',
+                             rec_id, e)
+            return Response('Processing error', status=500)
+        return Response('OK', status=200)
+
+    @http.route('/3cx/webhook/heartbeat',
+                type='http', auth='none', methods=['POST'], csrf=False,
+                readonly=False)
+    def agent_heartbeat(self, **_):
+        if not self._check_agent_token():
+            return self._unauthorized()
+        try:
+            payload = self._read_payload()
+        except ValueError:
+            return self._json({'error': 'bad_json'}, status=400)
+        settings = request.env['connect.settings'].sudo()
+        ws_ok = payload.get('ws_connected')
+        settings.set_param(
+            'threecx_agent_status',
+            'UP — Call Control WS {}'.format(
+                'connected' if ws_ok else 'DISCONNECTED'))
+        settings.set_param(
+            'threecx_agent_version', payload.get('version') or '')
+        settings.set_param('threecx_last_heartbeat', fields.Datetime.now())
+        return self._json({'ok': True})
 
     @http.route('/3cx/template',
                 type='http', auth='user', methods=['GET'], readonly=True)

@@ -50,6 +50,31 @@
                                     <field name="threecx_last_journal"/>
                                 </group>
                             </group>
+                            <group>
+                                <group string="Agent (Deep Tier — 3CX AI 8SC+)">
+                                    <field name="threecx_agent_enabled"
+                                           widget="boolean_toggle"/>
+                                    <field name="threecx_agent_url"
+                                           placeholder="http://host.docker.internal:8083"/>
+                                    <field name="threecx_client_id"/>
+                                    <field name="display_threecx_client_secret"
+                                           password="True"
+                                           placeholder="****"/>
+                                    <field name="threecx_recordings_enabled"
+                                           widget="boolean_toggle"/>
+                                    <field name="threecx_originate_timeout"/>
+                                </group>
+                                <group string="Agent Status">
+                                    <field name="threecx_agent_status"/>
+                                    <field name="threecx_agent_version"/>
+                                    <field name="threecx_last_heartbeat"/>
+                                    <button name="threecx_ping_agent"
+                                            type="object"
+                                            string="PING AGENT"
+                                            class="btn btn-info"
+                                            colspan="2"/>
+                                </group>
+                            </group>
                         </page>
                     </notebook>
                 </sheet>

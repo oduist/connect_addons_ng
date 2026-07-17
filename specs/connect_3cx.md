@@ -12,17 +12,23 @@
 ## Overview
 
 The `connect_3cx` module integrates an existing customer **3CX V20** PBX
-(PRO or AI edition) with the Connect ledger through 3CX's **server-side
-CRM integration**: the 3CX System Service executes an XML template on
-every external call, calling back into Odoo webhook controllers. This
-is phase 1 of the 3CX provider (ADR-034); the deep tier (Call Control
-API + XAPI sidecar, AI edition only) is a future phase.
+with the Connect ledger at two tiers:
+
+- **Phase 1 (ADR-034, PRO or AI edition)** — 3CX's server-side CRM
+  integration: the 3CX System Service executes an XML template on every
+  external call, calling back into Odoo webhook controllers (lookup,
+  journal at call end, contact creation).
+- **Phase 2 / deep tier (ADR-035, AI edition 8SC+ only, opt-in)** — a
+  sidecar agent (`oduist/3cx-agent`, `deploy/agent/`) holding the Call
+  Control WebSocket for **live call events**, server-side click-to-call
+  through Call Control makecall, and an XAPI poller that downloads
+  **recording audio** into Odoo (core transcription applies).
 
 Unlike the other providers, `connect_3cx` owns **no PBX configuration
 models and no phone widget**: 3CX keeps numbering, routing, devices and
 the softphone (3CX has no third-party WebRTC/WSS access). The module is
-`connect.settings` + `connect.user` extensions, three webhook
-controllers, and a generated CRM template.
+`connect.settings` + `connect.user` + `connect.channel` extensions,
+webhook controllers, a generated CRM template, and the agent image.
 
 Major features:
 - contact lookup at call arrival (caller name + screen pop in 3CX
@@ -38,10 +44,13 @@ Major features:
 - CRM template generator (download from the settings form, instance URL
   and API key pre-filled).
 
-**Limitations (tier ceiling, documented):** calls appear in the ledger
-only after hangup (no live channel states), internal 3CX calls are not
-reported, recording audio is not downloadable (URL reference only), no
-SMS surface.
+**Limitations:** on the phase-1 tier calls appear in the ledger only
+after hangup (no live channel states) and recording audio is not
+downloadable (URL reference only); internal 3CX calls are never
+reported by the CRM template; no SMS surface at any tier; no web phone
+at any tier. The deep tier removes the live-events and recording-audio
+limits but is developed **without a live 3CX validation pass** (mock
+tests only — ADR-035); revalidate against a real PBX before GA.
 
 ---
 
@@ -61,6 +70,25 @@ Click-to-call: originate_call() override returns ir.actions.act_url →
 browser opens https://<pbx>/webclient/#/call?phone=<number> (the user's
 own 3CX Web Client places the call; it lands in the ledger via the
 journal webhook).
+
+Deep tier (ADR-035, threecx_agent_enabled):
+
+3CX PBX (AI 8SC+) ←OAuth2+WSS/REST→ oduist/3cx-agent (Docker sidecar)
+                        │ POST /3cx/webhook/events      (Bearer, batches)
+                        │ PUT  /3cx/webhook/recording/<recid>.<ext>?meta
+                        │ POST /3cx/webhook/heartbeat
+                        │ GET  /3cx/api/config          (bootstrap)
+                        ▼
+                     Odoo (connect_3cx)
+                        │ POST {agent}/originate, /sync
+                        ▼
+                     agent → POST /callcontrol/{dn}/makecall → 3CX
+
+The agent is the sole consumer of a dedicated 3CX API client
+application (single-active-token rule); on Upsert WS events it re-GETs
+the entity and forwards the normalized participant state; ReportCall
+becomes a merger (transcript/summary/recording URL attach to the
+agent-created call instead of duplicating it).
 ```
 
 ## Models
@@ -90,6 +118,39 @@ Methods:
 
 The module appends `connect_3cx` to `ODUIST_MODULES` and generates the
 API key in `post_init_hook` (`setup_threecx_api_key(env)`).
+
+Deep-tier fields (ADR-035): `threecx_agent_enabled`,
+`threecx_agent_url`, `threecx_client_id`, `threecx_client_secret` +
+masked `display_threecx_client_secret` (in `PROTECTED_FIELDS`),
+`threecx_recordings_enabled`, `threecx_originate_timeout`, status
+`threecx_agent_status/version`, `threecx_last_heartbeat`. Deep-tier
+methods: `threecx_agent_request()` (Bearer HTTP to the agent),
+`threecx_agent_sync()` (postcommit `/sync` nudge fired from `write()`
+on `threecx_*` changes, status fields excluded), `threecx_ping_agent()`
+(form button), `threecx_get_agent_config()` (payload of
+`/3cx/api/config`), `_threecx_originate_via_agent()` (POST
+`{agent}/originate`; pre-creates the `3cxcc-<callid>-<legid>` leg from
+the makecall response; returns None on agent failure so
+`originate_call()` falls back to the dial URL).
+
+### `connect.channel` (`models/channel.py`, `_inherit` — deep tier)
+
+Fields: `threecx_callid` (indexed), `threecx_legid`,
+`threecx_answered` (Datetime, the `asterisk_answered` pattern).
+
+`on_threecx_participant_event(event)` maps a normalized agent event
+into core `process_channel_event` + `process_call_event`:
+
+- SID = `3cxcc-<callid>-<legid>`, fallback `3cxcc-<sha1(entity)[:16]>`;
+- `_threecx_leg_kind(state, dn)` — the single, test-pinned direction
+  heuristic: `originated_by_dn == dn` or status `Dialing` → outbound
+  (`'outbound-api'` + `caller_pbx_user` by `threecx_exten`), else
+  inbound (`'inbound'` + `called_pbx_user`); an existing channel never
+  flips direction (pre-created originate legs stay `outbound-api`);
+- upsert: `Connected` → `in-progress` + `threecx_answered` stamp, else
+  `ringing`; replays after a final status are ignored;
+- remove: `completed` with duration `ts − threecx_answered` when
+  answered, else `no-answer`.
 
 ### `connect.user` (`models/user.py`, `_inherit`)
 
@@ -159,6 +220,32 @@ Creates a `res.partner` from `first_name`/`last_name`/`number`/`email`/
 blast radius documented in ADR-034) and returns the full contact JSON
 (single scenario, no fetch chain).
 
+### Deep-tier routes (ADR-035)
+
+Gated on the token **and** `threecx_agent_enabled` (a stale agent stops
+writing the moment the admin disables the tier):
+
+- `POST /3cx/webhook/events` — batch of normalized participant events,
+  dispatched to `connect.channel.on_threecx_participant_event` under
+  the webhook user;
+- `PUT/POST /3cx/webhook/recording/<recid>.<ext>?callid=…` — recording
+  audio from the agent's XAPI poller; deduped by `(sid, source='3cx')`,
+  matched to the channel by `threecx_callid` (orphan `call_sid`
+  `3cxrec-<recid>` otherwise); **no** `skip_transcription` — this is
+  real audio, core transcription applies;
+- `POST /3cx/webhook/heartbeat` — agent status stamps.
+- `GET /3cx/api/config` (`controllers/agent_api.py`, Bearer + `sudo()`)
+  — agent bootstrap payload (PBX URL, 3CX client credentials,
+  recordings toggle).
+
+In deep mode `report_call` first calls `_merge_into_agent_channel()`:
+match an agent-created channel (`sid like '3cxcc-%'`, same
+extension/number leg shape, `create_date` within ±180 s of
+`start_utc_millis`) and attach the 3CX-AI-only artifacts
+(transcript/summary/recording URL fill-if-empty on the channel's
+recording, or a reference recording when the poller produced none);
+falls back to the phase-1 creation path when nothing matches.
+
 ### `GET /3cx/template`
 
 `auth='user'` + `connect.group_admin` check; streams the rendered CRM
@@ -209,10 +296,44 @@ Settings (standalone `connect.settings` form via
 `open_settings_form("connect_3cx.connect_settings_form_threecx", ...)`,
 admin-only).
 
+## Sidecar agent (`deploy/agent/`, `oduist/3cx-agent` — ADR-035)
+
+Python package `connect_3cx_agent` on the asterisk-agent skeleton
+(ADR-026): asyncio tasks + FastAPI, batched event outbox, config pull
+with a JSON runtime cache, debounced reconciler, heartbeat. Modules:
+
+- `tcx_api.py` — the process-wide 3CX token owner (client_credentials
+  at `POST /connect/token`, proactive refresh at 80% of expires_in,
+  single retry on 401) + Call Control (`/callcontrol`, makecall) and
+  XAPI helpers (`Recordings` OData listing, `Pbx.DownloadRecording`);
+- `ws.py` — `wss://<pbx>/callcontrol/ws` loop (Bearer, exponential
+  backoff, token invalidation on failure, reconcile on reconnect);
+- `handler.py` + `state.py` — participant registry: Upsert → re-GET
+  entity → store + emit; Remove → emit last-known state; synthetic
+  removes for the reconciler;
+- `recordings.py` — XAPI poller tracking the highest seen recording id
+  in the state file; defensive metadata pass-through, stops advancing
+  past a failed upload (Odoo dedupes by recording id);
+- `reconciler.py` — `config` scope (pull `/3cx/api/config`, cache,
+  invalidate token on credential change) + `participants` scope
+  (diff `GET /callcontrol` dump against the registry);
+- `http_server.py` — `/originate`, `/sync`, `/api/status`, `/healthz`,
+  `/3cx/healthz` (Bearer = shared `threecx_api_key`).
+
+Env bootstrap: `ODOO_URL`, `AGENT_TOKEN` (+ optional `PBX_URL`,
+`CLIENT_ID`, `CLIENT_SECRET`, `VERIFY_TLS`). Image policy: same as
+asterisk-agent (multi-arch, tag = short manifest version, rebuilt only
+when `deploy/agent/` changes); **publish only after a live-3CX smoke
+test**. Agent unit tests: `deploy/agent/tests/` (pytest, mock-based).
+
 ## Requirements on the 3CX side
 
 - 3CX V20, **PRO or AI** edition (server-side CRM integration is not
   available on Free/Basic/SMB);
 - template uploaded in Admin Console → Integrations → CRM;
 - 3CX journals **external** calls only, one record per call, at call
-  end.
+  end;
+- deep tier additionally: **AI edition, 8SC+**, a dedicated API client
+  application (Call Control + Configuration API scopes, System Owner
+  role for recordings) with the monitored extensions enumerated on it
+  in the 3CX console.

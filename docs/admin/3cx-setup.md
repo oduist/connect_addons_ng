@@ -83,6 +83,53 @@ installed, also select **3CX** as the user's *Click-to-call Provider*.
 - Click a phone number in Odoo: a new tab opens the 3CX Web Client with
   the number pre-filled.
 
+## Deep tier: the 3CX agent (AI edition, 8SC+)
+
+If your PBX runs the **3CX AI edition** (8 simultaneous calls or
+larger), you can additionally deploy the `oduist/3cx-agent` sidecar to
+get **live call events** (calls appear in Odoo while ringing, with
+durations measured from the actual answer), **server-side
+click-to-call** (rings all your 3CX devices instead of opening a
+browser tab) and **recording audio download** into Odoo (so OpenAI
+transcription applies).
+
+1. In the 3CX Admin Console open **Integrations → API** and create a
+   **dedicated** client application for the agent: check both *3CX
+   Call Control API Access* and *3CX Configuration API Access*, assign
+   the **System Owner** role (needed for recordings), and list the
+   extensions to monitor. Copy the Client ID and the API key (shown
+   once). Nothing else may use this client — 3CX keeps one active
+   token per client application.
+2. In `Connect → 3CX → Configuration → Settings`, section *Agent*:
+   enable the agent, set the agent URL, and paste the 3CX Client ID and
+   Client Secret.
+3. Run the agent next to Odoo (or anywhere with HTTPS reach to both
+   Odoo and the PBX):
+
+   ```bash
+   docker run -d --name connect-3cx-agent \
+     -e ODOO_URL=https://odoo.example.com \
+     -e AGENT_TOKEN=<API key from Connect Settings → 3CX> \
+     -p 8083:8083 \
+     -v connect-3cx-agent:/var/lib/connect-3cx \
+     oduist/3cx-agent:latest
+   ```
+
+   The agent pulls the PBX URL and the 3CX credentials from Odoo
+   automatically.
+4. Press **PING AGENT** in the settings form — the status should show
+   *Call Control WS connected*.
+
+With the agent enabled, the CRM template keeps working: caller-name
+lookup and screen pop stay server-side, and the end-of-call journal
+now **merges** its 3CX AI transcript/summary into the live call record
+instead of creating a duplicate.
+
+!!! warning "Validated against mocks"
+    The deep tier has not yet been validated against a live 3CX
+    installation. Treat it as a beta: verify call directions, durations
+    and recording matching on your PBX before relying on it.
+
 ## Security notes
 
 - All webhook routes live under `/3cx/webhook/*` and require the API
