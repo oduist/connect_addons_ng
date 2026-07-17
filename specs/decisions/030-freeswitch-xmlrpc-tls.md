@@ -2,8 +2,8 @@
 
 ## Status
 
-Superseded in part by ADR-043. TLS termination at Traefik remains the
-decision; ADR-043 fixes the public port and verification policy, manages the
+Superseded in part by ADR-044. TLS termination at Traefik remains the
+decision; ADR-044 fixes the public port and verification policy, manages the
 credential internally, moves Traefik to host networking, and restricts the
 plain-HTTP listener to loopback.
 
@@ -70,7 +70,7 @@ fixed internal port `8080`.
 
 - `_freeswitch_rpc()` always builds an `https://` URL and passes an
   `ssl` context to `xmlrpc.client.ServerProxy`.
-- ADR-043 subsequently fixed the public port to `443`, made certificate
+- ADR-044 subsequently fixed the public port to `443`, made certificate
   verification mandatory, fixed the username to `odoo`, and made the password
   an internally generated credential rotated with the host.
 - The internal `mod_xml_rpc` listen port is the fixed

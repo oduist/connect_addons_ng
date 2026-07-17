@@ -1,4 +1,4 @@
-# ADR-043: Managed FreeSWITCH XML-RPC edge
+# ADR-044: Managed FreeSWITCH XML-RPC edge
 
 ## Status
 

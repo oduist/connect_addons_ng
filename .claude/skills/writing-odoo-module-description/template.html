@@ -1,0 +1,124 @@
+<!--
+  Oduist Odoo Apps Store description template → static/description/index.html
+  Fill every {{PLACEHOLDER}}. Keep the oe_* / alert / fa classes EXACTLY as-is:
+  they are the Odoo Apps Store house style, not arbitrary markup.
+  Delete whole <section> blocks that do not apply (e.g. trial banner for a free
+  module, cross-sell block if there is nothing to cross-sell).
+
+  Manifest: set 'images': ['static/description/icon.png'] (reuse the shared icon;
+  there is usually no separate logo.png in this repo).
+-->
+
+<!-- ============ 1. HEADER: slogan + sub-slogan + icon ============ -->
+<section class="oe_container">
+  <div class="oe_row oe_spaced">
+    <div class="oe_span6">
+      <!-- {{SLOGAN}}: benefit-oriented one-liner, ends with "!". Keep the color. -->
+      <h2 class="oe_slogan" style="color:#875A7B;">{{SLOGAN}}</h2>
+      <!-- {{SUB_SLOGAN}}: second, softer line. -->
+      <h3 class="oe_slogan">{{SUB_SLOGAN}}</h3>
+    </div>
+    <div class="oe_span6">
+      <div class="oe_row_img oe_centered">
+        <!-- icon.png = the SHARED canonical Connect icon, same for every addon.
+             Copy it from connect/static/description/icon.png if missing. -->
+        <img alt="Icon" class="oe_picture" src="icon.png"/>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. TRIAL / PRICING BANNER (delete if module is free) ======= -->
+<section class="oe_container">
+  <div class="oe_row oe_spaced">
+    <div class="alert alert-warning oe_mt32" style="padding:0.3em 0.6em; font-size: 150%;">
+      This module is provided as a 30-day free trial. After the trial period ends, a purchase is required to continue using the application. For pricing and other details, visit https://oduist.com/pricing
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. FEATURES ============ -->
+<section class="oe_container">
+  <div class="oe_row oe_spaced">
+    <div class="oe_span12">
+      <h4 class="oe_slogan"><b>Features</b></h4>
+      <div class="alert alert-info oe_mt32" style="padding:0.3em 0.6em; font-size: 150%;">
+        <ul class="list-unstyled">
+          <!-- For an EXTENSION module, make the FIRST item this line: -->
+          <!-- <li><i class="fa fa-check-square-o text-primary"></i> This is an extension module for the Connect application!</li> -->
+
+          <!-- One <li> per delivered feature. fa-check-square-o = done. -->
+          <li>
+            <i class="fa fa-check-square-o text-primary"></i>
+            {{FEATURE_1}}
+          </li>
+          <li>
+            <i class="fa fa-check-square-o text-primary"></i>
+            {{FEATURE_2}}
+          </li>
+          <li>
+            <i class="fa fa-check-square-o text-primary"></i>
+            {{FEATURE_3}}
+          </li>
+
+          <!-- LAST item = planned feature or CTA. Note fa-square-o (empty box). -->
+          <li>
+            <i class="fa fa-square-o text-primary"></i>
+            {{CTA_OR_UPCOMING}}
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4. DOCUMENTATION / INSTALLATION ============ -->
+<section class="oe_container">
+  <div class="oe_row oe_spaced">
+    <div class="oe_span12">
+      <h4 class="oe_slogan"><b>Documentation</b></h4>
+      <div class="alert alert-warning oe_mt32" style="padding:0.3em 0.6em; font-size: 150%;">
+        <h2>For documentation and support visit oduist.com</h2>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. CROSS-SELL "Check out more addons" (optional) ==========
+     One panel per related module. Bump the /18.0/ series in URLs to match the
+     branch. Delete the whole section if there is nothing to cross-sell. -->
+<section class="oe_container">
+  <div class="oe_row oe_spaced">
+    <div class="oe_span12">
+      <h4 class="oe_slogan"><b>Check out more addons</b></h4>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="panel panel-default">
+            <div class="panel-body">
+              <div class="col-md-5">
+                <a href="https://apps.odoo.com/apps/modules/18.0/{{RELATED_MODULE}}">
+                  <img class="img img-responsive" width="150px"
+                    src="https://apps.odoocdn.com/apps/assets/18.0/{{RELATED_MODULE}}/icon.png"/>
+                </a>
+              </div>
+              <div class="col-md-7">
+                <h3 style="font-size: 150%;">{{RELATED_MODULE_TITLE}}</h3>
+                <p>{{RELATED_MODULE_BLURB}}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6. FOOTER (keep verbatim) ============ -->
+<section class="oe_container">
+  <div class="oe_row oe_spaced">
+    <div class="oe_span12">
+      <h1 class="oe_slogan">Oduist</h1>
+      <h2 class="oe_slogan">Connecting Odoo to Everything!</h2>
+    </div>
+  </div>
+</section>

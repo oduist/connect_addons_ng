@@ -107,12 +107,11 @@ Traefik), `8081/tcp` (firewall service HTTP, behind Traefik),
 
 ## 4. Compose layout
 
-The shipped `connect_freeswitch/deploy/docker-compose.yml` is a
-**development** stack that bundles Odoo + Postgres. For a customer host use
-the production layout below: only `traefik`, `fs` and `firewall`, with the
-`oduist/freeswitch` image (its entrypoint extracts the ACME
-certificate for `FS_DOMAIN`, applies `FS_ESL_PASSWORD`, and ships the
-curated module set incl. Piper TTS).
+The shipped `connect_freeswitch/deploy/docker-compose.yml` is the
+production FreeSWITCH host stack. It starts only `traefik`, `fs` and
+`firewall`, with `oduist/freeswitch:2.1.2` and
+`oduist/freeswitch-firewall:2.1.1`. The all-in-one local stack that also
+starts Odoo + Postgres lives in `docker-compose.full.yml`.
 
 The FreeSWITCH image owns its static bootstrap configuration. Do **not** mount
 `./freeswitch/conf` over `/usr/local/freeswitch/etc/freeswitch`: Odoo provides
@@ -136,114 +135,10 @@ FS_ESL_PASSWORD=<esl password>
 FIREWALL_DASHBOARD_PASSWORD=<pick a strong password>
 ```
 
-`docker-compose.yml` (template — no customer-specific values, everything
-comes from `.env`):
-
-```yaml
-services:
-  # TLS edge: terminates HTTPS for XML-RPC (/RPC2) and the firewall
-  # dashboard (/firewall); requests the Let's Encrypt certificate that
-  # the fs entrypoint reuses for Verto WSS.
-  traefik:
-    image: traefik:v3.3
-    container_name: traefik
-    network_mode: host
-    restart: unless-stopped
-    environment:
-      - FS_DOMAIN=${FS_DOMAIN:?Set FS_DOMAIN in .env}
-    command:
-      - "--global.checknewversion=false"
-      - "--global.sendanonymoususage=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.websecure.http.tls.certresolver=letsencrypt"
-      - "--entrypoints.websecure.http.tls.domains[0].main=${FS_DOMAIN:?Set FS_DOMAIN in .env}"
-      - "--providers.file.filename=/etc/traefik/dynamic.yml"
-      - "--providers.file.watch=true"
-      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?Set ACME_EMAIL in .env}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/acme/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.caserver=${ACME_CASERVER:-https://acme-v02.api.letsencrypt.org/directory}"
-    volumes:
-      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
-      - traefik-acme:/acme
-
-  fs:
-    image: oduist/freeswitch:latest   # pin the current release tag in production
-    container_name: freeswitch
-    hostname: freeswitch
-    network_mode: host
-    restart: unless-stopped
-    environment:
-      - SOUND_RATES=8000:16000
-      - SOUND_TYPES=music:en-us-callie
-      - EPMD=false
-      - DUMPCAP=false
-      - ODOO_URL=${ODOO_URL}
-      - FS_WEBHOOK_TOKEN=${FS_WEBHOOK_TOKEN}
-      - FS_DOMAIN=${FS_DOMAIN}
-      - FS_ESL_PASSWORD=${FS_ESL_PASSWORD}
-    volumes:
-      - freeswitch-sounds:/usr/share/freeswitch/sounds
-      - traefik-acme:/etc/traefik
-
-  # SIP brute-force protection; see docs/admin/firewall.md.
-  firewall:
-    image: oduist/freeswitch-firewall:1.1.0
-    container_name: firewall
-    network_mode: host
-    restart: unless-stopped
-    cap_add:
-      - NET_ADMIN
-    environment:
-      - ODOO_URL=${ODOO_URL}
-      - AGENT_TOKEN=${FIREWALL_AGENT_TOKEN}
-      - FS_ESL_HOST=127.0.0.1
-      - FS_ESL_PORT=8021
-      - FS_ESL_PASSWORD=${FS_ESL_PASSWORD}
-      - HTTP_BIND_HOST=127.0.0.1
-      - HTTP_BIND_PORT=8081
-      - DASHBOARD_USER=admin
-      - DASHBOARD_PASSWORD=${FIREWALL_DASHBOARD_PASSWORD}
-    volumes:
-      - firewall-cache:/var/lib/connect-firewall
-
-volumes:
-  freeswitch-sounds:
-  firewall-cache:
-  traefik-acme:
-```
-
-Extend `/opt/freeswitch/traefik/dynamic.yml` (the copied file already
-routes `/RPC2`) with the firewall router:
-
-```yaml
-http:
-  routers:
-    freeswitch-xmlrpc:
-      rule: 'Host(`{{ env "FS_DOMAIN" }}`) && PathPrefix(`/RPC2`)'
-      entryPoints: [websecure]
-      service: freeswitch-xmlrpc
-      tls:
-        certResolver: letsencrypt
-    firewall:
-      rule: 'Host(`{{ env "FS_DOMAIN" }}`) && PathPrefix(`/firewall`)'
-      entryPoints: [websecure]
-      service: firewall
-      tls:
-        certResolver: letsencrypt
-  services:
-    freeswitch-xmlrpc:
-      loadBalancer:
-        servers:
-          - url: "http://127.0.0.1:8080"
-    firewall:
-      loadBalancer:
-        servers:
-          - url: "http://127.0.0.1:8081"
-```
+The copied `docker-compose.yml` and `traefik/dynamic.yml` already include
+the firewall service and the `/firewall` Traefik route. Traefik runs on
+the host network and proxies to the loopback-only listeners
+`127.0.0.1:8080` (FreeSWITCH XML-RPC) and `127.0.0.1:8081` (firewall).
 
 Do not start `fs` or `firewall` yet. Their required tokens are generated by
 Odoo in the next step. Starting with made-up or empty values produces expected

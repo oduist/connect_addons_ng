@@ -37,14 +37,14 @@ currently carries these deliberate changes:
    create its Abyss socket on `127.0.0.1:8080`. Upstream exposes only an
    `http-port` setting and otherwise binds every interface. Traefik shares the
    host network namespace, terminates HTTPS, and is the only public route to
-   this plain-HTTP management listener (ADR-043).
+   this plain-HTTP management listener (ADR-044).
 3. `conf/autoload_configs/event_socket.conf.xml` binds ESL to
    `127.0.0.1:8021`. The entrypoint substitutes the runtime
    `FS_ESL_PASSWORD`, and the Docker healthcheck authenticates with the same
-   value (ADR-042).
+   value (ADR-043).
 4. FreeSWITCH-to-Odoo HTTP calls authenticate with the Odoo-generated
    `freeswitch_webhook_token`, supplied to the container as
-   `FS_WEBHOOK_TOKEN` (ADR-025 and ADR-044).
+   `FS_WEBHOOK_TOKEN` (ADR-025 and ADR-045).
 5. The entrypoint extracts the certificate for `FS_DOMAIN` from Traefik's
    shared ACME store for Verto WSS and DTLS-SRTP, with a self-signed fallback
    for development.

@@ -48,7 +48,7 @@ RUN git clone --depth 1 --branch ${FS_VERSION} \
 
 # mod_xml_rpc has no listen-address setting and otherwise binds its management
 # API to every host interface. Keep the plain-HTTP backend loopback-only; the
-# public route is the managed Traefik HTTPS edge (ADR-043).
+# public route is the managed Traefik HTTPS edge (ADR-044).
 COPY patches/mod_xml_rpc-loopback.patch /tmp/mod_xml_rpc-loopback.patch
 RUN git -C /usr/src/freeswitch apply --check /tmp/mod_xml_rpc-loopback.patch \
     && git -C /usr/src/freeswitch apply /tmp/mod_xml_rpc-loopback.patch

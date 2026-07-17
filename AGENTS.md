@@ -188,6 +188,10 @@ Specifically:
 - Dograh control routes are all under `/dograh/api/*` and require `Authorization: Bearer <dograh_service_token>` (fail-closed; the same shared secret authenticates Odoo→Dograh inbound webhooks)
 - Bird events arrive on the single `/bird/webhook` route and validate the Standard-Webhooks signature (`webhook-id` / `webhook-timestamp` / `webhook-signature`, `whsec_` secret) when enabled
 - Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`, LiveKit web phone in `connect_livekit/static/src/`, Infobip WebRTC phone in `connect_infobip/static/src/`
+- **Module Apps Store descriptions** (`<module>/static/description/index.html`)
+  follow the fixed Oduist house style. To write or regenerate one, use the
+  `writing-odoo-module-description` skill (`.claude/skills/`), which carries the
+  template and the code→features extraction procedure.
 
 ## FreeSWITCH & Firewall Docker Images
 
@@ -226,7 +230,7 @@ As a result, the published image tags **lag behind** the module manifest version
 ### Deploying the `fs` and `firewall` services with Oduflow
 
 `connect_freeswitch` generates the two service credentials automatically on
-install and repairs missing values on upgrade (ADR-044). Do not invent new
+install and repairs missing values on upgrade (ADR-045). Do not invent new
 tokens in deployment files and do not rotate an existing token during a
 routine service update.
 

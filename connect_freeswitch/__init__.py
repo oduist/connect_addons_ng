@@ -49,7 +49,7 @@ def ensure_deployment_tokens(env):
 
     The individual helpers remain public because older per-series migrations
     import them directly. This aggregate is the installation and current
-    migration contract used by Oduflow deployments (ADR-044).
+    migration contract used by Oduflow deployments (ADR-045).
     """
     setup_firewall(env)
     ensure_webhook_token(env)

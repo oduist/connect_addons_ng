@@ -19,17 +19,32 @@ PSTN (via SIP Gateway) ────►│
 ## Docker Deployment
 
 The module includes a ready-to-use Docker setup in `connect_freeswitch/deploy/`.
+The default `docker-compose.yml` is the production FreeSWITCH host stack
+(`traefik`, `fs`, `firewall`). `docker-compose.full.yml` is a standalone
+local stack that also starts Odoo 19 and PostgreSQL.
 
 ### Docker Compose
 
 ```yaml
 services:
   freeswitch:
-    build: ./connect_freeswitch/deploy
+    image: oduist/freeswitch:2.1.2
     network_mode: host
     environment:
       - ODOO_URL=http://localhost:8069
       - FS_WEBHOOK_TOKEN=<value of the FreeSWITCH Webhook Token>
+      - FS_DOMAIN=fs.example.com
+      - FS_ESL_PASSWORD=<shared ESL password>
+  firewall:
+    image: oduist/freeswitch-firewall:2.1.1
+    network_mode: host
+    cap_add: [NET_ADMIN]
+    environment:
+      - ODOO_URL=http://localhost:8069
+      - AGENT_TOKEN=<value of the Firewall Service Token>
+      - FS_ESL_HOST=127.0.0.1
+      - FS_ESL_PASSWORD=<shared ESL password>
+      - HTTP_BIND_HOST=127.0.0.1
 ```
 
 !!! warning "Network mode"
@@ -41,6 +56,10 @@ services:
 |----------|---------|-------------|
 | `ODOO_URL` | `http://localhost:8069` | Base URL for XML cURL callbacks to Odoo. |
 | `FS_WEBHOOK_TOKEN` | *(unset)* | Shared secret authenticating every FreeSWITCH → Odoo HTTP call (XML cURL, CDR, recordings, parking). **Required**: Odoo rejects the requests with 401 while it is unset or wrong. |
+| `FS_DOMAIN` | *(unset)* | Public FreeSWITCH host name used for SIP/WSS domain and Traefik ACME certificate extraction. |
+| `FS_ESL_PASSWORD` | `ConnectNGESLPassword` | Password for FreeSWITCH ESL. Set the same value on `fs` and `firewall`. |
+| `FIREWALL_AGENT_TOKEN` | *(unset)* | Shared secret for Odoo ↔ firewall service calls. Must match Firewall Service Token in Odoo settings. |
+| `FIREWALL_DASHBOARD_PASSWORD` | *(unset)* | Basic-auth password for the firewall dashboard. |
 | `SOUND_RATES` | `8000:16000` | Supported audio sample rates. |
 | `SOUND_TYPES` | `music:en-us-callie` | Prompt voices and hold music. |
 
@@ -76,14 +95,19 @@ Oduflow**.
 
 ```bash
 cd connect_freeswitch/deploy
-docker compose build
 docker compose up -d
+```
+
+For the local all-in-one stack:
+
+```bash
+docker compose -f docker-compose.full.yml up -d
 ```
 
 Verify FreeSWITCH is running:
 
 ```bash
-docker exec -it freeswitch fs_cli -x "status"
+docker exec freeswitch sh -c 'fs_cli -p "$FS_ESL_PASSWORD" -x "status"'
 ```
 
 ## Firewall Configuration
@@ -97,6 +121,7 @@ FreeSWITCH requires the following ports:
 | 5080 | UDP+TCP | SIP signaling (sofia `external` profile) — trunks and SIP phones |
 | 443 | TCP | XML-RPC over HTTPS (Odoo → Traefik → FreeSWITCH commands) |
 | 8080 | TCP | mod_xml_rpc plain HTTP — **internal only**, never expose; Traefik proxies to it |
+| 8081 | TCP | firewall service plain HTTP — **internal only**, bound to loopback; Traefik proxies `/firewall` to it |
 
 ```bash
 sudo ufw allow 48082/tcp
@@ -324,7 +349,8 @@ TTS settings are in `autoload_configs/piper_tts.conf.xml`:
 FreeSWITCH is always deployed behind **Traefik**, which is the single TLS edge for the stack (`deploy/docker-compose.yml` → `traefik` service, config in `deploy/traefik/`):
 
 - **Verto WSS / DTLS-SRTP** — FreeSWITCH terminates these itself. The `oduist/freeswitch` entrypoint extracts the freshest certificate from Traefik's ACME store (`acme.json`, shared via the `traefik-acme` volume) into `tls/wss.pem` and `tls/dtls-srtp.pem`. With no ACME cert available (local development) it falls back to a self-signed certificate.
-- **XML-RPC** — `mod_xml_rpc` has no native TLS, so Traefik terminates HTTPS in front of it (`deploy/traefik/dynamic.yml`) and proxies to the internal `8080` port. The same certificate Traefik manages secures this control-plane channel; Odoo connects over `https://`.
+- **XML-RPC** — `mod_xml_rpc` has no native TLS, so Traefik terminates HTTPS in front of it (`deploy/traefik/dynamic.yml`) and proxies to the internal `127.0.0.1:8080` port. The same certificate Traefik manages secures this control-plane channel; Odoo connects over `https://`.
+- **Firewall dashboard/API** — Traefik routes `/firewall` to the firewall service on `127.0.0.1:8081`; the service itself remains loopback-only.
 
 Traefik requests a **Let's Encrypt** certificate out of the box. Set
 `FS_DOMAIN` (the public FQDN of the FreeSWITCH host) and `ACME_EMAIL` in

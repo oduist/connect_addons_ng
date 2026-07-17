@@ -1,4 +1,4 @@
-# 042: Keep the FreeSWITCH bootstrap configuration inside the image
+# ADR-043: Keep the FreeSWITCH bootstrap configuration inside the image
 
 ## Status
 

@@ -1,4 +1,4 @@
-"""Rotate XML-RPC credentials and ensure deployment tokens (ADR-043/044)."""
+"""Rotate XML-RPC credentials and ensure deployment tokens (ADR-044/045)."""
 
 from odoo import SUPERUSER_ID, api
 from odoo.addons.connect_freeswitch import ensure_deployment_tokens

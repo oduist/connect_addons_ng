@@ -3,7 +3,7 @@
 
 Covers the managed XML-RPC edge: ``_freeswitch_rpc()`` always reaches
 mod_xml_rpc over verified HTTPS on port 443, uses the fixed internal username,
-and rotates its hidden password when the public host changes (ADR-043).
+and rotates its hidden password when the public host changes (ADR-044).
 """
 import ssl
 from unittest import mock

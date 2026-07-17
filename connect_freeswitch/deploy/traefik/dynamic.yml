@@ -1,4 +1,5 @@
-# Traefik dynamic configuration: route HTTPS XML-RPC traffic to FreeSWITCH.
+# Traefik dynamic configuration: route HTTPS control-plane traffic to the
+# host-networked FreeSWITCH and firewall services.
 #
 # mod_xml_rpc has no native TLS, so Traefik terminates HTTPS here (the cert is
 # issued by the letsencrypt resolver configured on the websecure entrypoint,
@@ -18,9 +19,20 @@ http:
       service: freeswitch-xmlrpc
       tls:
         certResolver: letsencrypt
+    firewall:
+      rule: 'Host(`{{ env "FS_DOMAIN" }}`) && PathPrefix(`/firewall`)'
+      entryPoints:
+        - websecure
+      service: firewall
+      tls:
+        certResolver: letsencrypt
 
   services:
     freeswitch-xmlrpc:
       loadBalancer:
         servers:
           - url: "http://127.0.0.1:8080"
+    firewall:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:8081"

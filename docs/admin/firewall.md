@@ -105,7 +105,7 @@ The service container must:
 | `FS_ESL_HOST` | usually `127.0.0.1` |
 | `FS_ESL_PORT` | usually `8021` |
 | `FS_ESL_PASSWORD` | password of FreeSWITCH `mod_event_socket`. The shipped FS image bakes in `ConnectNGESLPassword`; set `FS_ESL_PASSWORD` on both containers if you want a different value. |
-| `HTTP_BIND_HOST`, `HTTP_BIND_PORT` | where the service listens (default `0.0.0.0:8081`; set `HTTP_BIND_HOST=::` if the dashboard itself must be reachable over IPv6) |
+| `HTTP_BIND_HOST`, `HTTP_BIND_PORT` | where the service listens. The production compose binds `127.0.0.1:8081` and exposes `/firewall` through Traefik. |
 | `DASHBOARD_USER`, `DASHBOARD_PASSWORD` | basic-auth credentials for the dashboard / JSON API |
 
 Optionally:
@@ -119,7 +119,7 @@ Optionally:
 
 ```yaml
 firewall:
-  image: oduist/freeswitch-firewall:2.1.0
+  image: oduist/freeswitch-firewall:2.1.1
   network_mode: host
   cap_add: [NET_ADMIN]
   environment:
@@ -127,6 +127,7 @@ firewall:
     AGENT_TOKEN: <copy from Firewall Service Token in Odoo settings>
     FS_ESL_HOST: 127.0.0.1
     FS_ESL_PASSWORD: ConnectNGESLPassword
+    HTTP_BIND_HOST: 127.0.0.1
     DASHBOARD_USER: admin
     DASHBOARD_PASSWORD: <pick a strong password>
   volumes:
@@ -181,7 +182,7 @@ A ready preset for `oduflow` lives at
 | Setting | Default | Effect |
 |---|---|---|
 | Firewall Enabled | False | Master switch. When off, the service still runs but reports `firewall_enabled=False`. |
-| Firewall Service URL | `http://host.docker.internal:8081` | Odoo posts `/firewall/sync` here. |
+| Firewall Service URL | See deployment | Odoo posts `/firewall/sync` here. In production set this to `https://<freeswitch-host>`; Traefik routes the `/firewall` prefix to the loopback-only service on `127.0.0.1:8081`. |
 | Firewall Service Token | *generated* | Shared Bearer secret. ≥24 chars, `[A-Za-z0-9_-]` only. The service uses the same value for both directions; restart the container after changing it. |
 | Heartbeat Interval | 60 s | How often the service pings Odoo. |
 | Event Retention | 30 days | How long the audit log is kept; the daily cron prunes older. |

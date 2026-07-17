@@ -1,6 +1,6 @@
 # 004: FreeSWITCH XML-RPC for Odoo-to-FS Communication
 
-> Superseded in part by ADR-043: only the public host remains configurable;
+> Superseded in part by ADR-044: only the public host remains configurable;
 > port, username, password, and TLS verification are now managed internally.
 
 ## Problem

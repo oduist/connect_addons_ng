@@ -1,4 +1,4 @@
-# ADR-044: Bootstrap FreeSWITCH deployment credentials for Oduflow
+# ADR-045: Bootstrap FreeSWITCH deployment credentials for Oduflow
 
 ## Status
 
@@ -60,5 +60,6 @@ added to an existing database.
 
 - ADR-015: firewall shared-bearer controllers
 - ADR-025: FreeSWITCH webhook token authentication
-- ADR-042: immutable FreeSWITCH bootstrap configuration
-- ADR-043: managed FreeSWITCH XML-RPC edge
+- ADR-042: split production and all-in-one FreeSWITCH Compose stacks
+- ADR-043: immutable FreeSWITCH bootstrap configuration
+- ADR-044: managed FreeSWITCH XML-RPC edge
