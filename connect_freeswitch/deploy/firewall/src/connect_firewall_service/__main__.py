@@ -32,6 +32,7 @@ from .constants import (
     IPSET_EXPIRE_LONG,
     IPSET_EXPIRE_SHORT,
     IPSET_WHITELIST,
+    IPV6_SET_SUFFIX,
 )
 from . import iptables_manager, ipset_manager
 from .esl import ESLClient
@@ -69,20 +70,31 @@ def setup_logging(level: str) -> None:
 
 
 def install_firewall_baseline(settings: ServiceSettings) -> None:
-    ipset_manager.ensure_set(IPSET_WHITELIST, set_type="hash:net")
-    ipset_manager.ensure_set(IPSET_BLACKLIST, set_type="hash:net")
-    ipset_manager.ensure_set(
-        IPSET_AUTHENTICATED, timeout=settings.firewall_authenticated_timeout,
-    )
-    ipset_manager.ensure_set(
-        IPSET_BANNED, timeout=settings.firewall_banned_timeout,
-    )
-    ipset_manager.ensure_set(
-        IPSET_EXPIRE_SHORT, timeout=settings.firewall_expire_short_timeout,
-    )
-    ipset_manager.ensure_set(
-        IPSET_EXPIRE_LONG, timeout=settings.firewall_expire_long_timeout,
-    )
+    # Every set exists per address family: base name = IPv4 (inet),
+    # "6"-suffixed twin = IPv6 (inet6).
+    for family, suffix in (("inet", ""), ("inet6", IPV6_SET_SUFFIX)):
+        ipset_manager.ensure_set(
+            IPSET_WHITELIST + suffix, family=family, set_type="hash:net",
+        )
+        ipset_manager.ensure_set(
+            IPSET_BLACKLIST + suffix, family=family, set_type="hash:net",
+        )
+        ipset_manager.ensure_set(
+            IPSET_AUTHENTICATED + suffix, family=family,
+            timeout=settings.firewall_authenticated_timeout,
+        )
+        ipset_manager.ensure_set(
+            IPSET_BANNED + suffix, family=family,
+            timeout=settings.firewall_banned_timeout,
+        )
+        ipset_manager.ensure_set(
+            IPSET_EXPIRE_SHORT + suffix, family=family,
+            timeout=settings.firewall_expire_short_timeout,
+        )
+        ipset_manager.ensure_set(
+            IPSET_EXPIRE_LONG + suffix, family=family,
+            timeout=settings.firewall_expire_long_timeout,
+        )
     iptables_manager.apply_baseline(
         settings.firewall_tcp_ports, settings.firewall_udp_ports,
     )
@@ -111,8 +123,8 @@ async def heartbeat_loop(settings: ServiceSettings, odoo: OdooClient,
                          started_at: float) -> None:
     while True:
         try:
-            bans = ipset_manager.list_entries(IPSET_BANNED)
-            auth = ipset_manager.list_entries(IPSET_AUTHENTICATED)
+            bans = ipset_manager.list_entries_all_families(IPSET_BANNED)
+            auth = ipset_manager.list_entries_all_families(IPSET_AUTHENTICATED)
             await odoo.post("/heartbeat", {
                 "version": __version__,
                 "esl_connected": esl_client.is_connected,
@@ -123,18 +135,6 @@ async def heartbeat_loop(settings: ServiceSettings, odoo: OdooClient,
         except Exception as exc:
             logger.debug("Heartbeat failed: %s", exc)
         await asyncio.sleep(max(15, settings.firewall_heartbeat_interval))
-
-
-async def http_loop(settings: ServiceSettings, app) -> None:
-    config = uvicorn.Config(
-        app,
-        host=settings.http_bind_host,
-        port=settings.http_bind_port,
-        log_level=settings.log_level.lower(),
-        access_log=False,
-    )
-    server = uvicorn.Server(config)
-    await server.serve()
 
 
 async def run(settings: ServiceSettings) -> None:
@@ -184,6 +184,26 @@ async def run(settings: ServiceSettings) -> None:
     started_at = time.time()
     app = build_app(settings, reconciler, odoo, esl_client, event_bus, started_at)
 
+    # Own the uvicorn server so the shutdown path can drive its graceful
+    # stop directly. timeout_graceful_shutdown bounds how long uvicorn waits
+    # for in-flight connections: the SSE /firewall/events stream is
+    # long-lived and would otherwise hold shutdown open indefinitely (the
+    # dashboard reconnects on its own, so a force-close after a few seconds
+    # is fine).
+    http_config = uvicorn.Config(
+        app,
+        host=settings.http_bind_host,
+        port=settings.http_bind_port,
+        log_level=settings.log_level.lower(),
+        access_log=False,
+        timeout_graceful_shutdown=5,
+    )
+    http_server = uvicorn.Server(http_config)
+    # We install our own SIGTERM/SIGINT handlers below; keep uvicorn from
+    # replacing them with its own (its handler would trap the signal and
+    # race our stop-event, breaking the coordinated shutdown).
+    http_server.install_signal_handlers = lambda: None
+
     def _log_task_exception(task: asyncio.Task) -> None:
         if task.cancelled():
             return
@@ -199,9 +219,9 @@ async def run(settings: ServiceSettings) -> None:
             name="heartbeat",
         ),
         asyncio.create_task(reconciler.run(), name="reconciler"),
-        asyncio.create_task(http_loop(settings, app), name="http"),
     ]
-    for t in tasks:
+    http_task = asyncio.create_task(http_server.serve(), name="http")
+    for t in (*tasks, http_task):
         t.add_done_callback(_log_task_exception)
 
     stop = asyncio.Event()
@@ -212,6 +232,14 @@ async def run(settings: ServiceSettings) -> None:
     await stop.wait()
 
     logger.info("shutting down")
+    # Ask uvicorn to unwind its own lifespan cleanly: should_exit makes
+    # serve() return after emitting the ASGI lifespan.shutdown event, so the
+    # lifespan task is never cancelled mid-receive() — which is exactly what
+    # produced the CancelledError traceback on every stop. The background
+    # loops are plain infinite tasks, so cancelling them is quiet.
+    http_server.should_exit = True
+    with suppress(asyncio.CancelledError, Exception):
+        await http_task
     for task in tasks:
         task.cancel()
     for task in tasks:

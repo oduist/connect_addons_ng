@@ -32,8 +32,15 @@ SIP_TRANSPORT_SELECTION = [
 
 
 class ConnectEndpoint(models.Model):
-    _inherit = 'connect.endpoint'
+    _name = 'connect.asterisk.endpoint'
+    _description = 'Asterisk Endpoint'
 
+    name = fields.Char(string='Name', required=True)
+    connect_user_id = fields.Many2one('connect.user', string='Connect User', ondelete='cascade')
+    active = fields.Boolean(default=True)
+    # Asterisk numbering lives in the customer's dialplan; Odoo only mirrors
+    # a plain string per endpoint (used as caller-id fallback for originate).
+    exten_number = fields.Char(string='Extension Number')
     asterisk_channel = fields.Char(
         string='Asterisk Channel',
         help='Asterisk dial string of this endpoint, e.g. PJSIP/101. '
@@ -134,7 +141,7 @@ class ConnectEndpoint(models.Model):
         """Channel variables for the AMI Originate action of this endpoint."""
         self.ensure_one()
         variables = []
-        exten = self.connect_user_id.exten_number or self.exten_number
+        exten = self.connect_user_id.asterisk_exten_number or self.exten_number
         if exten:
             variables.extend([
                 '__REALCALLERIDNUM={}'.format(exten),

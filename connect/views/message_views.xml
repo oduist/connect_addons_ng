@@ -71,9 +71,4 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_connect_messages"
-              name="Messages"
-              parent="menu_connect_messages_parent"
-              action="action_connect_message"
-              sequence="10"/>
 </odoo>

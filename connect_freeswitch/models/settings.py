@@ -11,6 +11,8 @@ from odoo import api, fields, models
 from odoo.addons.connect.models.license import ODUIST_MODULES
 from odoo.addons.connect.models.settings import PROTECTED_FIELDS
 
+from ..constants import FREESWITCH_XMLRPC_PUBLIC_PORT, FREESWITCH_XMLRPC_USER
+
 ODUIST_MODULES.append('connect_freeswitch')
 
 # Mask the firewall service token the same way the core module masks openai_api_key.
@@ -18,12 +20,6 @@ if "display_firewall_service_token" not in PROTECTED_FIELDS:
     PROTECTED_FIELDS.append("display_firewall_service_token")
 if "display_freeswitch_webhook_token" not in PROTECTED_FIELDS:
     PROTECTED_FIELDS.append("display_freeswitch_webhook_token")
-
-# Same masking for the mod_xml_rpc password: the stored field is admin-only, and
-# the displayed field is masked back to **** so the secret never reaches the
-# browser or a non-admin get_param() over RPC.
-if "display_freeswitch_xmlrpc_password" not in PROTECTED_FIELDS:
-    PROTECTED_FIELDS.append("display_freeswitch_xmlrpc_password")
 
 logger = logging.getLogger(__name__)
 
@@ -86,35 +82,16 @@ class Settings(models.Model):
     freeswitch_xmlrpc_host = fields.Char(
         string="XML-RPC Host",
         help="Public host of the Traefik TLS endpoint that fronts FreeSWITCH "
-             "mod_xml_rpc (e.g. fs.example.com). Odoo connects to it over HTTPS.",
-    )
-    freeswitch_xmlrpc_port = fields.Integer(
-        string="XML-RPC Port",
-        default=443,
-        help="HTTPS port of the Traefik endpoint in front of mod_xml_rpc "
-             "(default: 443). mod_xml_rpc itself listens on a fixed internal "
-             "port behind Traefik and is never exposed directly.",
-    )
-    freeswitch_xmlrpc_user = fields.Char(
-        string="XML-RPC User",
-        help="FreeSWITCH mod_xml_rpc username (HTTP Basic Auth, sent over TLS)",
+             "mod_xml_rpc (e.g. fs.example.com). Odoo always connects to it "
+             "over verified HTTPS on port 443. Changing the host rotates the "
+             "internal XML-RPC password; restart FreeSWITCH afterwards.",
     )
     freeswitch_xmlrpc_password = fields.Char(
-        string="XML-RPC Password (stored)",
-        groups="connect.group_admin",
-        help="FreeSWITCH mod_xml_rpc password (HTTP Basic Auth, sent over TLS)",
-    )
-    display_freeswitch_xmlrpc_password = fields.Char(
         string="XML-RPC Password",
-        help="FreeSWITCH mod_xml_rpc password (HTTP Basic Auth, sent over TLS). "
-             "Masked to **** after saving; visible only to administrators.",
-    )
-    freeswitch_xmlrpc_tls_verify = fields.Boolean(
-        string="Verify TLS Certificate",
-        default=True,
-        help="Verify the TLS certificate of the XML-RPC endpoint. Keep enabled "
-             "in production (Traefik serves a CA-signed certificate). Disable "
-             "only for development behind a self-signed certificate.",
+        groups="connect.group_admin",
+        default=lambda self: secrets.token_urlsafe(32),
+        help="Automatically generated FreeSWITCH mod_xml_rpc password. This "
+             "control-plane credential is never shown or edited in the UI.",
     )
     # Shared secret authenticating every FreeSWITCH -> Odoo HTTP call
     # (/freeswitch/xml, /freeswitch/webhook/*). Auto-generated so the
@@ -213,6 +190,50 @@ class Settings(models.Model):
     )
 
     @api.model
+    def _normalize_freeswitch_xmlrpc_host(self, host):
+        """Return the canonical DNS hostname used by the managed TLS edge."""
+        return (host or "").strip().lower().rstrip(".")
+
+    @api.constrains("freeswitch_xmlrpc_host")
+    def _check_freeswitch_xmlrpc_host(self):
+        """Reject URLs, ports, and malformed labels in the host-only field."""
+        from odoo.exceptions import ValidationError
+
+        for rec in self:
+            host = rec.freeswitch_xmlrpc_host or ""
+            if not host:
+                continue
+            labels = host.split(".")
+            if (len(host) > 253 or any(
+                    not label or len(label) > 63
+                    or not re.match(
+                        r"^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$", label
+                    )
+                    for label in labels)):
+                raise ValidationError(
+                    "XML-RPC Host must be a DNS hostname without a scheme, "
+                    "path, or port (for example, fs.example.com)."
+                )
+
+    @api.model
+    def _generate_freeswitch_xmlrpc_password(self):
+        """Generate a URL-safe credential for the managed XML-RPC edge."""
+        return secrets.token_urlsafe(32)
+
+    @api.model
+    def _rotate_freeswitch_xmlrpc_password(self):
+        """Rotate and return the hidden XML-RPC credential."""
+        password = self._generate_freeswitch_xmlrpc_password()
+        self.sudo().set_param("freeswitch_xmlrpc_password", password)
+        return password
+
+    @api.model
+    def _get_freeswitch_xmlrpc_password(self):
+        """Return the hidden credential, creating it for legacy databases."""
+        password = self.sudo().get_param("freeswitch_xmlrpc_password")
+        return password or self._rotate_freeswitch_xmlrpc_password()
+
+    @api.model
     def _validate_firewall_secret(self, value, label="Firewall Service Token"):
         """Raise ValidationError on a weak / malformed shared-secret token."""
         from odoo.exceptions import ValidationError
@@ -234,7 +255,40 @@ class Settings(models.Model):
                 "remove: {}".format(label, " ".join(bad))
             )
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        normalized_vals = []
+        for vals in vals_list:
+            vals = dict(vals)
+            if "freeswitch_xmlrpc_host" in vals:
+                host = self._normalize_freeswitch_xmlrpc_host(
+                    vals["freeswitch_xmlrpc_host"]
+                )
+                vals["freeswitch_xmlrpc_host"] = host or False
+                if host and "freeswitch_xmlrpc_password" not in vals:
+                    vals["freeswitch_xmlrpc_password"] = (
+                        self._generate_freeswitch_xmlrpc_password()
+                    )
+            normalized_vals.append(vals)
+        return super().create(normalized_vals)
+
     def write(self, vals):
+        vals = dict(vals)
+        if "freeswitch_xmlrpc_host" in vals:
+            new_host = self._normalize_freeswitch_xmlrpc_host(
+                vals["freeswitch_xmlrpc_host"]
+            )
+            old_hosts = {
+                self._normalize_freeswitch_xmlrpc_host(host)
+                for host in self.mapped("freeswitch_xmlrpc_host")
+            }
+            vals["freeswitch_xmlrpc_host"] = new_host or False
+            if old_hosts != {new_host}:
+                vals["freeswitch_xmlrpc_password"] = (
+                    self._generate_freeswitch_xmlrpc_password()
+                    if new_host else False
+                )
+
         # The core settings.write() does a second-pass write under the
         # 'skip_protected_fields' context to replace the displayed
         # secret with asterisks. Skip our validation in that pass so we
@@ -257,6 +311,16 @@ class Settings(models.Model):
         return res
 
     @api.model
+    def originate_call(self, number, res_model=None, res_id=None, user=None, **kwargs):
+        # Dispatch by the user's click-to-call provider; fall through to
+        # other installed telephony modules when it is not FreeSWITCH.
+        if self._get_originate_provider(user) != 'freeswitch':
+            return super().originate_call(
+                number, res_model=res_model, res_id=res_id, user=user, **kwargs)
+        return self.env['connect.call'].originate_call(
+            number, res_model=res_model, res_id=res_id)
+
+    @api.model
     def get_recording_webhook_url(self):
         """Recording upload base URL including the auth token path segment.
 
@@ -274,6 +338,17 @@ class Settings(models.Model):
             base_url if base_url.endswith('/') else base_url + '/', token)
 
     @api.model
+    def get_voicemail_webhook_url(self):
+        """Voicemail upload base URL including the auth token path segment."""
+        base_url = self.env['ir.config_parameter'].sudo().get_param(
+            'web.base.url') or ''
+        token = self.sudo().get_param('freeswitch_webhook_token') or ''
+        if not base_url or not token:
+            return ''
+        return '{}freeswitch/webhook/voicemail/{}'.format(
+            base_url if base_url.endswith('/') else base_url + '/', token)
+
+    @api.model
     def _freeswitch_rpc(self, command, args=''):
         """Low-level mod_xml_rpc call that classifies the failure mode.
 
@@ -287,22 +362,20 @@ class Settings(models.Model):
         by FS connectivity issues.
         """
         host = self.get_param('freeswitch_xmlrpc_host')
-        port = self.get_param('freeswitch_xmlrpc_port') or 443
-        user = self.get_param('freeswitch_xmlrpc_user')
-        password = self.sudo().get_param('freeswitch_xmlrpc_password')
-        verify_tls = self.get_param('freeswitch_xmlrpc_tls_verify')
         if not host:
             logger.warning("FreeSWITCH XML-RPC host not configured")
             return None, 'NOT CONFIGURED'
+        password = self._get_freeswitch_xmlrpc_password()
         # mod_xml_rpc has no native TLS: Traefik terminates HTTPS in front of
         # it and proxies to the internal plain-HTTP port. Always connect over
         # https so the Basic Auth credential never travels in cleartext.
-        url = "https://{}:{}@{}:{}/RPC2".format(user, password, host, port)
+        url = "https://{}:{}@{}:{}/RPC2".format(
+            FREESWITCH_XMLRPC_USER,
+            password,
+            host,
+            FREESWITCH_XMLRPC_PUBLIC_PORT,
+        )
         context = ssl.create_default_context()
-        if not verify_tls:
-            # Self-signed development certificate: skip verification on request.
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
         try:
             server = xmlrpc.client.ServerProxy(url, context=context)
             result = server.freeswitch.api(command, args)
@@ -485,7 +558,7 @@ class Settings(models.Model):
             'login': connect_user._get_verto_login(),
             'password': password,
             'callerName': connect_user.name,
-            'callerNumber': connect_user.exten_number or user.login,
+            'callerNumber': connect_user.freeswitch_exten_number or user.login,
             'displayMode': connect_user.phone_display_mode or 'dropdown',
             'iceServers': ice_servers,
         }

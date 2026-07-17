@@ -4,6 +4,7 @@
 
 - **Name:** Oduist Connect Asterisk
 - **Technical:** `connect_asterisk`
+- **Version:** 19.0.2.0.0
 - **Depends:** `connect`, `web`
 - **Application:** False
 - **License:** Proprietary
@@ -12,9 +13,15 @@
 
 The `connect_asterisk` module extends the core `connect` module with
 Asterisk-specific functionality, ported from the legacy `asterisk_plus`
-product. Like the other providers it follows the abstract-core /
-concrete-integration pattern: core defines models and abstract hooks,
-Asterisk-side code adds fields and behaviour via `_inherit`.
+product. The shared ledger models (`connect.channel`, `connect.user`,
+`connect.recording`, `connect.settings`) are extended via `_inherit`;
+since ADR-031 the module also **owns its PBX configuration models** as
+independent `connect.asterisk.*` models: `connect.asterisk.endpoint`
+(standalone, formerly a `connect.endpoint` extension) and
+`connect.asterisk.number` (new minimal DID → user map). There is no
+Asterisk exten/callflow model — the numbering plan and inbound routing
+stay in the customer's dialplan; `connect.user` only mirrors a plain
+`asterisk_exten_number` Char.
 
 Unlike `connect_freeswitch`, the target deployment is an **existing
 customer Asterisk** (FreePBX, Issabel, plain Asterisk 13–21) — the
@@ -87,11 +94,13 @@ Methods:
 - `asterisk_agent_sync(scope)` — postcommit `/sync` nudge, gated on
   `asterisk_enabled` (fired from `write()` on `asterisk_*` changes,
   status fields excluded);
-- `originate_call(number, res_model, res_id, user)` — implements the
-  core click-to-call contract (`connect.call.redial` calls it):
-  pre-creates the first leg (`technical_direction='outbound-api'`,
-  `sid=ChannelId`) so later AMI events update instead of duplicate,
-  then POSTs an AMI `Originate` per originate-enabled endpoint;
+- `originate_call(number, res_model, res_id, user)` — override of the
+  core click-to-call dispatcher (`connect.call.redial` calls it): when
+  `_get_originate_provider(user)` is not `'asterisk'` it falls through
+  to `super()`; otherwise it pre-creates the first leg
+  (`technical_direction='outbound-api'`, `sid=ChannelId`) so later AMI
+  events update instead of duplicate, then POSTs an AMI `Originate`
+  per originate-enabled endpoint;
 - `asterisk_get_agent_config()` — payload of `/asterisk/api/config`;
 - `asterisk_get_phone_settings()` — JsSIP web phone configuration;
 - `asterisk_ping_agent()` / `check_asterisk_status()` — form buttons.
@@ -107,7 +116,7 @@ each builds a generic dict and calls core `process_channel_event` +
 
 | Handler | AMI event | Semantics |
 |---|---|---|
-| `on_ami_new_channel` | `Newchannel` | primary leg (`Uniqueid==Linkedid`) → `technical_direction='inbound'`; secondary leg → `'outbound-dial'` + `parent_sid=Linkedid`; endpoint matching via `connect.endpoint.get_endpoint_by_channel` fills `caller_pbx_user_id`/`called_pbx_user_id`; pre-created originate legs keep `'outbound-api'`; `Local/` channels skipped |
+| `on_ami_new_channel` | `Newchannel` | primary leg (`Uniqueid==Linkedid`) → `technical_direction='inbound'`; secondary leg → `'outbound-dial'` + `parent_sid=Linkedid`; endpoint matching via `connect.asterisk.endpoint.get_endpoint_by_channel` fills `caller_pbx_user_id`/`called_pbx_user_id`; pre-created originate legs keep `'outbound-api'`; `Local/` channels skipped |
 | `on_ami_new_state` | `Newstate` (Up only) | `status='in-progress'`, stamps `asterisk_answered` |
 | `on_ami_new_connected_line` | `NewConnectedLine` | fills missing/`s` caller/called numbers |
 | `on_ami_hangup` | `Hangup` | answered → `completed` + duration from `asterisk_answered`; unanswered via `UNANSWERED_CAUSE_MAP` (Q.850: 16→canceled, 17/21→busy, 18/19→no-answer, 26→canceled, else failed); replays are idempotent; runs orphan channel/recording relink |
@@ -117,8 +126,12 @@ each builds a generic dict and calls core `process_channel_event` +
 `_asterisk_relink_orphans()` mirrors the FreeSWITCH orphan handling
 (secondary legs and recordings arriving before their parent).
 
-### `connect.endpoint` (`models/endpoint.py`, `_inherit`)
+### `connect.asterisk.endpoint` (`models/endpoint.py`, own model — ADR-031)
 
+Standalone model (formerly a `connect.endpoint` extension): `name`
+(required), `connect_user_id` (Many2one `connect.user`, optional),
+`active`, `exten_number` (plain Char — Asterisk numbering lives in the
+customer's dialplan; used as caller-id fallback for originate),
 `asterisk_channel` (dial string, format-checked, unique),
 `asterisk_sip_user` (computed: `PJSIP/101 → 101`, stored),
 `asterisk_sip_password` (auto passphrase, `groups=connect.group_admin`,
@@ -130,13 +143,25 @@ dial string. `_get_originate_variables()` builds the `Variable` list
 (REALCALLERIDNUM, auto-answer header — `PJSIP_HEADER` vs
 `SIPADDHEADER` by channel tech, per-user extra vars).
 
+### `connect.asterisk.number` (`models/number.py`, new model — ADR-031)
+
+Minimal DID → user map backing `/asterisk/api/get_user_data_by_did`.
+Inbound DIDs stay in the customer's Asterisk dialplan; this model only
+lets the dialplan resolve a DID to a Connect user. Fields:
+`phone_number` (required, `UNIQUE`), `friendly_name`, `user` (Many2one
+`connect.user`, `ondelete='set null'`), `active`.
+
 ### `connect.user` (`models/user.py`, `_inherit`)
 
+`asterisk_exten_number` (plain Char, registered in
+`_pbx_number_fields()` — replaces the old shared `connect.exten` link),
+`originate_provider` `selection_add` `'asterisk'`,
 `asterisk_originate_vars`, web phone preferences (`phone_ring_volume`,
 `mask_call_number`, `call_popup_is_enabled/sticky`).
 `get_user_by_uri()` implements the core stub: matches
 `sip:<user>@host` / bare numbers against endpoint SIP users, then
-exten numbers. `search_pbx_users()` powers the phone contacts search.
+`asterisk_exten_number`. `search_pbx_users()` powers the phone
+contacts search.
 
 ### `connect.recording` (`models/recording.py`, `_inherit`)
 
@@ -174,7 +199,7 @@ model). Defaults in `data/ast_templates.xml`.
 - `GET /asterisk/api/get_partner_manager?number=&exten=` — salesperson
   dialstring/exten routing;
 - `GET /asterisk/api/get_user_data_by_did?did=` — DID → user dialstring
-  (`connect.number` destination=user);
+  (resolved through the `connect.asterisk.number` DID → user map);
 - `GET /asterisk/api/sip_peers` — pjsip wizard config for all endpoints;
 - `GET /asterisk/api/manager_conf` — AMI account snippet.
 
@@ -189,9 +214,10 @@ aligned with the `connect_twilio` phone widget (already core-wired):
 - `components/phone/` — JsSIP UA (WSS to the customer's Asterisk),
   call control, transfer/forward DTMF sequences, BroadcastChannel
   multi-tab coordination;
-- `components/{calls,contacts,favorites,tray}/` — core-model-wired
-  (`connect.call.get_widget_calls`, `connect.favorite`,
-  `res.partner.api_get_partner`, `connect.user`);
+- `components/{contacts,favorites,tray}/` — core-model-wired
+  (`connect.favorite`, `res.partner.api_get_partner`, `connect.user`);
+  the Calls history tab is imported from core
+  (`@connect/components/calls/calls`, `connect.call.get_widget_calls`);
 - `widgets/phone_field/` — click-to-dial: web phone when active,
   otherwise server-side `connect.settings.originate_call`;
 - `lib/jssip.min.js`, sounds, icomoon icon font.
@@ -199,22 +225,44 @@ aligned with the `connect_twilio` phone widget (already core-wired):
 ## Security
 
 - No new groups; reuses `connect.group_user/admin/webhook`.
-- New model `connect.asterisk.template`: admin-only (see above).
+- `connect.asterisk.template`: admin-only (see above).
+- `connect.asterisk.endpoint`: user read+write (own records only via
+  record rule on `connect_user_id.user`), admin full CRUD, webhook read.
+- `connect.asterisk.number`: user read, admin full CRUD.
 - All other data lives on core models with existing ACLs.
 - Secrets: `asterisk_agent_token` masked via `PROTECTED_FIELDS` +
   `groups=connect.group_admin`; `asterisk_sip_password` admin-only,
   exposed to the owner exclusively through `get_sip_user_config`.
 
+## Views & menu
+
+`connect_asterisk` owns the **Asterisk** submenu of the Connect app
+(ADR-031). All provider submenus share sequence 50 under
+`connect.menu_connect_root`, so they appear after Calls/Users in installation
+order and before the core Configuration menu (seq 100). The Asterisk settings
+are edited through the module's own standalone settings form view, opened
+via the core parametrized `open_settings_form()`.
+
+```
+Connect > Asterisk (seq 50)
+  +-- Endpoints (seq 10)
+  +-- Numbers (seq 20)
+  +-- Configuration (seq 100, admin)
+      +-- Templates
+      +-- Settings
+```
+
 ## Core contract — implemented vs intentionally not implemented
 
 | Core hook | Status |
 |---|---|
-| `connect.settings.originate_call` | ✔ AMI Originate via agent |
+| `connect.settings.originate_call` | ✔ dispatcher override — AMI Originate via agent when the user's provider is `asterisk` |
 | `connect.user.get_user_by_uri` | ✔ endpoint SIP user / exten match |
+| `connect.user._pbx_number_fields` | ✔ contributes `asterisk_exten_number` |
 | `connect.channel` event feed | ✔ AMI adapters |
 | `connect.recording` ingestion | ✔ webhook upload |
 | `connect.message.send` | ✘ no SMS transport on plain Asterisk (phase 2+) |
-| `connect.number.route_call` | ✘ inbound routing stays in the customer's dialplan; DID-assist lookup provided instead |
+| Inbound call routing | ✘ stays in the customer's dialplan; `connect.asterisk.number` DID-assist lookup provided instead |
 
 Deferred: voicemail (MiniVM), spy/whisper/barge, retention crons,
 multi-server, job-poll command channel for NATed agents (ADR-026 §6).
@@ -243,8 +291,7 @@ dialplan changes.
 
 ## Tests
 
-`connect_asterisk/tests/__init__.py` — gated loader →
-`tests_suite/connect_asterisk/tests/`:
+`connect_asterisk/tests/`:
 `test_webhook_events.py`, `test_originate.py`,
 `test_recording_webhook.py`, `test_endpoint.py`, `test_settings.py`,
 `test_agent_api.py`, `test_phone_config.py` (+ `common.py`).

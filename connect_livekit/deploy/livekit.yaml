@@ -1,0 +1,26 @@
+# LiveKit server configuration.
+# Replace the API secret and the webhook URL with your values; the same
+# key/secret go to Odoo (LiveKit Settings) and to sip.yaml/egress.yaml.
+port: 7880
+bind_addresses:
+  - ""
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 50100
+  # Discover the public IP via STUN; set to false when the server has a
+  # public address on its interface.
+  use_external_ip: true
+redis:
+  address: redis:6379
+keys:
+  # <api_key>: <api_secret>
+  APIconnect: "change-this-to-a-long-random-secret"
+webhook:
+  # Must be one of the keys above; Odoo verifies the JWT with it.
+  api_key: APIconnect
+  urls:
+    # The paired Odoo instance (one stack = one Odoo, ADR-037).
+    - https://odoo.example.com/livekit/webhook
+logging:
+  level: info

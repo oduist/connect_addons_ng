@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_telnyx_whatsapp_sender_tree" model="ir.ui.view">
+        <field name="name">connect.telnyx.whatsapp_sender.tree</field>
+        <field name="model">connect.telnyx.whatsapp_sender</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="number"/>
+                <field name="display_name"/>
+                <field name="status"/>
+                <field name="quality_rating"/>
+                <field name="is_default"/>
+                <field name="no_sync"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_telnyx_whatsapp_sender_form" model="ir.ui.view">
+        <field name="name">connect.telnyx.whatsapp_sender.form</field>
+        <field name="model">connect.telnyx.whatsapp_sender</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_sync" string="Sync" type="object" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="number" placeholder="+1234567890"/></h1>
+                    </div>
+                    <group>
+                        <group string="Sender">
+                            <field name="display_name"/>
+                            <field name="status"/>
+                            <field name="quality_rating"/>
+                            <field name="calling_enabled"/>
+                            <field name="number_id"/>
+                            <field name="is_default"/>
+                            <field name="no_sync"/>
+                        </group>
+                        <group string="Identifiers">
+                            <field name="phone_number_id"/>
+                            <field name="waba_id"/>
+                        </group>
+                    </group>
+                    <group string="Business Profile">
+                        <group>
+                            <field name="profile_about"/>
+                            <field name="profile_email"/>
+                            <field name="profile_website"/>
+                        </group>
+                        <group>
+                            <field name="profile_address"/>
+                            <field name="profile_description"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_telnyx_whatsapp_sender" model="ir.actions.act_window">
+        <field name="name">WhatsApp Senders</field>
+        <field name="res_model">connect.telnyx.whatsapp_sender</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_telnyx_whatsapp_senders"
+              name="WhatsApp Senders"
+              parent="menu_telnyx_messages"
+              action="action_telnyx_whatsapp_sender"
+              groups="connect.group_admin"
+              sequence="30"/>
+</odoo>

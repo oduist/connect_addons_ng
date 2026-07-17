@@ -16,7 +16,7 @@ def backfill_endpoint_passwords(env):
     Shared helper called from the per-series post-migration entry point.
     """
     from .models.passphrase import generate_passphrase
-    endpoints = env['connect.endpoint'].sudo().with_context(active_test=False).search([
+    endpoints = env['connect.freeswitch.endpoint'].sudo().with_context(active_test=False).search([
         '|', ('auth_password', '=', False), ('auth_password', '=', ''),
     ])
     for endpoint in endpoints:
@@ -44,13 +44,23 @@ def ensure_webhook_token(env):
         settings.set_param('freeswitch_webhook_token', secrets.token_urlsafe(32))
 
 
+def ensure_deployment_tokens(env):
+    """Ensure all credentials required by the deployed services exist.
+
+    The individual helpers remain public because older per-series migrations
+    import them directly. This aggregate is the installation and current
+    migration contract used by Oduflow deployments (ADR-045).
+    """
+    setup_firewall(env)
+    ensure_webhook_token(env)
+
+
 def post_init_hook(env):
     try:
+        ensure_deployment_tokens(env)
         module = env['ir.module.module'].search([('name', '=', 'connect_freeswitch')], limit=1)
         if module:
             module.write({'create_date': fields.Datetime.now()})
         env['oduist.license'].update_license_status(raise_exc=False)
-        setup_firewall(env)
-        ensure_webhook_token(env)
     except Exception as e:
         _logger.error('Error in post_init_hook: %s', str(e))

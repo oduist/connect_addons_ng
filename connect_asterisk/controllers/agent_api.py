@@ -107,8 +107,8 @@ class AsteriskAgentAPIController(http.Controller):
         if not connect_user:
             return self._text('')
         if exten:
-            return self._text(connect_user.exten_number or '')
-        channels = connect_user.endpoint_ids.filtered(
+            return self._text(connect_user.asterisk_exten_number or '')
+        channels = connect_user.asterisk_endpoint_ids.filtered(
             lambda e: e.asterisk_originate_enabled and e.asterisk_channel
         ).mapped('asterisk_channel')
         return self._text('&'.join(channels))
@@ -123,14 +123,12 @@ class AsteriskAgentAPIController(http.Controller):
         did = (did or '').replace(' ', '')
         if not did:
             return self._text('')
-        number = request.env['connect.number'].sudo().search(
+        number = request.env['connect.asterisk.number'].sudo().search(
             [('phone_number', 'in', [did, '+' + did])], limit=1)
-        connect_user = False
-        if number and number.destination == 'user' and number.user:
-            connect_user = number.user
+        connect_user = number.user if number else False
         if not connect_user:
             return self._text('')
-        channels = connect_user.endpoint_ids.filtered(
+        channels = connect_user.asterisk_endpoint_ids.filtered(
             lambda e: e.asterisk_originate_enabled and e.asterisk_channel
         ).mapped('asterisk_channel')
         return self._text('&'.join(channels))
@@ -146,7 +144,7 @@ class AsteriskAgentAPIController(http.Controller):
         if not self._check_token():
             return self._unauthorized()
         env = request.env
-        endpoints = env['connect.endpoint'].sudo().search(
+        endpoints = env['connect.asterisk.endpoint'].sudo().search(
             [('asterisk_sip_user', '!=', False)])
         Template = env['connect.asterisk.template'].sudo()
         chunks = [Template.render('sip_peer_header', {})]

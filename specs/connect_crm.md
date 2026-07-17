@@ -122,11 +122,16 @@ Associates UTM sources with phone numbers for call attribution.
 
 ---
 
-### 5. message_configuration.py — `_inherit = 'connect.message_configuration'`
+### 5. Message configuration extension — moved to `connect_crm_twilio` (ADR-031)
 
-Adds `crm.lead` as a routing destination for inbound messages.
+The message-routing model became Twilio-owned
+(`connect.twilio.message_configuration`), so its CRM extension lives in the
+**auto-installed bridge module `connect_crm_twilio`**
+(`depends: ['connect_crm', 'connect_twilio']`, `auto_install: True`), keeping
+`connect_crm` itself provider-agnostic.
 
-**Changes:**
+**Changes (in connect_crm_twilio/models/message_configuration.py):**
+- `_inherit = 'connect.twilio.message_configuration'`
 - `destination` field: `selection_add = [('crm.lead', 'CRM Lead')]`
 
 ---
@@ -194,7 +199,7 @@ When it is ported, this module will add:
 | `connect.call.get_widget_fields()` | Override — exposes `lead` in active calls widget |
 | `connect.call.register_summary_to_rec()` | Called from `register_crm_lead_call_summary()` to post summary to lead |
 | `connect.settings.get_param()` | Read CRM auto-create config values |
-| `connect.message_configuration` | Adds `crm.lead` as message routing destination |
+| `connect.twilio.message_configuration` | `crm.lead` routing destination added by the `connect_crm_twilio` bridge (auto-installed with connect_twilio) |
 | `connect.group_webhook` | Security group for webhook-triggered lead creation |
 | `ODUIST_MODULES` / `check_license('connect_crm')` | License tracking registration |
 

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_livekit_outgoing_callerid_list" model="ir.ui.view">
+        <field name="name">connect.livekit.outgoing_callerid.list</field>
+        <field name="model">connect.livekit.outgoing_callerid</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="number"/>
+                <field name="friendly_name"/>
+                <field name="trunk"/>
+                <field name="is_default"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_livekit_outgoing_callerid" model="ir.actions.act_window">
+        <field name="name">Outgoing CallerIDs</field>
+        <field name="res_model">connect.livekit.outgoing_callerid</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <menuitem id="menu_livekit_outgoing_callerids"
+              name="Outgoing CallerIDs"
+              parent="menu_livekit_config"
+              action="action_livekit_outgoing_callerid"
+              groups="connect.group_admin"
+              sequence="30"/>
+</odoo>

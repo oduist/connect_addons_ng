@@ -6,8 +6,6 @@
         <field name="arch" type="xml">
             <list>
                 <field name="user"/>
-                <field name="exten" optional="show"/>
-                <field name="outgoing_callerid" optional="show"/>
                 <field name="record_calls"/>
                 <field name="voicemail_enabled"/>
                 <field name="missed_calls_notify"/>
@@ -21,23 +19,23 @@
         <field name="model">connect.user</field>
         <field name="arch" type="xml">
             <form>
-                <header>
-                    <button name="create_extension" type="object" string="Extension" class="btn btn-primary"/>
-                </header>
+                <header/>
                 <sheet>
                     <div class="oe_button_box" name="button_box"/>
                     <group>
-                        <group string="User Info">
+                        <group string="User Info" name="user_info">
                             <field name="user"/>
-                            <field name="exten" readonly="1"/>
-                            <field name="outgoing_callerid"/>
+                            <field name="originate_provider"/>
+                            <field name="message_provider"/>
                             <field name="active"/>
                         </group>
-                        <group string="Call Settings">
+                        <group string="Call Settings" name="call_settings">
                             <field name="record_calls"/>
                             <field name="voicemail_enabled"/>
                             <field name="missed_calls_notify"/>
                             <field name="greeting_message"/>
+                            <field name="language"/>
+                            <field name="voice" placeholder="Provider default"/>
                         </group>
                     </group>
                     <notebook>
@@ -63,7 +61,7 @@
 
     <menuitem id="menu_connect_users"
               name="Users"
-              parent="menu_connect_pbx"
+              parent="menu_connect_root"
               action="action_connect_user"
-              sequence="10"/>
+              sequence="20"/>
 </odoo>

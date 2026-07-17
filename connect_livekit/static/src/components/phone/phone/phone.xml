@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <div t-name="connect_livekit.phone" owl="1"
+         t-attf-class="lk-phone {{state.display ? '' : 'd-none'}}">
+        <div class="lk-phone-header">
+            <span class="lk-phone-title">LiveKit Phone</span>
+            <button class="lk-phone-close" title="Close" t-on-click="close">
+                <i class="fa fa-times"/>
+            </button>
+        </div>
+
+        <div class="lk-phone-body">
+            <t t-if="state.status === 'idle'">
+                <input type="text" class="lk-phone-number" placeholder="+15551234567"
+                       t-model="state.number"
+                       t-on-keydown="onNumberKeydown"/>
+                <button class="lk-btn lk-btn-call" t-on-click="dial">
+                    <i class="fa fa-phone"/> Call
+                </button>
+            </t>
+
+            <t t-if="state.status === 'dialing'">
+                <div class="lk-phone-peer"><t t-esc="state.peer"/></div>
+                <div class="lk-phone-status">Calling…</div>
+                <button class="lk-btn lk-btn-hangup" t-on-click="hangup">
+                    <i class="fa fa-phone"/> Cancel
+                </button>
+            </t>
+
+            <t t-if="state.status === 'ringing'">
+                <div class="lk-phone-peer"><t t-esc="state.peer"/></div>
+                <div class="lk-phone-status">Incoming call…</div>
+                <div class="lk-phone-actions">
+                    <button class="lk-btn lk-btn-call" t-on-click="accept">
+                        <i class="fa fa-phone"/> Accept
+                    </button>
+                    <button class="lk-btn lk-btn-hangup" t-on-click="decline">
+                        <i class="fa fa-phone"/> Decline
+                    </button>
+                </div>
+            </t>
+
+            <t t-if="state.status === 'in-call'">
+                <div class="lk-phone-peer"><t t-esc="state.peer"/></div>
+                <div class="lk-phone-status">In call</div>
+                <div class="lk-phone-actions">
+                    <button class="lk-btn" t-on-click="toggleMute">
+                        <i t-attf-class="fa {{state.muted ? 'fa-microphone-slash' : 'fa-microphone'}}"/>
+                        <t t-esc="state.muted ? 'Unmute' : 'Mute'"/>
+                    </button>
+                    <button class="lk-btn lk-btn-hangup" t-on-click="hangup">
+                        <i class="fa fa-phone"/> Hang Up
+                    </button>
+                </div>
+            </t>
+        </div>
+
+        <div t-ref="lkAudio" class="lk-phone-audio"/>
+    </div>
+
+</templates>

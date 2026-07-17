@@ -31,7 +31,7 @@ class ConnectWhatsappSender(models.Model):
     offline_reasons = fields.Text(readonly=True)
 
     # Convenience fields
-    number_id = fields.Many2one('connect.number', string='Linked Number', ondelete='set null',
+    number_id = fields.Many2one('connect.twilio.number', string='Linked Number', ondelete='set null',
                                 help='Matched by phone number if available.', readonly=True)
 
     # Profile
@@ -48,7 +48,7 @@ class ConnectWhatsappSender(models.Model):
     quality_rating = fields.Char(string='Quality Rating', readonly=True)
 
     # Voice application to use for WhatsApp voice calling integration
-    voice_application = fields.Many2one('connect.twiml', string='Voice Application', ondelete='set null')
+    voice_application = fields.Many2one('connect.twilio.twiml', string='Voice Application', ondelete='set null')
 
     # Local controls
     no_sync = fields.Boolean(string='Do not sync', default=False)
@@ -75,7 +75,7 @@ class ConnectWhatsappSender(models.Model):
         for rec in self:
             num = self.env['connect.settings'].strip_number(rec.number) if hasattr(self.env['connect.settings'], 'strip_number') else rec.number
             candidate = f"+{num}" if num and not str(num).startswith('+') else num
-            linked = self.env['connect.number'].search([('phone_number', '=', candidate)], limit=1)
+            linked = self.env['connect.twilio.number'].search([('phone_number', '=', candidate)], limit=1)
             rec.number_id = linked.id if linked else False
 
     def _prepare_vals_from_api(self, data):
@@ -99,7 +99,7 @@ class ConnectWhatsappSender(models.Model):
             vals['number'] = sender_id.replace('whatsapp:', '', 1)
         # Link number if exists
         if vals.get('number'):
-            linked = self.env['connect.number'].search([('phone_number', '=', vals['number'])], limit=1)
+            linked = self.env['connect.twilio.number'].search([('phone_number', '=', vals['number'])], limit=1)
             if linked:
                 vals['number_id'] = linked.id
         return vals
@@ -133,7 +133,7 @@ class ConnectWhatsappSender(models.Model):
                 vals = self._prepare_vals_from_api(item)
                 # Set default voice_application if not already set
                 if 'voice_application' not in vals or not vals.get('voice_application'):
-                    domain_app = self.env['connect.domain'].get_domain_app()
+                    domain_app = self.env['connect.twilio.domain'].get_domain_app()
                     if domain_app:
                         vals['voice_application'] = domain_app.id
                 # Upsert by sid if present, else by number

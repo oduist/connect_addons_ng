@@ -22,5 +22,6 @@
               name="Debug Log"
               parent="menu_connect_settings"
               action="action_connect_debug"
+              groups="connect.group_admin"
               sequence="30"/>
 </odoo>

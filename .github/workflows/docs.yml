@@ -1,0 +1,47 @@
+name: Publish docs
+
+# Render the MkDocs site and push it to the `website` branch, which GitHub
+# Pages serves from. Runs on pushes to 19.0 that touch the docs, plus manual
+# dispatch.
+on:
+  push:
+    branches:
+      - "19.0"
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+# gh-deploy needs to push the built site to the `website` branch.
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-docs
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: docs/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r docs/requirements.txt
+
+      # Bring the existing `website` history into this fresh checkout so
+      # gh-deploy appends a new commit on top of it (keeping the full deploy
+      # history) instead of starting a divergent branch. Skipped on the very
+      # first deploy, when the branch does not exist yet.
+      - name: Fetch existing website branch
+        run: git fetch origin website:website || echo "website branch does not exist yet (first deploy)"
+
+      - name: Build and deploy to website branch
+        run: mkdocs gh-deploy --remote-branch website

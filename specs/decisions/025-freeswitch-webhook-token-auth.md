@@ -64,7 +64,7 @@ the token from, in order:
 Comparison uses `secrets.compare_digest`. **Fail-closed**: an empty
 stored token rejects everything. The token is auto-generated
 (`secrets.token_urlsafe(32)`) by the field default, `post_init_hook`,
-and the `19.0.1.10.2` post-migration (`ensure_webhook_token`), so
+and the `19.0.1.10.6` post-migration (`ensure_webhook_token`), so
 existing installs lock the endpoints immediately on upgrade.
 
 On the FreeSWITCH side the token arrives via the `FS_WEBHOOK_TOKEN` env
@@ -80,8 +80,8 @@ admin-driven UI flows.
 ## Consequences
 
 - **Operational (breaking, by design):** after upgrading
-  `connect_freeswitch` to 19.0.1.10.2, Odoo answers 401 to FreeSWITCH
-  until the container runs the matching image (≥ tag `1.10.2`) with
+  `connect_freeswitch` to 19.0.1.10.5, Odoo answers 401 to FreeSWITCH
+  until the container runs the matching image (≥ tag `1.10.5`) with
   `FS_WEBHOOK_TOKEN` set to the same value as the Odoo setting. The
   entrypoint logs a loud warning when the var is unset. A "soft"
   rollout was rejected: it would keep the credential-dumping endpoint

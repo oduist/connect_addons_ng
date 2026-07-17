@@ -31,6 +31,7 @@ from .constants import (
     addr_is_private,
 )
 from .event_bus import EventBus
+from .net_utils import normalize_entry, set_for
 from .odoo_client import OdooClient
 
 logger = logging.getLogger(__name__)
@@ -50,30 +51,59 @@ _IP_HEADER_CANDIDATES = (
 )
 
 _IPV4_RE = re.compile(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b")
-_RECEIVED_RE = re.compile(r"received=(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+# ``received=`` carries either family; RFC 3261 spells IPv6 bare but
+# some sofia builds bracket it — accept both and validate by parsing.
+_RECEIVED_RE = re.compile(r"received=\[?([0-9a-fA-F:.]+)\]?")
 _SIP_HOST_RE = re.compile(r"sip:[^@>]+@(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+# IPv6 URI hosts are always bracketed (sip:user@[2001:db8::1]:5060).
+_SIP_HOST6_RE = re.compile(r"sip:[^@>]+@\[([0-9a-fA-F:.]+)\]")
+_BRACKETED_V6_RE = re.compile(r"\[([0-9a-fA-F:.]+)\]")
+
+
+def _parse_candidate(text: Optional[str]) -> Optional[str]:
+    """Normalize a candidate IP string; None when it isn't a valid IP."""
+    if not text:
+        return None
+    candidate = text.strip().strip("[]")
+    try:
+        normalized, _version = normalize_entry(candidate)
+    except ValueError:
+        return None
+    # A CIDR is not a usable event source address.
+    if "/" in normalized:
+        return None
+    return normalized
 
 
 def _extract_ip(event: Mapping[str, str]) -> Optional[str]:
+    """Find the remote SIP IP (either family) in normalized form."""
     for key in _IP_HEADER_CANDIDATES:
         val = event.get(key)
         if not val:
             continue
-        m = _IPV4_RE.search(val)
-        if m:
-            return m.group(0)
+        # Bare IP field (possibly bracketed) — the common case.
+        ip = _parse_candidate(val)
+        if ip:
+            return ip
+        # IP embedded in a longer value (URI, display name, etc.).
+        for regex in (_IPV4_RE, _BRACKETED_V6_RE):
+            m = regex.search(val)
+            if m:
+                ip = _parse_candidate(m.group(m.lastindex or 0))
+                if ip:
+                    return ip
     # Fall back to the Contact header. NAT'ed clients put the public IP
     # in ``received=``; non-NAT clients put it straight in the URI.
     for key in ("contact", "Contact"):
         val = event.get(key)
         if not val:
             continue
-        m = _RECEIVED_RE.search(val)
-        if m:
-            return m.group(1)
-        m = _SIP_HOST_RE.search(val)
-        if m:
-            return m.group(1)
+        for regex in (_RECEIVED_RE, _SIP_HOST_RE, _SIP_HOST6_RE):
+            m = regex.search(val)
+            if m:
+                ip = _parse_candidate(m.group(1))
+                if ip:
+                    return ip
     return None
 
 
@@ -137,11 +167,12 @@ class ESLHandler:
         to ``-exist``; we use ``is_member`` to keep Odoo's audit log
         and the dashboard's event stream from showing duplicates.
         """
-        already = ipset_manager.is_member(IPSET_BANNED, ip)
+        banned_set = set_for(IPSET_BANNED, ip)
+        already = ipset_manager.is_member(banned_set, ip)
         ipset_manager.add_entry(
-            IPSET_BANNED, ip, comment=comment, timeout=self.banned_ttl,
+            banned_set, ip, comment=comment, timeout=self.banned_ttl,
         )
-        ipset_manager.del_entry(IPSET_EXPIRE_LONG, ip)
+        ipset_manager.del_entry(set_for(IPSET_EXPIRE_LONG, ip), ip)
         if already:
             logger.debug("AUTO-BAN duplicate %s (%s) suppressed", ip, details)
             return
@@ -180,11 +211,11 @@ class ESLHandler:
 
         if subclass == "sofia::register" or _is_success(event):
             ipset_manager.add_entry(
-                IPSET_AUTHENTICATED, ip, comment=comment,
+                set_for(IPSET_AUTHENTICATED, ip), ip, comment=comment,
                 timeout=self.trust_ttl,
             )
-            ipset_manager.del_entry(IPSET_EXPIRE_LONG, ip)
-            ipset_manager.del_entry(IPSET_BANNED, ip)
+            ipset_manager.del_entry(set_for(IPSET_EXPIRE_LONG, ip), ip)
+            ipset_manager.del_entry(set_for(IPSET_BANNED, ip), ip)
             self.odoo.enqueue_event(
                 {"event_type": "auth_success", "ip": ip,
                  "user_agent": ua, "account_id": account,
@@ -209,11 +240,11 @@ class ESLHandler:
 
         if subclass in ("sofia::register_attempt", "sofia::pre_register"):
             ipset_manager.add_entry(
-                IPSET_EXPIRE_SHORT, ip, comment=comment,
+                set_for(IPSET_EXPIRE_SHORT, ip), ip, comment=comment,
                 timeout=self.expire_short_ttl,
             )
             ipset_manager.add_entry(
-                IPSET_EXPIRE_LONG, ip, comment=comment,
+                set_for(IPSET_EXPIRE_LONG, ip), ip, comment=comment,
                 timeout=self.expire_long_ttl,
             )
             self.event_bus.record({

@@ -22,7 +22,7 @@ Asterisk** — the agent is not in the media or signaling path.
 Install `connect_asterisk` like any Odoo addon. On install a random
 Agent Token is generated automatically.
 
-## 2. Configure Connect Settings → Asterisk
+## 2. Configure Connect → Asterisk → Configuration → Settings
 
 | Setting | Meaning |
 |---------|---------|
@@ -65,7 +65,7 @@ docker run -d --name connect-asterisk-agent \
   oduist/asterisk-agent:latest
 ```
 
-Press **PING AGENT** in the settings tab — the status fields should
+Press **PING AGENT** in the settings form — the status fields should
 show the agent version and *AMI connected*.
 
 Topology notes:
@@ -79,11 +79,13 @@ Topology notes:
 
 ## 5. Map users and endpoints
 
-For each Odoo user create a **Connect User** and add an **Endpoint**
-with the *Asterisk Channel* of their phone (e.g. `PJSIP/101`). The
-endpoint matches AMI events to the user and is dialed first on
-click-to-call. Optional per-endpoint settings: originate context,
-auto-answer SIP header, SIP transport.
+For each Odoo user create a **Connect User** (**Connect > Users**) and
+add an **Endpoint** under **Connect > Asterisk > Endpoints** with the *Asterisk
+Channel* of their phone (e.g. `PJSIP/101`). The endpoint matches AMI
+events to the user and is dialed first on click-to-call. Optional
+per-endpoint settings: originate context, auto-answer SIP header, SIP
+transport. To let the dialplan route a DID to a user, map it under
+**Connect > Asterisk > Numbers** (used by the `get_user_data_by_did` lookup).
 
 If you want Odoo to manage SIP credentials, the
 `/asterisk/api/sip_peers?token=...` route renders a pjsip wizard
@@ -92,7 +94,7 @@ config for all endpoints — include it from `pjsip_wizard.conf` with
 
 ## 6. Web phone (optional)
 
-Enable *Web Phone* in the Asterisk tab and set the WebSocket URL
+Enable *Web Phone* in the Asterisk settings and set the WebSocket URL
 (`wss://pbx.example.com:8089/ws`). Requirements on Asterisk:
 `http.conf` with TLS enabled, a pjsip WebRTC transport/endpoint
 (transport `webrtc` on the Odoo endpoint generates a matching
@@ -113,7 +115,7 @@ salesperson) and `get_user_data_by_did` (DID → user dialstring).
 - `docker logs connect-asterisk-agent` — AMI connection and event flow
   (`AMI_TRACE=true` dumps raw events).
 - `asterisk -rx "manager show connected"` — the agent's AMI session.
-- Settings → Asterisk → status fields are refreshed by agent
-  heartbeats every 60 s.
+- Connect → Asterisk → Configuration → Settings → status fields are refreshed by
+  agent heartbeats every 60 s.
 - Stale active calls are healed automatically: the agent reconciles
   with `CoreShowChannels` once a minute and emits synthetic hangups.

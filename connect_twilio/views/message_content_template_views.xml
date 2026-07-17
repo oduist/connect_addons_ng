@@ -10,8 +10,8 @@
     <menuitem id="menu_connect_message_content_template"
               name="WhatsApp Templates"
               action="action_connect_message_content_template"
-              sequence="64"
-              parent="connect.menu_connect_messages_parent"
+              sequence="40"
+              parent="menu_twilio_messages"
               groups="connect.group_admin"/>
 
     <record id="view_connect_message_content_template_search" model="ir.ui.view">

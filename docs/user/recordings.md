@@ -5,7 +5,7 @@
 If call recording is enabled for your account, calls are automatically recorded. Recordings appear:
 
 - **On the call record** — Inline audio player in the call form
-- **In the recordings list** — Navigate to **Connect > Recordings**
+- **In the recordings list** — Navigate to **Connect > Calls > Recordings**
 
 ### Playback
 
@@ -17,6 +17,14 @@ Recording can be enabled at multiple levels (configured by your administrator):
 
 - **Per user** — Enable/disable recording for a specific PBX user
 - **Per call flow** — Enable/disable recording for calls through a specific callflow
+
+### In-Call Recording Control
+
+When runtime recording control is available for your phone provider, the phone
+widget shows a recording button during an active call. Use it to start or stop
+recording for that call. If your administrator enabled automatic recording, the
+button shows the active recording state and can stop the current recording when
+the provider supports it.
 
 ## AI Transcription
 
@@ -46,7 +54,7 @@ When **Register Summary** is enabled in settings, call summaries are automatical
 
 ## Browsing Recordings
 
-Navigate to **Connect > Recordings** to see all recordings in a list view.
+Navigate to **Connect > Calls > Recordings** to see all recordings in a list view.
 
 The list shows:
 

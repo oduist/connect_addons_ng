@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="snippets" inherit_id="website.snippets" name="Connect FreeSWITCH snippets">
+        <xpath expr="//t[@id='installed_snippets_hook']" position="after">
+            <t t-snippet="connect_freeswitch_website.s_phone_status"
+               string="Phone Status" group="content">
+                <keywords>phone, schedule, open, hours, status</keywords>
+            </t>
+            <t t-snippet="connect_freeswitch_website.s_phone_opening_hours"
+               string="Phone Opening Hours" group="content">
+                <keywords>phone, schedule, opening, hours</keywords>
+            </t>
+        </xpath>
+    </template>
+</odoo>

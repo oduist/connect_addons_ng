@@ -19,17 +19,32 @@ PSTN (via SIP Gateway) ────►│
 ## Docker Deployment
 
 The module includes a ready-to-use Docker setup in `connect_freeswitch/deploy/`.
+The default `docker-compose.yml` is the production FreeSWITCH host stack
+(`traefik`, `fs`, `firewall`). `docker-compose.full.yml` is a standalone
+local stack that also starts Odoo 19 and PostgreSQL.
 
 ### Docker Compose
 
 ```yaml
 services:
   freeswitch:
-    build: ./connect_freeswitch/deploy
+    image: oduist/freeswitch:2.1.2
     network_mode: host
     environment:
       - ODOO_URL=http://localhost:8069
       - FS_WEBHOOK_TOKEN=<value of the FreeSWITCH Webhook Token>
+      - FS_DOMAIN=fs.example.com
+      - FS_ESL_PASSWORD=<shared ESL password>
+  firewall:
+    image: oduist/freeswitch-firewall:2.1.1
+    network_mode: host
+    cap_add: [NET_ADMIN]
+    environment:
+      - ODOO_URL=http://localhost:8069
+      - AGENT_TOKEN=<value of the Firewall Service Token>
+      - FS_ESL_HOST=127.0.0.1
+      - FS_ESL_PASSWORD=<shared ESL password>
+      - HTTP_BIND_HOST=127.0.0.1
 ```
 
 !!! warning "Network mode"
@@ -41,6 +56,10 @@ services:
 |----------|---------|-------------|
 | `ODOO_URL` | `http://localhost:8069` | Base URL for XML cURL callbacks to Odoo. |
 | `FS_WEBHOOK_TOKEN` | *(unset)* | Shared secret authenticating every FreeSWITCH → Odoo HTTP call (XML cURL, CDR, recordings, parking). **Required**: Odoo rejects the requests with 401 while it is unset or wrong. |
+| `FS_DOMAIN` | *(unset)* | Public FreeSWITCH host name used for SIP/WSS domain and Traefik ACME certificate extraction. |
+| `FS_ESL_PASSWORD` | `ConnectNGESLPassword` | Password for FreeSWITCH ESL. Set the same value on `fs` and `firewall`. |
+| `FIREWALL_AGENT_TOKEN` | *(unset)* | Shared secret for Odoo ↔ firewall service calls. Must match Firewall Service Token in Odoo settings. |
+| `FIREWALL_DASHBOARD_PASSWORD` | *(unset)* | Basic-auth password for the firewall dashboard. |
 | `SOUND_RATES` | `8000:16000` | Supported audio sample rates. |
 | `SOUND_TYPES` | `music:en-us-callie` | Prompt voices and hold music. |
 
@@ -50,29 +69,45 @@ Odoo authenticates all incoming FreeSWITCH HTTP requests with a shared
 secret. A random token is generated automatically on install/upgrade,
 which **locks the endpoints until you pair the container**:
 
-1. Generate a token (≥24 chars, letters/digits/`_`/`-`), e.g.
-   `openssl rand -base64 32 | tr '+/' '-_'`.
-2. In Odoo open *Connect → Settings → FreeSWITCH* and paste it into
-   **FreeSWITCH Webhook Token** (the field masks itself to `****` after
-   saving).
-3. Set the same value as `FS_WEBHOOK_TOKEN` on the FreeSWITCH container
-   and restart it.
+1. Install or upgrade `connect_freeswitch`. The missing-only deployment
+   bootstrap creates both this token and the firewall service token without
+   changing existing values.
+2. Let Oduflow read `connect.settings.freeswitch_webhook_token` through a
+   sudo Odoo shell and pass it directly to the `fs` service as
+   `FS_WEBHOOK_TOKEN`. Treat the shell output as a secret and do not store it
+   in the repository or repeat it in deployment reports.
+3. For a manual deployment, retrieve the same protected setting with an Odoo
+   shell and put it in the container environment. Entering a new value in the
+   **FreeSWITCH Webhook Token** field is an explicit rotation, not a normal
+   installation step.
+4. Restart or recreate the `fs` container after setting the environment
+   variable.
 
 Without the pairing, registrations, dialplan lookups, CDRs and
 recording uploads all fail with HTTP 401 (fail-closed by design).
+
+The Oduflow agent procedure for retrieving both generated tokens and updating
+services without losing their existing environment is defined in
+`AGENTS.md`, section **Deploying the `fs` and `firewall` services with
+Oduflow**.
 
 ### Build and Run
 
 ```bash
 cd connect_freeswitch/deploy
-docker compose build
 docker compose up -d
+```
+
+For the local all-in-one stack:
+
+```bash
+docker compose -f docker-compose.full.yml up -d
 ```
 
 Verify FreeSWITCH is running:
 
 ```bash
-docker exec -it freeswitch fs_cli -x "status"
+docker exec freeswitch sh -c 'fs_cli -p "$FS_ESL_PASSWORD" -x "status"'
 ```
 
 ## Firewall Configuration
@@ -83,15 +118,16 @@ FreeSWITCH requires the following ports:
 |------|----------|---------|
 | 48082 | TCP | Verto WebSocket Secure (WSS) — browser phone signaling |
 | 16000-17000 | UDP | RTP media — voice audio packets |
-| 65060 | UDP | SIP signaling (if using SIP phones) |
-| 7443 | TCP | SIP WebSocket Secure (if using SIP over WSS) |
+| 5080 | UDP+TCP | SIP signaling (sofia `external` profile) — trunks and SIP phones |
 | 443 | TCP | XML-RPC over HTTPS (Odoo → Traefik → FreeSWITCH commands) |
 | 8080 | TCP | mod_xml_rpc plain HTTP — **internal only**, never expose; Traefik proxies to it |
+| 8081 | TCP | firewall service plain HTTP — **internal only**, bound to loopback; Traefik proxies `/firewall` to it |
 
 ```bash
 sudo ufw allow 48082/tcp
 sudo ufw allow 16000:17000/udp
-sudo ufw allow 65060/udp   # only if using SIP phones
+sudo ufw allow 5080/udp
+sudo ufw allow 5080/tcp
 ```
 
 !!! tip "RTP port range"
@@ -101,7 +137,7 @@ sudo ufw allow 65060/udp   # only if using SIP phones
 
 ### Settings
 
-Navigate to **Connect > Configuration > Settings** and open the **FreeSWITCH** tab.
+Navigate to **Connect > FreeSWITCH > Configuration > Settings**.
 
 | Field | Description |
 |-------|-------------|
@@ -117,17 +153,26 @@ Odoo always connects to XML-RPC **over HTTPS**. `mod_xml_rpc` has no native TLS,
 
 | Field | Description |
 |-------|-------------|
-| **XML-RPC Host** | Public host of the Traefik TLS endpoint that fronts FreeSWITCH (e.g., `fs.example.com`). |
-| **XML-RPC Port** | HTTPS port of the Traefik endpoint (default: 443). `mod_xml_rpc` itself stays on the fixed internal port `8080` behind Traefik. |
-| **XML-RPC User** | mod_xml_rpc username (HTTP Basic Auth, sent over TLS). |
-| **XML-RPC Password** | mod_xml_rpc password (HTTP Basic Auth, sent over TLS). Stored admin-only and masked to `****` after saving — never exposed to non-administrators. |
-| **Verify TLS Certificate** | Verify the endpoint's certificate. Keep **on** in production (Traefik serves a CA-signed certificate). Turn **off** only in development behind a self-signed certificate. |
+| **XML-RPC Host** | Public DNS host of the Traefik TLS endpoint that fronts FreeSWITCH (e.g., `fs.example.com`). Enter a hostname only, without `https://`, a port, or a path. |
+
+Odoo always connects to verified HTTPS on port `443`. The XML-RPC username is
+fixed to `odoo`, and the password is generated and stored internally. Changing
+the host rotates the password; restart the FreeSWITCH container afterwards so
+`mod_xml_rpc` fetches the new credential from Odoo.
+
+Upgrading to the managed XML-RPC configuration also rotates the legacy
+operator-managed password once. Restart FreeSWITCH immediately after the
+module upgrade.
+
+The pinned FreeSWITCH image restricts the plain-HTTP backend to
+`127.0.0.1:8080`. Traefik shares the host network namespace and is the only
+public route to it.
 
 When configured, Odoo automatically sends `sofia profile external restart reloadxml` to FreeSWITCH whenever SIP gateways are created, modified, or deleted. This ensures FreeSWITCH picks up gateway changes immediately without manual intervention.
 
 #### Checking server status
 
-The **CHECK STATUS** button on the FreeSWITCH settings tab probes the
+The **CHECK STATUS** button on the FreeSWITCH settings form probes the
 server over XML-RPC and writes the result to the **Server Status**
 field. When the probe fails, the field shows the specific reason so you
 know which side to fix:
@@ -135,14 +180,14 @@ know which side to fix:
 | Server Status | Meaning | What to do |
 |---------------|---------|------------|
 | `UP — <version>` | FreeSWITCH reachable and answering. | Nothing — healthy. |
-| `NOT CONFIGURED` | No XML-RPC host set in Odoo; no connection is attempted. | Fill in the XML-RPC Host (and port/user/password) above. |
-| `UNREACHABLE` | Host set but the TLS connection failed (firewall, closed port, wrong host/IP, DNS, or — when **Verify TLS Certificate** is on — an untrusted/self-signed certificate). | Check the host/port, that Traefik is terminating HTTPS and proxying to `mod_xml_rpc` on `8080`, and that the certificate is trusted (or turn off verification for a self-signed dev cert). |
-| `AUTH FAILED` | Host reachable but `mod_xml_rpc` rejected the credentials (HTTP 401). | Fix the XML-RPC User / Password to match the FreeSWITCH side. |
+| `NOT CONFIGURED` | No XML-RPC host set in Odoo; no connection is attempted. | Fill in the XML-RPC Host above. |
+| `UNREACHABLE` | Host set but the verified TLS connection to port `443` failed (firewall, DNS, routing, or an invalid/untrusted certificate). | Check the host, Traefik, DNS, port `443`, and the public certificate. |
+| `AUTH FAILED` | Host reachable but `mod_xml_rpc` rejected the internally managed credential (HTTP 401). | Restart FreeSWITCH so it fetches the current generated credential from Odoo; check Odoo/FreeSWITCH XML-curl connectivity if it persists. |
 | `INVALID RESPONSE` | Server answered but the payload could not be parsed. | Check the FreeSWITCH logs and the `mod_xml_rpc` configuration. |
 
 ### Endpoints
 
-Navigate to **Connect > PBX > Endpoints** to configure user devices.
+Navigate to **Connect > FreeSWITCH > Endpoints** to configure user devices.
 
 Each PBX user needs at least one endpoint to make and receive calls.
 
@@ -158,7 +203,7 @@ Each PBX user needs at least one endpoint to make and receive calls.
 
 ### SIP Gateways
 
-Navigate to **Connect > PBX > Gateways** to configure PSTN trunks.
+Navigate to **Connect > FreeSWITCH > Configuration > SIP Gateways** to configure PSTN trunks.
 
 A gateway connects FreeSWITCH to an external SIP provider for making/receiving calls to/from the public phone network.
 
@@ -178,7 +223,7 @@ A gateway connects FreeSWITCH to an external SIP provider for making/receiving c
 
 ### Outgoing Routes
 
-Navigate to **Connect > PBX > Outgoing Routes** to configure call routing rules.
+Navigate to **Connect > FreeSWITCH > Configuration > Outgoing Routes** to configure call routing rules.
 
 Routes determine how outbound calls are sent through SIP gateways.
 
@@ -209,7 +254,7 @@ this order:
 1. The caller's **Outgoing Caller ID** (per-user, set on the Connect User
    form).
 2. The **system-wide default** Caller ID — the entry under
-   **Connect > PBX > Caller IDs** flagged **Default** — used when the user
+   **Connect > FreeSWITCH > Outgoing Caller IDs** flagged **Default** — used when the user
    has no per-user number assigned.
 3. The user's **extension number**, when neither of the above is configured.
 
@@ -285,7 +330,7 @@ Place them in `/opt/piper/models/` inside the container and add a `<model>` entr
 <model language="de-AT" path="/opt/piper/models/de_AT-some-voice-medium.onnx" />
 ```
 
-To make the new code selectable from the callflow form, also override `connect.callflow._get_language_selection()` in your extension module.
+To make the new code selectable from the callflow form, also override `connect.freeswitch.callflow._get_language_selection()` in your extension module.
 
 ### Configuration
 
@@ -304,13 +349,24 @@ TTS settings are in `autoload_configs/piper_tts.conf.xml`:
 FreeSWITCH is always deployed behind **Traefik**, which is the single TLS edge for the stack (`deploy/docker-compose.yml` → `traefik` service, config in `deploy/traefik/`):
 
 - **Verto WSS / DTLS-SRTP** — FreeSWITCH terminates these itself. The `oduist/freeswitch` entrypoint extracts the freshest certificate from Traefik's ACME store (`acme.json`, shared via the `traefik-acme` volume) into `tls/wss.pem` and `tls/dtls-srtp.pem`. With no ACME cert available (local development) it falls back to a self-signed certificate.
-- **XML-RPC** — `mod_xml_rpc` has no native TLS, so Traefik terminates HTTPS in front of it (`deploy/traefik/dynamic.yml`) and proxies to the internal `8080` port. The same certificate Traefik manages secures this control-plane channel; Odoo connects over `https://`.
+- **XML-RPC** — `mod_xml_rpc` has no native TLS, so Traefik terminates HTTPS in front of it (`deploy/traefik/dynamic.yml`) and proxies to the internal `127.0.0.1:8080` port. The same certificate Traefik manages secures this control-plane channel; Odoo connects over `https://`.
+- **Firewall dashboard/API** — Traefik routes `/firewall` to the firewall service on `127.0.0.1:8081`; the service itself remains loopback-only.
 
-Traefik requests a **Let's Encrypt** certificate out of the box. Set `FS_DOMAIN` (the public FQDN of the FreeSWITCH host) and `ACME_EMAIL` in `deploy/.env`; while testing, point `ACME_CASERVER` at the Let's Encrypt staging URL to avoid rate limits. In local development (`FS_DOMAIN=localhost`, no public domain) ACME cannot validate, so Traefik serves its built-in self-signed certificate — turn **Verify TLS Certificate** off in the XML-RPC settings.
+Traefik requests a **Let's Encrypt** certificate out of the box. Set
+`FS_DOMAIN` (the public FQDN of the FreeSWITCH host) and `ACME_EMAIL` in
+`deploy/.env`; while testing the edge itself, point `ACME_CASERVER` at the
+Let's Encrypt staging URL to avoid rate limits. Odoo deliberately rejects the
+staging and self-signed certificates because XML-RPC certificate verification
+is always enabled. Switch to the production CA before testing Odoo →
+FreeSWITCH commands.
 
 ## FreeSWITCH Configuration Files
 
-All configuration files are in `deploy/freeswitch/conf/`. Key files:
+Static bootstrap sources are in `deploy/freeswitch/conf/` and are copied into
+the `oduist/freeswitch` image at build time. Do not mount that source directory
+over the container configuration in production: Odoo returns dynamic PBX data
+through `mod_xml_curl`, while these files are the versioned bootstrap that
+loads the integration modules and binds internal services securely. Key files:
 
 | File | Purpose |
 |------|---------|
@@ -329,7 +385,7 @@ All configuration files are in `deploy/freeswitch/conf/`. Key files:
 
 ## XML Templates
 
-Navigate to **Connect > PBX > XML Templates** to view and customize the FreeSWITCH XML configuration templates.
+Navigate to **Connect > FreeSWITCH > Configuration > XML Templates** to view and customize the FreeSWITCH XML configuration templates.
 
 Odoo generates FreeSWITCH XML dynamically using Jinja2 templates. Each template produces a specific piece of configuration — user directory entries, dialplan extensions, gateway definitions, etc. The system ships with sensible defaults, but administrators can customize any template to modify the generated XML.
 
@@ -407,6 +463,62 @@ The following profile-level parameters handle NAT transparently:
 
 No per-user configuration is needed — NAT handling applies automatically to all registrations on the external profile.
 
+## Operations Runbook
+
+### Rotate the SIP trunk password
+
+Use this procedure when the SIP provider forces a credential rotation or
+as routine security hygiene. The mechanics are simple: saving a new
+password on the gateway record automatically restarts the sofia
+`external` profile, FreeSWITCH re-reads the gateway XML through
+xml_curl and re-registers within a few seconds.
+
+**Coordination.** If the provider portal requires setting the new
+password manually, agree on the order with the provider first: set the
+new password on the provider side, then in Odoo. Between the two steps
+outbound registration fails with `FAIL_WAIT`, so keep the window short.
+The expected registration gap after the Odoo save is a few seconds.
+
+**Steps:**
+
+1. Obtain (or generate and set) the new trunk password in the
+   provider's portal.
+2. In Odoo open **Connect → FreeSWITCH → Gateways**, open the trunk
+   gateway and paste the new value into **Password** (the field is
+   visible to Connect admins only), then **Save**. The save schedules a
+   post-commit `sofia profile external restart reloadxml`, so the new
+   credentials are picked up without touching the container.
+
+   The same change over the API (e.g. from an Odoo shell):
+
+   ```python
+   env['connect.freeswitch.gateway'].search(
+       [('name', '=', 'mytrunk')]).write({'password': 'NEW-SECRET'})
+   ```
+
+**Verification:**
+
+1. Check the registration state — `State` must be `REGED`:
+
+   ```
+   fs_cli -x "sofia status gateway mytrunk"
+   ```
+
+2. Smoke test: one outbound call through the trunk and one inbound call
+   to a DID.
+
+**Recovery (wrong password):**
+
+- `sofia status gateway <name>` shows `FAIL_WAIT` / `TRYING` instead of
+  `REGED` and the provider rejects REGISTER with 401/403. Revert by
+  writing the previous password back on the gateway record (same flow,
+  the profile restarts again).
+- If the profile looks stuck, force the reload manually:
+
+  ```
+  fs_cli -x "sofia profile external restart reloadxml"
+  ```
+
 ## Troubleshooting
 
 ### Incoming calls not reaching SIP phone
@@ -431,7 +543,7 @@ If a SIP phone can make outgoing calls but does not ring for incoming calls:
 Inbound DID matching tolerates an optional leading `+`: a number stored as
 `+41215121140` matches a trunk that delivers `41215121140`, and vice-versa.
 You do **not** need to match the trunk's exact E.164/national format when
-entering the DID under **Connect > PBX > Numbers**.
+entering the DID under **Connect > FreeSWITCH > Numbers**.
 
 If an inbound call still drops with a 404, the delivered digits themselves do
 not match. Check the `destination_number` the trunk actually sends (Odoo debug
@@ -451,7 +563,7 @@ not normalized and require the stored number to match the delivered digits.
 
 - Verify WSS port 48082 is accessible
 - Check that `wss.pem` certificate is valid
-- Verify the WebSocket URL in Connect settings matches the server
+- Verify the WebSocket URL in the FreeSWITCH settings matches the server
 
 ### FreeSWITCH can't reach Odoo
 
@@ -461,6 +573,6 @@ not normalized and require the stored number to match the delivered digits.
 
 ### Gateway registration failures
 
-- Verify gateway credentials in **Connect > PBX > Gateways**
+- Verify gateway credentials in **Connect > FreeSWITCH > Configuration > SIP Gateways**
 - Check SIP trunk provider firewall rules
 - Review registration status: `docker exec -it freeswitch fs_cli -x "sofia status"`

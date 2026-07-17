@@ -1,0 +1,12 @@
+# LiveKit Egress configuration (recordings).
+# api_key/api_secret must match a key from livekit.yaml. Files land on
+# the shared egress-out volume; the uploader sidecar delivers them to
+# Odoo (/livekit/webhook/recording/<filename>).
+api_key: APIconnect
+api_secret: "change-this-to-a-long-random-secret"
+ws_url: ws://livekit:7880
+redis:
+  address: redis:6379
+# ws:// (no TLS) inside the compose network.
+insecure: true
+log_level: info

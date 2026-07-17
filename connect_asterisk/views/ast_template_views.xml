@@ -57,10 +57,10 @@
     </record>
 
     <menuitem id="menu_asterisk_template"
-              name="Asterisk Templates"
-              parent="connect.menu_connect_pbx"
+              name="Templates"
+              parent="menu_asterisk_config"
               action="action_asterisk_template"
-              sequence="81"
+              sequence="10"
               groups="connect.group_admin"/>
 
 </odoo>

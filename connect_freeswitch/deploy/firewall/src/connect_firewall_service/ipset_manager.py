@@ -12,6 +12,8 @@ import re
 import subprocess
 from typing import Iterable
 
+from .constants import IPV6_SET_SUFFIX
+
 logger = logging.getLogger(__name__)
 
 # Matches ipset save lines like:
@@ -108,6 +110,16 @@ def list_entries(name: str) -> list[dict]:
             "timeout": int(m.group(2)) if m.group(2) else None,
             "comment": m.group(3) or "",
         })
+    return out
+
+
+def list_entries_all_families(base_name: str) -> list[dict]:
+    """Entries of an IPv4 set and its inet6 twin, tagged with ``family``."""
+    out = []
+    for suffix, family in (("", 4), (IPV6_SET_SUFFIX, 6)):
+        for item in list_entries(base_name + suffix):
+            item["family"] = family
+            out.append(item)
     return out
 
 
