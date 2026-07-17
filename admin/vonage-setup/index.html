@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://oduist.github.io/connect_addons_ng/user/callflows/">
+        <link rel="canonical" href="https://oduist.github.io/connect_addons_ng/admin/vonage-setup/">
       
       
-        <link rel="prev" href="../recordings/">
+        <link rel="prev" href="../twilio-setup/">
       
       
-        <link rel="next" href="../ai-agents/">
+        <link rel="next" href="../freeswitch-setup/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Call Flows (IVR) - Oduist Connect Documentation</title>
+        <title>Vonage Integration - Oduist Connect Documentation</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#call-flows-ivr" class="md-skip">
+        <a href="#vonage-integration" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Call Flows (IVR)
+              Vonage Integration
             
           </span>
         </div>
@@ -264,8 +264,10 @@
       
   
   
+    
   
   
+  
     
     
     
@@ -276,13 +278,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
@@ -303,7 +303,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -321,7 +321,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -349,7 +349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/licensing/" class="md-nav__link">
+      <a href="../licensing/" class="md-nav__link">
         
   
   
@@ -377,7 +377,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/customer-onboarding/" class="md-nav__link">
+      <a href="../customer-onboarding/" class="md-nav__link">
         
   
   
@@ -405,7 +405,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/core-setup/" class="md-nav__link">
+      <a href="../core-setup/" class="md-nav__link">
         
   
   
@@ -433,7 +433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/twilio-setup/" class="md-nav__link">
+      <a href="../twilio-setup/" class="md-nav__link">
         
   
   
@@ -458,10 +458,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../admin/vonage-setup/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vonage Integration
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -477,6 +504,92 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#prerequisites" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#users-and-the-web-phone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Users and the web phone
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#numbers-and-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Numbers and routing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recordings-and-voicemail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recordings and voicemail
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -489,7 +602,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/freeswitch-setup/" class="md-nav__link">
+      <a href="../freeswitch-setup/" class="md-nav__link">
         
   
   
@@ -517,7 +630,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/pipecat-setup/" class="md-nav__link">
+      <a href="../pipecat-setup/" class="md-nav__link">
         
   
   
@@ -545,7 +658,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/asterisk-setup/" class="md-nav__link">
+      <a href="../asterisk-setup/" class="md-nav__link">
         
   
   
@@ -573,7 +686,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/telnyx-setup/" class="md-nav__link">
+      <a href="../telnyx-setup/" class="md-nav__link">
         
   
   
@@ -601,7 +714,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/livekit-setup/" class="md-nav__link">
+      <a href="../livekit-setup/" class="md-nav__link">
         
   
   
@@ -629,7 +742,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/infobip-setup/" class="md-nav__link">
+      <a href="../infobip-setup/" class="md-nav__link">
         
   
   
@@ -657,7 +770,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/dograh-setup/" class="md-nav__link">
+      <a href="../dograh-setup/" class="md-nav__link">
         
   
   
@@ -685,7 +798,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../admin/bird-setup/" class="md-nav__link">
+      <a href="../bird-setup/" class="md-nav__link">
         
   
   
@@ -693,235 +806,6 @@
     
   
     Bird Integration
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../admin/parking/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Call Parking
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../admin/working-schedule/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Working Schedules
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../admin/security/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Security
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../admin/firewall/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    SIP Firewall
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-    
-    
-      
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    User Guide
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    User Guide
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../getting-started/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Getting Started
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../calls/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Making and Receiving Calls
   
 
     
@@ -970,7 +854,236 @@
   
   
     <li class="md-nav__item">
-      <a href="../messages/" class="md-nav__link">
+      <a href="../working-schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Working Schedules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../firewall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SIP Firewall
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/calls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Making and Receiving Calls
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/parking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Call Parking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user/messages/" class="md-nav__link">
         
   
   
@@ -998,7 +1111,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../meetings/" class="md-nav__link">
+      <a href="../../user/meetings/" class="md-nav__link">
         
   
   
@@ -1026,7 +1139,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../recordings/" class="md-nav__link">
+      <a href="../../user/recordings/" class="md-nav__link">
         
   
   
@@ -1051,37 +1164,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Call Flows (IVR)
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../user/callflows/" class="md-nav__link">
         
   
   
@@ -1097,154 +1183,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#ivr-menus" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        IVR Menus
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="IVR Menus">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How It Works
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#input-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Input Types
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ring-groups" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ring Groups
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Ring Groups">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Features
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#multi-level-ivr" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Multi-Level IVR
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#voicemail" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Voicemail
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#fs-queues-freeswitch-only" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        FS Queues (FreeSWITCH-only)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="FS Queues (FreeSWITCH-only)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-the-caller-experiences" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What the caller experiences
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#admin-configuration-summary" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Admin configuration summary
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1257,7 +1195,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ai-agents/" class="md-nav__link">
+      <a href="../../user/ai-agents/" class="md-nav__link">
         
   
   
@@ -1312,77 +1250,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#ivr-menus" class="md-nav__link">
+  <a href="#prerequisites" class="md-nav__link">
     <span class="md-ellipsis">
       
-        IVR Menus
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="IVR Menus">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-it-works" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How It Works
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#input-types" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Input Types
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#ring-groups" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Ring Groups
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Ring Groups">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Features
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#multi-level-ivr" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Multi-Level IVR
+        Prerequisites
       
     </span>
   </a>
@@ -1390,10 +1261,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#voicemail" class="md-nav__link">
+  <a href="#configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Voicemail
+        Configuration
       
     </span>
   </a>
@@ -1401,41 +1272,46 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fs-queues-freeswitch-only" class="md-nav__link">
+  <a href="#users-and-the-web-phone" class="md-nav__link">
     <span class="md-ellipsis">
       
-        FS Queues (FreeSWITCH-only)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="FS Queues (FreeSWITCH-only)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-the-caller-experiences" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What the caller experiences
+        Users and the web phone
       
     </span>
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#admin-configuration-summary" class="md-nav__link">
+      
+        <li class="md-nav__item">
+  <a href="#numbers-and-routing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Admin configuration summary
+        Numbers and routing
       
     </span>
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#recordings-and-voicemail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recordings and voicemail
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#known-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Known limitations
+      
+    </span>
+  </a>
   
 </li>
       
@@ -1456,101 +1332,69 @@
 
 
 
-<h1 id="call-flows-ivr">Call Flows (IVR)</h1>
-<p>Call flows define how incoming calls are handled — either as an IVR menu (interactive voice response) or a ring group.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Call flows are configured by administrators. This section describes what callers experience and how the features work.</p>
+<h1 id="vonage-integration">Vonage Integration</h1>
+<p>The <code>connect_vonage</code> module connects Odoo to the Vonage (ex-Nexmo)
+platform: inbound/outbound calls with NCCO call control, a browser web
+phone based on the Vonage Client SDK, SMS through the Messages API and
+call recordings with AI transcription.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>An Odoo instance reachable over <strong>public HTTPS</strong> (Vonage webhooks and
+  the signed-callback JWTs require it). Verify <code>connect.api_url</code> in
+  System Parameters before syncing.</li>
+<li>A Vonage API account with an API key and secret
+  (<a href="https://dashboard.nexmo.com/">dashboard.nexmo.com</a>).</li>
+<li>The <code>vonage</code> Python package installed in the Odoo environment
+  (<code>pip install vonage</code>).</li>
+</ul>
+<h2 id="configuration">Configuration</h2>
+<ol>
+<li>Install the <code>connect_vonage</code> module (requires <code>connect</code>).</li>
+<li>Open <strong>Connect → Settings → Vonage API</strong> and fill in:</li>
+<li><strong>API Key</strong> and <strong>API Secret</strong> — from the Vonage dashboard.</li>
+<li><strong>Signature Secret</strong> — from Dashboard → Settings → <em>Signature
+     secret</em>. It authenticates incoming webhooks (signed callbacks).</li>
+<li><strong>Region</strong> — optional voice region for the application.</li>
+<li>Click <strong>SYNC VONAGE ACCOUNT</strong>. The sync:</li>
+<li>creates a Vonage <strong>Application</strong> with voice, messages (v1) and RTC
+     capabilities, <code>signed_callbacks</code> enabled and all webhook URLs
+     pointing to your Odoo instance, and stores the application ID and
+     its private key;</li>
+<li>creates a Vonage <strong>User</strong> for every Connect user with a username;</li>
+<li>imports your <strong>numbers</strong> and links them to the application;</li>
+<li>seeds <strong>outgoing caller IDs</strong> from the imported numbers.</li>
+</ol>
+<div class="admonition warning">
+<p class="admonition-title">Application private key</p>
+<p>Vonage returns the application private key <strong>only when the
+application is created</strong>. The sync stores it automatically. If you
+want to reuse an existing application instead, fill in its ID and
+paste its private key manually before syncing.</p>
 </div>
-<h2 id="ivr-menus">IVR Menus</h2>
-<p>An IVR plays a voice prompt and waits for the caller to press a digit or speak a choice.</p>
-<p><strong>Example:</strong></p>
-<blockquote>
-<p>"Thank you for calling. Press 1 for Sales, Press 2 for Support, or Press 0 to speak with an operator."</p>
-</blockquote>
-<p>The caller presses a digit, and the call is routed to the corresponding extension (a user, another callflow, etc.).</p>
-<h3 id="how-it-works">How It Works</h3>
-<ol>
-<li>The caller dials your phone number</li>
-<li>A voice prompt plays the menu options</li>
-<li>The caller presses a digit (DTMF) or speaks a keyword</li>
-<li>The call is routed to the matching extension</li>
-<li>If the input is invalid, an error message plays and the prompt repeats</li>
-</ol>
-<h3 id="input-types">Input Types</h3>
-<table>
-<thead>
-<tr>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>DTMF</strong></td>
-<td>Caller presses digits on their phone keypad.</td>
-</tr>
-<tr>
-<td><strong>Speech</strong></td>
-<td>Caller speaks a keyword (e.g., "sales", "support").</td>
-</tr>
-<tr>
-<td><strong>Both</strong></td>
-<td>Accept either DTMF or speech input.</td>
-</tr>
-</tbody>
-</table>
-<h2 id="ring-groups">Ring Groups</h2>
-<p>A ring group rings multiple users simultaneously. The first user to answer gets the call.</p>
-<p><strong>Example:</strong></p>
-<blockquote>
-<p>Three sales representatives are in a ring group. When a customer calls the sales number, all three phones ring at once. The first rep to pick up handles the call.</p>
-</blockquote>
-<h3 id="features">Features</h3>
+<p>To re-point webhooks after a domain change, fix <code>connect.api_url</code> and
+run the sync again.</p>
+<h2 id="users-and-the-web-phone">Users and the web phone</h2>
+<p>Each Connect user needs an alphanumeric <strong>Username</strong>. The web phone
+(systray icon) logs into the Vonage Client SDK with a JWT minted by
+Odoo; enable/disable it per user with <strong>Web Phone Enabled</strong> on the
+user's Phone tab. Calls to the user ring the browser via the
+application (<code>app</code>) endpoint.</p>
+<h2 id="numbers-and-routing">Numbers and routing</h2>
+<p>Imported numbers appear under <strong>Connect → Numbers</strong>. Set each number's
+<strong>Destination</strong>: a user, a call flow (IVR) or an <strong>NCCO</strong> application
+(Connect → Vonage → NCCO — static JSON, jinja2-templated JSON, Python
+or <code>model.method</code>).</p>
+<h2 id="recordings-and-voicemail">Recordings and voicemail</h2>
+<p>Vonage recording files require JWT authentication, so recordings are
+downloaded by Odoo (a 2-minute cron retries failures) and stored as
+attachments; transcription runs after the download. Voicemail messages
+are stored as recordings with source <code>voicemail</code>.</p>
+<h2 id="known-limitations">Known limitations</h2>
 <ul>
-<li><strong>Simultaneous ring</strong> — All users in the group are called at the same time</li>
-<li><strong>Timeout</strong> — If no one answers within the configured timeout, the call can go to voicemail or another destination</li>
-<li><strong>Recording</strong> — Ring group calls can be recorded</li>
-</ul>
-<h2 id="multi-level-ivr">Multi-Level IVR</h2>
-<p>Call flows can chain together. An IVR choice can route to another call flow, creating multi-level menus:</p>
-<blockquote>
-<p>"Press 1 for Sales" → "Press 1 for New Customers, Press 2 for Existing Customers"</p>
-</blockquote>
-<h2 id="voicemail">Voicemail</h2>
-<p>Call flows can have voicemail enabled. When enabled with a voicemail prompt, the caller can leave a callflow-level voicemail after the callflow cannot connect them:</p>
-<ul>
-<li><strong>Standalone callflow</strong> — if the callflow has no gather choices, ring users, or queue fallback, the voicemail prompt is played and the caller is recorded.</li>
-<li><strong>Ring group</strong> — if no ring user answers, the callflow can play its voicemail prompt and record the caller.</li>
-<li><strong>IVR menu</strong> — if the caller does not make a choice before the timeout, the callflow can record voicemail after any configured ring-user or queue fallback.</li>
-</ul>
-<p>Invalid IVR input still follows the invalid-input message and retry flow. It does not immediately trigger voicemail.</p>
-<p>Callflow voicemail takes precedence inside callflows. Direct calls to a user keep that user's voicemail behavior. In FreeSWITCH, FS Queue voicemail is configured separately on the queue timeout settings.</p>
-<p>The voicemail greeting can be customized per call flow. The voicemail prompt must be set for callflow voicemail to trigger.</p>
-<h2 id="fs-queues-freeswitch-only">FS Queues (FreeSWITCH-only)</h2>
-<p>When the <code>connect_freeswitch</code> module is installed, call flows can route calls into an <strong>FS Queue</strong> — a hold area where the caller hears Music-on-Hold while agents are being rung. The first agent to answer takes the call.</p>
-<p>A queue can be used three ways:</p>
-<ul>
-<li><strong>Directly as an extension destination</strong> — dial the queue's extension and you enter the queue.</li>
-<li><strong>As an IVR choice</strong> — any IVR menu option can point to a queue.</li>
-<li><strong>As the "no choice" default of an IVR</strong> — if the caller doesn't press anything, the call is transferred into the queue.</li>
-<li><strong>As a fallback for a ring group</strong> — if nobody in the ring group answers, the call is moved into the queue before voicemail.</li>
-</ul>
-<h3 id="what-the-caller-experiences">What the caller experiences</h3>
-<ol>
-<li>A brief "please hold" (the queue answers and starts Music-on-Hold).</li>
-<li>Music-on-Hold plays while agent phones ring in the background.</li>
-<li>As soon as any agent answers, the call is connected to them.</li>
-<li>If no agent answers within the configured timeout, the caller is hung up, sent to voicemail, or transferred to a fallback extension, depending on how the queue is set up.</li>
-</ol>
-<h3 id="admin-configuration-summary">Admin configuration summary</h3>
-<p>FS Queues are configured under <strong>Connect → FreeSWITCH → FIFO Queues</strong>. Each queue defines:</p>
-<ul>
-<li>member users and/or endpoint agents,</li>
-<li>max wait time,</li>
-<li>Music-on-Hold source,</li>
-<li>whether to announce the caller's position,</li>
-<li>what to do on timeout (hangup, voicemail, transfer).</li>
+<li>Ring groups ring users <strong>sequentially</strong> (Vonage NCCO <code>connect</code> takes
+  a single endpoint).</li>
+<li>WhatsApp/MMS sending, call transfer and simultaneous ring are not
+  available yet (see ADR-036).</li>
 </ul>
 
 
