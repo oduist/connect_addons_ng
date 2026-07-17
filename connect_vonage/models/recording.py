@@ -11,6 +11,7 @@ from odoo.exceptions import ValidationError
 from odoo.tools import config
 
 from odoo.addons.connect.models.settings import debug
+from .settings import lock_vonage_webhook
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +44,13 @@ class Recording(models.Model):
         recording_url = params.get('recording_url')
         if not recording_url:
             return False
+        recording_uuid = params.get('recording_uuid')
+        if not recording_uuid:
+            logger.error('Vonage recording event has no recording_uuid.')
+            return False
+        lock_vonage_webhook(self.env.cr, 'recording', recording_uuid)
+        if self.search_count([('sid', '=', recording_uuid)], limit=1):
+            return True
         conversation_uuid = params.get('conversation_uuid')
         channel = self.env['connect.channel'].search(
             [('conversation_uuid', '=', conversation_uuid)],
@@ -53,7 +61,7 @@ class Recording(models.Model):
         if start_time and end_time:
             duration = int((end_time - start_time).total_seconds())
         data = {
-            'sid': params.get('recording_uuid'),
+            'sid': recording_uuid,
             'call_sid': channel.sid,
             'vonage_recording_url': recording_url,
             'status': 'completed',
@@ -73,13 +81,7 @@ class Recording(models.Model):
             })
         # skip_transcription: the media is not downloaded yet; the flag is
         # set by _download_vonage_recording() once the attachment exists.
-        rec = self.with_context(skip_transcription=True).create(data)
-        # Best-effort inline download; the cron retries failures.
-        try:
-            rec._download_vonage_recording()
-        except Exception:
-            logger.exception(
-                'Inline download failed for recording %s', rec.id)
+        self.with_context(skip_transcription=True).create(data)
         return True
 
     @api.model
@@ -124,7 +126,7 @@ class Recording(models.Model):
 
     @api.model
     def _cron_download_vonage_recordings(self, limit=20):
-        """Retry downloads that failed inline (work queue by flag)."""
+        """Download pending recordings outside the webhook request."""
         pending = self.search([
             ('vonage_recording_url', '!=', False),
             ('vonage_downloaded', '=', False),

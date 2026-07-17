@@ -8,7 +8,7 @@ export const messageActionsRegistry = registry.category("mail.message/actions")
 messageActionsRegistry
     .add("vonage-sms-reply", {
         condition: (component) =>
-            component.message.message_type !== null,
+            component.message.message_type === "sms",
         icon: "fa fa-mail-reply",
         title: _t("SMS Reply"),
         onClick: async (component) => {

@@ -88,7 +88,8 @@ New addon `connect_vonage` (depends: `connect`, external python dep:
   `call.voicemail_url`, because voicemail media also requires JWT auth.
 - **Recordings**: the record event handler creates the
   `connect.recording` with `vonage_recording_url` set and `media_url`
-  left empty (context `skip_transcription`), then a cron
+  left empty (context `skip_transcription`). Recording UUIDs are
+  idempotency keys, and a cron
   (`_cron_download_vonage_recordings`) downloads via
   `client.voice.download_recording()` (JWT) into
   `recording_attachment` and only then flags `transcription_pending`.
@@ -102,6 +103,8 @@ New addon `connect_vonage` (depends: `connect`, external python dep:
   standard ACL paths) with `vonage_jwt.JwtClient`. Client-originated
   calls hit the application answer_url with `from_user`; the handler
   builds an outbound `connect` NCCO and pre-creates the channel.
+  Installation backfills missing usernames from sanitized Odoo logins
+  before restoring the database `NOT NULL` constraint.
 - **Click-to-call** (`originate_call`): `voice.create_call` to the
   agent's `app` endpoint with an inline NCCO that records (optional)
   and connects to the destination number; the channel is pre-created

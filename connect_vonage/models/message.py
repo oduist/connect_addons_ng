@@ -11,7 +11,12 @@ from odoo.exceptions import ValidationError
 from vonage_messages import Sms
 
 from odoo.addons.connect.models.settings import debug
-from .settings import format_connect_response, to_e164, to_vonage_number
+from .settings import (
+    format_connect_response,
+    lock_vonage_webhook,
+    to_e164,
+    to_vonage_number,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +76,14 @@ class ConnectMessage(models.Model):
     @api.model
     def receive(self, params):
         if not self.env['oduist.license'].check_license('connect', silent=True):
+            return True
+        message_uuid = params.get('message_uuid')
+        if not message_uuid:
+            logger.error('Inbound Vonage message has no message_uuid.')
+            return False
+        lock_vonage_webhook(self.env.cr, 'message', message_uuid)
+        if self.sudo().search_count(
+                [('message_sid', '=', message_uuid)], limit=1):
             return True
         try:
             debug(self, 'Receive message: %s' % json.dumps(params, indent=2))

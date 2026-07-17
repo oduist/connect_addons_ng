@@ -83,6 +83,14 @@ def to_e164(number):
     return number
 
 
+def lock_vonage_webhook(cr, resource, identifier):
+    """Serialize webhook retries for one provider resource UUID."""
+    cr.execute(
+        'SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))',
+        ('connect_vonage.{}:{}'.format(resource, identifier),),
+    )
+
+
 class Settings(models.Model):
     _inherit = 'connect.settings'
 
@@ -293,21 +301,19 @@ class Settings(models.Model):
             raise ValidationError('User does not have a username defined!')
         api_url = self.sudo().get_param('api_url')
         event_url = urljoin(api_url, 'vonage/webhook/event')
+        callerid = user.connect_user.outgoing_callerid
+        if not callerid:
+            callerid = self.env['connect.outgoing_callerid'].search(
+                [('is_default', '=', True)], limit=1)
+        callerId = callerid.number
+        if not callerId:
+            raise ValidationError(
+                'You must configure a default number for caller ID!')
         exten = self.env['connect.exten'].search(
             [('number', '=', number)], limit=1)
         if exten:
-            callerId = user.connect_user.exten.number or number
             ncco = exten.render()
         else:
-            if user.connect_user.outgoing_callerid:
-                callerId = user.connect_user.outgoing_callerid.number
-            else:
-                default_number = self.env['connect.outgoing_callerid'].search(
-                    [('is_default', '=', True)], limit=1)
-                callerId = default_number.number
-            if not callerId:
-                raise ValidationError(
-                    'You must configure a default number for caller ID!')
             call_duration_limit = int(
                 self.sudo().get_param('call_duration_limit'))
             ncco = []

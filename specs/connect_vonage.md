@@ -104,10 +104,10 @@ speech results). `ring_users` ring **sequentially** (one endpoint per
 
 - `vonage_recording_url`, `vonage_downloaded`. Vonage recording URLs
   need JWT auth, so `media_url` is never set.
-- `on_recording_event(params)` creates the record
+- `on_recording_event(params)` idempotently creates the record
   (`skip_transcription`), resolves the channel by conversation_uuid,
-  computes duration from start/end and attempts an inline download;
-  `_cron_download_vonage_recordings` (every 2 min) retries into
+  computes duration from start/end; `_cron_download_vonage_recordings`
+  (every 2 min) downloads it into
   `recording_attachment`, then flags `transcription_pending`.
 - `get_transcript()` / `transcribe_recording()` overridden to feed
   Whisper from the attachment. Voicemail recordings are stored with
@@ -117,7 +117,8 @@ speech results). `ring_users` ring **sequentially** (one endpoint per
 
 - `send()` — Messages API SMS (`messages.send(Sms(...))`), chatter
   post, `message_sid` = message_uuid. WhatsApp send deferred to v1.1.
-- `receive()` — inbound webhook mapping (channel sms/whatsapp/mms,
+- `receive()` — idempotent inbound webhook mapping by `message_uuid`
+  (channel sms/whatsapp/mms,
   media object per message_type), partner match, threading
   (whatsapp `context.message_uuid` or last message), destination via
   `connect.message_configuration`, chatter.
@@ -141,7 +142,7 @@ executed as `connect.user_connect_webhook` after JWT validation
 |---|---|---|
 | `answer` (GET/POST) | Inbound number call → `number.route_call`; web phone call (`from_user`) → `user.on_client_call` | NCCO JSON |
 | `event` | Voice leg status events → `call.on_voice_event` | OK |
-| `recording` / `vm_recording` | Record action events → recording create + download | OK |
+| `recording` / `vm_recording` | Record action events → queue recording download | OK |
 | `ncco/<id>` | Render an NCCO app | NCCO JSON |
 | `<model>/call_action/<id>` | Synchronous connect events (whitelist: connect.user, connect.callflow) | NCCO JSON or 204 |
 | `callflow/<id>/input` | IVR input results | NCCO JSON |
