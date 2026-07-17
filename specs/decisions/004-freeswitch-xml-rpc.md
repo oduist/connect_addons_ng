@@ -1,5 +1,8 @@
 # 004: FreeSWITCH XML-RPC for Odoo-to-FS Communication
 
+> Superseded in part by ADR-043: only the public host remains configurable;
+> port, username, password, and TLS verification are now managed internally.
+
 ## Problem
 
 Communication between Odoo and FreeSWITCH is pull-only: FreeSWITCH fetches configuration from Odoo via xml_curl. When an admin creates, edits, or deletes a SIP gateway in Odoo, FreeSWITCH continues using stale config until someone manually runs `sofia profile external restart reloadxml` on the FS console.

@@ -139,18 +139,19 @@ A ready preset for `oduflow` lives at
 ## Setting up in Odoo
 
 1. Install or upgrade `connect_freeswitch` — `post_init_hook` (or the
-   per-version migration on upgrade) generates an initial **Firewall
-   Service Token** and creates the agent singleton.
+   per-version migration on upgrade) runs the missing-only deployment
+   bootstrap, generates both service tokens, and creates the agent singleton.
 2. Open **Connect → FreeSWITCH → Configuration → Settings**, page **Firewall**, as an admin:
    * Toggle **Firewall Enabled** on.
    * Set **Firewall Service URL** to where Traefik (or whichever
      reverse-proxy you use) reaches the service container.
-   * **Firewall Service Token**: either keep the auto-generated value
-     or paste your own (≥24 chars, `[A-Za-z0-9_-]` only). Copy the
-     value into the `AGENT_TOKEN` env var of the firewall service
-     container **before saving**, because the field gets masked back
-     to `****` immediately after. Restart the service container so it
-     picks up the new token.
+   * **Firewall Service Token**: leave the auto-generated value unchanged
+     during normal installation. Oduflow reads the protected
+     `firewall_service_token` with a sudo Odoo shell and passes it directly as
+     the service's `AGENT_TOKEN`. For a manual deployment, retrieve the same
+     setting through an administrative Odoo shell. Entering a value in this
+     masked field is an explicit rotation and requires updating and restarting
+     the service in the same maintenance window.
    * Adjust port lists and timeouts if you need to deviate from the
      defaults.
 3. Connect → FreeSWITCH → Firewall → **Whitelist**: add your trunk providers,

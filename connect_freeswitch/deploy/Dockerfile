@@ -46,6 +46,13 @@ RUN ldconfig
 RUN git clone --depth 1 --branch ${FS_VERSION} \
     https://github.com/signalwire/freeswitch.git /usr/src/freeswitch
 
+# mod_xml_rpc has no listen-address setting and otherwise binds its management
+# API to every host interface. Keep the plain-HTTP backend loopback-only; the
+# public route is the managed Traefik HTTPS edge (ADR-043).
+COPY patches/mod_xml_rpc-loopback.patch /tmp/mod_xml_rpc-loopback.patch
+RUN git -C /usr/src/freeswitch apply --check /tmp/mod_xml_rpc-loopback.patch \
+    && git -C /usr/src/freeswitch apply /tmp/mod_xml_rpc-loopback.patch
+
 # ── Add mod_piper_tts to the source tree ────────────────────────────────────
 RUN git clone --depth 1 --branch ${MOD_PIPER_TTS_VERSION} \
     https://github.com/aks-devs/mod_piper_tts.git /tmp/mod_piper_tts \
@@ -237,6 +244,6 @@ ENV ODOO_URL=http://localhost:8069 \
 VOLUME ["/usr/share/freeswitch/sounds"]
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-    CMD fs_cli -x "status" | grep -q ^UP || exit 1
+    CMD fs_cli -p "${FS_ESL_PASSWORD:-ConnectNGESLPassword}" -x "status" | grep -q '^UP' || exit 1
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

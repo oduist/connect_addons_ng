@@ -1,5 +1,12 @@
 # 030: TLS for FreeSWITCH XML-RPC via Traefik
 
+## Status
+
+Superseded in part by ADR-043. TLS termination at Traefik remains the
+decision; ADR-043 fixes the public port and verification policy, manages the
+credential internally, moves Traefik to host networking, and restricts the
+plain-HTTP listener to loopback.
+
 ## Problem
 
 `_freeswitch_rpc()` built the `mod_xml_rpc` URL as
@@ -30,6 +37,13 @@ TLS therefore has to be terminated by something in front of it.
    extracts Traefik's ACME certificate to serve Verto/WSS. Reuse the same
    Traefik edge to terminate HTTPS for XML-RPC and proxy to the internal
    `8080` plain-HTTP port. Odoo always connects over `https://`.
+
+The file-provider router must include a host matcher rendered from
+`FS_DOMAIN` as well as the `/RPC2` path prefix, and explicitly select the
+`letsencrypt` certificate resolver. A path-only rule does not give ACME a
+domain from which to request a certificate and leaves Traefik serving its
+self-signed default. `FS_DOMAIN` is therefore passed into the Traefik
+container for file-provider Go-template rendering.
 3. **stunnel/nginx sidecar inside the FreeSWITCH image** terminating TLS
    with the extracted `wss.pem`. Rejected — heavier (Dockerfile +
    entrypoint changes, image rebuild/republish) for no benefit over
@@ -56,27 +70,21 @@ fixed internal port `8080`.
 
 - `_freeswitch_rpc()` always builds an `https://` URL and passes an
   `ssl` context to `xmlrpc.client.ServerProxy`.
-- New Boolean `freeswitch_xmlrpc_tls_verify` (default **on**) on
-  `connect.settings`. When off, the context disables hostname/chain
-  verification — for development behind a self-signed certificate only.
-- `freeswitch_xmlrpc_port` is repurposed as the **public** Traefik HTTPS
-  port (default `443`). The internal `mod_xml_rpc` listen port is a fixed
-  `FS_XMLRPC_INTERNAL_PORT = 8080` constant in `controllers/freeswitch_xml.py`
-  (used when serving `xml_rpc.conf`), decoupled from the public port.
+- ADR-043 subsequently fixed the public port to `443`, made certificate
+  verification mandatory, fixed the username to `odoo`, and made the password
+  an internally generated credential rotated with the host.
+- The internal `mod_xml_rpc` listen port is the fixed
+  `FREESWITCH_XMLRPC_INTERNAL_PORT = 8080` package constant. The pinned image
+  patches the upstream module to bind it to `127.0.0.1`.
 - `deploy/docker-compose.yml` gains a `traefik` service plus
   `deploy/traefik/dynamic.yml`: Traefik is configured for production via
   CLI flags (env-interpolated `${FS_DOMAIN}` / `${ACME_EMAIL}`), with a
   **Let's Encrypt** resolver issuing the cert for `FS_DOMAIN` on the
-  `websecure` entrypoint. The dynamic route forwards `PathPrefix(/RPC2)`
-  on `websecure` to `http://host.docker.internal:8080` (FreeSWITCH runs
-  `network_mode: host`, reached via the host gateway). The `traefik-acme`
+  `websecure` entrypoint. The dynamic route matches the rendered `FS_DOMAIN`
+  host plus `PathPrefix(/RPC2)` and forwards to
+  `http://127.0.0.1:8080`; Traefik and FreeSWITCH both use host networking.
+  The `traefik-acme`
   volume is shared with the fs container so its entrypoint can reuse
-  Traefik's certificate for Verto. In local development (`FS_DOMAIN`
-  defaults to `localhost`) ACME cannot validate, so Traefik serves its
-  self-signed default cert and Odoo runs with TLS verification off.
-
-No migration: the product has no existing installations yet (still in
-development), so the field default-value change and the new Boolean apply
-to fresh records directly.
+  Traefik's certificate for Verto.
 
 [#37]: https://github.com/oduist/connect_addons_ng/issues/37
