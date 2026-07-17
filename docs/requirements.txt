@@ -1,0 +1,4 @@
+# Documentation build dependencies (MkDocs Material).
+# mkdocs-material pulls in mkdocs, pymdown-extensions and the rest of the
+# stack used by mkdocs.yml (admonition, pymdownx.*, tables, attr_list).
+mkdocs-material==9.7.6

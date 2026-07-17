@@ -2,7 +2,7 @@
 "use strict"
 import {loadJS} from "@web/core/assets"
 import {useService} from "@web/core/utils/hooks"
-import {Calls} from "@connect_twilio/components/phone/calls/calls"
+import {Calls} from "@connect/components/calls/calls"
 import {Favorites} from "@connect_twilio/components/phone/favorites/favorites"
 import {Contacts} from "@connect_twilio/components/phone/contacts/contacts"
 import {dialTone, setFocus} from "@connect_twilio/js/utils"
@@ -85,6 +85,11 @@ export class Phone extends Component {
             xTransferPartner: false,
             phone_status: this.status.ended,
             calls: [],
+            recordingState: 'off',
+            recordingBusy: false,
+            recordingError: '',
+            recordingPath: '',
+            recordingRef: '',
         })
         this.callDuration = 0
         this.callDurationTimerInstance = null
@@ -301,6 +306,8 @@ export class Phone extends Component {
                     // console.log('tbcSoundMute')
                     self.state.isSoundMute = params.mute
                     self.setIncomingVolume()
+                } else if (event === 'tbcRecordingState') {
+                    self._applyRecordingResult(params)
                 } else if (event === 'tbcCancelForward') {
                     // console.log('tbcCancelForward')
                     self._cancelForward()
@@ -371,6 +378,131 @@ export class Phone extends Component {
     async setCallStatus(status) {
         const currentCallStatus = this.callStatus[status] ? this.callStatus[status] : this.callStatus.Failed
         this.notify(currentCallStatus.toUpperCase(), {sticky: false})
+    }
+
+    getRecordingChannelSid() {
+        if (!this.session) {
+            return ''
+        }
+        if (this.session.parameters && this.session.parameters.CallSid) {
+            return this.session.parameters.CallSid
+        }
+        if (
+            this.session.customParameters
+            && typeof this.session.customParameters.get === 'function'
+            && this.session.customParameters.get('CallSid')
+        ) {
+            return this.session.customParameters.get('CallSid')
+        }
+        return ''
+    }
+
+    _recordingPayload() {
+        return {
+            provider: 'twilio',
+            channel_sid: this.getRecordingChannelSid(),
+        }
+    }
+
+    _applyRecordingResult(result) {
+        if (!result) {
+            return
+        }
+        this.state.recordingState = result.state || 'off'
+        this.state.recordingRef = result.recording_ref || ''
+        this.state.recordingPath = result.recording_path || ''
+        this.state.recordingError = result.error || ''
+        this.state.recordingBusy = ['starting', 'stopping'].includes(this.state.recordingState)
+    }
+
+    _broadcastRecordingState() {
+        this.bc.postMessage({
+            event: 'tbcRecordingState',
+            params: {
+                state: this.state.recordingState,
+                recording_ref: this.state.recordingRef,
+                recording_path: this.state.recordingPath,
+                error: this.state.recordingError,
+            },
+        })
+    }
+
+    async syncRecordingState() {
+        const channelSid = this.getRecordingChannelSid()
+        if (!channelSid) {
+            this.state.recordingState = 'off'
+            this.state.recordingError = 'Call SID unavailable'
+            return
+        }
+        try {
+            const result = await this.orm.call(
+                'connect.channel',
+                'get_softphone_recording_state',
+                [this._recordingPayload()]
+            )
+            this._applyRecordingResult(result)
+            this._broadcastRecordingState()
+        } catch (error) {
+            console.warn('Recording state sync failed:', error)
+            this.state.recordingState = 'error'
+            this.state.recordingError = error.message || String(error)
+        }
+    }
+
+    isRecordingOn() {
+        return this.state.recordingState === 'on' || this.state.recordingState === 'starting'
+    }
+
+    isRecordingButtonDisabled() {
+        return this.state.recordingBusy || !this.getRecordingChannelSid()
+    }
+
+    getRecordingTitle() {
+        if (!this.getRecordingChannelSid()) {
+            return 'Recording unavailable'
+        }
+        if (this.state.recordingBusy) {
+            return this.state.recordingState === 'starting' ? 'Starting recording' : 'Stopping recording'
+        }
+        if (this.state.recordingState === 'error') {
+            return this.state.recordingError || 'Recording error'
+        }
+        return this.isRecordingOn() ? 'Stop Recording' : 'Start Recording'
+    }
+
+    getRecordingIconClass() {
+        if (this.state.recordingState === 'error') {
+            return 'fa fa-exclamation-triangle'
+        }
+        if (this.state.recordingBusy) {
+            return 'fa fa-spinner fa-spin'
+        }
+        return this.isRecordingOn() ? 'fa fa-stop-circle' : 'fa fa-circle'
+    }
+
+    async _onClickRecordingToggle() {
+        if (this.isRecordingButtonDisabled()) {
+            return
+        }
+        const action = this.isRecordingOn() ? 'stop_softphone_recording' : 'start_softphone_recording'
+        this.state.recordingBusy = true
+        this.state.recordingState = this.isRecordingOn() ? 'stopping' : 'starting'
+        this._broadcastRecordingState()
+        try {
+            const result = await this.orm.call(
+                'connect.channel',
+                action,
+                [this._recordingPayload()]
+            )
+            this._applyRecordingResult(result)
+            this._broadcastRecordingState()
+        } catch (error) {
+            this.state.recordingState = 'error'
+            this.state.recordingError = error.message || String(error)
+            this.state.recordingBusy = false
+            this._broadcastRecordingState()
+            this.notify(this.state.recordingError, {title: 'Recording', sticky: false, type: 'danger'})
+        }
     }
 
     async updateToken() {
@@ -465,6 +597,7 @@ export class Phone extends Component {
                 self.createCallCounter(phoneNumber)
                 self.state.phone_status = self.status.accepted
                 await self.setCallStatus("Answered")
+                await self.syncRecordingState()
             })
             session.on("disconnect", async function (data) {
                 // console.log('incoming -> ended: ', data)
@@ -551,6 +684,7 @@ export class Phone extends Component {
             self.createCallCounter(phoneNumber)
             self.state.phone_status = self.status.accepted
             await self.setCallStatus("Answered")
+            await self.syncRecordingState()
             const params = self.getJsonCallData()
             self.bc.postMessage({event: "tbcAnswerCall", params})
         })
@@ -623,6 +757,11 @@ export class Phone extends Component {
         this.state.xTransferTo = ''
         this.state.xTransferInfo = ''
         this.state.xTransferPartner = false
+        this.state.recordingState = 'off'
+        this.state.recordingBusy = false
+        this.state.recordingError = ''
+        this.state.recordingPath = ''
+        this.state.recordingRef = ''
     }
 
     _openPartner(id) {

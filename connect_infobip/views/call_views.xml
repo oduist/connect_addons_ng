@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_call_form_infobip" model="ir.ui.view">
+        <field name="name">connect.call.form.infobip</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.view_connect_call_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='channels']" position="after">
+                <page name="infobip" string="Infobip">
+                    <group>
+                        <field name="infobip_dialog_id"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

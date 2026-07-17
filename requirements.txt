@@ -3,3 +3,4 @@ pyjwt
 twilio
 telnyx
 pynacl
+livekit-api

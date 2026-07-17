@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="fs_template_dialplan_pipecat_agent" model="connect.freeswitch.template">
+        <field name="key">dialplan_pipecat_agent</field>
+        <field name="name">Dialplan - Pipecat AI Agent</field>
+        <field name="section">dialplan</field>
+        <field name="description">Answers and forks 16 kHz mono L16 audio to the Pipecat sidecar.</field>
+        <field name="content"><![CDATA[<extension name="pipecat_agent_{{ agent.id }}">
+  <condition field="destination_number" expression="^{{ number }}$">
+    <action application="answer"/>
+    <action application="sleep" data="500"/>
+    <action application="export" data="odoo_pipecat_agent_id={{ agent.id }}"/>
+    <action application="export" data="odoo_exten_id={{ agent.exten.id if agent.exten else '' }}"/>
+    <action application="set" data="MOD_AUDIO_BASIC_AUTH_USERNAME=pipecat"/>
+    <action application="set" data="MOD_AUDIO_BASIC_AUTH_PASSWORD={{ service_token }}"/>
+    <action application="set" data="api_result=${uuid_audio_fork(${uuid} start {{ ws_url }}/ws?call_uuid=${uuid}&amp;agent_id={{ agent.id }} mono 16k pipecat {} true true 16000)}"/>
+    {% if record_calls and recording_url %}
+    <action application="set" data="RECORD_STEREO=true"/>
+    <action application="set" data="media_bug_answer_req=true"/>
+    <action application="record_session" data="{{ recording_url }}/${uuid}.wav"/>
+    {% endif %}
+    <action application="park"/>
+  </condition>
+</extension>]]></field>
+        <field name="default_content"><![CDATA[<extension name="pipecat_agent_{{ agent.id }}">
+  <condition field="destination_number" expression="^{{ number }}$">
+    <action application="answer"/>
+    <action application="sleep" data="500"/>
+    <action application="export" data="odoo_pipecat_agent_id={{ agent.id }}"/>
+    <action application="export" data="odoo_exten_id={{ agent.exten.id if agent.exten else '' }}"/>
+    <action application="set" data="MOD_AUDIO_BASIC_AUTH_USERNAME=pipecat"/>
+    <action application="set" data="MOD_AUDIO_BASIC_AUTH_PASSWORD={{ service_token }}"/>
+    <action application="set" data="api_result=${uuid_audio_fork(${uuid} start {{ ws_url }}/ws?call_uuid=${uuid}&amp;agent_id={{ agent.id }} mono 16k pipecat {} true true 16000)}"/>
+    {% if record_calls and recording_url %}
+    <action application="set" data="RECORD_STEREO=true"/>
+    <action application="set" data="media_bug_answer_req=true"/>
+    <action application="record_session" data="{{ recording_url }}/${uuid}.wav"/>
+    {% endif %}
+    <action application="park"/>
+  </condition>
+</extension>]]></field>
+    </record>
+</odoo>

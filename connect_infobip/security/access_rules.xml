@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- connect.infobip.exten access rules -->
+    <record id="access_connect_infobip_exten_admin" model="ir.model.access">
+        <field name="name">connect.infobip.exten admin</field>
+        <field name="model_id" ref="model_connect_infobip_exten"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_infobip_exten_user" model="ir.model.access">
+        <field name="name">connect.infobip.exten user</field>
+        <field name="model_id" ref="model_connect_infobip_exten"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_infobip_exten_webhook" model="ir.model.access">
+        <field name="name">connect.infobip.exten webhook</field>
+        <field name="model_id" ref="model_connect_infobip_exten"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.infobip.number access rules -->
+    <record id="access_connect_infobip_number_admin" model="ir.model.access">
+        <field name="name">connect.infobip.number admin</field>
+        <field name="model_id" ref="model_connect_infobip_number"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_infobip_number_user" model="ir.model.access">
+        <field name="name">connect.infobip.number user</field>
+        <field name="model_id" ref="model_connect_infobip_number"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_infobip_number_webhook" model="ir.model.access">
+        <field name="name">connect.infobip.number webhook</field>
+        <field name="model_id" ref="model_connect_infobip_number"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.infobip.outgoing_callerid access rules -->
+    <record id="access_connect_infobip_outgoing_callerid_admin" model="ir.model.access">
+        <field name="name">connect.infobip.outgoing_callerid admin</field>
+        <field name="model_id" ref="model_connect_infobip_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_infobip_outgoing_callerid_user" model="ir.model.access">
+        <field name="name">connect.infobip.outgoing_callerid user</field>
+        <field name="model_id" ref="model_connect_infobip_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_infobip_outgoing_callerid_webhook" model="ir.model.access">
+        <field name="name">connect.infobip.outgoing_callerid webhook</field>
+        <field name="model_id" ref="model_connect_infobip_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.infobip.user_callflow access rules -->
+    <record id="access_connect_infobip_user_callflow_admin" model="ir.model.access">
+        <field name="name">connect.infobip.user_callflow admin</field>
+        <field name="model_id" ref="model_connect_infobip_user_callflow"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_infobip_user_callflow_user" model="ir.model.access">
+        <field name="name">connect.infobip.user_callflow user</field>
+        <field name="model_id" ref="model_connect_infobip_user_callflow"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.infobip.message_configuration access rules (admin-only) -->
+    <record id="access_connect_infobip_message_configuration_admin" model="ir.model.access">
+        <field name="name">connect.infobip.message_configuration admin</field>
+        <field name="model_id" ref="model_connect_infobip_message_configuration"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- connect.infobip.whatsapp_sender access rules -->
+    <record id="access_connect_infobip_whatsapp_sender_admin" model="ir.model.access">
+        <field name="name">connect.infobip.whatsapp_sender admin</field>
+        <field name="model_id" ref="model_connect_infobip_whatsapp_sender"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_infobip_whatsapp_sender_user" model="ir.model.access">
+        <field name="name">connect.infobip.whatsapp_sender user</field>
+        <field name="model_id" ref="model_connect_infobip_whatsapp_sender"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_infobip_whatsapp_sender_webhook" model="ir.model.access">
+        <field name="name">connect.infobip.whatsapp_sender webhook</field>
+        <field name="model_id" ref="model_connect_infobip_whatsapp_sender"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.infobip.whatsapp_template access rules -->
+    <record id="access_connect_infobip_whatsapp_template_admin" model="ir.model.access">
+        <field name="name">connect.infobip.whatsapp_template admin</field>
+        <field name="model_id" ref="model_connect_infobip_whatsapp_template"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_infobip_whatsapp_template_user" model="ir.model.access">
+        <field name="name">connect.infobip.whatsapp_template user</field>
+        <field name="model_id" ref="model_connect_infobip_whatsapp_template"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- connect.infobip.whatsapp_composer access rules -->
+    <record id="access_connect_infobip_whatsapp_composer_admin" model="ir.model.access">
+        <field name="name">connect.infobip.whatsapp_composer admin</field>
+        <field name="model_id" ref="model_connect_infobip_whatsapp_composer"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_infobip_whatsapp_composer_user" model="ir.model.access">
+        <field name="name">connect.infobip.whatsapp_composer user</field>
+        <field name="model_id" ref="model_connect_infobip_whatsapp_composer"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- sms.composer access (for our override) -->
+    <record id="access_sms_composer_user" model="ir.model.access">
+        <field name="name">sms.composer connect user</field>
+        <field name="model_id" ref="sms.model_sms_composer"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+</odoo>

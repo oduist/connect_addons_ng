@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <div t-name="connect_livekit.menu" owl="1">
+        <button type="button"
+                t-attf-class="o-dropdown dropdown-toggle dropdown lk-toggle-phone {{state.inCall ? 'lk-busy' : ''}}"
+                aria-expanded="false" title="Toggle LiveKit Phone"
+                t-on-click="_onClick">
+            <i aria-label="Toggle Phone" class="fa fa-lg fa-phone" role="img"/>
+        </button>
+    </div>
+
+</templates>

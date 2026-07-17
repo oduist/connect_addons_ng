@@ -1,0 +1,81 @@
+site_name: Oduist Connect Documentation
+site_description: Telephony integration platform for Odoo
+site_url: https://oduist.github.io/connect_addons_ng/
+copyright: Copyright &copy; Oduist OÜ
+
+docs_dir: docs
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  # Dark ("slate") is the default scheme (mirrors oduflow.dev); light stays
+  # available via the header toggle. Actual colors are overridden in
+  # stylesheets/oduflow.css via the --md-* custom properties.
+  palette:
+    - scheme: slate
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+    - scheme: default
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+  font:
+    text: Outfit
+    code: Geist Mono
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+
+extra_css:
+  - stylesheets/oduflow.css
+
+nav:
+  - Home: index.md
+  - Admin Guide:
+      - Installation: admin/installation.md
+      - Licensing & Trial: admin/licensing.md
+      - Customer Onboarding (FreeSWITCH): admin/customer-onboarding.md
+      - Core Configuration: admin/core-setup.md
+      - Twilio Integration: admin/twilio-setup.md
+      - FreeSWITCH Integration: admin/freeswitch-setup.md
+      - Pipecat AI Agents: admin/pipecat-setup.md
+      - Asterisk Integration: admin/asterisk-setup.md
+      - Telnyx Integration: admin/telnyx-setup.md
+      - 3CX Integration: admin/3cx-setup.md
+      - LiveKit Integration: admin/livekit-setup.md
+      - Infobip Integration: admin/infobip-setup.md
+      - Dograh Integration (AI Agents): admin/dograh-setup.md
+      - Bird Integration: admin/bird-setup.md
+      - Call Parking: admin/parking.md
+      - Working Schedules: admin/working-schedule.md
+      - Security: admin/security.md
+      - SIP Firewall: admin/firewall.md
+  - User Guide:
+      - Getting Started: user/getting-started.md
+      - Making and Receiving Calls: user/calls.md
+      - Call Parking: user/parking.md
+      - Messages (SMS & WhatsApp): user/messages.md
+      - Video Meetings: user/meetings.md
+      - Recordings & Transcriptions: user/recordings.md
+      - Call Flows (IVR): user/callflows.md
+      - AI Voice Agents: user/ai-agents.md
+
+extra:
+  # Remove the "Made with Material for MkDocs" footer notice.
+  generator: false
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list

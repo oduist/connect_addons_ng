@@ -42,7 +42,6 @@
                             <field name="gather_input_type"/>
                             <field name="gather_timeout"/>
                             <field name="gather_digits"/>
-                            <field name="gather_hints"/>
                         </group>
                     </group>
                     <group invisible="not gather_input">

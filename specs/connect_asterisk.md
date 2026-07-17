@@ -214,9 +214,10 @@ aligned with the `connect_twilio` phone widget (already core-wired):
 - `components/phone/` — JsSIP UA (WSS to the customer's Asterisk),
   call control, transfer/forward DTMF sequences, BroadcastChannel
   multi-tab coordination;
-- `components/{calls,contacts,favorites,tray}/` — core-model-wired
-  (`connect.call.get_widget_calls`, `connect.favorite`,
-  `res.partner.api_get_partner`, `connect.user`);
+- `components/{contacts,favorites,tray}/` — core-model-wired
+  (`connect.favorite`, `res.partner.api_get_partner`, `connect.user`);
+  the Calls history tab is imported from core
+  (`@connect/components/calls/calls`, `connect.call.get_widget_calls`);
 - `widgets/phone_field/` — click-to-dial: web phone when active,
   otherwise server-side `connect.settings.originate_call`;
 - `lib/jssip.min.js`, sounds, icomoon icon font.
@@ -290,8 +291,7 @@ dialplan changes.
 
 ## Tests
 
-`connect_asterisk/tests/__init__.py` — gated loader →
-`tests_suite/connect_asterisk/tests/`:
+`connect_asterisk/tests/`:
 `test_webhook_events.py`, `test_originate.py`,
 `test_recording_webhook.py`, `test_endpoint.py`, `test_settings.py`,
 `test_agent_api.py`, `test_phone_config.py` (+ `common.py`).

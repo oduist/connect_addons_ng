@@ -144,7 +144,7 @@ Extends core message with Twilio message handling - implements the abstract `sen
 | Method | Description |
 |--------|-------------|
 | `receive()` | Twilio webhook: process incoming SMS/WhatsApp messages |
-| `send()` | **Implements abstract:** Send message via Twilio API |
+| `send()` | **Implements abstract:** Send message via Twilio API. Dispatch guard: when `connect.settings._get_message_provider()` is not `'twilio'`, falls through to `super()` (co-installation with other messaging providers, e.g. `connect_bird`). |
 | `client_send()` | Low-level: `client.messages.create()` wrapper |
 | `_compute_direction()` | Override: check against Twilio-owned numbers to determine direction |
 
@@ -175,6 +175,17 @@ Extends core recording with Twilio-specific SIDs and webhook handling.
   They live in core `connect` because OpenAI transcription is technology-agnostic.
 - This module only handles Twilio-specific recording webhook processing and SID tracking.
 
+### Runtime softphone recording control
+
+`connect.channel` is extended with Twilio handlers for the core softphone
+recording RPCs. The phone widget sends provider `twilio` and the active
+`CallSid`; the handler resolves the channel row, verifies participant/admin
+access through core helpers, and uses Twilio's Recording API to start/stop
+recording. Runtime state is stored on the shared channel control fields
+(`recording_state`, `recording_control_ref`, `recording_control_error`) while
+completed artifacts continue to enter `connect.recording` through the Twilio
+recording status webhook.
+
 ---
 
 ### 6. user.py - `_inherit = 'connect.user'`
@@ -187,6 +198,7 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 |-------|------|-------|
 | `username` | Char | PBX username, `UNIQUE`, alphanumeric. **Not field-level required** (co-installation fix): a constraint on `sip_enabled`/`client_enabled`/`username`/`domain` requires username+domain only when the Twilio SIP or web phone is enabled |
 | `originate_provider` | Selection | `selection_add=[('twilio', 'Twilio')]` on the core field |
+| `message_provider` | Selection | `selection_add=[('twilio', 'Twilio')]` on the core field |
 | `twilio_exten` | Many2one | `connect.twilio.exten`, readonly |
 | `twilio_exten_number` | Char | Related `twilio_exten.number`, stored; registered in `_pbx_number_fields()` |
 | `twilio_outgoing_callerid` | Many2one | `connect.twilio.outgoing_callerid` |
@@ -218,6 +230,7 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `render_client()` | Generate TwiML `<Dial><Client>` |
 | `render_sip()` | Generate TwiML `<Dial><Sip>` |
 | `render_voicemail()` | Generate TwiML `<Record>` for voicemail |
+| `get_greeting_message()` / `get_voicemail_prompt()` | `<Say>` the user prompts with `language`/`voice` from `connect.user` (fallbacks `en-US` / `Woman`, ADR-037) |
 | `get_client_token()` | Generate JWT for Twilio Voice SDK |
 | `get_client_identity()` | Return SIP identity string |
 | `_get_sip_uri()` | Compute SIP URI |
@@ -240,7 +253,6 @@ extension) with Twilio SID, webhook URLs, sync and call routing.
 |-------|------|-------|
 | `phone_number` | Char | Required, `UNIQUE` |
 | `friendly_name` | Char | |
-| `is_default` | Boolean | |
 | `destination` | Selection | `user`, `callflow`, `twiml` |
 | `callflow` | Many2one | `connect.twilio.callflow` |
 | `user` | Many2one | `connect.user` |
@@ -317,7 +329,7 @@ callflow field set (name, `exten`/`exten_number` → `connect.twilio.exten`,
 | `_get_gather_action_url()` | Compute gather action webhook URL |
 | `on_call_action()` | Handle call action from gather input |
 | `create_extension()` | Create associated `connect.twilio.exten` |
-| `_get_language_selection()` | BCP-47 language list — **duplicated** with `connect.freeswitch.callflow`; changes must be applied to both (ADR-031) |
+| `_get_language_selection()` | BCP-47 language list — **duplicated** with `connect.freeswitch.callflow`, `connect.telnyx.callflow` and core `connect.user`; changes must be applied to all four (ADR-031/ADR-037) |
 
 `connect.twilio.callflow_choice`: `callflow` (required), `choice_digits`
 (required), `exten` (`connect.twilio.exten`, required), `speech`.
@@ -647,6 +659,7 @@ The phone widget uses the Twilio Voice JavaScript SDK (`@twilio/voice-sdk`) to:
 - Show active call status (duration, caller info)
 - Transfer calls
 - Manage call hold/mute
+- Start/stop recording for the active call through the core softphone recording RPCs
 
 ---
 

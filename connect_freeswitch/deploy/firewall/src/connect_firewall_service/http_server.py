@@ -32,6 +32,7 @@ from .constants import (
 )
 from .esl import ESLClient
 from .event_bus import EventBus
+from .net_utils import normalize_entry, set_for
 from .odoo_client import OdooClient
 from .reconciler import Reconciler
 
@@ -157,7 +158,7 @@ def build_app(
         }
 
     def _entries_payload(name: str) -> list[dict]:
-        return ipset_manager.list_entries(name)
+        return ipset_manager.list_entries_all_families(name)
 
     @app.get("/firewall/api/bans")
     async def api_bans():
@@ -177,7 +178,13 @@ def build_app(
 
     @app.delete("/firewall/api/bans/{ip}")
     async def api_unban(ip: str):
-        ok = ipset_manager.del_entry(IPSET_BANNED, ip)
+        # Normalize before touching ipset: a non-IP path segment would
+        # otherwise trigger a blocking DNS lookup inside the ipset CLI.
+        try:
+            ip, _version = normalize_entry(ip)
+        except ValueError:
+            return {"removed": False}
+        ok = ipset_manager.del_entry(set_for(IPSET_BANNED, ip), ip)
         odoo.enqueue_event({
             "event_type": "manual_unban_applied",
             "ip": ip,
