@@ -1595,18 +1595,19 @@ var on the service). There is no dedicated Odoo user for the service.</p>
 <h2 id="setting-up-in-odoo">Setting up in Odoo</h2>
 <ol>
 <li>Install or upgrade <code>connect_freeswitch</code> — <code>post_init_hook</code> (or the
-   per-version migration on upgrade) generates an initial <strong>Firewall
-   Service Token</strong> and creates the agent singleton.</li>
+   per-version migration on upgrade) runs the missing-only deployment
+   bootstrap, generates both service tokens, and creates the agent singleton.</li>
 <li>Open <strong>Connect → FreeSWITCH → Configuration → Settings</strong>, page <strong>Firewall</strong>, as an admin:</li>
 <li>Toggle <strong>Firewall Enabled</strong> on.</li>
 <li>Set <strong>Firewall Service URL</strong> to where Traefik (or whichever
      reverse-proxy you use) reaches the service container.</li>
-<li><strong>Firewall Service Token</strong>: either keep the auto-generated value
-     or paste your own (≥24 chars, <code>[A-Za-z0-9_-]</code> only). Copy the
-     value into the <code>AGENT_TOKEN</code> env var of the firewall service
-     container <strong>before saving</strong>, because the field gets masked back
-     to <code>****</code> immediately after. Restart the service container so it
-     picks up the new token.</li>
+<li><strong>Firewall Service Token</strong>: leave the auto-generated value unchanged
+     during normal installation. Oduflow reads the protected
+     <code>firewall_service_token</code> with a sudo Odoo shell and passes it directly as
+     the service's <code>AGENT_TOKEN</code>. For a manual deployment, retrieve the same
+     setting through an administrative Odoo shell. Entering a value in this
+     masked field is an explicit rotation and requires updating and restarting
+     the service in the same maintenance window.</li>
 <li>Adjust port lists and timeouts if you need to deviate from the
      defaults.</li>
 <li>Connect → FreeSWITCH → Firewall → <strong>Whitelist</strong>: add your trunk providers,
