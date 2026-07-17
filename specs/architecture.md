@@ -487,8 +487,14 @@ connect/                              # Core (technology-agnostic ledger)
     data.xml
     res_users.xml
     ir_cron.xml
-  migrations/19.0.4.0.0/
+  migrations/18.0.4.0.0/
     pre-migration.py                  # archive moved PBX tables as _*_legacy
+  static/src/
+    components/license_banner/        # License banner systray
+    components/calls/                 # Shared Calls history widget (Calls tab,
+                                      # imported by every provider phone panel)
+    services/active_calls/            # Shared active-calls systray widget
+                                      # (registered once, gated on group_user)
 
 connect_twilio/                       # Twilio integration
   __init__.py
@@ -529,11 +535,13 @@ connect_twilio/                       # Twilio integration
     twiml.xml
     whatsapp_templates.xml
   static/src/
-    components/phone/                 # Phone UI (Twilio Voice SDK)
+    components/phone/                 # Phone UI (Twilio Voice SDK); Calls tab
+                                      # imported from core connect
     js/main.js                        # Twilio Device init
     js/utils.js
     widgets/phone_field/              # Click-to-call
-    services/                         # Active calls, mail extensions
+    services/                         # Actions, mail extensions
+                                      # (active-calls widget now in core)
 
 connect_freeswitch/                   # FreeSWITCH integration
   models/
@@ -550,7 +558,7 @@ connect_freeswitch/                   # FreeSWITCH integration
     call.py / settings.py             # _inherit (originate, XML-RPC)
   controllers/
     freeswitch_xml.py / freeswitch_cdr.py / freeswitch_parking.py / firewall_api.py
-  migrations/19.0.2.0.0/
+  migrations/18.0.2.0.0/
     pre-migration.py                  # detach fifo FKs
     post-migration.py                 # id-preserving copy from _*_legacy tables
   static/src/                         # Verto client, parking panel

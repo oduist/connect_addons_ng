@@ -19,7 +19,7 @@ Deepgram TTS.
 
 The call path is:
 
-1. A `connect.exten` resolves to `connect.pipecat.agent`.
+1. A `connect.freeswitch.exten` resolves to `connect.pipecat.agent`.
 2. Odoo renders a dialplan that answers, waits 500 ms, configures WebSocket
    Basic auth, starts `uuid_audio_fork` in bidirectional raw-stream mode and
    parks the channel.
@@ -29,7 +29,7 @@ The call path is:
    binary L16. Tool calls ask Odoo to transfer or hang up through XML-RPC.
 5. At completion, the sidecar posts transcript and summary to Odoo.
 
-See ADR-040 for the transport decision and security boundaries.
+See ADR-035 for the transport decision and security boundaries.
 
 ## Models
 
@@ -43,16 +43,16 @@ See ADR-040 for the transport decision and security boundaries.
 | `stt_provider`, `stt_model` | Selection, Char | OpenAI or Deepgram |
 | `llm_provider`, `llm_model` | Selection, Char | OpenAI or Anthropic |
 | `tts_provider`, `tts_model`, `tts_voice` | Selection, Char, Char | OpenAI, ElevenLabs or Deepgram |
-| `transfer_exten`, `transfer_prompt` | Many2one, Text | Optional human destination and tool guidance |
+| `transfer_exten`, `transfer_prompt` | Many2one to `connect.freeswitch.exten`, Text | Optional human destination and tool guidance |
 | `max_duration` | Integer | Positive call/session timeout in seconds |
 | `record_calls` | Boolean | Enables the existing FreeSWITCH recording webhook |
-| `exten`, `exten_number` | Many2one, related Char | Back-reference to the agent extension |
+| `exten`, `exten_number` | Many2one to `connect.freeswitch.exten`, related Char | Back-reference to the agent extension |
 
 `create_extension()` opens the standard extension form.
 `generate_dialplan(params, exten=None)` renders
 `dialplan_pipecat_agent` through `connect.freeswitch.template`.
 
-### `connect.exten`
+### `connect.freeswitch.exten`
 
 Adds `('connect.pipecat.agent', 'AI Agent')` to the `dst` reference.
 
@@ -67,7 +67,8 @@ requests respectively.
 ## HTTP API
 
 All routes require `Authorization: Bearer <pipecat_service_token>` and fail
-closed when no token is configured. Mutating routes set `readonly=False`.
+closed when no token is configured. Mutating Odoo 19 routes set
+`readonly=False`.
 
 | Method and route | Purpose |
 |---|---|
@@ -98,7 +99,8 @@ successful `uuid_transfer` is not immediately killed.
 `connect.group_user` has read-only agent access, per the product decision.
 `connect.group_admin` has CRUD. `connect.group_webhook` has read-only access
 plus an all-record read rule. The webhook group also receives read-only access
-to `connect.exten`, required to resolve the configured human transfer number.
+to `connect.freeswitch.exten`, required to resolve the configured human transfer
+number.
 No non-admin group has access to settings or stored provider secrets.
 
 ## Deferred

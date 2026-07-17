@@ -1,30 +1,32 @@
-/** @odoo-module **/
+import { Interaction } from "@web/public/interaction";
+import { registry } from "@web/core/registry";
 
-import publicWidget from "@web/legacy/js/public/public_widget";
+export class ConnectPhoneStatus extends Interaction {
+    static selector = ".s_connect_phone_status";
 
-const ConnectPhoneStatus = publicWidget.Widget.extend({
-    selector: ".s_connect_phone_status",
-    disabledInEditableMode: false,
-
-    async start() {
-        const superStart = this._super.bind(this);
-        this.previousChildren = [...this.el.childNodes];
+    async willStart() {
+        this.data = null;
         const numberId = parseInt(this.el.dataset.numberId || "0", 10);
         if (!numberId) {
-            return superStart(...arguments);
+            return;
         }
-        let data;
         try {
-            const response = await fetch(`/freeswitch/schedule/status/${numberId}`);
+            const response = await this.waitFor(
+                fetch(`/freeswitch/schedule/status/${numberId}`)
+            );
             if (response.ok) {
-                data = await response.json();
+                this.data = await this.waitFor(response.json());
             }
         } catch {
             // Leave the placeholder content on network errors.
         }
-        if (!data) {
-            return superStart(...arguments);
+    }
+
+    start() {
+        if (!this.data) {
+            return;
         }
+        const data = this.data;
         const dataset = this.el.dataset;
         const parts = [];
 
@@ -56,16 +58,14 @@ const ConnectPhoneStatus = publicWidget.Widget.extend({
             parts.push(document.createTextNode(` (${data.status_text})`));
         }
 
+        const previousChildren = [...this.el.childNodes];
         this.el.replaceChildren(...parts);
-        return superStart(...arguments);
-    },
+        this.registerCleanup(() => {
+            this.el.replaceChildren(...previousChildren);
+        });
+    }
+}
 
-    destroy() {
-        if (this.previousChildren) {
-            this.el.replaceChildren(...this.previousChildren);
-        }
-        this._super(...arguments);
-    },
-});
-
-publicWidget.registry.connectPhoneStatus = ConnectPhoneStatus;
+registry
+    .category("public.interactions")
+    .add("connect_freeswitch_website.phone_status", ConnectPhoneStatus);

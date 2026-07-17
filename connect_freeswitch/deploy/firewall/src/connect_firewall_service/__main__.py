@@ -137,18 +137,6 @@ async def heartbeat_loop(settings: ServiceSettings, odoo: OdooClient,
         await asyncio.sleep(max(15, settings.firewall_heartbeat_interval))
 
 
-async def http_loop(settings: ServiceSettings, app) -> None:
-    config = uvicorn.Config(
-        app,
-        host=settings.http_bind_host,
-        port=settings.http_bind_port,
-        log_level=settings.log_level.lower(),
-        access_log=False,
-    )
-    server = uvicorn.Server(config)
-    await server.serve()
-
-
 async def run(settings: ServiceSettings) -> None:
     logger.info(
         "connect-firewall-service %s starting (Odoo=%s, ESL=%s:%s, enabled=%s)",
@@ -196,6 +184,26 @@ async def run(settings: ServiceSettings) -> None:
     started_at = time.time()
     app = build_app(settings, reconciler, odoo, esl_client, event_bus, started_at)
 
+    # Own the uvicorn server so the shutdown path can drive its graceful
+    # stop directly. timeout_graceful_shutdown bounds how long uvicorn waits
+    # for in-flight connections: the SSE /firewall/events stream is
+    # long-lived and would otherwise hold shutdown open indefinitely (the
+    # dashboard reconnects on its own, so a force-close after a few seconds
+    # is fine).
+    http_config = uvicorn.Config(
+        app,
+        host=settings.http_bind_host,
+        port=settings.http_bind_port,
+        log_level=settings.log_level.lower(),
+        access_log=False,
+        timeout_graceful_shutdown=5,
+    )
+    http_server = uvicorn.Server(http_config)
+    # We install our own SIGTERM/SIGINT handlers below; keep uvicorn from
+    # replacing them with its own (its handler would trap the signal and
+    # race our stop-event, breaking the coordinated shutdown).
+    http_server.install_signal_handlers = lambda: None
+
     def _log_task_exception(task: asyncio.Task) -> None:
         if task.cancelled():
             return
@@ -211,9 +219,9 @@ async def run(settings: ServiceSettings) -> None:
             name="heartbeat",
         ),
         asyncio.create_task(reconciler.run(), name="reconciler"),
-        asyncio.create_task(http_loop(settings, app), name="http"),
     ]
-    for t in tasks:
+    http_task = asyncio.create_task(http_server.serve(), name="http")
+    for t in (*tasks, http_task):
         t.add_done_callback(_log_task_exception)
 
     stop = asyncio.Event()
@@ -224,6 +232,14 @@ async def run(settings: ServiceSettings) -> None:
     await stop.wait()
 
     logger.info("shutting down")
+    # Ask uvicorn to unwind its own lifespan cleanly: should_exit makes
+    # serve() return after emitting the ASGI lifespan.shutdown event, so the
+    # lifespan task is never cancelled mid-receive() — which is exactly what
+    # produced the CancelledError traceback on every stop. The background
+    # loops are plain infinite tasks, so cancelling them is quiet.
+    http_server.should_exit = True
+    with suppress(asyncio.CancelledError, Exception):
+        await http_task
     for task in tasks:
         task.cancel()
     for task in tasks:

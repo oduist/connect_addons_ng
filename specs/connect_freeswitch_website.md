@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect FreeSWITCH Website
 - **Technical:** `connect_freeswitch_website`
-- **Version:** 19.0.1.0.0
+- **Version:** 18.0.1.0.0
 - **Depends:** `connect_freeswitch`, `website`
 - **Application:** False
 - **Auto-install:** False (explicit opt-in: it adds public endpoints)

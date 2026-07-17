@@ -9,15 +9,14 @@
         'security/access_rules.xml',
         'views/snippets/s_phone_status.xml',
         'views/snippets/s_phone_opening_hours.xml',
-        'views/snippets/phone_snippet_options.xml',
         'views/snippets/snippets.xml',
     ],
     'assets': {
         'web.assets_frontend': [
             'connect_freeswitch_website/static/src/snippets/**/*.js',
         ],
-        'website.assets_wysiwyg': [
-            'connect_freeswitch_website/static/src/website_builder/phone_snippet_options.js',
+        'website.website_builder_assets': [
+            'connect_freeswitch_website/static/src/website_builder/**/*',
         ],
     },
     'installable': True,

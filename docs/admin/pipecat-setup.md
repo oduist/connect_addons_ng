@@ -6,7 +6,7 @@ sidecar. Pipecat does not run inside Odoo.
 
 ## 1. Build the images
 
-Build the FreeSWITCH image after the `connect_freeswitch` 18.0.2.1.0 update:
+Build the FreeSWITCH image after the `connect_freeswitch` 18.0.2.1.2 update:
 
 ```bash
 docker build --platform linux/amd64 --provenance=false --sbom=false \
@@ -25,7 +25,7 @@ WSS routing shape.
 
 ## 2. Pair Odoo and the sidecar
 
-Open **Connect → Settings → Pipecat AI**.
+Open **Connect → FreeSWITCH → Configuration → Settings → Pipecat AI**.
 
 1. Set **Pipecat Sidecar URL** to its externally reachable base URL, for
    example `wss://voice.example.com`. Do not append `/ws`.
@@ -42,7 +42,7 @@ the media WebSocket; the sidecar uses Bearer auth for Odoo and `/health`.
 
 ## 3. Configure an agent
 
-Go to **Connect → PBX → AI Agents**, create an agent, and configure:
+Go to **Connect → FreeSWITCH → AI Agents**, create an agent, and configure:
 
 - system prompt and optional greeting;
 - STT, LLM and TTS providers/models;

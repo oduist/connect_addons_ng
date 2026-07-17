@@ -1,32 +1,31 @@
-/** @odoo-module **/
+import { Interaction } from "@web/public/interaction";
+import { registry } from "@web/core/registry";
 
-import publicWidget from "@web/legacy/js/public/public_widget";
+export class ConnectPhoneOpeningHours extends Interaction {
+    static selector = ".s_connect_phone_opening_hours";
 
-const ConnectPhoneOpeningHours = publicWidget.Widget.extend({
-    selector: ".s_connect_phone_opening_hours",
-    disabledInEditableMode: false,
-
-    async start() {
-        const superStart = this._super.bind(this);
-        this.previousChildren = [...this.el.childNodes];
+    async willStart() {
+        this.data = null;
         const numberId = parseInt(this.el.dataset.numberId || "0", 10);
         if (!numberId) {
-            return superStart(...arguments);
+            return;
         }
         const days = parseInt(this.el.dataset.days || "10", 10) || 10;
-        let data;
         try {
-            const response = await fetch(
-                `/freeswitch/schedule/opening_hours/${numberId}?days=${days}`
+            const response = await this.waitFor(
+                fetch(`/freeswitch/schedule/opening_hours/${numberId}?days=${days}`)
             );
             if (response.ok) {
-                data = await response.json();
+                this.data = await this.waitFor(response.json());
             }
         } catch {
             // Leave the placeholder content on network errors.
         }
-        if (!data) {
-            return superStart(...arguments);
+    }
+
+    start() {
+        if (!this.data) {
+            return;
         }
         const dataset = this.el.dataset;
         const useLongDate = dataset.dateFormat !== "short";
@@ -35,7 +34,7 @@ const ConnectPhoneOpeningHours = publicWidget.Widget.extend({
         const tableEl = document.createElement("table");
         tableEl.classList.add("table", "table-sm");
         const bodyEl = document.createElement("tbody");
-        for (const day of data.days) {
+        for (const day of this.data.days) {
             const rowEl = document.createElement("tr");
             const dateEl = document.createElement("td");
             dateEl.textContent = useLongDate ? day.date_long : day.date_short;
@@ -54,16 +53,17 @@ const ConnectPhoneOpeningHours = publicWidget.Widget.extend({
         }
         tableEl.appendChild(bodyEl);
 
+        const previousChildren = [...this.el.childNodes];
         this.el.replaceChildren(tableEl);
-        return superStart(...arguments);
-    },
+        this.registerCleanup(() => {
+            this.el.replaceChildren(...previousChildren);
+        });
+    }
+}
 
-    destroy() {
-        if (this.previousChildren) {
-            this.el.replaceChildren(...this.previousChildren);
-        }
-        this._super(...arguments);
-    },
-});
-
-publicWidget.registry.connectPhoneOpeningHours = ConnectPhoneOpeningHours;
+registry
+    .category("public.interactions")
+    .add(
+        "connect_freeswitch_website.phone_opening_hours",
+        ConnectPhoneOpeningHours
+    );

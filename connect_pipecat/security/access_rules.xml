@@ -38,8 +38,8 @@
         <field name="perm_unlink" eval="0"/>
     </record>
     <record id="access_exten_pipecat_webhook" model="ir.model.access">
-        <field name="name">connect.exten pipecat webhook</field>
-        <field name="model_id" ref="connect.model_connect_exten"/>
+        <field name="name">connect.freeswitch.exten pipecat webhook</field>
+        <field name="model_id" ref="connect_freeswitch.model_connect_freeswitch_exten"/>
         <field name="group_id" ref="connect.group_webhook"/>
         <field name="perm_read" eval="1"/>
         <field name="perm_write" eval="0"/>

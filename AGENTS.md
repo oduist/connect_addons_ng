@@ -14,11 +14,13 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_freeswitch_website`** — website widgets for FreeSWITCH number working schedules (ADR-037): Phone Status and Phone Opening Hours snippets + public JSON endpoints under `/freeswitch/schedule/*`. The only module that may depend on `website`; not auto-installed. Core `connect` owns the schedule engine (`connect.schedule` on top of `resource.calendar`).
 - **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). Owns `connect.asterisk.{endpoint,number}`; AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). **Asterisk** submenu under the Connect app. See ADR-026.
 - **`connect_telnyx`** — Telnyx integration (TeXML-first, ADR-032). Owns `connect.telnyx.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,texml,domain}`; SIP domain = credential connection + TeXML app SIP subdomain, per-user telephony credentials, @telnyx/webrtc phone widget, SMS/WhatsApp/RCS via messaging profile (ADR-033: `connect.telnyx.{whatsapp_sender,whatsapp_template,rcs_agent}` + composers), Ed25519 webhook validation. **Telnyx** submenu under the Connect app.
+- **`connect_livekit`** — LiveKit integration (self-hosted realtime stack, ADR-036). Owns `connect.livekit.{room,trunk,number,outgoing_callerid,agent}`; three levels: video rooms with public guest links + Egress recording, SIP telephony via the livekit-sip bridge (BYO carrier trunk) with a browser web phone joining rooms by short-TTL JWT, and voice-AI agents served by the `oduist/livekit-agent` sidecar (LiveKit Agents, plugin cascade Deepgram/OpenAI/ElevenLabs). LiveKit webhooks (`/livekit/webhook`) verified with the JWT WebhookReceiver. **LiveKit** submenu under the Connect app; all models admin-only.
 - **`connect_infobip`** — Infobip integration (event-driven Calls API, NO TwiML analog — ADR-036). Owns `connect.infobip.{exten,number,outgoing_callerid,user_callflow,message_configuration,whatsapp_sender,whatsapp_template}`; voice = webhook events → REST actions (Dialog bridges, platform-side `connectTimeout`), per-user WebRTC identities (no per-user SIP), vendored infobip-rtc phone widget, SMS + WhatsApp, recordings downloaded into attachments. No IVR/callflows in v1. **Infobip** submenu under the Connect app.
+- **`connect_dograh`** — Dograh AI voice agents on FreeSWITCH (ADR-041). Owns `connect.dograh.agent`; depends on `connect` AND `connect_freeswitch`. Inbound: per-call dialplan posts Dograh's `/inbound/run` webhook and attaches mod_audio_fork (L16/16 kHz) to the returned media WebSocket; outbound: Dograh calls `/dograh/api/originate`. Ships a vendored freeswitch provider package for Dograh under `connect_dograh/deploy/` (overlay image `oduist/dograh-api`). **Dograh** submenu under the Connect app.
 - **`connect_bird`** — Bird.com (ex-MessageBird) integration. Owns `connect.bird.{number,message_template,message_configuration,webhook}`; SMS/WhatsApp send/receive via the Bird developer platform (`{region}.platform.bird.com/v1`, Bearer `bk_...` keys, raw httpx — the official SDK covers only email and is not used), template-first messaging (SMS + WhatsApp templates), voice-call ledger from `voice.*` events, click-to-call via two-leg callback originate (no web phone — Bird has no WebRTC SDK), recordings fetched by cron, delivery statuses polled until the platform ships `sms.*` webhook events. Single `/bird/webhook` endpoint with Standard-Webhooks signature. **Bird** submenu under the Connect app. See ADR-038.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
 
-Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_infobip` and `connect_bird` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module).
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird` and `connect_dograh` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module).
 
 ## Architecture
 
@@ -70,10 +72,12 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_twilio.md` — Twilio module spec (models, webhooks, controllers, frontend)
 - `specs/connect_asterisk.md` — Asterisk module spec (models, agent contract, controllers, frontend)
 - `specs/connect_telnyx.md` — Telnyx module spec (models, TeXML routing, controllers, frontend)
+- `specs/connect_livekit.md` — LiveKit module spec (rooms, SIP bridge, AI agents, sidecar worker)
 - `specs/connect_infobip.md` — Infobip module spec (models, event-driven voice, controllers, frontend)
+- `specs/connect_dograh.md` — Dograh module spec (models, dialplan flow, controllers, vendored Dograh provider package)
 - `specs/connect_freeswitch_website.md` — Website widgets module spec (snippets, public endpoints)
 - `specs/connect_bird.md` — Bird module spec (models, webhooks, controllers, wizards)
-- `docs/` — User and admin documentation (MkDocs Material), see `docs/mkdocs.yml` for structure
+- `docs/` — User and admin documentation (MkDocs Material), see `mkdocs.yml` for structure
 
 ## Development Commands
 Use oduflow to manage module development and deployment.
@@ -181,14 +185,20 @@ Specifically:
 - Asterisk webhook/API routes are under `/asterisk/webhook/*` and `/asterisk/api/*` and require `Authorization: Bearer <asterisk_agent_token>`
 - Telnyx webhook routes are all under `/telnyx/webhook/*` and validate the Ed25519 `telnyx-signature-ed25519` header when enabled
 - Infobip webhook routes are all under `/infobip/webhook/*` and require the shared `infobip_webhook_token` (`?token=` or Basic Auth password) when enabled — Infobip does not sign webhooks
+- Dograh control routes are all under `/dograh/api/*` and require `Authorization: Bearer <dograh_service_token>` (fail-closed; the same shared secret authenticates Odoo→Dograh inbound webhooks)
 - Bird events arrive on the single `/bird/webhook` route and validate the Standard-Webhooks signature (`webhook-id` / `webhook-timestamp` / `webhook-signature`, `whsec_` secret) when enabled
-- Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`, Infobip WebRTC phone in `connect_infobip/static/src/`
+- Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`, LiveKit web phone in `connect_livekit/static/src/`, Infobip WebRTC phone in `connect_infobip/static/src/`
+- **Module Apps Store descriptions** (`<module>/static/description/index.html`)
+  follow the fixed Oduist house style. To write or regenerate one, use the
+  `writing-odoo-module-description` skill (`.claude/skills/`), which carries the
+  template and the code→features extraction procedure.
 
 ## FreeSWITCH & Firewall Docker Images
 
 - FreeSWITCH image: `oduist/freeswitch` — Dockerfile: `connect_freeswitch/deploy/Dockerfile`, config: `connect_freeswitch/deploy/freeswitch/conf/`
 - Firewall image: `oduist/freeswitch-firewall` — Dockerfile: `connect_freeswitch/deploy/firewall/Dockerfile`, sources: `connect_freeswitch/deploy/firewall/src/`
 - Asterisk agent image: `oduist/asterisk-agent` — Dockerfile: `connect_asterisk/deploy/agent/Dockerfile`, sources: `connect_asterisk/deploy/agent/src/`. Same versioning policy: rebuilt only when a release changes files under `connect_asterisk/deploy/agent/`; tag = short `connect_asterisk` manifest version; build multi-arch (`linux/amd64,linux/arm64`) — the agent runs on customer hardware.
+- LiveKit agent image: `oduist/livekit-agent` — Dockerfile: `connect_livekit/deploy/agent/Dockerfile`, sources: `connect_livekit/deploy/agent/src/`. One image, two commands (`run` = LiveKit Agents worker, `upload-recordings` = egress uploader). Same versioning policy: rebuilt only when a release changes files under `connect_livekit/deploy/agent/`; tag = short `connect_livekit` manifest version; build multi-arch (`linux/amd64,linux/arm64`) — the worker runs on customer hardware. The LiveKit server/sip/egress images in `connect_livekit/deploy/docker-compose.yml` are pinned upstream `livekit/*` images.
 
 ### Versioning policy
 
@@ -216,6 +226,51 @@ As a result, the published image tags **lag behind** the module manifest version
      docker push oduist/freeswitch-firewall:<short> && docker push oduist/freeswitch-firewall:latest
      ```
 4. The two images are independent — only rebuild the one whose source files actually changed in this release.
+
+### Deploying the `fs` and `firewall` services with Oduflow
+
+`connect_freeswitch` generates the two service credentials automatically on
+install and repairs missing values on upgrade (ADR-045). Do not invent new
+tokens in deployment files and do not rotate an existing token during a
+routine service update.
+
+Use this order:
+
+1. Install or upgrade `connect_freeswitch` before creating the services.
+2. Read the stored values with `run_odoo_shell` under `sudo()`:
+
+   ```python
+   settings = env["connect.settings"].sudo()
+   print("FS_WEBHOOK_TOKEN=" + (settings.get_param("freeswitch_webhook_token") or ""))
+   print("AGENT_TOKEN=" + (settings.get_param("firewall_service_token") or ""))
+   ```
+
+   Treat that tool output as secret material: use it only for the immediately
+   following service calls, never quote it in the final response, commit it,
+   or write it into a repository file. If either value is empty, upgrade
+   `connect_freeswitch` and read it again instead of generating a parallel
+   value outside Odoo.
+3. Before changing an existing service, call `get_service_info(name)`. Use
+   `update_service`, not delete/recreate. Oduflow `env_vars` and `volumes` are
+   full replacements, so merge the new token into the complete existing set
+   and preserve image, host mode, volumes, capabilities, and unrelated env.
+4. The `fs` service must use `host_mode=true` and receive at least
+   `ODOO_URL`, `FS_DOMAIN`, `FS_WEBHOOK_TOKEN`, and `FS_ESL_PASSWORD`. Do not
+   mount anything over `/usr/local/freeswitch/etc/freeswitch`; the bootstrap
+   config is owned by the image. Preserve the sounds and Traefik ACME volumes
+   where configured.
+5. The `firewall` service must use `host_mode=true`, `net_admin=true`, and
+   receive `ODOO_URL`, the Odoo token as `AGENT_TOKEN`,
+   `FS_ESL_HOST=127.0.0.1`, and the same `FS_ESL_PASSWORD` as `fs`. Preserve
+   its cache volume and dashboard variables. Its HTTP listener stays on
+   `127.0.0.1:8081` behind the host-network TLS edge.
+6. Verify with `run_service_command("fs", ...)` using the runtime ESL
+   password, then inspect both service logs. Confirm XML-RPC listens on
+   `127.0.0.1:8080`, ESL on `127.0.0.1:8021`, the firewall reports
+   `esl_connected`, and Odoo's **Check Status** succeeds through HTTPS.
+
+The FreeSWITCH bootstrap and the maintained upstream source patch are
+documented in `connect_freeswitch/deploy/freeswitch/README.md`.
 
 ## Testing FreeSWITCH SIP Calls
 
@@ -269,6 +324,7 @@ connect_addons_ng/
 ├── connect_telnyx/tests/
 ├── connect_infobip/tests/test_*.py
 ├── connect_bird/tests/test_*.py
+├── connect_dograh/tests/test_*.py
 └── connect_helpdesk/tests/
 ```
 
@@ -314,6 +370,7 @@ oduflow run_odoo_tests connect_asterisk
 oduflow run_odoo_tests connect_crm
 oduflow run_odoo_tests connect_telnyx
 oduflow run_odoo_tests connect_infobip
+oduflow run_odoo_tests connect_dograh
 oduflow run_odoo_tests connect_helpdesk
 ```
 

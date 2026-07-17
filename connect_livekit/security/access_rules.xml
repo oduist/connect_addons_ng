@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ADR-036 (owner decision): all connect_livekit models are
+         admin-only. The Connect User group gets NO rows here; browser
+         features (web phone tokens, guest meet join) go through model
+         methods with internal sudo. Webhook handlers also run their
+         livekit-model reads/writes under sudo, so the webhook group
+         needs no rows either. -->
+
+    <!-- connect.livekit.room access rules -->
+    <record id="access_connect_livekit_room_admin" model="ir.model.access">
+        <field name="name">connect.livekit.room admin</field>
+        <field name="model_id" ref="model_connect_livekit_room"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- connect.livekit.trunk access rules -->
+    <record id="access_connect_livekit_trunk_admin" model="ir.model.access">
+        <field name="name">connect.livekit.trunk admin</field>
+        <field name="model_id" ref="model_connect_livekit_trunk"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- connect.livekit.number access rules -->
+    <record id="access_connect_livekit_number_admin" model="ir.model.access">
+        <field name="name">connect.livekit.number admin</field>
+        <field name="model_id" ref="model_connect_livekit_number"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- connect.livekit.outgoing_callerid access rules -->
+    <record id="access_connect_livekit_outgoing_callerid_admin" model="ir.model.access">
+        <field name="name">connect.livekit.outgoing_callerid admin</field>
+        <field name="model_id" ref="model_connect_livekit_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- connect.livekit.agent access rules -->
+    <record id="access_connect_livekit_agent_admin" model="ir.model.access">
+        <field name="name">connect.livekit.agent admin</field>
+        <field name="model_id" ref="model_connect_livekit_agent"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_livekit_ai_call_wizard_admin" model="ir.model.access">
+        <field name="name">connect.livekit.ai_call_wizard admin</field>
+        <field name="model_id" ref="model_connect_livekit_ai_call_wizard"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+</odoo>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_livekit_trunk_list" model="ir.ui.view">
+        <field name="name">connect.livekit.trunk.list</field>
+        <field name="model">connect.livekit.trunk</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="outbound_address"/>
+                <field name="inbound_trunk_sid"/>
+                <field name="outbound_trunk_sid"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_livekit_trunk_form" model="ir.ui.view">
+        <field name="name">connect.livekit.trunk.form</field>
+        <field name="model">connect.livekit.trunk</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Carrier trunk name..."/></h1>
+                    </div>
+                    <group>
+                        <group string="Inbound (carrier → LiveKit)">
+                            <field name="inbound_addresses"/>
+                            <field name="inbound_auth_username"/>
+                            <field name="inbound_auth_password" password="1"/>
+                            <field name="krisp_enabled"/>
+                            <field name="inbound_trunk_sid"/>
+                        </group>
+                        <group string="Outbound (LiveKit → carrier)">
+                            <field name="outbound_address"/>
+                            <field name="outbound_transport"/>
+                            <field name="outbound_auth_username"/>
+                            <field name="outbound_auth_password" password="1"/>
+                            <field name="outbound_trunk_sid"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_livekit_trunk" model="ir.actions.act_window">
+        <field name="name">Trunks</field>
+        <field name="res_model">connect.livekit.trunk</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_livekit_trunks"
+              name="Trunks"
+              parent="menu_livekit_config"
+              action="action_livekit_trunk"
+              groups="connect.group_admin"
+              sequence="20"/>
+</odoo>
