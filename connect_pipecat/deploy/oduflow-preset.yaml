@@ -1,0 +1,16 @@
+name: pipecat-agent
+image: oduist/pipecat-agent:1.0.0
+
+environment:
+  ODOO_URL: ${ODOO_URL}
+  PIPECAT_SERVICE_TOKEN: ${PIPECAT_SERVICE_TOKEN}
+  HOST: 0.0.0.0
+  PORT: 7860
+  LOG_LEVEL: INFO
+
+# Route this service through TLS. FreeSWITCH connects to /ws using WSS while
+# Odoo checks /health using HTTPS on the same public host.
+traefik:
+  enabled: true
+  port: 7860
+  websocket: true

@@ -1,6 +1,7 @@
 /** @odoo-module **/
 
-import { Component, useState, useRef, onMounted, onWillUnmount } from "@odoo/owl";
+import { Component, useState, useRef, onMounted, onWillUnmount, onWillUpdateProps } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
 
 
 export class PhoneDialpad extends Component {
@@ -15,17 +16,29 @@ export class PhoneDialpad extends Component {
     };
 
     setup() {
+        this.orm = useService("orm");
+        this.notification = useService("notification");
         this.state = useState({
             number: "",
             muted: false,
             callDuration: 0,
+            recordingState: "off",
+            recordingBusy: false,
+            recordingError: "",
+            recordingPath: "",
         });
 
         this.numberInput = useRef("numberInput");
         this.durationInterval = null;
+        this.lastRecordingCallId = null;
 
         onMounted(() => {
             this.numberInput.el?.focus();
+            this._syncRecordingForProps(this.props);
+        });
+
+        onWillUpdateProps((nextProps) => {
+            this._syncRecordingForProps(nextProps);
         });
 
         onWillUnmount(() => {
@@ -100,6 +113,121 @@ export class PhoneDialpad extends Component {
     onToggleMute() {
         if (this.props.vertoClient) {
             this.state.muted = this.props.vertoClient.toggleMute();
+        }
+    }
+
+    getRecordingCallId(vertoClient = this.props.vertoClient) {
+        if (!vertoClient || typeof vertoClient.getCallId !== "function") {
+            return "";
+        }
+        return vertoClient.getCallId();
+    }
+
+    _recordingPayload(vertoClient = this.props.vertoClient) {
+        return {
+            provider: "freeswitch",
+            call_id: this.getRecordingCallId(vertoClient),
+            recording_path: this.state.recordingPath,
+        };
+    }
+
+    _applyRecordingResult(result) {
+        if (!result) return;
+        this.state.recordingState = result.state || "off";
+        this.state.recordingPath = result.recording_path || "";
+        this.state.recordingError = result.error || "";
+        this.state.recordingBusy = ["starting", "stopping"].includes(this.state.recordingState);
+    }
+
+    _syncRecordingForProps(props) {
+        const callId = this.getRecordingCallId(props.vertoClient);
+        if (props.callState !== "active") {
+            this.lastRecordingCallId = null;
+            this.state.recordingState = "off";
+            this.state.recordingBusy = false;
+            this.state.recordingError = "";
+            this.state.recordingPath = "";
+            return;
+        }
+        if (callId && callId !== this.lastRecordingCallId) {
+            this.lastRecordingCallId = callId;
+            this.syncRecordingState(props.vertoClient);
+        }
+    }
+
+    async syncRecordingState(vertoClient = this.props.vertoClient) {
+        const callId = this.getRecordingCallId(vertoClient);
+        if (!callId) {
+            this.state.recordingState = "off";
+            this.state.recordingError = "Call UUID unavailable";
+            return;
+        }
+        try {
+            const result = await this.orm.call(
+                "connect.channel",
+                "get_softphone_recording_state",
+                [this._recordingPayload(vertoClient)]
+            );
+            this._applyRecordingResult(result);
+        } catch (error) {
+            console.warn("Recording state sync failed:", error);
+            this.state.recordingState = "error";
+            this.state.recordingError = error.message || String(error);
+        }
+    }
+
+    isRecordingOn() {
+        return this.state.recordingState === "on" || this.state.recordingState === "starting";
+    }
+
+    isRecordingButtonDisabled() {
+        return this.state.recordingBusy || !this.getRecordingCallId();
+    }
+
+    getRecordingTitle() {
+        if (!this.getRecordingCallId()) {
+            return "Recording unavailable";
+        }
+        if (this.state.recordingBusy) {
+            return this.state.recordingState === "starting" ? "Starting recording" : "Stopping recording";
+        }
+        if (this.state.recordingState === "error") {
+            return this.state.recordingError || "Recording error";
+        }
+        return this.isRecordingOn() ? "Stop Recording" : "Start Recording";
+    }
+
+    getRecordingIconClass() {
+        if (this.state.recordingState === "error") {
+            return "fa fa-exclamation-triangle";
+        }
+        if (this.state.recordingBusy) {
+            return "fa fa-spinner fa-spin";
+        }
+        return this.isRecordingOn() ? "fa fa-stop-circle" : "fa fa-circle";
+    }
+
+    async onToggleRecording() {
+        if (this.isRecordingButtonDisabled()) return;
+        const action = this.isRecordingOn() ? "stop_softphone_recording" : "start_softphone_recording";
+        this.state.recordingBusy = true;
+        this.state.recordingState = this.isRecordingOn() ? "stopping" : "starting";
+        try {
+            const result = await this.orm.call(
+                "connect.channel",
+                action,
+                [this._recordingPayload()]
+            );
+            this._applyRecordingResult(result);
+        } catch (error) {
+            this.state.recordingState = "error";
+            this.state.recordingError = error.message || String(error);
+            this.state.recordingBusy = false;
+            this.notification.add(this.state.recordingError, {
+                title: "Recording",
+                type: "danger",
+                sticky: false,
+            });
         }
     }
 

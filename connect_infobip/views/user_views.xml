@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inherit core user list to add Infobip-specific columns -->
+    <record id="view_connect_user_tree_infobip" model="ir.ui.view">
+        <field name="name">connect.user.tree.infobip</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user']" position="after">
+                <field name="infobip_exten" optional="show"/>
+                <field name="infobip_outgoing_callerid" optional="hide"/>
+                <field name="infobip_webrtc_enabled" string="Infobip Web"/>
+                <field name="infobip_phone_enabled" string="Infobip Phone"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit core user form to add Infobip-specific fields -->
+    <record id="view_connect_user_form_infobip" model="ir.ui.view">
+        <field name="name">connect.user.form.infobip</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_form"/>
+        <field name="arch" type="xml">
+            <!-- Infobip extension stat button -->
+            <xpath expr="//header" position="inside">
+                <button name="create_infobip_extension" type="object"
+                        string="Infobip Extension" class="btn btn-primary"/>
+            </xpath>
+
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="infobip_exten" readonly="1"/>
+                <field name="infobip_outgoing_callerid"/>
+                <field name="infobip_whatsapp_sender_id"/>
+            </xpath>
+
+            <!-- Add Phone tab with Web/External phone settings to notebook -->
+            <xpath expr="//page[@name='organization']" position="before">
+                <page name="infobip_phone" string="Infobip Phone">
+                    <group>
+                        <group string="Web Phone">
+                            <field name="infobip_webrtc_enabled" string="Enabled"/>
+                            <field name="infobip_identity" string="Identity"
+                                   invisible="infobip_webrtc_enabled == False"/>
+                            <field name="infobip_client_priority" string="Priority"
+                                   invisible="infobip_webrtc_enabled == False"/>
+                            <field name="infobip_client_ring_timeout" string="Ring Timeout"
+                                   invisible="infobip_webrtc_enabled == False"/>
+                        </group>
+                        <group string="External Phone">
+                            <field name="infobip_phone_enabled" string="Enabled"/>
+                            <field name="infobip_phone_number" string="Phone Number"
+                                   invisible="infobip_phone_enabled == False"
+                                   required="infobip_phone_enabled == True"/>
+                            <field name="infobip_phone_priority" string="Priority"
+                                   invisible="infobip_phone_enabled == False"/>
+                            <field name="infobip_phone_ring_timeout" string="Ring Timeout"
+                                   invisible="infobip_phone_enabled == False"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -41,8 +41,13 @@ class CallFlow(models.Model):
     choices = fields.One2many('connect.telnyx.callflow_choice', 'callflow')
     ring_users = fields.Many2many('connect.user')
     record_calls = fields.Boolean()
-    voicemail_prompt = fields.Text()
-    voicemail_enabled = fields.Boolean()
+    voicemail_prompt = fields.Text(
+        help='Message played before recording callflow voicemail. '
+             'Callflow voicemail takes precedence over user voicemail inside '
+             'callflows; direct user routing keeps user voicemail behavior.')
+    voicemail_enabled = fields.Boolean(
+        help='Enable callflow voicemail after no callflow action handles the '
+             'caller. Requires a voicemail prompt.')
     gather_action_url = fields.Char(compute='_get_gather_action_url')
 
     def create_extension(self):
@@ -54,9 +59,9 @@ class CallFlow(models.Model):
         """Languages supported by Telnyx TeXML Say (AWS Polly voices).
 
         Codes are BCP-47 and are passed verbatim to TeXML Say. Duplicated
-        in connect_twilio and connect_freeswitch by design — the providers
-        are fully independent; keep the lists in sync when editing
-        (ADR-031/ADR-032).
+        in connect_twilio, connect_freeswitch and core connect.user by
+        design — the providers are fully independent; keep all four lists
+        in sync when editing (ADR-031/ADR-032/ADR-037).
         """
         return [
             ('ca-ES', 'Catalan (Spain)'),
@@ -106,6 +111,13 @@ class CallFlow(models.Model):
             return callflow.render(request=request, params={'invalid_input': True})
         return choice[0].exten.render(request=request)
 
+    def _get_gather_hints(self):
+        self.ensure_one()
+        hints = (self.gather_hints or '').strip()
+        if hints and 'speech' in (self.gather_input_type or ''):
+            return hints
+        return None
+
     def render(self, request={}, params={}):
         self.ensure_one()
         api_url = self.env['connect.settings'].sudo().get_param('api_url')
@@ -125,7 +137,8 @@ class CallFlow(models.Model):
                 timeout=self.gather_timeout,
                 numDigits=str(self.gather_digits),
                 input=self.gather_input_type,
-                language=self.language
+                language=self.language,
+                hints=self._get_gather_hints(),
             )
             self.get_prompt_message(gather)
             response.append(gather)
@@ -190,11 +203,11 @@ class CallFlow(models.Model):
         response = VoiceResponse()
         if request.get('DialCallStatus') != 'completed':
             callflow = self.browse(flow_id)
-            if callflow.voicemail_prompt:
+            if callflow.voicemail_enabled and callflow.voicemail_prompt:
                 api_url = self.env['connect.settings'].sudo().get_param('api_url')
                 record_status_url = urljoin(api_url, 'telnyx/webhook/vm_recordingstatus')
                 response.pause(length=1)
-                response.say(callflow.voicemail_prompt, language=callflow.language, voice=callflow.voice)
+                callflow.get_voicemail_prompt_message(response)
                 response.record(
                     maxLength=120,
                     finishOnKey='#',

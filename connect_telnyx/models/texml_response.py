@@ -92,6 +92,14 @@ class Dial(TeXML):
         return self._add('Conference', name, **attrs)
 
 
+class Connect(TeXML):
+    tag = 'Connect'
+
+    def ai_assistant(self, assistant_id, **attrs):
+        attrs['id'] = assistant_id
+        return self._add('AIAssistant', **attrs)
+
+
 def pretty_xml(content):
     try:
         dom = parseString(str(content))

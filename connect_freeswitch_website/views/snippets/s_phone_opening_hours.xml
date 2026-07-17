@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="s_phone_opening_hours" name="Phone Opening Hours">
+        <div class="s_connect_phone_opening_hours"
+             data-number-id=""
+             data-days="10"
+             data-show-labels="true"
+             data-date-format="long">
+            <table class="table table-sm">
+                <tbody>
+                    <tr>
+                        <td><i class="fa fa-phone me-1" role="presentation"/>Opening hours</td>
+                        <td class="text-muted">Select a phone number in the snippet options</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </template>
+</odoo>

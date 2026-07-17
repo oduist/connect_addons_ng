@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_telnyx_ai_assistant_list" model="ir.ui.view">
+        <field name="name">connect.telnyx.ai_assistant.list</field>
+        <field name="model">connect.telnyx.ai_assistant</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="model"/>
+                <field name="voice"/>
+                <field name="record_calls"/>
+                <field name="memory_enabled"/>
+                <field name="sid"/>
+                <field name="last_sync_at"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_telnyx_ai_assistant_form" model="ir.ui.view">
+        <field name="name">connect.telnyx.ai_assistant.form</field>
+        <field name="model">connect.telnyx.ai_assistant</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_call_with_assistant" type="object"
+                            string="Call with Assistant" class="btn-primary"
+                            invisible="not sid"/>
+                    <button name="action_push_to_telnyx" type="object"
+                            string="Push to Telnyx"/>
+                    <button name="action_pull_from_telnyx" type="object"
+                            string="Pull from Telnyx" invisible="not sid"/>
+                    <button name="action_rotate_tool_token" type="object"
+                            string="Rotate Tool Token"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Assistant name..."/></h1>
+                    </div>
+                    <group>
+                        <group string="Telnyx">
+                            <field name="sid"/>
+                            <field name="version_id"/>
+                            <field name="imported"/>
+                            <field name="last_sync_at"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Model and Voice">
+                            <field name="model"/>
+                            <field name="voice"/>
+                            <field name="voice_speed"/>
+                            <field name="transcription_model"/>
+                            <field name="transcription_language"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Agent" name="agent">
+                            <group>
+                                <field name="description"/>
+                                <field name="greeting"/>
+                                <field name="instructions"/>
+                            </group>
+                        </page>
+                        <page string="Calling" name="calling">
+                            <group>
+                                <field name="time_limit_secs"/>
+                                <field name="record_calls"/>
+                                <field name="memory_enabled"/>
+                            </group>
+                        </page>
+                        <page string="Odoo Tools" name="odoo_tools">
+                            <group>
+                                <field name="enable_contact_tools"/>
+                                <field name="enable_crm_tools"
+                                       help="Published only when Connect CRM is installed."/>
+                                <field name="enable_helpdesk_tools"
+                                       help="Published only when Connect Helpdesk is installed."/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_telnyx_ai_assistant" model="ir.actions.act_window">
+        <field name="name">AI Assistants</field>
+        <field name="res_model">connect.telnyx.ai_assistant</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_telnyx_ai_assistants"
+              name="AI Assistants"
+              parent="menu_connect_telnyx"
+              action="action_telnyx_ai_assistant"
+              groups="connect.group_admin"
+              sequence="20"/>
+</odoo>

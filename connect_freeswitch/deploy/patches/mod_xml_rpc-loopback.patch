@@ -1,0 +1,107 @@
+diff --git a/src/mod/xml_int/mod_xml_rpc/mod_xml_rpc.c b/src/mod/xml_int/mod_xml_rpc/mod_xml_rpc.c
+index 8e49462..280276a 100644
+--- a/src/mod/xml_int/mod_xml_rpc/mod_xml_rpc.c
++++ b/src/mod/xml_int/mod_xml_rpc/mod_xml_rpc.c
+@@ -71,6 +71,13 @@
+ #include <../lib/abyss/src/session.h>
+ #include "ws.h"
+ 
++#ifndef _WIN32
++#include <arpa/inet.h>
++#include <errno.h>
++#include <sys/socket.h>
++#include <unistd.h>
++#endif
++
+ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_rpc_load);
+ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown);
+ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime);
+@@ -78,6 +85,42 @@ SWITCH_MODULE_DEFINITION(mod_xml_rpc, mod_xml_rpc_load, mod_xml_rpc_shutdown, mo
+ 
+ static abyss_bool HTTPWrite(TSession * s, const char *buffer, const uint32_t len);
+ 
++#ifndef _WIN32
++static int create_loopback_socket(uint16_t port)
++{
++	int server_socket;
++	int reuse = 1;
++	struct sockaddr_in address;
++
++	server_socket = socket(AF_INET, SOCK_STREAM, 0);
++	if (server_socket < 0) {
++		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
++					  "Cannot create XML-RPC loopback socket: %s\n", strerror(errno));
++		return -1;
++	}
++
++	if (setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
++		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
++					  "Cannot set SO_REUSEADDR on XML-RPC socket: %s\n", strerror(errno));
++	}
++
++	memset(&address, 0, sizeof(address));
++	address.sin_family = AF_INET;
++	address.sin_port = htons(port);
++	address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
++
++	if (bind(server_socket, (struct sockaddr *)&address, sizeof(address)) < 0) {
++		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
++					  "Cannot bind XML-RPC to 127.0.0.1:%u: %s\n",
++					  port, strerror(errno));
++		close(server_socket);
++		return -1;
++	}
++
++	return server_socket;
++}
++#endif
++
+ static struct {
+ 	uint16_t port;
+ 	uint8_t running;
+@@ -1216,6 +1259,9 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
+ 	char logfile[512];
+ 	switch_hash_index_t *hi;
+ 	const void *var;
++#ifndef _WIN32
++	int server_socket;
++#endif
+ 	void *val;
+ 
+ 	globals.running = 1;
+@@ -1240,7 +1286,26 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
+ 	}
+ 
+ 	switch_snprintf(logfile, sizeof(logfile), "%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, "freeswitch_http.log");
++#ifndef _WIN32
++	server_socket = create_loopback_socket(globals.port);
++	if (server_socket < 0) {
++		globals.running = 0;
++		xmlrpc_registry_free(globals.registryP);
++		MIMETypeTerm();
++		return SWITCH_STATUS_TERM;
++	}
++	if (!ServerCreateSocket(&globals.abyssServer, "XmlRpcServer", server_socket,
++						SWITCH_GLOBAL_dirs.htdocs_dir, logfile)) {
++		globals.running = 0;
++		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
++					  "Failed to create XML-RPC loopback server\n");
++		xmlrpc_registry_free(globals.registryP);
++		MIMETypeTerm();
++		return SWITCH_STATUS_TERM;
++	}
++#else
+ 	ServerCreate(&globals.abyssServer, "XmlRpcServer", globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, logfile);
++#endif
+ 
+ 	xmlrpc_server_abyss_set_handler(&env, &globals.abyssServer, "/RPC2", globals.registryP);
+ 
+@@ -1259,7 +1324,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_xml_rpc_runtime)
+ 	ServerAddHandler(&globals.abyssServer, auth_hook);
+ 	ServerSetKeepaliveTimeout(&globals.abyssServer, 5);
+ 
+-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP Port %d, DocRoot [%s]%s\n",
++	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Starting HTTP on 127.0.0.1:%d, DocRoot [%s]%s\n",
+ 		globals.port, SWITCH_GLOBAL_dirs.htdocs_dir, globals.enable_websocket ? " with websocket." : "");
+ 	ServerRun(&globals.abyssServer);
+ 

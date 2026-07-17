@@ -42,7 +42,7 @@
                             <field name="gather_input_type"/>
                             <field name="gather_timeout"/>
                             <field name="gather_digits"/>
-                            <field name="gather_hints"/>
+                            <field name="gather_hints" invisible="gather_input_type == 'dtmf'"/>
                         </group>
                     </group>
                     <group invisible="not gather_input">

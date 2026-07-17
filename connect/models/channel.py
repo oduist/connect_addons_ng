@@ -1,9 +1,12 @@
 import logging
 import re
 from odoo import fields, models, api, release
+from odoo.exceptions import AccessError, UserError
 from .settings import debug
 
 logger = logging.getLogger(__name__)
+
+CALL_END_STATUSES = ('completed', 'busy', 'failed', 'no-answer', 'canceled')
 
 
 class Channel(models.Model):
@@ -37,6 +40,16 @@ class Channel(models.Model):
     called_user = fields.Many2one('res.users', string='Called User', tracking=True)
     caller_number = fields.Char(compute='_get_channel_numbers', store=True, index=True)
     called_number = fields.Char(compute='_get_channel_numbers', store=True, index=True)
+    recording_state = fields.Selection([
+        ('off', 'Off'),
+        ('on', 'On'),
+        ('starting', 'Starting'),
+        ('stopping', 'Stopping'),
+        ('error', 'Error'),
+    ], default='off', copy=False, tracking=True)
+    recording_control_ref = fields.Char(copy=False, readonly=True)
+    recording_control_path = fields.Char(copy=False, readonly=True)
+    recording_control_error = fields.Char(copy=False, readonly=True)
 
     @api.depends('caller', 'called')
     def _get_channel_numbers(self):
@@ -196,6 +209,90 @@ class Channel(models.Model):
         else:
             debug(self, 'Not setting channel partner without channel users.')
         return self.env['res.partner']
+
+    def _softphone_recording_payload(self, supported=True):
+        self.ensure_one()
+        return {
+            'supported': supported,
+            'state': self.recording_state or 'off',
+            'recording_ref': self.recording_control_ref or '',
+            'recording_path': self.recording_control_path or '',
+            'error': self.recording_control_error or '',
+            'channel_sid': self.sid or '',
+        }
+
+    @api.model
+    def _softphone_recording_unsupported(self):
+        return {
+            'supported': False,
+            'state': 'unsupported',
+            'recording_ref': '',
+            'recording_path': '',
+            'error': 'Recording control is not supported for this provider.',
+            'channel_sid': '',
+        }
+
+    @api.model
+    def _softphone_recording_channel(self, payload):
+        payload = payload or {}
+        channel_sid = payload.get('channel_sid') or payload.get('call_sid')
+        if not channel_sid:
+            raise UserError('Missing active call identifier.')
+        request_user = self.env.user
+        channel = self.sudo().search([('sid', '=', channel_sid)], limit=1)
+        if not channel:
+            raise UserError('Active call was not found.')
+        channel._check_softphone_recording_access(request_user)
+        return channel
+
+    def _check_softphone_recording_access(self, user=None):
+        self.ensure_one()
+        user = user or self.env.user
+        if user.has_group('connect.group_admin'):
+            return True
+        user_ids = set()
+        for field_name in ['caller_user', 'called_user']:
+            rec = self[field_name]
+            if rec:
+                user_ids.add(rec.id)
+        if self.call:
+            for field_name in ['caller_user', 'answered_user']:
+                rec = self.call[field_name]
+                if rec:
+                    user_ids.add(rec.id)
+            user_ids.update(self.call.called_users.ids)
+        if user.id in user_ids:
+            return True
+        raise AccessError('You can control recording only for your own calls.')
+
+    def _check_softphone_recording_active(self):
+        self.ensure_one()
+        if self.status in CALL_END_STATUSES:
+            raise UserError('Recording can be controlled only during an active call.')
+        return True
+
+    @api.model
+    def _dispatch_softphone_recording(self, payload, action):
+        payload = payload or {}
+        provider = payload.get('provider')
+        if not provider:
+            raise UserError('Missing recording provider.')
+        method = '_softphone_recording_{}_{}'.format(action, provider)
+        if not hasattr(self, method):
+            return self._softphone_recording_unsupported()
+        return getattr(self, method)(payload)
+
+    @api.model
+    def get_softphone_recording_state(self, payload):
+        return self._dispatch_softphone_recording(payload, 'state')
+
+    @api.model
+    def start_softphone_recording(self, payload):
+        return self._dispatch_softphone_recording(payload, 'start')
+
+    @api.model
+    def stop_softphone_recording(self, payload):
+        return self._dispatch_softphone_recording(payload, 'stop')
 
     @api.depends('duration')
     def _get_duration_human(self):

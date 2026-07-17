@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_livekit_agent_list" model="ir.ui.view">
+        <field name="name">connect.livekit.agent.list</field>
+        <field name="model">connect.livekit.agent</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="mode"/>
+                <field name="stt_provider"/>
+                <field name="llm_model"/>
+                <field name="tts_provider"/>
+                <field name="voice"/>
+                <field name="record_calls"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_livekit_agent_form" model="ir.ui.view">
+        <field name="name">connect.livekit.agent.form</field>
+        <field name="model">connect.livekit.agent</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_call_with_agent" type="object"
+                            string="Call with Agent" class="btn-primary"/>
+                    <button name="action_rotate_tool_token" type="object"
+                            string="Rotate Tool Token"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Agent name..."/></h1>
+                    </div>
+                    <group>
+                        <group string="Mode">
+                            <field name="mode"/>
+                            <field name="active"/>
+                            <field name="language"/>
+                        </group>
+                        <group string="Models and Voice">
+                            <field name="stt_provider" invisible="mode == 'realtime'"/>
+                            <field name="stt_model" invisible="mode == 'realtime'"/>
+                            <field name="llm_model"/>
+                            <field name="tts_provider" invisible="mode == 'realtime'"/>
+                            <field name="tts_model" invisible="mode == 'realtime'"/>
+                            <field name="voice"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Agent" name="agent">
+                            <group>
+                                <field name="description"/>
+                                <field name="greeting"/>
+                                <field name="instructions"/>
+                            </group>
+                        </page>
+                        <page string="Calling" name="calling">
+                            <group>
+                                <field name="time_limit_secs"/>
+                                <field name="record_calls"/>
+                            </group>
+                        </page>
+                        <page string="Odoo Tools" name="odoo_tools">
+                            <group>
+                                <field name="enable_contact_tools"/>
+                                <field name="enable_crm_tools"
+                                       help="Published only when CRM is installed."/>
+                                <field name="enable_helpdesk_tools"
+                                       help="Published only when Helpdesk is installed."/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_livekit_agent" model="ir.actions.act_window">
+        <field name="name">AI Agents</field>
+        <field name="res_model">connect.livekit.agent</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_livekit_agents"
+              name="AI Agents"
+              parent="menu_connect_livekit"
+              action="action_livekit_agent"
+              groups="connect.group_admin"
+              sequence="20"/>
+</odoo>

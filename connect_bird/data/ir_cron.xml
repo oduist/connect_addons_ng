@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="cron_fetch_bird_recordings" model="ir.cron">
+        <field name="name">Connect Bird: Fetch Call Recordings</field>
+        <field name="model_id" ref="connect.model_connect_recording"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_fetch_bird_recordings()</field>
+        <field name="interval_number">2</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <!-- The platform delivers webhook events for the email product only
+         so far; message delivery statuses are polled until sms.* and
+         whatsapp.* subscriptions become available. -->
+    <record id="cron_poll_bird_message_status" model="ir.cron">
+        <field name="name">Connect Bird: Poll Message Status</field>
+        <field name="model_id" ref="connect.model_connect_message"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_poll_bird_status()</field>
+        <field name="interval_number">5</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="True"/>
+    </record>
+
+</odoo>

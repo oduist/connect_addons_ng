@@ -1,7 +1,7 @@
 # connect_elevenlabs — module spec
 
 ElevenLabs Conversational-AI voice agents for Oduist Connect, as a **Twilio
-add-on** (ADR-034). Version `19.0.1.0.0`, depends `['connect', 'connect_twilio',
+add-on** (ADR-046). Version `19.0.1.0.0`, depends `['connect', 'connect_twilio',
 'calendar']`, external python `elevenlabs` (validated against SDK `2.58.0`).
 
 ## Models (owned)

@@ -51,6 +51,19 @@ WhatsApp and RCS **messaging** are integrated (ADR-033).
 
 ## Models (connect_telnyx/models/)
 
+### ai_assistant.py — `connect.telnyx.ai_assistant`
+
+Manages Telnyx Voice AI Assistants through the v2 API. Stores the prompt,
+greeting, model/voice/transcription settings, recording/memory switches and
+the Odoo tool allowlist. Unknown remote assistants are imported by account
+sync; once imported, Odoo configures its signed dynamic-variables webhook and
+per-assistant tool endpoints. Phone numbers route to assistants through the
+existing TeXML application using `<Connect><AIAssistant>` (ADR-034).
+
+Completed AI conversations are linked to `connect.call` by conversation and
+Call Control IDs. Transcript and Telnyx Insight summary are stored on an
+idempotent `connect.recording` row with `source = telnyx-ai`.
+
 ### texml_response.py — TeXML builder (no Odoo model)
 
 `VoiceResponse`, `Gather`, `Dial` (+`sip()`/`number()`/`conference()`),
@@ -134,7 +147,9 @@ password is visible to the user for hardphone provisioning).
 Methods: `_create_telnyx_credential()` / `_ensure_telnyx_credentials()`
 / `delete_telnyx_credentials()`; `telnyx_render()` +
 `telnyx_render_sip/client/voicemail` (user_callflow chain, TeXML
-`<Dial><Sip>`); `get_telnyx_client_token()` (JWT via
+`<Dial><Sip>`; user greeting/voicemail `<Say>` carries
+`connect.user.language`/`voice`, fallbacks `en-US` / `Polly.Joanna` —
+ADR-037); `get_telnyx_client_token()` (JWT via
 `telephony_credentials.create_token` + `sip_domain` for the web phone);
 `get_user_by_telnyx_uri()`; `telnyx_on_call_action()`; callflow-managing
 constraints (`_manage_telnyx_*`).
@@ -146,7 +161,8 @@ numbers are attached to the domain's routing TeXML app
 (`phone_numbers.update(connection_id=…)`) and to the messaging profile;
 inbound calls arrive on the shared `/telnyx/webhook/number` route and
 are dispatched by `Called`/`To` (`route_call()` → `render()`).
-`destination` Selection: `user` / `callflow` / `texml`.
+`destination` Selection: `user` / `callflow` / `texml`. Numbers have no
+default flag; outbound defaults live on `connect.telnyx.outgoing_callerid`.
 
 ### outgoing_callerid.py - `connect.telnyx.outgoing_callerid`
 
@@ -249,6 +265,9 @@ validation: Ed25519 over the raw body
 | `/telnyx/webhook/callaction` | Generic call action |
 | `/telnyx/webhook/texml/<id>` | TeXML app voice request |
 | `/telnyx/webhook/message` | Messaging v2 JSON events |
+| `/telnyx/webhook/assistant/<id>/variables` | Signed caller context and memory configuration |
+| `/telnyx/webhook/assistant/<id>/tool/<name>` | Token-authenticated allowlisted Odoo tool |
+| `/telnyx/webhook/assistant/insights` | Signed conversation summary delivery |
 
 ---
 
@@ -328,9 +347,12 @@ bundle `lib/telnyx-webrtc.js`, global `TelnyxWebRTC.TelnyxRTC`):
   `telnyx-rcs-reply` chatter actions, the Notification icon patch for
   the `WhatsApp`/`RCS` types, and a WhatsApp *Message* button on the
   phone field widget (ADR-033).
-- The rest (calls/contacts/favorites/tray components, active-calls
-  service, phone field widget, actions service) is the Twilio code with
-  renamed registry keys and the `telnyx_exten_number` field.
+- The rest (contacts/favorites/tray components, phone field widget,
+  actions service) is the Twilio code with renamed registry keys and the
+  `telnyx_exten_number` field. The **Calls history tab** and the
+  **active-calls systray widget** are no longer copied here — they are
+  imported from / registered by core `connect`
+  (`@connect/components/calls/calls`, `connect/services/active_calls`).
 
 ---
 

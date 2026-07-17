@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Website editors pick a phone number in the snippet options panel
+         (BuilderMany2One name_search), so they need read access to the
+         FreeSWITCH numbers and their schedules. Visitors never touch the
+         models directly: the public controllers read via sudo. -->
+    <record id="access_freeswitch_number_website_designer" model="ir.model.access">
+        <field name="name">connect.freeswitch.number website designer</field>
+        <field name="model_id" ref="connect_freeswitch.model_connect_freeswitch_number"/>
+        <field name="group_id" ref="website.group_website_designer"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_schedule_website_designer" model="ir.model.access">
+        <field name="name">connect.schedule website designer</field>
+        <field name="model_id" ref="connect.model_connect_schedule"/>
+        <field name="group_id" ref="website.group_website_designer"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+</odoo>
