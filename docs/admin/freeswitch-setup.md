@@ -28,7 +28,7 @@ local stack that also starts Odoo 19 and PostgreSQL.
 ```yaml
 services:
   freeswitch:
-    image: oduist/freeswitch:2.1.0
+    image: oduist/freeswitch:2.1.2
     network_mode: host
     environment:
       - ODOO_URL=http://localhost:8069
@@ -36,7 +36,7 @@ services:
       - FS_DOMAIN=fs.example.com
       - FS_ESL_PASSWORD=<shared ESL password>
   firewall:
-    image: oduist/freeswitch-firewall:2.1.0
+    image: oduist/freeswitch-firewall:2.1.1
     network_mode: host
     cap_add: [NET_ADMIN]
     environment:
@@ -69,16 +69,27 @@ Odoo authenticates all incoming FreeSWITCH HTTP requests with a shared
 secret. A random token is generated automatically on install/upgrade,
 which **locks the endpoints until you pair the container**:
 
-1. Generate a token (≥24 chars, letters/digits/`_`/`-`), e.g.
-   `openssl rand -base64 32 | tr '+/' '-_'`.
-2. In Odoo open *Connect → FreeSWITCH → Configuration → Settings* and paste it into
-   **FreeSWITCH Webhook Token** (the field masks itself to `****` after
-   saving).
-3. Set the same value as `FS_WEBHOOK_TOKEN` on the FreeSWITCH container
-   and restart it.
+1. Install or upgrade `connect_freeswitch`. The missing-only deployment
+   bootstrap creates both this token and the firewall service token without
+   changing existing values.
+2. Let Oduflow read `connect.settings.freeswitch_webhook_token` through a
+   sudo Odoo shell and pass it directly to the `fs` service as
+   `FS_WEBHOOK_TOKEN`. Treat the shell output as a secret and do not store it
+   in the repository or repeat it in deployment reports.
+3. For a manual deployment, retrieve the same protected setting with an Odoo
+   shell and put it in the container environment. Entering a new value in the
+   **FreeSWITCH Webhook Token** field is an explicit rotation, not a normal
+   installation step.
+4. Restart or recreate the `fs` container after setting the environment
+   variable.
 
 Without the pairing, registrations, dialplan lookups, CDRs and
 recording uploads all fail with HTTP 401 (fail-closed by design).
+
+The Oduflow agent procedure for retrieving both generated tokens and updating
+services without losing their existing environment is defined in
+`AGENTS.md`, section **Deploying the `fs` and `firewall` services with
+Oduflow**.
 
 ### Build and Run
 
@@ -96,7 +107,7 @@ docker compose -f docker-compose.full.yml up -d
 Verify FreeSWITCH is running:
 
 ```bash
-docker exec -it freeswitch fs_cli -x "status"
+docker exec freeswitch sh -c 'fs_cli -p "$FS_ESL_PASSWORD" -x "status"'
 ```
 
 ## Firewall Configuration
@@ -142,11 +153,20 @@ Odoo always connects to XML-RPC **over HTTPS**. `mod_xml_rpc` has no native TLS,
 
 | Field | Description |
 |-------|-------------|
-| **XML-RPC Host** | Public host of the Traefik TLS endpoint that fronts FreeSWITCH (e.g., `fs.example.com`). |
-| **XML-RPC Port** | HTTPS port of the Traefik endpoint (default: 443). `mod_xml_rpc` itself stays on the fixed internal port `8080` behind Traefik. |
-| **XML-RPC User** | mod_xml_rpc username (HTTP Basic Auth, sent over TLS). |
-| **XML-RPC Password** | mod_xml_rpc password (HTTP Basic Auth, sent over TLS). Stored admin-only and masked to `****` after saving — never exposed to non-administrators. |
-| **Verify TLS Certificate** | Verify the endpoint's certificate. Keep **on** in production (Traefik serves a CA-signed certificate). Turn **off** only in development behind a self-signed certificate. |
+| **XML-RPC Host** | Public DNS host of the Traefik TLS endpoint that fronts FreeSWITCH (e.g., `fs.example.com`). Enter a hostname only, without `https://`, a port, or a path. |
+
+Odoo always connects to verified HTTPS on port `443`. The XML-RPC username is
+fixed to `odoo`, and the password is generated and stored internally. Changing
+the host rotates the password; restart the FreeSWITCH container afterwards so
+`mod_xml_rpc` fetches the new credential from Odoo.
+
+Upgrading to the managed XML-RPC configuration also rotates the legacy
+operator-managed password once. Restart FreeSWITCH immediately after the
+module upgrade.
+
+The pinned FreeSWITCH image restricts the plain-HTTP backend to
+`127.0.0.1:8080`. Traefik shares the host network namespace and is the only
+public route to it.
 
 When configured, Odoo automatically sends `sofia profile external restart reloadxml` to FreeSWITCH whenever SIP gateways are created, modified, or deleted. This ensures FreeSWITCH picks up gateway changes immediately without manual intervention.
 
@@ -160,9 +180,9 @@ know which side to fix:
 | Server Status | Meaning | What to do |
 |---------------|---------|------------|
 | `UP — <version>` | FreeSWITCH reachable and answering. | Nothing — healthy. |
-| `NOT CONFIGURED` | No XML-RPC host set in Odoo; no connection is attempted. | Fill in the XML-RPC Host (and port/user/password) above. |
-| `UNREACHABLE` | Host set but the TLS connection failed (firewall, closed port, wrong host/IP, DNS, or — when **Verify TLS Certificate** is on — an untrusted/self-signed certificate). | Check the host/port, that Traefik is terminating HTTPS and proxying to `mod_xml_rpc` on `8080`, and that the certificate is trusted (or turn off verification for a self-signed dev cert). |
-| `AUTH FAILED` | Host reachable but `mod_xml_rpc` rejected the credentials (HTTP 401). | Fix the XML-RPC User / Password to match the FreeSWITCH side. |
+| `NOT CONFIGURED` | No XML-RPC host set in Odoo; no connection is attempted. | Fill in the XML-RPC Host above. |
+| `UNREACHABLE` | Host set but the verified TLS connection to port `443` failed (firewall, DNS, routing, or an invalid/untrusted certificate). | Check the host, Traefik, DNS, port `443`, and the public certificate. |
+| `AUTH FAILED` | Host reachable but `mod_xml_rpc` rejected the internally managed credential (HTTP 401). | Restart FreeSWITCH so it fetches the current generated credential from Odoo; check Odoo/FreeSWITCH XML-curl connectivity if it persists. |
 | `INVALID RESPONSE` | Server answered but the payload could not be parsed. | Check the FreeSWITCH logs and the `mod_xml_rpc` configuration. |
 
 ### Endpoints
@@ -332,11 +352,21 @@ FreeSWITCH is always deployed behind **Traefik**, which is the single TLS edge f
 - **XML-RPC** — `mod_xml_rpc` has no native TLS, so Traefik terminates HTTPS in front of it (`deploy/traefik/dynamic.yml`) and proxies to the internal `127.0.0.1:8080` port. The same certificate Traefik manages secures this control-plane channel; Odoo connects over `https://`.
 - **Firewall dashboard/API** — Traefik routes `/firewall` to the firewall service on `127.0.0.1:8081`; the service itself remains loopback-only.
 
-Traefik requests a **Let's Encrypt** certificate out of the box. Set `FS_DOMAIN` (the public FQDN of the FreeSWITCH host) and `ACME_EMAIL` in `deploy/.env`; while testing, point `ACME_CASERVER` at the Let's Encrypt staging URL to avoid rate limits. In local development (`FS_DOMAIN=localhost`, no public domain) ACME cannot validate, so Traefik serves its built-in self-signed certificate — turn **Verify TLS Certificate** off in the XML-RPC settings.
+Traefik requests a **Let's Encrypt** certificate out of the box. Set
+`FS_DOMAIN` (the public FQDN of the FreeSWITCH host) and `ACME_EMAIL` in
+`deploy/.env`; while testing the edge itself, point `ACME_CASERVER` at the
+Let's Encrypt staging URL to avoid rate limits. Odoo deliberately rejects the
+staging and self-signed certificates because XML-RPC certificate verification
+is always enabled. Switch to the production CA before testing Odoo →
+FreeSWITCH commands.
 
 ## FreeSWITCH Configuration Files
 
-All configuration files are in `deploy/freeswitch/conf/`. Key files:
+Static bootstrap sources are in `deploy/freeswitch/conf/` and are copied into
+the `oduist/freeswitch` image at build time. Do not mount that source directory
+over the container configuration in production: Odoo returns dynamic PBX data
+through `mod_xml_curl`, while these files are the versioned bootstrap that
+loads the integration modules and binds internal services securely. Key files:
 
 | File | Purpose |
 |------|---------|

@@ -227,6 +227,51 @@ As a result, the published image tags **lag behind** the module manifest version
      ```
 4. The two images are independent — only rebuild the one whose source files actually changed in this release.
 
+### Deploying the `fs` and `firewall` services with Oduflow
+
+`connect_freeswitch` generates the two service credentials automatically on
+install and repairs missing values on upgrade (ADR-045). Do not invent new
+tokens in deployment files and do not rotate an existing token during a
+routine service update.
+
+Use this order:
+
+1. Install or upgrade `connect_freeswitch` before creating the services.
+2. Read the stored values with `run_odoo_shell` under `sudo()`:
+
+   ```python
+   settings = env["connect.settings"].sudo()
+   print("FS_WEBHOOK_TOKEN=" + (settings.get_param("freeswitch_webhook_token") or ""))
+   print("AGENT_TOKEN=" + (settings.get_param("firewall_service_token") or ""))
+   ```
+
+   Treat that tool output as secret material: use it only for the immediately
+   following service calls, never quote it in the final response, commit it,
+   or write it into a repository file. If either value is empty, upgrade
+   `connect_freeswitch` and read it again instead of generating a parallel
+   value outside Odoo.
+3. Before changing an existing service, call `get_service_info(name)`. Use
+   `update_service`, not delete/recreate. Oduflow `env_vars` and `volumes` are
+   full replacements, so merge the new token into the complete existing set
+   and preserve image, host mode, volumes, capabilities, and unrelated env.
+4. The `fs` service must use `host_mode=true` and receive at least
+   `ODOO_URL`, `FS_DOMAIN`, `FS_WEBHOOK_TOKEN`, and `FS_ESL_PASSWORD`. Do not
+   mount anything over `/usr/local/freeswitch/etc/freeswitch`; the bootstrap
+   config is owned by the image. Preserve the sounds and Traefik ACME volumes
+   where configured.
+5. The `firewall` service must use `host_mode=true`, `net_admin=true`, and
+   receive `ODOO_URL`, the Odoo token as `AGENT_TOKEN`,
+   `FS_ESL_HOST=127.0.0.1`, and the same `FS_ESL_PASSWORD` as `fs`. Preserve
+   its cache volume and dashboard variables. Its HTTP listener stays on
+   `127.0.0.1:8081` behind the host-network TLS edge.
+6. Verify with `run_service_command("fs", ...)` using the runtime ESL
+   password, then inspect both service logs. Confirm XML-RPC listens on
+   `127.0.0.1:8080`, ESL on `127.0.0.1:8021`, the firewall reports
+   `esl_connected`, and Odoo's **Check Status** succeeds through HTTPS.
+
+The FreeSWITCH bootstrap and the maintained upstream source patch are
+documented in `connect_freeswitch/deploy/freeswitch/README.md`.
+
 ## Testing FreeSWITCH SIP Calls
 
 Use oduflow's `run_service_command` to execute `fs_cli` commands directly inside the FreeSWITCH container — no external SIP client needed.

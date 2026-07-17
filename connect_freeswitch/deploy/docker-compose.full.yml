@@ -39,6 +39,8 @@ services:
     container_name: traefik
     network_mode: host
     restart: unless-stopped
+    environment:
+      - FS_DOMAIN=${FS_DOMAIN:?Set FS_DOMAIN in deploy/.env}
     command:
       - "--global.checknewversion=false"
       - "--global.sendanonymoususage=false"
@@ -64,7 +66,10 @@ services:
       - traefik-acme:/acme
 
   fs:
-    image: oduist/freeswitch:2.1.0
+    # The curated bootstrap configuration is part of this image. Do not bind
+    # mount a host configuration directory over it; Odoo supplies dynamic
+    # directory/dialplan/configuration sections through mod_xml_curl.
+    image: oduist/freeswitch:2.1.2
     container_name: freeswitch
     hostname: freeswitch
     network_mode: host
@@ -79,21 +84,19 @@ services:
       # FreeSWITCH Webhook Token in Odoo settings (ADR-025).
       - FS_WEBHOOK_TOKEN=${FS_WEBHOOK_TOKEN:?Set FS_WEBHOOK_TOKEN in deploy/.env}
       # Domain used by the oduist/freeswitch entrypoint to extract the Traefik
-      # ACME cert for Verto.
+      # ACME cert for Verto and configure the SIP/WebRTC realm.
       - FS_DOMAIN=${FS_DOMAIN:?Set FS_DOMAIN in deploy/.env}
       # Must match the firewall service's FS_ESL_PASSWORD.
       - FS_ESL_PASSWORD=${FS_ESL_PASSWORD:?Set FS_ESL_PASSWORD in deploy/.env}
     volumes:
       - freeswitch-sounds:/usr/share/freeswitch/sounds
-      - ./freeswitch/conf:/usr/local/freeswitch/etc/freeswitch
-      - ./freeswitch/logs:/var/log/freeswitch
       # Shared Traefik ACME store; the oduist/freeswitch entrypoint reads
       # /etc/traefik/acme.json to reuse Traefik's certificate for Verto.
       - traefik-acme:/etc/traefik
 
   # SIP brute-force protection; see docs/admin/firewall.md.
   firewall:
-    image: oduist/freeswitch-firewall:2.1.0
+    image: oduist/freeswitch-firewall:2.1.1
     container_name: firewall
     network_mode: host
     restart: unless-stopped
