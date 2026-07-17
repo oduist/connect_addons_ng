@@ -13,7 +13,7 @@
     'category': 'Phone',
     'summary': 'AI Sale Management',
     'description': "AI Sale Management",
-    "depends": ['connect_elevenlabs', 'sale_management'],
+    "depends": ['connect_elevenlabs', 'sale_management', 'website_sale'],
     'data': [
         'data/tools.xml',
     ],
@@ -25,4 +25,3 @@
     'images': ['static/description/logo.png'],
     'post_init_hook': 'post_init_hook',
 }
-

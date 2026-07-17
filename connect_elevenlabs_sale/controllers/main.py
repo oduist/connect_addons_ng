@@ -21,15 +21,22 @@ class ConnectElevenlabsSaleController(ConnectElevenlabsController):
         data = json.loads(http.request.httprequest.get_data(as_text=True))
         logger.info('Agent data: %s', data)
         products = http.request.env['product.template'].sudo().search([])
-        res = [{
-            'product_id': k.id,
-            'product_name': k.name,
-            'product_categories': [
-                {'cetegory_name': c.name, 'category_id': c.id} for c in k.public_categ_ids],
-            'product_price': k.list_price,
-            'items_in_stock': 10,
-            'product_description': k.description_sale,
-        } for k in products if k.is_published]
+        res = []
+        for template in products.filtered('is_published'):
+            product = template.product_variant_id
+            if not product:
+                continue
+            res.append({
+                'product_id': product.id,
+                'product_template_id': template.id,
+                'product_name': template.name,
+                'product_categories': [
+                    {'category_name': c.name, 'category_id': c.id}
+                    for c in template.public_categ_ids],
+                'product_price': product.lst_price,
+                'items_in_stock': 10,
+                'product_description': template.description_sale,
+            })
         logger.info('Available products: %s', json.dumps(res, indent=2))
         return http.request.make_json_response(res)
 
@@ -41,18 +48,21 @@ class ConnectElevenlabsSaleController(ConnectElevenlabsController):
         data = json.loads(http.request.httprequest.get_data(as_text=True))
         logger.info('Agent data: %s', data)
         # Create the sale order
-        product = http.request.env['product.template'].sudo().search(
-            [('id', '=', data.get('product_id'))])
+        product = http.request.env['product.product'].sudo().browse(
+            int(data.get('product_id') or 0)).exists()
         if not product:
             return http.request.make_json_response(
                 {'error': 'Product not found! Please contact technical support!'})
+        quantity = data.get('product_quantity') or 1
         order_data = {
             'partner_id': data.get('partner_id'),
             'order_line': [
                 (0, 0, {
-                    'product_id': data.get('product_id'),
-                    'product_uom_qty': data.get('product_quantity'),
-                    'price_unit': product.list_price,
+                    'product_id': product.id,
+                    'name': product.get_product_multiline_description_sale(),
+                    'product_uom': product.uom_id.id,
+                    'product_uom_qty': quantity,
+                    'price_unit': product.lst_price,
                 }),
             ]
         }
@@ -73,11 +83,6 @@ class ConnectElevenlabsSaleController(ConnectElevenlabsController):
             raise Unauthorized()
         data = json.loads(http.request.httprequest.get_data(as_text=True))
         logger.info('Agent data: %s', data)
-        call = http.request.env['connect.call'].sudo().browse(int(data['call_id']))
-        if call.direction == 'outgoing':
-            data['partner_phone'] = call.called
-        else:
-            data['partner_phone'] = call.caller
         if not data.get('partner_id'):
             return http.request.make_json_response(
                 {'error': 'You must provide your partner ID to get your orders!'})
@@ -105,7 +110,9 @@ class ConnectElevenlabsSaleController(ConnectElevenlabsController):
                 'delivery_date': str(order.commitment_date),
                 'shipping_weight': order.shipping_weight,
                 'manager_name': order.user_id.name or 'Manager not set',
-                'manager_extension': order.user_id.connect_user.exten.number or 'No extension',
+                'manager_extension': (
+                    order.user_id.connect_user.twilio_exten.number
+                    if order.user_id.connect_user.twilio_exten else 'No extension'),
                 'items': items,
             })
         logger.info('Sale Order data for partner %s: %s', data.get('partner_id'), json.dumps(orders))
@@ -118,11 +125,6 @@ class ConnectElevenlabsSaleController(ConnectElevenlabsController):
             raise Unauthorized()
         data = json.loads(http.request.httprequest.get_data(as_text=True))
         logger.info('Agent data: %s', data)
-        call = http.request.env['connect.call'].sudo().browse(int(data['call_id']))
-        if call.direction == 'outgoing':
-            data['partner_phone'] = call.called
-        else:
-            data['partner_phone'] = call.caller
         if not data.get('partner_id'):
             return http.request.make_json_response(
                 {'error': 'You must provide your partner ID to get your orders!'})

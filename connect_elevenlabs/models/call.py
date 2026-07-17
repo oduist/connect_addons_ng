@@ -61,7 +61,7 @@ class Call(models.Model):
         call = self.sudo().create({
             'caller': caller,
             'called': called,
-            'direction': 'inbound',
+            'direction': 'incoming',
             'status': status,
             'duration': duration,
             'call_sid': call_sid,

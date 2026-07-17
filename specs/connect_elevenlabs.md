@@ -81,7 +81,10 @@ Settings (via `open_elevenlabs_form`).
   `helpdesk` via `connect_helpdesk`).
 - `connect_elevenlabs_knowledge` — `connect.elevenlabs_knowledge` documents synced
   to `conversational_ai.knowledge_base`, injected into the agent prompt config.
-- `connect_elevenlabs_sale` — sale/product/partner agent tools.
+- `connect_elevenlabs_sale` — sale/product/partner agent tools; depends on
+  `sale_management` and `website_sale` because the product listing exposes only
+  published website products. `get_products` returns `product.product` variant
+  IDs for `create_order`.
 
 ## Runtime (out of scope for ephemeral env tests)
 

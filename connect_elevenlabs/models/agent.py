@@ -302,7 +302,7 @@ class ElevenlabsAgent(models.Model):
     @api.constrains("stability")
     def _check_stability(self):
         for rec in self:
-            if rec.stability and rec.stability < 0 or rec.temperature > 1.0:
+            if rec.stability and rec.stability < 0 or rec.stability > 1.0:
                 raise ValidationError(
                     "Please enter a stability value between 0.0 and 1.0."
                 )
@@ -313,7 +313,7 @@ class ElevenlabsAgent(models.Model):
             if rec.speed and rec.speed < 0.7 or rec.speed > 1.2:
                 raise ValidationError("Please enter a speed value between 0.7 and 1.2.")
 
-    @api.constrains("speed")
+    @api.constrains("similarity_boost")
     def _check_similarity_boost(self):
         for rec in self:
             if (

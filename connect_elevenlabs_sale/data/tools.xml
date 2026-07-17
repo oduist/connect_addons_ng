@@ -88,7 +88,7 @@
             <field name="data_type">integer</field>
             <field name="required" eval="True"/>
             <field name="value_type">description</field>
-            <field name="description">ID of the product.</field>
+            <field name="description">Product variant ID returned by get_products.</field>
             <field name="tool" ref="create_sale_order_tool"/>
         </record>
 
