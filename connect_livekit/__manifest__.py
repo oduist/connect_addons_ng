@@ -33,6 +33,7 @@
             'connect_livekit/static/src/js/main.js',
         ],
     },
+    'images': ['static/description/icon.png'],
     'installable': True,
     'application': False,
     'license': 'Other proprietary',
