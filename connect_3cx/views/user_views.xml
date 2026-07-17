@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_user_form_threecx" model="ir.ui.view">
+        <field name="name">connect.user.form.threecx</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="threecx_exten"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
