@@ -9,16 +9,22 @@ description: Use when writing or regenerating an Odoo module's Apps Store page (
 
 The "description" of an Odoo module is its **Apps Store page**:
 `static/description/index.html`. It follows the fixed Oduist "Connect" house
-style: one **self-contained, scoped `.ocx` block** — a `<style>` block plus a
-hero (with signal rings), a feature-card grid, a docs band and a footer, using
-Font Awesome (`fa-*`) icons. Regenerating it means **filling the known
-`template.html` with content extracted from the module's own code**, not
+style: a hero (with signal rings), a feature-card grid, a docs band and a
+footer, using Font Awesome (`fa-*`) icons. Regenerating it means **filling the
+known `template.html` with content extracted from the module's own code**, not
 inventing markup or a new visual language.
 
-The whole `<style>` block is scoped under `.ocx`, so it is safe to paste into
-the Apps Store page without leaking styles. Keep it **verbatim** — do not add
-external fonts, JS, `<link>`s or remote images; only the local `icon.png` is
-referenced.
+> ⚠️ **All CSS must be inline `style=""` attributes — never a `<style>`
+> block.** Odoo's `html_sanitize` strips `<style>` and `<script>` tags out of
+> module descriptions (verified on Odoo 19 — a `<style>`-based design renders
+> completely unstyled in the backend Apps view), but it **keeps** inline
+> `style=""` attributes, including `linear-gradient`, `box-shadow`, `display:grid`
+> and `flex`. `template.html` is already written this way; keep it that way.
+> The trade-off is no `:hover` and no `@media` — responsiveness comes from
+> `grid-template-columns:repeat(auto-fit,minmax(280px,1fr))` and `flex-wrap`.
+
+Do not add external fonts, JS, `<link>`s or remote images; only the local
+`icon.png` is referenced.
 
 Do not confuse it with `doc/index.rst`, which is only a version **Change Log**.
 
@@ -30,29 +36,26 @@ Do not confuse it with `doc/index.rst`, which is only a version **Change Log**.
 
 ## Anatomy (fixed section order)
 
-Everything lives inside one `<div class="ocx"> … </div>` wrapper whose first
-child is the scoped `<style>` block.
+Everything lives inside one outer `<div style="…">` (font + padding). Every
+element carries its own inline `style=""`.
 
-1. **`<style>`** — the scoped design system. Paste verbatim.
-2. **Hero** (`.ocx-hero`) — `.ocx-eyebrow` (uppercase, amber; the provider /
-   role label, e.g. `TWILIO INTEGRATION`), `.ocx-title` (benefit slogan, ends
-   `!`), `.ocx-sub` (softer second line), the shared `icon.png` in a glass
-   badge, and the `.ocx-hero__rings` signal-rings element (decorative,
-   `aria-hidden`).
-3. **Trial note** (`.ocx-note`) — one slim amber strip: "30-day free trial …".
-   Keep it for every standalone, purchasable module; **delete** it only for an
+1. **Hero** — an inline gradient card holding: an **eyebrow** (uppercase, amber;
+   the provider / role label, e.g. `TWILIO INTEGRATION`), the **title** (benefit
+   slogan, ends `!`), a **sub** line, the shared `icon.png` in a glass badge,
+   and a decorative **signal-rings** `<div>` (`aria-hidden`).
+2. **Trial note** — one slim amber strip: "30-day free trial …". Keep it for
+   every standalone, purchasable module; **delete** it only for an
    `auto_install` bridge (e.g. `connect_crm_twilio`).
-4. **Features** (`.ocx-section`) — `.ocx-eyebrow--dark` ("What's inside") +
-   `.ocx-h2` heading + `.ocx-grid` of `.ocx-card`s. Each card is an
-   `.ocx-ico` chip (a `fa-*` icon) + `.ocx-card__title` + `.ocx-card__text`.
-   The **last** card adds `ocx-card--cta` (dashed amber) for an upcoming
-   feature or call to action.
-5. **Docs band** (`.ocx-docs`) — "Docs & support" + a pill link to oduist.com.
-6. **Footer** (`.ocx-footer`) — `Oduist` wordmark + `Connecting Odoo to
-   Everything` tagline.
+3. **Features** — a dark "What's inside" eyebrow + a heading + a
+   `repeat(auto-fit,minmax(280px,1fr))` grid of cards. Each card is an icon
+   chip (a `fa-*` icon) + a bold title + a one-line description. The **last**
+   card is the CTA (dashed amber chip + border) for an upcoming feature or call
+   to action.
+4. **Docs band** — "Docs & support" + a pill link to oduist.com.
+5. **Footer** — `Oduist` wordmark + `Connecting Odoo to Everything` tagline.
 
-Start from `template.html` in this skill directory — it is the full `.ocx`
-block with `{{PLACEHOLDER}}`s and inline rules.
+Start from `template.html` in this skill directory — it is the full inline-styled
+block with `{{PLACEHOLDER}}`s.
 
 ## Procedure
 
@@ -100,8 +103,9 @@ block with `{{PLACEHOLDER}}`s and inline rules.
 
 ## Common Mistakes
 
-- Editing or re-styling the scoped `<style>` block, or writing Markdown / a new
-  visual language instead of the `.ocx` house style.
+- **Using a `<style>` block or CSS classes for styling** — Odoo strips `<style>`
+  from module descriptions and the page renders unstyled. All CSS must be inline
+  `style=""` attributes.
 - Adding external fonts, `<link>`s, `<script>`s or remote images — the page must
   stay self-contained; only local `icon.png` is referenced.
 - Using Font Awesome 5/6 icon names (`fa-robot`, `fa-solid …`) — the Apps Store
