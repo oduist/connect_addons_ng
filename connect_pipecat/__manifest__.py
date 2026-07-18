@@ -12,6 +12,7 @@
         'views/settings.xml',
     ],
     'post_init_hook': 'post_init_hook',
+    'images': ['static/description/icon.png'],
     'installable': True,
     'application': False,
     'license': 'Other proprietary',

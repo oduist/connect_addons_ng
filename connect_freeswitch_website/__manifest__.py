@@ -19,6 +19,7 @@
             'connect_freeswitch_website/static/src/website_builder/**/*',
         ],
     },
+    'images': ['static/description/icon.png'],
     'installable': True,
     'application': False,
     'license': 'Other proprietary',
