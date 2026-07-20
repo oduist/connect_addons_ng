@@ -22,5 +22,5 @@
         'views/settings.xml',
     ],
     'demo': [],
-    'images': ['static/description/logo.png'],
+    'images': ['static/description/icon.png'],
 }
