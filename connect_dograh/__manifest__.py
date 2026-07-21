@@ -16,6 +16,7 @@
     ],
     'post_init_hook': 'post_init_hook',
     'installable': True,
+    'images': ['static/description/icon.png'],
     'application': False,
     'license': 'Other proprietary',
 }

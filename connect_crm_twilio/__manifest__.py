@@ -8,6 +8,7 @@
     'auto_install': True,
     'data': [],
     'installable': True,
+    'images': ['static/description/icon.png'],
     'application': False,
     'license': 'Other proprietary',
 }
