@@ -6,7 +6,7 @@
         <field name="group_id" ref="connect.group_webhook"/>
         <field name="perm_read" eval="1"/>
         <field name="perm_create" eval="0"/>
-        <field name="perm_write" eval="1"/>
+        <field name="perm_write" eval="0"/>
         <field name="perm_unlink" eval="0"/>
     </record>
 </odoo>
