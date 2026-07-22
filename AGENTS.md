@@ -18,9 +18,11 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_infobip`** — Infobip integration (event-driven Calls API, NO TwiML analog — ADR-036). Owns `connect.infobip.{exten,number,outgoing_callerid,user_callflow,message_configuration,whatsapp_sender,whatsapp_template}`; voice = webhook events → REST actions (Dialog bridges, platform-side `connectTimeout`), per-user WebRTC identities (no per-user SIP), vendored infobip-rtc phone widget, SMS + WhatsApp, recordings downloaded into attachments. No IVR/callflows in v1. **Infobip** submenu under the Connect app.
 - **`connect_dograh`** — Dograh AI voice agents on FreeSWITCH (ADR-041). Owns `connect.dograh.agent`; depends on `connect` AND `connect_freeswitch`. Inbound: per-call dialplan posts Dograh's `/inbound/run` webhook and attaches mod_audio_fork (L16/16 kHz) to the returned media WebSocket; outbound: Dograh calls `/dograh/api/originate`. Ships a vendored freeswitch provider package for Dograh under `connect_dograh/deploy/` (overlay image `oduist/dograh-api`). **Dograh** submenu under the Connect app.
 - **`connect_bird`** — Bird.com (ex-MessageBird) integration. Owns `connect.bird.{number,message_template,message_configuration,webhook}`; SMS/WhatsApp send/receive via the Bird developer platform (`{region}.platform.bird.com/v1`, Bearer `bk_...` keys, raw httpx — the official SDK covers only email and is not used), template-first messaging (SMS + WhatsApp templates), voice-call ledger from `voice.*` events, click-to-call via two-leg callback originate (no web phone — Bird has no WebRTC SDK), recordings fetched by cron, delivery statuses polled until the platform ships `sms.*` webhook events. Single `/bird/webhook` endpoint with Standard-Webhooks signature. **Bird** submenu under the Connect app. See ADR-038.
+- **`connect_memory`** — external AI memory base (ADR-043): `connect.memory.{outbox,inbox,mixin,backfill}` outbox/inbox pull contract + `mail.thread` correspondence capture + `res.partner` summary/backfill; provider-neutral (Hindsight/Cognee); Odoo emits events and never calls the engine; external sidecar in `deploy/`. **Memory** submenu under the Connect app. Depends on `connect`.
+- **`connect_memory_sale`** — domain module for memory events on `sale.order`/`account.move`/`account.partial.reconcile` + hourly payment-behavior digest (`connect.memory.sale.mixin`). Depends on `connect_memory`, `sale`, `account`.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
 
-Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird` and `connect_dograh` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module).
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird` and `connect_dograh` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module). `connect_memory` depends on `connect`; the domain module `connect_memory_sale` depends on `connect_memory` + `sale` + `account`.
 
 ## Architecture
 
@@ -77,6 +79,8 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_dograh.md` — Dograh module spec (models, dialplan flow, controllers, vendored Dograh provider package)
 - `specs/connect_freeswitch_website.md` — Website widgets module spec (snippets, public endpoints)
 - `specs/connect_bird.md` — Bird module spec (models, webhooks, controllers, wizards)
+- `specs/connect_memory.md` — Memory base module spec (outbox/inbox contract, capture, backfill, controllers, deploy sidecar)
+- `specs/connect_memory_sale.md` — Memory Sale domain module spec (sale/invoice/payment events, payment digest)
 - `docs/` — User and admin documentation (MkDocs Material), see `mkdocs.yml` for structure
 
 ## Development Commands
@@ -280,6 +284,8 @@ connect_addons_ng/
 ├── connect_infobip/tests/test_*.py
 ├── connect_bird/tests/test_*.py
 ├── connect_dograh/tests/test_*.py
+├── connect_memory/tests/test_*.py
+├── connect_memory_sale/tests/test_*.py
 └── connect_helpdesk/tests/
 ```
 
@@ -326,6 +332,8 @@ oduflow run_odoo_tests connect_crm
 oduflow run_odoo_tests connect_telnyx
 oduflow run_odoo_tests connect_infobip
 oduflow run_odoo_tests connect_dograh
+oduflow run_odoo_tests connect_memory
+oduflow run_odoo_tests connect_memory_sale
 oduflow run_odoo_tests connect_helpdesk
 ```
 
