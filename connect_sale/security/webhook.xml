@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Read-only: process_call_event() only sets call.sale_order (a field on
+         connect.call, already writable by the webhook user via core
+         security). get_order_by_partner() and register_summary_to_rec() both
+         run .sudo()/with_user(SUPERUSER_ID), bypassing ACLs. create_sale_order_button()
+         and unlink_sale_order() run as the Connect user (their own rights),
+         not the webhook user. So the webhook user never creates, writes or
+         unlinks sale.order directly, only needs read. -->
+    <record id="access_sale_order_webhook" model="ir.model.access">
+        <field name="name">sale.order webhook</field>
+        <field name="model_id" ref="sale.model_sale_order"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+</odoo>
