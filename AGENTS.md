@@ -19,8 +19,12 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_dograh`** — Dograh AI voice agents on FreeSWITCH (ADR-041). Owns `connect.dograh.agent`; depends on `connect` AND `connect_freeswitch`. Inbound: per-call dialplan posts Dograh's `/inbound/run` webhook and attaches mod_audio_fork (L16/16 kHz) to the returned media WebSocket; outbound: Dograh calls `/dograh/api/originate`. Ships a vendored freeswitch provider package for Dograh under `connect_dograh/deploy/` (overlay image `oduist/dograh-api`). **Dograh** submenu under the Connect app.
 - **`connect_bird`** — Bird.com (ex-MessageBird) integration. Owns `connect.bird.{number,message_template,message_configuration,webhook}`; SMS/WhatsApp send/receive via the Bird developer platform (`{region}.platform.bird.com/v1`, Bearer `bk_...` keys, raw httpx — the official SDK covers only email and is not used), template-first messaging (SMS + WhatsApp templates), voice-call ledger from `voice.*` events, click-to-call via two-leg callback originate (no web phone — Bird has no WebRTC SDK), recordings fetched by cron, delivery statuses polled until the platform ships `sms.*` webhook events. Single `/bird/webhook` endpoint with Standard-Webhooks signature. **Bird** submenu under the Connect app. See ADR-038.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
+- **`connect_hr`** — provider-agnostic HR bridge — links `connect.call` to `hr.employee` (by number, no auto-create); depends `connect` + `hr`.
+- **`connect_sale`** — provider-agnostic Sale bridge — links `connect.call` to `sale.order` (by partner, open orders); depends `connect` + `sale`.
+- **`connect_account`** — provider-agnostic Accounting bridge — links `connect.call` to `account.move` (by partner, open customer invoices only); depends `connect` + `account`.
+- **`connect_project`** — provider-agnostic Project bridge — links `connect.call` to `project.task`/`project.project` (by partner, open task first); depends `connect` + `project`.
 
-Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird` and `connect_dograh` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module).
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird` and `connect_dograh` all depend on `connect` but are independent of each other. `connect_crm`, `connect_hr`, `connect_sale`, `connect_account` and `connect_project` are likewise independent, provider-agnostic bridges that only depend on `connect` plus their respective host app. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module).
 
 ## Architecture
 
@@ -77,6 +81,10 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_dograh.md` — Dograh module spec (models, dialplan flow, controllers, vendored Dograh provider package)
 - `specs/connect_freeswitch_website.md` — Website widgets module spec (snippets, public endpoints)
 - `specs/connect_bird.md` — Bird module spec (models, webhooks, controllers, wizards)
+- `specs/connect_hr.md` — HR bridge module spec (models, security, views)
+- `specs/connect_sale.md` — Sale bridge module spec (models, security, views)
+- `specs/connect_account.md` — Accounting bridge module spec (models, security, views)
+- `specs/connect_project.md` — Project bridge module spec (models, security, views)
 - `docs/` — User and admin documentation (MkDocs Material), see `mkdocs.yml` for structure
 
 ## Development Commands
@@ -325,6 +333,10 @@ connect_addons_ng/
 ├── connect_infobip/tests/test_*.py
 ├── connect_bird/tests/test_*.py
 ├── connect_dograh/tests/test_*.py
+├── connect_hr/tests/test_*.py
+├── connect_sale/tests/test_*.py
+├── connect_account/tests/test_*.py
+├── connect_project/tests/test_*.py
 └── connect_helpdesk/tests/
 ```
 
@@ -371,6 +383,10 @@ oduflow run_odoo_tests connect_crm
 oduflow run_odoo_tests connect_telnyx
 oduflow run_odoo_tests connect_infobip
 oduflow run_odoo_tests connect_dograh
+oduflow run_odoo_tests connect_hr
+oduflow run_odoo_tests connect_sale
+oduflow run_odoo_tests connect_account
+oduflow run_odoo_tests connect_project
 oduflow run_odoo_tests connect_helpdesk
 ```
 
