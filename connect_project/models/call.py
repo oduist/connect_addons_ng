@@ -39,11 +39,15 @@ class ProjectCall(models.Model):
                     [('partner_id', '=', call.partner.id),
                      ('stage_id.fold', '=', False)], order='id desc', limit=1)
                 if task:
+                    debug(self, 'Call {} assign task <{}> "{}"'.format(
+                        call.id, task.id, task.name))
                     call.task = task
                 else:
                     project = self.env['project.project'].sudo().search(
                         [('partner_id', '=', call.partner.id)], order='id desc', limit=1)
                     if project:
+                        debug(self, 'Call {} assign project <{}> "{}"'.format(
+                            call.id, project.id, project.name))
                         call.project = project
         except Exception:
             logger.exception('Project process_call_event error:')
