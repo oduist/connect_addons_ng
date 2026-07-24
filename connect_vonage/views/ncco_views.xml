@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ncco_action" model="ir.actions.act_window">
+        <field name="name">NCCO</field>
+        <field name="res_model">connect.ncco</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_connect_ncco"
+              sequence="10"
+              parent="menu_connect_vonage"
+              name="NCCO"
+              action="ncco_action"/>
+
+    <record id="view_connect_ncco_tree" model="ir.ui.view">
+        <field name="name">connect.ncco.tree</field>
+        <field name="model">connect.ncco</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="exten"/>
+                <field name="description"/>
+                <field name="code_type"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_connect_ncco_form" model="ir.ui.view">
+        <field name="name">connect.ncco.form</field>
+        <field name="model">connect.ncco</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="create_extension" type="object" string="Extension" class="btn btn-primary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <label class="oe_edit_only" for="name"/>
+                            <field name="name" placeholder="NCCO name..."/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="description"/>
+                            <field name="code_type"/>
+                        </group>
+                        <group>
+                            <field name="exten_number"/>
+                            <field name="answer_url" readonly="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="nccopy" widget="ace" options="{'mode': 'python'}"
+                               invisible="code_type != 'nccopy'"
+                               required="code_type == 'nccopy'"/>
+                        <field name="model"
+                               invisible="code_type != 'model_method'"
+                               required="code_type == 'model_method'"/>
+                        <field name="method"
+                               invisible="code_type != 'model_method'"
+                               required="code_type == 'model_method'"/>
+                        <field name="ncco" widget="ace"
+                               invisible="code_type != 'ncco'"
+                               required="code_type == 'ncco'"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_connect_ncco_search" model="ir.ui.view">
+        <field name="name">connect.ncco.search</field>
+        <field name="model">connect.ncco</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="exten_number"/>
+                <field name="ncco"/>
+                <field name="nccopy"/>
+                <field name="code_type"/>
+                <filter name="by_type" context="{'group_by': 'code_type'}"/>
+            </search>
+        </field>
+    </record>
+
+</odoo>

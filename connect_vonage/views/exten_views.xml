@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_exten_form_vonage" model="ir.ui.view">
+        <field name="name">connect.exten.form.vonage</field>
+        <field name="model">connect.exten</field>
+        <field name="inherit_id" ref="connect.view_connect_exten_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Dialplan Preview" invisible="not dialplan">
+                    <field name="dialplan" nolabel="1" colspan="2" readonly="1"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

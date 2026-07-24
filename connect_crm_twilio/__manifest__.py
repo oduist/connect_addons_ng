@@ -7,6 +7,7 @@
     'depends': ['connect_crm', 'connect_twilio'],
     'auto_install': True,
     'data': [],
+    'images': ['static/description/icon.png'],
     'installable': True,
     'application': False,
     'license': 'Other proprietary',

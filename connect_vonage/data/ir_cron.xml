@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="download_vonage_recordings" model="ir.cron">
+            <field name="name">Download Vonage Recordings</field>
+            <field name="interval_number">2</field>
+            <field name="interval_type">minutes</field>
+            <field name="model_id" ref="connect.model_connect_recording"/>
+            <field name="code">model._cron_download_vonage_recordings()</field>
+            <field name="state">code</field>
+            <field name="active">True</field>
+        </record>
+    </data>
+</odoo>

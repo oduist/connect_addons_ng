@@ -1,6 +1,7 @@
 openai
 pyjwt
 twilio
+vonage
 telnyx
 pynacl
 livekit-api
