@@ -43,6 +43,20 @@
     - **Oduist Connect FreeSWITCH** for FreeSWITCH
     - **Oduist Connect Asterisk** for an existing Asterisk PBX
 
+6. Optionally install the business-record bridges, which attach calls to the
+   Odoo records they belong to (see
+   [Calls and Business Records](../user/business-records.md)):
+    - **Oduist Connect CRM** — leads and opportunities
+    - **Oduist Connect Helpdesk** — tickets
+    - **Oduist Connect HR** — employees
+    - **Oduist Connect Sale** — sale orders
+    - **Oduist Connect Account** — customer invoices
+    - **Oduist Connect Project** — tasks and projects
+
+    Each bridge depends only on `connect` plus its own Odoo app, so they are
+    independent of the telephony provider you chose above and can be combined
+    freely.
+
 ## Post-Installation
 
 Each installed integration adds its own submenu (**Twilio**, **FreeSWITCH**,
