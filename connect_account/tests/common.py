@@ -2,23 +2,35 @@ from contextlib import contextmanager
 from unittest.mock import patch
 
 from odoo import Command, fields
+from odoo.tests.common import TransactionCase
 
-from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
-
-class ConnectAccountTestCommon(AccountTestInvoicingCommon):
-
-    @classmethod
-    def get_default_groups(cls):
-        # AccountTestInvoicingCommon runs tests as its own independent
-        # 'accountman' test user (accounting groups only); add the Connect
-        # Admin group so that user can also create/write connect.call and
-        # connect.channel records while driving process_call_event().
-        return super().get_default_groups() | cls.quick_ref('connect.group_admin')
+class ConnectAccountTestCommon(TransactionCase):
+    # Deliberately NOT based on AccountTestInvoicingCommon: that scaffold
+    # builds a whole demo company including products, and product creation
+    # breaks whenever a module loaded later in the graph has added a required
+    # column to product.template (website_sale's base_unit_count). These tests
+    # never touch products — they post invoices with explicit account_id — so
+    # the minimal company/user setup below is both sufficient and immune to
+    # co-installation order.
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # Run as a user holding accounting rights (to post invoices), contact
+        # creation (the test partner) and Connect Admin (to create
+        # connect.call / connect.channel while driving process_call_event()).
+        cls.test_user = cls.env['res.users'].create({
+            'name': 'Connect Account Tester',
+            'login': 'connect_account_tester',
+            'group_ids': [Command.set([
+                cls.env.ref('base.group_user').id,
+                cls.env.ref('base.group_partner_manager').id,
+                cls.env.ref('account.group_account_manager').id,
+                cls.env.ref('connect.group_admin').id,
+            ])],
+        })
+        cls.env = cls.env(user=cls.test_user)
         cls.Move = cls.env['account.move']
         cls.Call = cls.env['connect.call']
         cls.Settings = cls.env['connect.settings'].sudo()
