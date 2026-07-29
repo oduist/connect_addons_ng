@@ -2,114 +2,122 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/3cx-setup/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/asterisk-setup/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/bird-setup/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/core-setup/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/customer-onboarding/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/dograh-setup/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/firewall/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/freeswitch-setup/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/infobip-setup/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/installation/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/licensing/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/livekit-setup/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/parking/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/pipecat-setup/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/security/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/telnyx-setup/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/twilio-setup/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/vonage-setup/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/admin/working-schedule/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
+    </url>
+    <url>
+         <loc>https://oduist.github.io/connect_addons_ng/superpowers/plans/2026-07-22-connect-domain-bridges/</loc>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/user/ai-agents/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
+    </url>
+    <url>
+         <loc>https://oduist.github.io/connect_addons_ng/user/business-records/</loc>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/user/callflows/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/user/calls/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/user/getting-started/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/user/meetings/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/user/messages/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/user/parking/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
     <url>
          <loc>https://oduist.github.io/connect_addons_ng/user/recordings/</loc>
-         <lastmod>2026-07-17</lastmod>
+         <lastmod>2026-07-29</lastmod>
     </url>
 </urlset>

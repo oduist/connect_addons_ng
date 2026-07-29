@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://oduist.github.io/connect_addons_ng/admin/pipecat-setup/">
+        <link rel="canonical" href="https://oduist.github.io/connect_addons_ng/user/business-records/">
       
       
-        <link rel="prev" href="../freeswitch-setup/">
+        <link rel="prev" href="../callflows/">
       
       
-        <link rel="next" href="../asterisk-setup/">
+        <link rel="next" href="../ai-agents/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Pipecat AI Agents - Oduist Connect Documentation</title>
+        <title>Calls and Business Records - Oduist Connect Documentation</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pipecat-ai-agent-setup" class="md-skip">
+        <a href="#calls-and-business-records" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Pipecat AI Agents
+              Calls and Business Records
             
           </span>
         </div>
@@ -264,8 +264,6 @@
       
   
   
-    
-  
   
   
     
@@ -278,11 +276,13 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
@@ -303,7 +303,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -321,7 +321,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../installation/" class="md-nav__link">
+      <a href="../../admin/installation/" class="md-nav__link">
         
   
   
@@ -349,7 +349,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../licensing/" class="md-nav__link">
+      <a href="../../admin/licensing/" class="md-nav__link">
         
   
   
@@ -377,7 +377,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../customer-onboarding/" class="md-nav__link">
+      <a href="../../admin/customer-onboarding/" class="md-nav__link">
         
   
   
@@ -405,7 +405,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core-setup/" class="md-nav__link">
+      <a href="../../admin/core-setup/" class="md-nav__link">
         
   
   
@@ -433,7 +433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../twilio-setup/" class="md-nav__link">
+      <a href="../../admin/twilio-setup/" class="md-nav__link">
         
   
   
@@ -461,7 +461,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../vonage-setup/" class="md-nav__link">
+      <a href="../../admin/vonage-setup/" class="md-nav__link">
         
   
   
@@ -489,7 +489,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../freeswitch-setup/" class="md-nav__link">
+      <a href="../../admin/freeswitch-setup/" class="md-nav__link">
         
   
   
@@ -514,37 +514,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Pipecat AI Agents
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../admin/pipecat-setup/" class="md-nav__link">
         
   
   
@@ -560,70 +533,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#1-build-the-images" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        1. Build the images
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#2-pair-odoo-and-the-sidecar" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        2. Pair Odoo and the sidecar
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#3-configure-an-agent" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        3. Configure an agent
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#verification" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Verification
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -636,7 +545,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../asterisk-setup/" class="md-nav__link">
+      <a href="../../admin/asterisk-setup/" class="md-nav__link">
         
   
   
@@ -664,7 +573,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../telnyx-setup/" class="md-nav__link">
+      <a href="../../admin/telnyx-setup/" class="md-nav__link">
         
   
   
@@ -692,7 +601,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../3cx-setup/" class="md-nav__link">
+      <a href="../../admin/3cx-setup/" class="md-nav__link">
         
   
   
@@ -720,7 +629,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../livekit-setup/" class="md-nav__link">
+      <a href="../../admin/livekit-setup/" class="md-nav__link">
         
   
   
@@ -748,7 +657,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../infobip-setup/" class="md-nav__link">
+      <a href="../../admin/infobip-setup/" class="md-nav__link">
         
   
   
@@ -776,7 +685,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dograh-setup/" class="md-nav__link">
+      <a href="../../admin/dograh-setup/" class="md-nav__link">
         
   
   
@@ -804,7 +713,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bird-setup/" class="md-nav__link">
+      <a href="../../admin/bird-setup/" class="md-nav__link">
         
   
   
@@ -812,6 +721,235 @@
     
   
     Bird Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin/parking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Call Parking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin/working-schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Working Schedules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../admin/firewall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SIP Firewall
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../calls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Making and Receiving Calls
   
 
     
@@ -860,236 +998,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../working-schedule/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Working Schedules
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../security/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Security
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../firewall/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    SIP Firewall
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-    
-    
-      
-        
-        
-      
-    
-    
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
-        
-          
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
-            
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    User Guide
-  
-
-    
-  </span>
-  
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
-            <span class="md-nav__icon md-icon"></span>
-            
-  
-    User Guide
-  
-
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../user/getting-started/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Getting Started
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../user/calls/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Making and Receiving Calls
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../user/parking/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Call Parking
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../user/messages/" class="md-nav__link">
+      <a href="../messages/" class="md-nav__link">
         
   
   
@@ -1117,7 +1026,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user/meetings/" class="md-nav__link">
+      <a href="../meetings/" class="md-nav__link">
         
   
   
@@ -1145,7 +1054,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user/recordings/" class="md-nav__link">
+      <a href="../recordings/" class="md-nav__link">
         
   
   
@@ -1173,7 +1082,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user/callflows/" class="md-nav__link">
+      <a href="../callflows/" class="md-nav__link">
         
   
   
@@ -1198,10 +1107,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../user/business-records/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Calls and Business Records
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1217,6 +1153,81 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-a-call-finds-its-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How a call finds its record
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-you-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What you see
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-a-record-from-a-call" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a record from a call
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#call-summaries-on-the-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Call summaries on the record
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#licensing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Licensing
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1229,7 +1240,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user/ai-agents/" class="md-nav__link">
+      <a href="../ai-agents/" class="md-nav__link">
         
   
   
@@ -1284,10 +1295,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#1-build-the-images" class="md-nav__link">
+  <a href="#how-a-call-finds-its-record" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1. Build the images
+        How a call finds its record
       
     </span>
   </a>
@@ -1295,10 +1306,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#2-pair-odoo-and-the-sidecar" class="md-nav__link">
+  <a href="#what-you-see" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Pair Odoo and the sidecar
+        What you see
       
     </span>
   </a>
@@ -1306,10 +1317,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-configure-an-agent" class="md-nav__link">
+  <a href="#creating-a-record-from-a-call" class="md-nav__link">
     <span class="md-ellipsis">
       
-        3. Configure an agent
+        Creating a record from a call
       
     </span>
   </a>
@@ -1317,10 +1328,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#verification" class="md-nav__link">
+  <a href="#call-summaries-on-the-record" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Verification
+        Call summaries on the record
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#licensing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Licensing
       
     </span>
   </a>
@@ -1344,63 +1366,121 @@
 
 
 
-<h1 id="pipecat-ai-agent-setup">Pipecat AI Agent Setup</h1>
-<p>The Pipecat integration requires the <code>connect_pipecat</code> addon, a FreeSWITCH
-image containing <code>mod_audio_fork</code>, and the <code>oduist/pipecat-agent:1.0.0</code>
-sidecar. Pipecat does not run inside Odoo.</p>
-<h2 id="1-build-the-images">1. Build the images</h2>
-<p>Build the FreeSWITCH image after the <code>connect_freeswitch</code> 19.0.2.1.0 update:</p>
-<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>--platform<span class="w"> </span>linux/amd64<span class="w"> </span>--provenance<span class="o">=</span><span class="nb">false</span><span class="w"> </span>--sbom<span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-t<span class="w"> </span>oduist/freeswitch:2.1.0<span class="w"> </span>connect_freeswitch/deploy
-</code></pre></div>
-<p>Build the sidecar:</p>
-<div class="highlight"><pre><span></span><code>docker<span class="w"> </span>build<span class="w"> </span>--platform<span class="w"> </span>linux/amd64<span class="w"> </span>--provenance<span class="o">=</span><span class="nb">false</span><span class="w"> </span>--sbom<span class="o">=</span><span class="nb">false</span><span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>-t<span class="w"> </span>oduist/pipecat-agent:1.0.0<span class="w"> </span>connect_pipecat/deploy
-</code></pre></div>
-<p><code>connect_pipecat/deploy/oduflow-preset.yaml</code> contains the service variables and
-WSS routing shape.</p>
-<h2 id="2-pair-odoo-and-the-sidecar">2. Pair Odoo and the sidecar</h2>
-<p>Open <strong>Connect → FreeSWITCH → Configuration → Settings → Pipecat AI</strong>.</p>
-<ol>
-<li>Set <strong>Pipecat Sidecar URL</strong> to its externally reachable base URL, for
-   example <code>wss://voice.example.com</code>. Do not append <code>/ws</code>.</li>
-<li>Generate a URL-safe token of at least 24 characters and enter it as the
-   Pipecat service token.</li>
-<li>Set exactly the same value as <code>PIPECAT_SERVICE_TOKEN</code> in the sidecar.</li>
-<li>Set <code>ODOO_URL</code> in the sidecar to Odoo's HTTPS base URL.</li>
-<li>Enter API keys for every provider used by an agent.</li>
-<li>Restart the sidecar and click <strong>CHECK STATUS</strong>. A healthy service reports
-   <code>UP (1.0.0)</code>.</li>
-</ol>
-<p>The token authenticates both directions: FreeSWITCH uses Basic auth to open
-the media WebSocket; the sidecar uses Bearer auth for Odoo and <code>/health</code>.</p>
-<h2 id="3-configure-an-agent">3. Configure an agent</h2>
-<p>Go to <strong>Connect → FreeSWITCH → AI Agents</strong>, create an agent, and configure:</p>
+<h1 id="calls-and-business-records">Calls and Business Records</h1>
+<p>Connect can attach every call to the Odoo record it belongs to — an employee,
+a sale order, an invoice, a project task, a CRM lead or a helpdesk ticket.
+The link is made automatically while the call is being processed, so the call
+history on a customer record fills itself in without anyone tagging calls by
+hand.</p>
+<p>Each integration ships as its own module. Install only the ones you need:</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Links calls to</th>
+<th>Menu where the calls appear</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Oduist Connect HR</strong></td>
+<td>Employees</td>
+<td>Employee form → <strong>Calls</strong></td>
+</tr>
+<tr>
+<td><strong>Oduist Connect Sale</strong></td>
+<td>Sale orders</td>
+<td>Sale order form → <strong>Calls</strong></td>
+</tr>
+<tr>
+<td><strong>Oduist Connect Account</strong></td>
+<td>Customer invoices</td>
+<td>Invoice form → <strong>Calls</strong></td>
+</tr>
+<tr>
+<td><strong>Oduist Connect Project</strong></td>
+<td>Tasks and projects</td>
+<td>Task/project form → <strong>Calls</strong></td>
+</tr>
+<tr>
+<td><strong>Oduist Connect CRM</strong></td>
+<td>Leads and opportunities</td>
+<td>Lead form → <strong>Calls</strong></td>
+</tr>
+<tr>
+<td><strong>Oduist Connect Helpdesk</strong></td>
+<td>Tickets</td>
+<td>Ticket form → <strong>Calls</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="how-a-call-finds-its-record">How a call finds its record</h2>
+<p>Matching runs once per call, right after the call is registered. A call that
+already points at a record is never re-assigned, so a manual correction stays
+in place.</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Matching rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HR</strong></td>
+<td>By phone number. An incoming call is matched on the caller's number, an outgoing call on the number dialled, against the employee's work and mobile phone.</td>
+</tr>
+<tr>
+<td><strong>Sale</strong></td>
+<td>By customer. The call is attached to that customer's most recent sale order.</td>
+</tr>
+<tr>
+<td><strong>Account</strong></td>
+<td>By customer. The call is attached to the customer's newest <strong>posted, unpaid customer invoice</strong>. Vendor bills are never matched.</td>
+</tr>
+<tr>
+<td><strong>Project</strong></td>
+<td>By customer. The call is attached to the customer's newest task in an open stage; if the customer has no open task, it is attached to their project instead.</td>
+</tr>
+</tbody>
+</table>
+<p>If nothing matches, the call is simply left unlinked — you can still attach it
+by hand from the call form.</p>
+<h2 id="what-you-see">What you see</h2>
+<p><strong>On the business record</strong> — a <strong>Calls</strong> button in the button box opens the
+full call history for that record. On projects and tasks there is also a
+<strong>Recorded Calls</strong> tab listing the recordings made during those calls.</p>
+<p><strong>On the call</strong> — the linked record appears in its own field on the call form
+(<strong>Employee</strong>, <strong>Sale Order</strong>, <strong>Invoice</strong>, <strong>Task</strong>, <strong>Project</strong>) and as a
+column you can enable in the call list. Next to the field, <strong>Unlink</strong> detaches
+the call from the record without deleting either.</p>
+<h2 id="creating-a-record-from-a-call">Creating a record from a call</h2>
+<p>Some modules can create the record straight from the call, which is the usual
+way to handle a call from someone who is not in the system yet:</p>
 <ul>
-<li>system prompt and optional greeting;</li>
-<li>STT, LLM and TTS providers/models;</li>
-<li>language, voice and maximum duration;</li>
-<li>optional human transfer extension;</li>
-<li>call recording if transcript audio should also be retained.</li>
+<li><strong>Project</strong> — <strong>Create Task</strong> on the call form.</li>
+<li><strong>Sale</strong> — <strong>Create Sale Order</strong> on the call form.</li>
+<li><strong>CRM</strong> — <strong>Create Lead</strong>.</li>
+<li><strong>Helpdesk</strong> — <strong>Create Ticket</strong>.</li>
 </ul>
-<p>Use the <strong>Extension</strong> button to assign a unique extension number. A DID may then
-route to that extension using the normal Connect routing controls.</p>
-<h2 id="verification">Verification</h2>
-<p>Call the extension and confirm the greeting is heard. Speak over a long agent
-reply: playback should stop immediately (<code>killAudio</code>) and the caller's new turn
-should be processed. Ask for a human and verify the configured extension rings.
-After hangup, open the call in Connect and verify summary and transcript.</p>
-<p>Check these logs when diagnosing failures:</p>
-<ul>
-<li><code>mod_audio_fork::connect_failed</code> in FreeSWITCH: WSS, certificate or Basic
-  token mismatch;</li>
-<li>sidecar <code>401</code>: Odoo/service token mismatch;</li>
-<li>provider initialization error: missing key or unsupported model/voice;</li>
-<li>call result <code>404</code>: CDR creation was delayed beyond the sidecar retry window.</li>
-</ul>
-<p>The acceptance target is first agent audio in under 1.4 seconds with working
-barge-in. Measure this in the deployment because provider and network latency
-dominate the result.</p>
+<p>The buttons are idempotent: pressing one a second time opens the record that
+was already created rather than making a duplicate. The new record is linked
+to the call, and the customer is carried over when the call has one.</p>
+<p>HR and Account have no such button by design — employees and invoices are not
+things you create from an inbound call.</p>
+<h2 id="call-summaries-on-the-record">Call summaries on the record</h2>
+<p>When AI call summaries are switched on (<strong>Connect &gt; Configuration &gt; Settings</strong>,
+<em>Register call summary</em>), the summary of a finished call is posted to the
+chatter of the linked record as soon as it is generated. That puts the gist of
+the conversation on the invoice, task or employee file without anyone
+re-typing it.</p>
+<p>Summaries are only posted to records the call is actually linked to. See
+<a href="../recordings/">Recordings &amp; Transcriptions</a> for how summaries are produced.</p>
+<h2 id="licensing">Licensing</h2>
+<p>Each of these modules is licensed separately from the Connect core. When a
+module's licence is missing or expired, its linking, buttons and summary
+posting stop quietly — calls are still recorded and the rest of Connect keeps
+working.</p>
 
 
 

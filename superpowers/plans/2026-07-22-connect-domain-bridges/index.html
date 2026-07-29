@@ -1,0 +1,2396 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Telephony integration platform for Odoo">
+      
+      
+      
+        <link rel="canonical" href="https://oduist.github.io/connect_addons_ng/superpowers/plans/2026-07-22-connect-domain-bridges/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Connect Domain Bridges (account / sale / hr / project) Implementation Plan - Oduist Connect Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Outfit:300,300i,400,400i,700,700i%7CGeist+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Outfit";--md-code-font:"Geist Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/oduflow.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#connect-domain-bridges-account-sale-hr-project-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Oduist Connect Documentation" class="md-header__button md-logo" aria-label="Oduist Connect Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Oduist Connect Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Connect Domain Bridges (account / sale / hr / project) Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Oduist Connect Documentation" class="md-nav__button md-logo" aria-label="Oduist Connect Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Oduist Connect Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Admin Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Admin Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/licensing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Licensing & Trial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/customer-onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Customer Onboarding (FreeSWITCH)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/core-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/twilio-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Twilio Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/vonage-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vonage Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/freeswitch-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FreeSWITCH Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/pipecat-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipecat AI Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/asterisk-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Asterisk Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/telnyx-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Telnyx Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/3cx-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3CX Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/livekit-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LiveKit Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/infobip-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Infobip Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/dograh-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dograh Integration (AI Agents)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/bird-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bird Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/parking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Call Parking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/working-schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Working Schedules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/firewall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SIP Firewall
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/calls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Making and Receiving Calls
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/parking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Call Parking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/messages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messages (SMS & WhatsApp)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/meetings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Meetings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/recordings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recordings & Transcriptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/callflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Call Flows (IVR)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/business-records/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Calls and Business Records
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/ai-agents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Voice Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference-the-shared-bridge-pattern-canonical-connect_crm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference: the Shared Bridge Pattern (canonical = connect_crm)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Reference: the Shared Bridge Pattern (canonical = connect_crm)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-connect_hr-link-calls-to-employees-lookup-by-number" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: connect_hr — link calls to employees (lookup by number)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-connect_sale-link-calls-to-sale-orders-lookup-by-partner" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: connect_sale — link calls to sale orders (lookup by partner)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-connect_account-link-calls-to-customer-invoices-lookup-by-partner-bug-fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: connect_account — link calls to customer invoices (lookup by partner, bug-fixed)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-connect_project-link-calls-to-tasksprojects-recorded-calls-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: connect_project — link calls to tasks/projects + recorded-calls page
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-specs-docs-agentsmd-and-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Specs, docs, AGENTS.md, and PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Review Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="connect-domain-bridges-account-sale-hr-project-implementation-plan">Connect Domain Bridges (account / sale / hr / project) Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Add four provider-agnostic call↔record bridges — <code>connect_account</code>, <code>connect_sale</code>, <code>connect_hr</code>, <code>connect_project</code> — that link a <code>connect.call</code> to an invoice / sale order / employee / task, exactly the way <code>connect_crm</code> links a call to a lead (ADR-046 Part 1, ODU-344).</p>
+<p><strong>Architecture:</strong> Each bridge is a small standalone module depending on <code>['connect', '&lt;app&gt;']</code>. It <code>_inherit</code>s <code>connect.call</code> to add ONE dedicated <code>Many2one</code> to the target record (never the shared <code>ref</code> slot as the source of truth), wires the core hooks (<code>process_call_event</code> to link by lookup, <code>register_call</code> + <code>_auto_create_*</code> where auto-create applies, <code>_get_ref</code>, <code>get_widget_fields</code>, a <code>@api.constrains('summary')</code> summary sync), and <code>_inherit</code>s the target model to add a <code>connect_calls</code> One2many + stored count + a smart button. <code>connect_crm</code> is the canonical reference — every bridge repeats its shape with per-module deltas.</p>
+<p><strong>Tech Stack:</strong> Odoo 19 addon (Python/XML), <code>oduflow</code> MCP for a live-mount test environment, <code>connect</code> core license/hook API (<code>oduist.license.check_license</code>, <code>connect.call.process_call_event</code>/<code>register_call</code>/<code>_get_ref</code>/<code>get_widget_fields</code>/<code>register_summary_to_rec</code>), <code>res.partner._normalize_phone</code>, <code>connect.settings.get_param</code>.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li><strong>Target Odoo series: 19.0 only.</strong> No <code>release.version_info</code> version-forks in <code>.py</code>. Python must stay byte-identical across series (18.0 backport touches only XML/migrations — ADR-039), so branch on <code>release.version_info[0]</code> ONLY where the existing core already does (none needed here).</li>
+<li><strong>Manifest:</strong> <code>'version': '19.0.1.0.0'</code>, <code>'license': 'Other proprietary'</code>, <code>'category': 'Phone'</code>, <code>'application': False</code>, <code>'post_init_hook': 'post_init_hook'</code>. Author <code>'Oduist'</code>.</li>
+<li><strong>Bump the manifest version at most once</strong> (each bridge is one release unit at <code>19.0.1.0.0</code>).</li>
+<li><strong>Commit messages:</strong> <code>[connect_&lt;app&gt;] &lt;subject&gt;</code> (single-module) / <code>[misc] &lt;subject&gt;</code> (cross-cutting). Lowercase imperative, square brackets. NO <code>feat:</code>/<code>fix:</code>/<code>chore:</code> prefixes.</li>
+<li><strong>Comments in English only.</strong></li>
+<li><strong>Security default for new models:</strong> none are added — bridges only <code>_inherit</code> existing models. Webhook write access to each target goes to <code>connect.group_webhook</code> via <code>security/webhook.xml</code> (read + create/write only where the bridge writes that record). NO broad create/write beyond what the bridge needs.</li>
+<li><strong>License gate:</strong> every hook/button first calls <code>self.env['oduist.license'].check_license('connect_&lt;app&gt;', silent=True)</code> and returns/<code>super()</code>s on failure — capture must never break the host op.</li>
+<li><strong>Register each module in the license registry:</strong> <code>ODUIST_MODULES.append('connect_&lt;app&gt;')</code> in <code>models/settings.py</code> (or the first imported model file if there is no settings model).</li>
+<li><strong>Tests are colocated</strong> (<code>connect_&lt;app&gt;/tests/</code>, ADR-034), imported in <code>tests/__init__.py</code>, and follow the <code>connect_crm/tests/common.py</code> pattern.</li>
+<li><strong>Do NOT port these source anti-patterns (ADR-046 blacklist):</strong> <code>update_reference()</code> + <code>if not res</code> chain; the <code>ref</code>/<code>model</code>/<code>res_id</code> triplet as the only link; unstored <code>*_calls_count</code>; dead <code>create(call_id)</code> hooks nobody feeds; <code>invalidate_model(flush=True)</code> (use <code>self.env.registry.clear_cache()</code>); <code>@tools.ormcache</code> on lookups; <code>release.version_info</code> forks; <code>self.env.cr.commit()</code>; <code>view_mode='tree,form'</code> (use <code>'list,form'</code>); the source's <strong>stale</strong> manifest keys (<code>qweb</code>, <code>price</code>, and any <code>images</code> pointing at non-existent/legacy assets — do NOT carry those over); over-broad ACLs; copy-paste class names (<code>AccountOrder</code>) and rule ids. (Note: a fresh <code>'images': ['static/description/icon.png']</code> reusing the shared icon IS the house convention and is required — see each task's icon step; only the source's dead image refs are the anti-pattern.)</li>
+</ul>
+<hr />
+<h2 id="reference-the-shared-bridge-pattern-canonical-connect_crm">Reference: the Shared Bridge Pattern (canonical = <code>connect_crm</code>)</h2>
+<p>Every task below <strong>instantiates</strong> this pattern. Read these reference files once; each task lists only its deltas.</p>
+<ul>
+<li><code>connect_crm/models/call.py</code> — <code>_inherit connect.call</code>: dedicated M2O, <code>_get_ref</code>, <code>process_call_event</code>, <code>register_call</code>, <code>_auto_create_*</code>, <code>create_*_button</code>, <code>unlink_*</code>, <code>get_widget_fields</code>, <code>register_*_call_summary</code>.</li>
+<li><code>connect_crm/models/crm_lead.py</code> — <code>_inherit</code> target: <code>connect_calls</code> One2many, stored <code>connect_calls_count</code> (<code>@api.depends('connect_calls')</code>), <code>phone_normalized</code>, <code>get_*_by_number</code>, <code>create()</code> reading <code>connect_call_id</code>.</li>
+<li><code>connect_crm/models/settings.py</code> — <code>ODUIST_MODULES.append(...)</code>.</li>
+<li><code>connect_crm/__init__.py</code> — <code>post_init_hook(env)</code>.</li>
+<li><code>connect_crm/__manifest__.py</code>, <code>connect_crm/security/webhook.xml</code>, <code>connect_crm/views/{call_views,crm_lead_views}.xml</code>, <code>connect_crm/tests/*</code>.</li>
+</ul>
+<p><strong>Canonical <code>_get_ref</code> override</strong> (repeat verbatim, swap <code>&lt;m2o&gt;</code>/<code>&lt;target_model&gt;</code>):
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">_get_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rec</span><span class="o">.&lt;</span><span class="n">m2o</span><span class="o">&gt;</span><span class="p">:</span>
+            <span class="n">rec</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="s1">&#39;&lt;target_model&gt;,</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rec</span><span class="o">.&lt;</span><span class="n">m2o</span><span class="o">&gt;.</span><span class="n">id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">(</span><span class="o">&lt;</span><span class="n">Class</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">rec</span><span class="p">)</span><span class="o">.</span><span class="n">_get_ref</span><span class="p">()</span>
+</code></pre></div></p>
+<p><strong>Canonical <code>connect.call</code> list/form view inheritance</strong> (<code>views/call_views.xml</code>):
+<div class="highlight"><pre><span></span><code><span class="nt">&lt;record</span><span class="w"> </span><span class="na">id=</span><span class="s">&quot;view_connect_call_tree_&lt;app&gt;&quot;</span><span class="w"> </span><span class="na">model=</span><span class="s">&quot;ir.ui.view&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;name&quot;</span><span class="nt">&gt;</span>connect.call.tree.<span class="nt">&lt;app&gt;&lt;/field&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;model&quot;</span><span class="nt">&gt;</span>connect.call<span class="nt">&lt;/field&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;inherit_id&quot;</span><span class="w"> </span><span class="na">ref=</span><span class="s">&quot;connect.view_connect_call_tree&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;arch&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;xml&quot;</span><span class="nt">&gt;</span>
+<span class="w">        </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;partner&quot;</span><span class="w"> </span><span class="na">position=</span><span class="s">&quot;after&quot;</span><span class="nt">&gt;</span>
+<span class="w">            </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;&lt;m2o&gt;&quot;</span><span class="w"> </span><span class="na">optional=</span><span class="s">&quot;show&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/field&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/field&gt;</span>
+<span class="nt">&lt;/record&gt;</span>
+<span class="nt">&lt;record</span><span class="w"> </span><span class="na">id=</span><span class="s">&quot;view_connect_call_form_&lt;app&gt;&quot;</span><span class="w"> </span><span class="na">model=</span><span class="s">&quot;ir.ui.view&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;name&quot;</span><span class="nt">&gt;</span>connect.call.form.<span class="nt">&lt;app&gt;&lt;/field&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;model&quot;</span><span class="nt">&gt;</span>connect.call<span class="nt">&lt;/field&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;inherit_id&quot;</span><span class="w"> </span><span class="na">ref=</span><span class="s">&quot;connect.view_connect_call_form&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;arch&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;xml&quot;</span><span class="nt">&gt;</span>
+<span class="w">        </span><span class="nt">&lt;button</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;create_partner_button&quot;</span><span class="w"> </span><span class="na">position=</span><span class="s">&quot;after&quot;</span><span class="nt">&gt;</span>
+<span class="w">            </span><span class="nt">&lt;button</span><span class="w"> </span><span class="na">string=</span><span class="s">&quot;&lt;Label&gt;&quot;</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;create_&lt;app&gt;_button&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;object&quot;</span>
+<span class="w">                    </span><span class="na">class=</span><span class="s">&quot;oe_stat_button&quot;</span><span class="w"> </span><span class="na">icon=</span><span class="s">&quot;&lt;icon&gt;&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/button&gt;</span>
+<span class="w">        </span><span class="nt">&lt;notebook</span><span class="w"> </span><span class="na">position=</span><span class="s">&quot;inside&quot;</span><span class="nt">&gt;</span>
+<span class="w">            </span><span class="nt">&lt;page</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;&lt;app&gt;&quot;</span><span class="w"> </span><span class="na">string=</span><span class="s">&quot;&lt;Label&gt;&quot;</span><span class="nt">&gt;</span>
+<span class="w">                </span><span class="nt">&lt;group&gt;</span>
+<span class="w">                    </span><span class="nt">&lt;group&gt;&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;&lt;m2o&gt;&quot;</span><span class="nt">/&gt;&lt;/group&gt;</span>
+<span class="w">                    </span><span class="nt">&lt;group&gt;</span>
+<span class="w">                        </span><span class="nt">&lt;button</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;unlink_&lt;app&gt;&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;object&quot;</span><span class="w"> </span><span class="na">string=</span><span class="s">&quot;Unlink&quot;</span>
+<span class="w">                                </span><span class="na">invisible=</span><span class="s">&quot;not &lt;m2o&gt;&quot;</span><span class="nt">/&gt;</span>
+<span class="w">                    </span><span class="nt">&lt;/group&gt;</span>
+<span class="w">                </span><span class="nt">&lt;/group&gt;</span>
+<span class="w">            </span><span class="nt">&lt;/page&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/notebook&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/field&gt;</span>
+<span class="nt">&lt;/record&gt;</span>
+</code></pre></div>
+(Bridges without a create-from-call button — <code>connect_account</code>, <code>connect_hr</code> — omit the <code>&lt;button ... position="after"&gt;</code> block.)</p>
+<p><strong>Canonical smart button on the target form</strong> (<code>views/&lt;record&gt;_views.xml</code>):
+<div class="highlight"><pre><span></span><code><span class="nt">&lt;record</span><span class="w"> </span><span class="na">id=</span><span class="s">&quot;connect_calls_&lt;app&gt;_action&quot;</span><span class="w"> </span><span class="na">model=</span><span class="s">&quot;ir.actions.act_window&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;name&quot;</span><span class="nt">&gt;</span>Calls<span class="nt">&lt;/field&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;res_model&quot;</span><span class="nt">&gt;</span>connect.call<span class="nt">&lt;/field&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;view_mode&quot;</span><span class="nt">&gt;</span>list,form<span class="nt">&lt;/field&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;domain&quot;</span><span class="nt">&gt;</span>[(&#39;<span class="nt">&lt;m2o&gt;</span>&#39;,<span class="w"> </span>&#39;=&#39;,<span class="w"> </span>active_id)]<span class="nt">&lt;/field&gt;</span>
+<span class="nt">&lt;/record&gt;</span>
+<span class="nt">&lt;record</span><span class="w"> </span><span class="na">id=</span><span class="s">&quot;view_&lt;record&gt;_form_connect_&lt;app&gt;&quot;</span><span class="w"> </span><span class="na">model=</span><span class="s">&quot;ir.ui.view&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;name&quot;</span><span class="nt">&gt;</span>connect_<span class="nt">&lt;app&gt;</span>.<span class="nt">&lt;record&gt;</span>.form<span class="nt">&lt;/field&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;model&quot;</span><span class="nt">&gt;&lt;target_model&gt;&lt;/field&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;inherit_id&quot;</span><span class="w"> </span><span class="na">ref=</span><span class="s">&quot;&lt;core_form_ref&gt;&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;arch&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;xml&quot;</span><span class="nt">&gt;</span>
+<span class="w">        </span><span class="nt">&lt;xpath</span><span class="w"> </span><span class="na">expr=</span><span class="s">&quot;&lt;button_box_xpath&gt;&quot;</span><span class="w"> </span><span class="na">position=</span><span class="s">&quot;inside&quot;</span><span class="nt">&gt;</span>
+<span class="w">            </span><span class="nt">&lt;button</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;%(connect_calls_&lt;app&gt;_action)d&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;action&quot;</span>
+<span class="w">                    </span><span class="na">class=</span><span class="s">&quot;oe_stat_button&quot;</span><span class="w"> </span><span class="na">icon=</span><span class="s">&quot;fa-phone&quot;</span><span class="nt">&gt;</span>
+<span class="w">                </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;connect_calls_count&quot;</span><span class="w"> </span><span class="na">string=</span><span class="s">&quot;Calls&quot;</span><span class="w"> </span><span class="na">widget=</span><span class="s">&quot;statinfo&quot;</span><span class="nt">/&gt;</span>
+<span class="w">            </span><span class="nt">&lt;/button&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/xpath&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/field&gt;</span>
+<span class="nt">&lt;/record&gt;</span>
+</code></pre></div></p>
+<p><strong>Canonical <code>post_init_hook</code></strong> (<code>__init__.py</code>, swap the module name):
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">fields</span>
+<span class="n">_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">post_init_hook</span><span class="p">(</span><span class="n">env</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">module</span> <span class="o">=</span> <span class="n">env</span><span class="p">[</span><span class="s1">&#39;ir.module.module&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">search</span><span class="p">([(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;connect_&lt;app&gt;&#39;</span><span class="p">)],</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">module</span><span class="p">:</span>
+            <span class="n">module</span><span class="o">.</span><span class="n">write</span><span class="p">({</span><span class="s1">&#39;create_date&#39;</span><span class="p">:</span> <span class="n">fields</span><span class="o">.</span><span class="n">Datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()})</span>
+        <span class="n">env</span><span class="p">[</span><span class="s1">&#39;oduist.license&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update_license_status</span><span class="p">(</span><span class="n">raise_exc</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">_logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Error in post_init_hook: </span><span class="si">%s</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+</code></pre></div></p>
+<p><strong>Per-bridge parameter table</strong> (fill the pattern with these):</p>
+<table>
+<thead>
+<tr>
+<th>Bridge</th>
+<th>depends</th>
+<th>target model</th>
+<th>link M2O</th>
+<th><code>ref</code> label</th>
+<th>lookup strategy</th>
+<th>auto-create</th>
+<th>create button</th>
+<th>core form ref / button_box xpath</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>connect_hr</td>
+<td><code>['connect','hr']</code></td>
+<td><code>hr.employee</code></td>
+<td><code>employee</code></td>
+<td><code>Employee</code></td>
+<td>by number (employee <code>work_phone</code>/<code>mobile_phone</code>)</td>
+<td>no</td>
+<td>no</td>
+<td><code>hr.view_employee_form</code> / <code>//div[@name='button_box']</code></td>
+</tr>
+<tr>
+<td>connect_sale</td>
+<td><code>['connect','sale']</code></td>
+<td><code>sale.order</code></td>
+<td><code>sale_order</code></td>
+<td><code>Sale Order</code></td>
+<td>by partner (open orders)</td>
+<td>no</td>
+<td>yes (<code>create_sale_order_button</code>)</td>
+<td><code>sale.view_order_form</code> / <code>//div[@name='button_box']</code></td>
+</tr>
+<tr>
+<td>connect_account</td>
+<td><code>['connect','account']</code></td>
+<td><code>account.move</code></td>
+<td><code>invoice</code></td>
+<td><code>Invoice</code></td>
+<td>by partner (posted, unpaid, <code>out_invoice</code>)</td>
+<td>no</td>
+<td>no</td>
+<td><code>account.view_move_form</code> / <code>//div[@name='button_box']</code></td>
+</tr>
+<tr>
+<td>connect_project</td>
+<td><code>['connect','project']</code></td>
+<td><code>project.task</code> (+<code>project.project</code>)</td>
+<td><code>task</code> (+<code>project</code>)</td>
+<td><code>Task</code>/<code>Project</code></td>
+<td>by partner (open task, else project)</td>
+<td>no</td>
+<td>yes (<code>create_task_button</code>)</td>
+<td><code>project.view_task_form2</code> / <code>//div[@name='button_box']</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="task-1-connect_hr-link-calls-to-employees-lookup-by-number">Task 1: <code>connect_hr</code> — link calls to employees (lookup by number)</h3>
+<p>Closest to <code>connect_crm</code>: employees carry phone numbers, so calls link by number. The source <code>asterisk_plus_hr</code> was non-functional (unstored count, no lookup, <code>hr.employee.public</code> half-wired, dead view, misspelled <code>hr_empoloyee.py</code>) — implement fresh per the pattern. <strong>Do not</strong> include <code>hr.employee.public</code> in the <code>ref</code> selection (avoids the dead public view).</p>
+<p><strong>Files:</strong>
+- Create: <code>connect_hr/__init__.py</code>, <code>connect_hr/__manifest__.py</code>
+- Create: <code>connect_hr/models/__init__.py</code>, <code>connect_hr/models/call.py</code>, <code>connect_hr/models/hr_employee.py</code>, <code>connect_hr/models/settings.py</code>
+- Create: <code>connect_hr/security/webhook.xml</code>
+- Create: <code>connect_hr/views/call_views.xml</code>, <code>connect_hr/views/hr_employee_views.xml</code>
+- Create: <code>connect_hr/static/description/icon.png</code>
+- Test: <code>connect_hr/tests/__init__.py</code>, <code>connect_hr/tests/common.py</code>, <code>connect_hr/tests/test_employee_lookup.py</code>, <code>connect_hr/tests/test_process_event.py</code></p>
+<p><strong>Interfaces:</strong>
+- Consumes: core <code>connect.call</code> hooks (<code>process_call_event</code>, <code>_get_ref</code>, <code>get_widget_fields</code>), <code>res.partner._normalize_phone</code>, <code>oduist.license.check_license</code>.
+- Produces: <code>connect.call.employee</code> (M2O), <code>hr.employee.connect_calls</code>/<code>connect_calls_count</code>/<code>phone_normalized</code>/<code>mobile_normalized</code>/<code>get_employee_by_number(number, country=None)</code>.</p>
+<ul>
+<li>[ ] <strong>Step 1: Scaffold the module skeleton</strong></li>
+</ul>
+<p>Create <code>connect_hr/__init__.py</code> (canonical <code>post_init_hook</code>, module <code>connect_hr</code>), <code>connect_hr/models/__init__.py</code>:
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">call</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">hr_employee</span>
+</code></pre></div>
+Create <code>connect_hr/__manifest__.py</code>:
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Oduist Connect HR&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="s1">&#39;19.0.1.0.0&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;category&#39;</span><span class="p">:</span> <span class="s1">&#39;Phone&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;summary&#39;</span><span class="p">:</span> <span class="s1">&#39;HR integration for Oduist Connect&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;author&#39;</span><span class="p">:</span> <span class="s1">&#39;Oduist&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;depends&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;connect&#39;</span><span class="p">,</span> <span class="s1">&#39;hr&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s1">&#39;security/webhook.xml&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;views/hr_employee_views.xml&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;views/call_views.xml&#39;</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="s1">&#39;post_init_hook&#39;</span><span class="p">:</span> <span class="s1">&#39;post_init_hook&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;installable&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s1">&#39;application&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s1">&#39;license&#39;</span><span class="p">:</span> <span class="s1">&#39;Other proprietary&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
+Create <code>connect_hr/models/settings.py</code>:
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.addons.connect.models.license</span><span class="w"> </span><span class="kn">import</span> <span class="n">ODUIST_MODULES</span>
+
+<span class="n">ODUIST_MODULES</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;connect_hr&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ConnectHrSettings</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="s1">&#39;connect.settings&#39;</span>
+</code></pre></div></p>
+<ul>
+<li>[ ] <strong>Step 2: Write the target-model extension <code>hr_employee.py</code></strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">api</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">models</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.addons.connect.models.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">debug</span><span class="p">,</span> <span class="n">MAX_EXTEN_LEN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.addons.connect.models.res_partner</span><span class="w"> </span><span class="kn">import</span> <span class="n">strip_number</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">HrEmployee</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="s1">&#39;hr.employee&#39;</span>
+
+    <span class="n">connect_calls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span><span class="s1">&#39;connect.call&#39;</span><span class="p">,</span> <span class="s1">&#39;employee&#39;</span><span class="p">)</span>
+    <span class="n">connect_calls_count</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span><span class="p">(</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_get_connect_calls_count&#39;</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Calls&#39;</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">phone_normalized</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_get_phone_normalized&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">mobile_normalized</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_get_phone_normalized&#39;</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;connect_calls&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_connect_calls_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">rec</span><span class="o">.</span><span class="n">connect_calls_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.call&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">search_count</span><span class="p">(</span>
+                <span class="p">[(</span><span class="s1">&#39;employee&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">id</span><span class="p">)],</span>
+            <span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;work_phone&#39;</span><span class="p">,</span> <span class="s1">&#39;mobile_phone&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_phone_normalized</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">rec</span><span class="o">.</span><span class="n">phone_normalized</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;res.partner&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">_normalize_phone</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">work_phone</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">work_phone</span> <span class="k">else</span> <span class="kc">False</span>
+            <span class="p">)</span>
+            <span class="n">rec</span><span class="o">.</span><span class="n">mobile_normalized</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;res.partner&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">_normalize_phone</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">mobile_phone</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">mobile_phone</span> <span class="k">else</span> <span class="kc">False</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_search_employee_by_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;hr.employee&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+            <span class="p">[</span><span class="s1">&#39;|&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;phone_normalized&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">number</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;mobile_normalized&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">number</span><span class="p">)],</span>
+            <span class="n">order</span><span class="o">=</span><span class="s1">&#39;id desc&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Number </span><span class="si">{}</span><span class="s1"> belongs to employees: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="n">found</span><span class="o">.</span><span class="n">mapped</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">found</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_employee_by_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">number</span> <span class="o">=</span> <span class="n">strip_number</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">number</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">number</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">MAX_EXTEN_LEN</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;hr.employee&#39;</span><span class="p">]</span>
+        <span class="n">employee</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search_employee_by_number</span><span class="p">(</span><span class="s1">&#39;+</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">number</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">employee</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">employee</span>
+        <span class="n">employee</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_search_employee_by_number</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">employee</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">employee</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;hr.employee&#39;</span><span class="p">]</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 3: Write the <code>connect.call</code> bridge <code>call.py</code></strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">api</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">models</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.addons.connect.models.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">debug</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">HrCall</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="s1">&#39;connect.call&#39;</span>
+
+    <span class="n">employee</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span><span class="s1">&#39;hr.employee&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;set null&#39;</span><span class="p">,</span> <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Reference</span><span class="p">(</span><span class="n">selection_add</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;hr.employee&#39;</span><span class="p">,</span> <span class="s1">&#39;Employee&#39;</span><span class="p">)])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">employee</span><span class="p">:</span>
+                <span class="n">rec</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="s1">&#39;hr.employee,</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">employee</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">super</span><span class="p">(</span><span class="n">HrCall</span><span class="p">,</span> <span class="n">rec</span><span class="p">)</span><span class="o">.</span><span class="n">_get_ref</span><span class="p">()</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">model</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_call_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">error_data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">call_id</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">process_call_event</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">error_data</span><span class="o">=</span><span class="n">error_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">call_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">call_id</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;oduist.license&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">check_license</span><span class="p">(</span><span class="s1">&#39;connect_hr&#39;</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">call_id</span>
+        <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">call_id</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">call</span><span class="o">.</span><span class="n">employee</span><span class="p">:</span>
+                <span class="n">number</span> <span class="o">=</span> <span class="n">call</span><span class="o">.</span><span class="n">caller</span> <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">direction</span> <span class="o">==</span> <span class="s1">&#39;incoming&#39;</span> <span class="k">else</span> <span class="n">call</span><span class="o">.</span><span class="n">called</span>
+                <span class="n">employee</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;hr.employee&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_employee_by_number</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">employee</span><span class="p">:</span>
+                    <span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Call </span><span class="si">{}</span><span class="s1"> assign employee &lt;</span><span class="si">{}</span><span class="s1">&gt; &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">call</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">employee</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">employee</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+                    <span class="n">call</span><span class="o">.</span><span class="n">employee</span> <span class="o">=</span> <span class="n">employee</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s1">&#39;HR process_call_event error:&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">call_id</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">unlink_employee</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">employee</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_widget_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_widget_fields</span><span class="p">()</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;employee&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fields</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;summary&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_hr_employee_call_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;oduist.license&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">check_license</span><span class="p">(</span><span class="s1">&#39;connect_hr&#39;</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.settings&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s1">&#39;register_summary&#39;</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="n">reload_view</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">employee</span> <span class="ow">and</span> <span class="n">rec</span><span class="o">.</span><span class="n">summary</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">register_summary_to_rec</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">employee</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">summary</span><span class="p">)</span>
+                <span class="n">reload_view</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">reload_view</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.settings&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">connect_reload_view</span><span class="p">(</span><span class="s1">&#39;hr.employee&#39;</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 4: Write <code>security/webhook.xml</code></strong> (read-only on <code>hr.employee</code> for the webhook group)</li>
+</ul>
+<p><div class="highlight"><pre><span></span><code><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+<span class="nt">&lt;odoo&gt;</span>
+<span class="w">    </span><span class="nt">&lt;record</span><span class="w"> </span><span class="na">id=</span><span class="s">&quot;access_hr_employee_webhook&quot;</span><span class="w"> </span><span class="na">model=</span><span class="s">&quot;ir.model.access&quot;</span><span class="nt">&gt;</span>
+<span class="w">        </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;name&quot;</span><span class="nt">&gt;</span>hr.employee<span class="w"> </span>webhook<span class="nt">&lt;/field&gt;</span>
+<span class="w">        </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;model_id&quot;</span><span class="w"> </span><span class="na">ref=</span><span class="s">&quot;hr.model_hr_employee&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;group_id&quot;</span><span class="w"> </span><span class="na">ref=</span><span class="s">&quot;connect.group_webhook&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;perm_read&quot;</span><span class="w"> </span><span class="na">eval=</span><span class="s">&quot;1&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;perm_create&quot;</span><span class="w"> </span><span class="na">eval=</span><span class="s">&quot;0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;perm_write&quot;</span><span class="w"> </span><span class="na">eval=</span><span class="s">&quot;1&quot;</span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;field</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;perm_unlink&quot;</span><span class="w"> </span><span class="na">eval=</span><span class="s">&quot;0&quot;</span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/record&gt;</span>
+<span class="nt">&lt;/odoo&gt;</span>
+</code></pre></div>
+(<code>perm_write=1</code> so <code>process_call_event</code>, running as the webhook user, can set <code>call.employee</code> — the write is on <code>connect.call</code>, but the summary sync writes <code>hr.employee</code>; keep write, drop create/unlink.)</p>
+<ul>
+<li>[ ] <strong>Step 5: Write the views</strong></li>
+</ul>
+<p><code>connect_hr/views/call_views.xml</code> — instantiate the canonical <code>connect.call</code> list/form pattern with <code>&lt;app&gt;=hr</code>, <code>&lt;m2o&gt;=employee</code>, <code>&lt;Label&gt;=Employee</code>, <strong>omit</strong> the create button (no create-from-call). <code>connect_hr/views/hr_employee_views.xml</code> — canonical smart button with <code>core_form_ref=hr.view_employee_form</code>, <code>button_box_xpath=//div[@name='button_box']</code>, plus a search-view extension exposing <code>work_phone</code>/<code>mobile_phone</code> (inherit <code>hr.view_employee_filter</code>).</p>
+<ul>
+<li>[ ] <strong>Step 6: Write <code>tests/common.py</code> + <code>tests/__init__.py</code></strong></li>
+</ul>
+<p>Mirror <code>connect_crm/tests/common.py</code>: a <code>TransactionCase</code> subclass exposing <code>Employee = env['hr.employee']</code>, <code>Call = env['connect.call']</code>, <code>Settings</code>, a <code>webhook_user = env.ref('connect.user_connect_webhook')</code>, <code>_create_call(**vals)</code> (defaults <code>caller</code>/<code>called</code>/<code>direction='incoming'</code>/<code>status='completed'</code>, <code>sudo().with_context(tracking_disable=True)</code>), and a <code>mock_license_check</code> contextmanager patching <code>oduist.license.check_license</code>. <code>tests/__init__.py</code> imports <code>test_employee_lookup</code>, <code>test_process_event</code>.</p>
+<ul>
+<li>[ ] <strong>Step 7: Write the failing tests</strong></li>
+</ul>
+<p><code>connect_hr/tests/test_employee_lookup.py</code>:
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConnectHrTestCommon</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TestEmployeeLookup</span><span class="p">(</span><span class="n">ConnectHrTestCommon</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_lookup_by_work_phone</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">emp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Employee</span><span class="o">.</span><span class="n">create</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Bob&#39;</span><span class="p">,</span> <span class="s1">&#39;work_phone&#39;</span><span class="p">:</span> <span class="s1">&#39;+380671234567&#39;</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">flush_all</span><span class="p">()</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Employee</span><span class="o">.</span><span class="n">get_employee_by_number</span><span class="p">(</span><span class="s1">&#39;380671234567&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">found</span><span class="p">,</span> <span class="n">emp</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_lookup_by_mobile</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">emp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Employee</span><span class="o">.</span><span class="n">create</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Sue&#39;</span><span class="p">,</span> <span class="s1">&#39;mobile_phone&#39;</span><span class="p">:</span> <span class="s1">&#39;+380509999999&#39;</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">flush_all</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Employee</span><span class="o">.</span><span class="n">get_employee_by_number</span><span class="p">(</span><span class="s1">&#39;+380509999999&#39;</span><span class="p">),</span> <span class="n">emp</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_lookup_unknown_returns_empty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Employee</span><span class="o">.</span><span class="n">get_employee_by_number</span><span class="p">(</span><span class="s1">&#39;+380000000000&#39;</span><span class="p">))</span>
+</code></pre></div></p>
+<p><code>connect_hr/tests/test_process_event.py</code>:
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConnectHrTestCommon</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TestProcessEvent</span><span class="p">(</span><span class="n">ConnectHrTestCommon</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_incoming_call_links_employee</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">emp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Employee</span><span class="o">.</span><span class="n">create</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Bob&#39;</span><span class="p">,</span> <span class="s1">&#39;work_phone&#39;</span><span class="p">:</span> <span class="s1">&#39;+380671234567&#39;</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">flush_all</span><span class="p">()</span>
+        <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_call</span><span class="p">(</span><span class="n">caller</span><span class="o">=</span><span class="s1">&#39;+380671234567&#39;</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;incoming&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">mock_license_check</span><span class="p">(</span><span class="kc">True</span><span class="p">):</span>
+            <span class="n">call</span><span class="o">.</span><span class="n">employee</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Employee</span><span class="o">.</span><span class="n">get_employee_by_number</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">caller</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">employee</span><span class="p">,</span> <span class="n">emp</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_get_ref_reflects_employee</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">emp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Employee</span><span class="o">.</span><span class="n">create</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Bob&#39;</span><span class="p">,</span> <span class="s1">&#39;work_phone&#39;</span><span class="p">:</span> <span class="s1">&#39;+380671234567&#39;</span><span class="p">})</span>
+        <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_call</span><span class="p">()</span>
+        <span class="n">call</span><span class="o">.</span><span class="n">employee</span> <span class="o">=</span> <span class="n">emp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span> <span class="n">emp</span><span class="p">)</span>
+</code></pre></div></p>
+<ul>
+<li>[ ] <strong>Step 8: Push, install, run tests</strong></li>
+</ul>
+<p><div class="highlight"><pre><span></span><code>git add connect_hr &amp;&amp; git commit -m &quot;[connect_hr] add HR call bridge (employee link, lookup by number)&quot;
+git push
+</code></pre></div>
+Then (oduflow MCP, live-mount env): <code>pull_and_apply(install="connect_hr")</code>, read the response for ParseError/access errors; <code>run_odoo_tests connect_hr</code>.
+Expected: installs clean; <code>test_employee_lookup</code> + <code>test_process_event</code> pass (0 failed).</p>
+<ul>
+<li>[ ] <strong>Step 9: Add the icon and finalize</strong></li>
+</ul>
+<p>Copy the shared icon: <code>cp .claude/skills/writing-odoo-module-description/icon.png connect_hr/static/description/icon.png</code>; add <code>'images': ['static/description/icon.png']</code> to the manifest. Commit <code>[connect_hr] add store icon</code>.</p>
+<hr />
+<h3 id="task-2-connect_sale-link-calls-to-sale-orders-lookup-by-partner">Task 2: <code>connect_sale</code> — link calls to sale orders (lookup by partner)</h3>
+<p>Sale orders have no own phone, so linking is <strong>by partner</strong> (open orders only). Optional create-from-call button. Drop the source's dead <code>sale.order.create(call_id)</code> hook — the NG create hook reads <code>connect_call_id</code>.</p>
+<p><strong>Files:</strong>
+- Create: <code>connect_sale/__init__.py</code>, <code>connect_sale/__manifest__.py</code>
+- Create: <code>connect_sale/models/__init__.py</code>, <code>connect_sale/models/call.py</code>, <code>connect_sale/models/sale_order.py</code>, <code>connect_sale/models/settings.py</code>
+- Create: <code>connect_sale/security/webhook.xml</code>
+- Create: <code>connect_sale/views/call_views.xml</code>, <code>connect_sale/views/sale_order_views.xml</code>
+- Create: <code>connect_sale/static/description/icon.png</code>
+- Test: <code>connect_sale/tests/{__init__,common}.py</code>, <code>connect_sale/tests/test_order_lookup.py</code>, <code>connect_sale/tests/test_process_event.py</code></p>
+<p><strong>Interfaces:</strong>
+- Produces: <code>connect.call.sale_order</code> (M2O), <code>create_sale_order_button</code>, <code>unlink_sale_order</code>; <code>sale.order.connect_calls</code>/<code>connect_calls_count</code>/<code>get_order_by_partner(partner)</code>/<code>create()</code> reading <code>connect_call_id</code>.</p>
+<ul>
+<li>
+<p>[ ] <strong>Step 1: Scaffold</strong> — as Task 1 with <code>connect_sale</code>, <code>depends ['connect', 'sale']</code>, manifest <code>data</code> = <code>['security/webhook.xml', 'views/sale_order_views.xml', 'views/call_views.xml']</code>. <code>models/__init__.py</code> imports <code>settings, call, sale_order</code>. <code>models/settings.py</code> appends <code>'connect_sale'</code> to <code>ODUIST_MODULES</code>.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 2: Target extension <code>sale_order.py</code></strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">api</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">models</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SaleOrder</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="s1">&#39;sale.order&#39;</span>
+
+    <span class="n">connect_calls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span><span class="s1">&#39;connect.call&#39;</span><span class="p">,</span> <span class="s1">&#39;sale_order&#39;</span><span class="p">)</span>
+    <span class="n">connect_calls_count</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span><span class="p">(</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_get_connect_calls_count&#39;</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Calls&#39;</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">partner_phone</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span><span class="n">related</span><span class="o">=</span><span class="s1">&#39;partner_id.phone&#39;</span><span class="p">)</span>
+    <span class="n">partner_mobile</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span><span class="n">related</span><span class="o">=</span><span class="s1">&#39;partner_id.mobile&#39;</span><span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;connect_calls&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_connect_calls_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">rec</span><span class="o">.</span><span class="n">connect_calls_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.call&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">search_count</span><span class="p">(</span>
+                <span class="p">[(</span><span class="s1">&#39;sale_order&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">id</span><span class="p">)],</span>
+            <span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">model</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_order_by_partner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">partner</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;sale.order&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;sale.order&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+            <span class="p">[(</span><span class="s1">&#39;partner_id&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">partner</span><span class="o">.</span><span class="n">id</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;state&#39;</span><span class="p">,</span> <span class="s1">&#39;in&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;draft&#39;</span><span class="p">,</span> <span class="s1">&#39;sent&#39;</span><span class="p">,</span> <span class="s1">&#39;sale&#39;</span><span class="p">))],</span>
+            <span class="n">order</span><span class="o">=</span><span class="s1">&#39;id desc&#39;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">model_create_multi</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals_list</span><span class="p">):</span>
+        <span class="n">recs</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">vals_list</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;connect_call_id&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">recs</span><span class="p">:</span>
+            <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.call&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">context</span><span class="p">[</span><span class="s1">&#39;connect_call_id&#39;</span><span class="p">])</span>
+            <span class="n">call</span><span class="o">.</span><span class="n">sale_order</span> <span class="o">=</span> <span class="n">recs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">recs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">recs</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 3: Bridge <code>call.py</code></strong> — instantiate the pattern (<code>&lt;m2o&gt;=sale_order</code>, target <code>sale.order</code>), with by-partner lookup and a create button:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">api</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.addons.connect.models.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">debug</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">SaleCall</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="s1">&#39;connect.call&#39;</span>
+
+    <span class="n">sale_order</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span><span class="s1">&#39;sale.order&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;set null&#39;</span><span class="p">,</span> <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Reference</span><span class="p">(</span><span class="n">selection_add</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;sale.order&#39;</span><span class="p">,</span> <span class="s1">&#39;Sale Order&#39;</span><span class="p">)])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">sale_order</span><span class="p">:</span>
+                <span class="n">rec</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="s1">&#39;sale.order,</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">sale_order</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">super</span><span class="p">(</span><span class="n">SaleCall</span><span class="p">,</span> <span class="n">rec</span><span class="p">)</span><span class="o">.</span><span class="n">_get_ref</span><span class="p">()</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">model</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_call_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">error_data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">call_id</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">process_call_event</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">error_data</span><span class="o">=</span><span class="n">error_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">call_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">call_id</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;oduist.license&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">check_license</span><span class="p">(</span><span class="s1">&#39;connect_sale&#39;</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">call_id</span>
+        <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">call_id</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">call</span><span class="o">.</span><span class="n">sale_order</span> <span class="ow">and</span> <span class="n">call</span><span class="o">.</span><span class="n">partner</span><span class="p">:</span>
+                <span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;sale.order&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_order_by_partner</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">partner</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">order</span><span class="p">:</span>
+                    <span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Call </span><span class="si">{}</span><span class="s1"> assign order &lt;</span><span class="si">{}</span><span class="s1">&gt; &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">call</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">order</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">order</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+                    <span class="n">call</span><span class="o">.</span><span class="n">sale_order</span> <span class="o">=</span> <span class="n">order</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s1">&#39;Sale process_call_event error:&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">call_id</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_sale_order_button</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;oduist.license&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">check_license</span><span class="p">(</span><span class="s1">&#39;connect_sale&#39;</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s1">&#39;Connect Sale license is not activated!&#39;</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;connect_call_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s1">&#39;default_partner_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">partner</span><span class="o">.</span><span class="n">id</span><span class="p">}</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sale_order</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">partner</span><span class="p">:</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;sale.order&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_order_by_partner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partner</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">order</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">sale_order</span> <span class="o">=</span> <span class="n">order</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.act_window&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_model&#39;</span><span class="p">:</span> <span class="s1">&#39;sale.order&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sale_order</span><span class="o">.</span><span class="n">id</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sale_order</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sale_order</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sale_order</span> <span class="k">else</span> <span class="s1">&#39;New Sale Order&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;view_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;form&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;target&#39;</span><span class="p">:</span> <span class="s1">&#39;current&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="n">context</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">unlink_sale_order</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sale_order</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_widget_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_widget_fields</span><span class="p">()</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;sale_order&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fields</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;summary&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_sale_order_call_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;oduist.license&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">check_license</span><span class="p">(</span><span class="s1">&#39;connect_sale&#39;</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.settings&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s1">&#39;register_summary&#39;</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="n">reload_view</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">sale_order</span> <span class="ow">and</span> <span class="n">rec</span><span class="o">.</span><span class="n">summary</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">register_summary_to_rec</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">sale_order</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">summary</span><span class="p">)</span>
+                <span class="n">reload_view</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">reload_view</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.settings&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">connect_reload_view</span><span class="p">(</span><span class="s1">&#39;sale.order&#39;</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>
+<p>[ ] <strong>Step 4: <code>security/webhook.xml</code></strong> — read+write on <code>sale.order</code> for <code>connect.group_webhook</code> (id <code>access_sale_order_webhook</code>, <code>sale.model_sale_order</code>, <code>perm_read=1 perm_write=1 perm_create=0 perm_unlink=0</code>).</p>
+</li>
+<li>
+<p>[ ] <strong>Step 5: Views</strong> — <code>call_views.xml</code>: canonical list/form with the create button (<code>create_sale_order_button</code>, icon <code>fa-shopping-cart</code>, label <code>Sale Order</code>). <code>sale_order_views.xml</code>: smart button (<code>sale.view_order_form</code>, <code>//div[@name='button_box']</code>), <code>partner_phone</code>/<code>partner_mobile</code> on the form, and a search-filter extension on <code>sale.sale_order_view_search_inherit_quotation</code>/<code>...sale</code> exposing partner phones.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 6: Tests</strong> — <code>common.py</code> mirrors Task 1 with <code>Order = env['sale.order']</code> and a <code>_create_partner</code>. <code>test_order_lookup.py</code>: <code>get_order_by_partner</code> returns the newest open order and empty when partner has only cancelled orders. <code>test_process_event.py</code>: an incoming call whose <code>partner</code> has an open order gets <code>sale_order</code> set; <code>create()</code> with <code>connect_call_id</code> context back-links the call.</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># test_order_lookup.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConnectSaleTestCommon</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TestOrderLookup</span><span class="p">(</span><span class="n">ConnectSaleTestCommon</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_returns_open_order</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Order</span><span class="o">.</span><span class="n">create</span><span class="p">({</span><span class="s1">&#39;partner_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">partner</span><span class="o">.</span><span class="n">id</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">flush_all</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Order</span><span class="o">.</span><span class="n">get_order_by_partner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partner</span><span class="p">),</span> <span class="n">order</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_no_partner_returns_empty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Order</span><span class="o">.</span><span class="n">get_order_by_partner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;res.partner&#39;</span><span class="p">]))</span>
+</code></pre></div>
+<ul>
+<li>
+<p>[ ] <strong>Step 7: Push, install, test</strong> — <code>[connect_sale] add sale order call bridge (partner link + create button)</code>, <code>pull_and_apply(install="connect_sale")</code>, <code>run_odoo_tests connect_sale</code>. Expected: clean install, tests pass.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 8: Icon + commit</strong> — copy shared icon, add <code>'images'</code>, commit <code>[connect_sale] add store icon</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-3-connect_account-link-calls-to-customer-invoices-lookup-by-partner-bug-fixed">Task 3: <code>connect_account</code> — link calls to customer invoices (lookup by partner, bug-fixed)</h3>
+<p>Invoices have no own phone → link <strong>by partner</strong>. <strong>Fix the source bug</strong>: the source mixed <code>in_invoice</code>/<code>out_invoice</code> regardless of call direction. Link only <strong>customer</strong> invoices (<code>out_invoice</code>), posted and not fully paid. No auto-create, no create button (never create an invoice from a call). Give it a <strong>real ACL</strong> (the source had none, band-aided with <code>sudo()</code>), and a correctly-named class (not <code>AccountOrder</code>).</p>
+<p><strong>Files:</strong>
+- Create: <code>connect_account/__init__.py</code>, <code>connect_account/__manifest__.py</code>
+- Create: <code>connect_account/models/{__init__,call,account_move,settings}.py</code>
+- Create: <code>connect_account/security/webhook.xml</code>
+- Create: <code>connect_account/views/{call_views,account_move_views}.xml</code>
+- Create: <code>connect_account/static/description/icon.png</code>
+- Test: <code>connect_account/tests/{__init__,common}.py</code>, <code>connect_account/tests/test_invoice_lookup.py</code>, <code>connect_account/tests/test_process_event.py</code></p>
+<p><strong>Interfaces:</strong>
+- Produces: <code>connect.call.invoice</code> (M2O to <code>account.move</code>); <code>account.move.connect_calls</code>/<code>connect_calls_count</code>/<code>get_invoice_by_partner(partner)</code>.</p>
+<ul>
+<li>
+<p>[ ] <strong>Step 1: Scaffold</strong> — <code>connect_account</code>, <code>depends ['connect', 'account']</code>, <code>data = ['security/webhook.xml', 'views/account_move_views.xml', 'views/call_views.xml']</code>, <code>models/__init__.py</code> → <code>settings, call, account_move</code>, settings appends <code>'connect_account'</code>.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 2: Target extension <code>account_move.py</code></strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">api</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">models</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AccountMove</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="s1">&#39;account.move&#39;</span>
+
+    <span class="n">connect_calls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span><span class="s1">&#39;connect.call&#39;</span><span class="p">,</span> <span class="s1">&#39;invoice&#39;</span><span class="p">)</span>
+    <span class="n">connect_calls_count</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span><span class="p">(</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_get_connect_calls_count&#39;</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Calls&#39;</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">partner_phone</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span><span class="n">related</span><span class="o">=</span><span class="s1">&#39;partner_id.phone&#39;</span><span class="p">)</span>
+    <span class="n">partner_mobile</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span><span class="n">related</span><span class="o">=</span><span class="s1">&#39;partner_id.mobile&#39;</span><span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;connect_calls&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_connect_calls_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">rec</span><span class="o">.</span><span class="n">connect_calls_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.call&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">search_count</span><span class="p">(</span>
+                <span class="p">[(</span><span class="s1">&#39;invoice&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">id</span><span class="p">)],</span>
+            <span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">model</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_invoice_by_partner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">partner</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;account.move&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;account.move&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">(</span><span class="s1">&#39;partner_id&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">partner</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+                <span class="p">(</span><span class="s1">&#39;state&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;posted&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s1">&#39;move_type&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39;out_invoice&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s1">&#39;payment_state&#39;</span><span class="p">,</span> <span class="s1">&#39;!=&#39;</span><span class="p">,</span> <span class="s1">&#39;paid&#39;</span><span class="p">),</span>
+            <span class="p">],</span>
+            <span class="n">order</span><span class="o">=</span><span class="s1">&#39;invoice_date desc, id desc&#39;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 3: Bridge <code>call.py</code></strong> — instantiate the pattern (<code>&lt;m2o&gt;=invoice</code>, target <code>account.move</code>), by-partner lookup, NO create button, NO auto-create:</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">api</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">models</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.addons.connect.models.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">debug</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">AccountCall</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="s1">&#39;connect.call&#39;</span>
+
+    <span class="n">invoice</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span><span class="s1">&#39;account.move&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;set null&#39;</span><span class="p">,</span> <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Reference</span><span class="p">(</span><span class="n">selection_add</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;account.move&#39;</span><span class="p">,</span> <span class="s1">&#39;Invoice&#39;</span><span class="p">)])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">invoice</span><span class="p">:</span>
+                <span class="n">rec</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="s1">&#39;account.move,</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">invoice</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">super</span><span class="p">(</span><span class="n">AccountCall</span><span class="p">,</span> <span class="n">rec</span><span class="p">)</span><span class="o">.</span><span class="n">_get_ref</span><span class="p">()</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">model</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_call_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">error_data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">call_id</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">process_call_event</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">error_data</span><span class="o">=</span><span class="n">error_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">call_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">call_id</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;oduist.license&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">check_license</span><span class="p">(</span><span class="s1">&#39;connect_account&#39;</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">call_id</span>
+        <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">call_id</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">call</span><span class="o">.</span><span class="n">invoice</span> <span class="ow">and</span> <span class="n">call</span><span class="o">.</span><span class="n">partner</span><span class="p">:</span>
+                <span class="n">invoice</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;account.move&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_invoice_by_partner</span><span class="p">(</span><span class="n">call</span><span class="o">.</span><span class="n">partner</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">invoice</span><span class="p">:</span>
+                    <span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;Call </span><span class="si">{}</span><span class="s1"> assign invoice &lt;</span><span class="si">{}</span><span class="s1">&gt; &quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">call</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">invoice</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">invoice</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+                    <span class="n">call</span><span class="o">.</span><span class="n">invoice</span> <span class="o">=</span> <span class="n">invoice</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s1">&#39;Account process_call_event error:&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">call_id</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">unlink_invoice</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">invoice</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_widget_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_widget_fields</span><span class="p">()</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;invoice&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fields</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;summary&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_account_move_call_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;oduist.license&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">check_license</span><span class="p">(</span><span class="s1">&#39;connect_account&#39;</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.settings&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s1">&#39;register_summary&#39;</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="n">reload_view</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">invoice</span> <span class="ow">and</span> <span class="n">rec</span><span class="o">.</span><span class="n">summary</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">register_summary_to_rec</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">invoice</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">summary</span><span class="p">)</span>
+                <span class="n">reload_view</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">reload_view</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.settings&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">connect_reload_view</span><span class="p">(</span><span class="s1">&#39;account.move&#39;</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>
+<p>[ ] <strong>Step 4: <code>security/webhook.xml</code></strong> — read+write on <code>account.move</code> for <code>connect.group_webhook</code> (id <code>access_account_move_webhook</code>, <code>account.model_account_move</code>, <code>perm_read=1 perm_write=1 perm_create=0 perm_unlink=0</code>).</p>
+</li>
+<li>
+<p>[ ] <strong>Step 5: Views</strong> — <code>call_views.xml</code>: canonical list/form, <strong>no</strong> create button. <code>account_move_views.xml</code>: smart button on <code>account.view_move_form</code> at <code>//div[@name='button_box']</code>, <code>partner_phone</code>/<code>partner_mobile</code> on the form, search filter on <code>account.view_account_invoice_filter</code> exposing partner phones.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 6: Tests</strong> — <code>test_invoice_lookup.py</code>: <code>get_invoice_by_partner</code> returns a posted unpaid <code>out_invoice</code>, and empty for a <code>paid</code> invoice or an <code>in_invoice</code> (vendor bill) — the bug-fix guard. <code>test_process_event.py</code>: an incoming call whose partner has such an invoice gets <code>invoice</code> set.</p>
+</li>
+</ul>
+<p><div class="highlight"><pre><span></span><code><span class="c1"># test_invoice_lookup.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConnectAccountTestCommon</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TestInvoiceLookup</span><span class="p">(</span><span class="n">ConnectAccountTestCommon</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_vendor_bill_is_ignored</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_post_invoice</span><span class="p">(</span><span class="n">move_type</span><span class="o">=</span><span class="s1">&#39;in_invoice&#39;</span><span class="p">)</span>  <span class="c1"># vendor bill for self.partner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertFalse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Move</span><span class="o">.</span><span class="n">get_invoice_by_partner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partner</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_customer_unpaid_invoice_found</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">inv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_post_invoice</span><span class="p">(</span><span class="n">move_type</span><span class="o">=</span><span class="s1">&#39;out_invoice&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Move</span><span class="o">.</span><span class="n">get_invoice_by_partner</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partner</span><span class="p">),</span> <span class="n">inv</span><span class="p">)</span>
+</code></pre></div>
+<code>common.py</code> provides <code>_post_invoice(move_type)</code> creating a one-line invoice for <code>self.partner</code> and posting it (<code>Move.create({...}).action_post()</code>), plus <code>Move = env['account.move']</code>.</p>
+<ul>
+<li>
+<p>[ ] <strong>Step 7: Push, install, test</strong> — <code>[connect_account] add invoice call bridge (partner link, out_invoice only)</code>, <code>pull_and_apply(install="connect_account")</code>, <code>run_odoo_tests connect_account</code>. Expected: clean, tests pass.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 8: Icon + commit</strong> — shared icon, <code>'images'</code>, <code>[connect_account] add store icon</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-4-connect_project-link-calls-to-tasksprojects-recorded-calls-page">Task 4: <code>connect_project</code> — link calls to tasks/projects + recorded-calls page</h3>
+<p>Two targets (<code>project.task</code> primary, <code>project.project</code>), <strong>by-partner</strong> lookup (open task first, else project), a <code>create_task_button</code>, and a <code>connect.recording</code> extension giving each task/project a <strong>Recorded Calls</strong> page. Drop the source's dead <code>project.create(call_id)</code> hook; keep the task-side back-link via <code>connect_call_id</code>.</p>
+<p><strong>Files:</strong>
+- Create: <code>connect_project/__init__.py</code>, <code>connect_project/__manifest__.py</code>
+- Create: <code>connect_project/models/{__init__,call,project,task,recording,settings}.py</code>
+- Create: <code>connect_project/security/webhook.xml</code>
+- Create: <code>connect_project/views/{call_views,project_views,task_views}.xml</code>
+- Create: <code>connect_project/static/description/icon.png</code>
+- Test: <code>connect_project/tests/{__init__,common}.py</code>, <code>connect_project/tests/test_lookup.py</code>, <code>connect_project/tests/test_recording_link.py</code></p>
+<p><strong>Interfaces:</strong>
+- Produces: <code>connect.call.task</code>/<code>connect.call.project</code> (M2O), <code>create_task_button</code>, <code>unlink_task</code>; <code>project.task</code>/<code>project.project</code> <code>connect_calls</code>/<code>connect_calls_count</code>/<code>recorded_calls</code>; <code>connect.recording.task</code>/<code>connect.recording.project</code>.</p>
+<ul>
+<li>
+<p>[ ] <strong>Step 1: Scaffold</strong> — <code>connect_project</code>, <code>depends ['connect', 'project']</code>, <code>data = ['security/webhook.xml', 'views/project_views.xml', 'views/task_views.xml', 'views/call_views.xml']</code>, <code>models/__init__.py</code> → <code>settings, call, project, task, recording</code>, settings appends <code>'connect_project'</code>.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 2: Target extensions <code>project.py</code> and <code>task.py</code></strong></p>
+</li>
+</ul>
+<p><code>project.py</code>:
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">api</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">models</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Project</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="s1">&#39;project.project&#39;</span>
+
+    <span class="n">connect_calls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span><span class="s1">&#39;connect.call&#39;</span><span class="p">,</span> <span class="s1">&#39;project&#39;</span><span class="p">)</span>
+    <span class="n">connect_calls_count</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span><span class="p">(</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_get_connect_calls_count&#39;</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Calls&#39;</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">recorded_calls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span><span class="s1">&#39;connect.recording&#39;</span><span class="p">,</span> <span class="s1">&#39;project&#39;</span><span class="p">)</span>
+    <span class="n">partner_phone</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span><span class="n">related</span><span class="o">=</span><span class="s1">&#39;partner_id.phone&#39;</span><span class="p">)</span>
+    <span class="n">partner_mobile</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span><span class="n">related</span><span class="o">=</span><span class="s1">&#39;partner_id.mobile&#39;</span><span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;connect_calls&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_connect_calls_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">rec</span><span class="o">.</span><span class="n">connect_calls_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.call&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">search_count</span><span class="p">(</span>
+                <span class="p">[(</span><span class="s1">&#39;project&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">id</span><span class="p">)],</span>
+            <span class="p">)</span>
+</code></pre></div>
+<code>task.py</code> (same shape, <code>_inherit='project.task'</code>, count domain <code>('task', '=', rec.id)</code>, <code>recorded_calls</code> One2many on <code>'task'</code>, plus the <code>connect_call_id</code> back-link in <code>create</code>):
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">api</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">models</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Task</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="s1">&#39;project.task&#39;</span>
+
+    <span class="n">connect_calls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span><span class="s1">&#39;connect.call&#39;</span><span class="p">,</span> <span class="s1">&#39;task&#39;</span><span class="p">)</span>
+    <span class="n">connect_calls_count</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span><span class="p">(</span>
+        <span class="n">compute</span><span class="o">=</span><span class="s1">&#39;_get_connect_calls_count&#39;</span><span class="p">,</span> <span class="n">string</span><span class="o">=</span><span class="s1">&#39;Calls&#39;</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">recorded_calls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">One2many</span><span class="p">(</span><span class="s1">&#39;connect.recording&#39;</span><span class="p">,</span> <span class="s1">&#39;task&#39;</span><span class="p">)</span>
+    <span class="n">partner_phone</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span><span class="n">related</span><span class="o">=</span><span class="s1">&#39;partner_id.phone&#39;</span><span class="p">)</span>
+    <span class="n">partner_mobile</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Char</span><span class="p">(</span><span class="n">related</span><span class="o">=</span><span class="s1">&#39;partner_id.mobile&#39;</span><span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">depends</span><span class="p">(</span><span class="s1">&#39;connect_calls&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_connect_calls_count</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">rec</span><span class="o">.</span><span class="n">connect_calls_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.call&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">search_count</span><span class="p">(</span>
+                <span class="p">[(</span><span class="s1">&#39;task&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">id</span><span class="p">)],</span>
+            <span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">model_create_multi</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals_list</span><span class="p">):</span>
+        <span class="n">recs</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">vals_list</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;connect_call_id&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">recs</span><span class="p">:</span>
+            <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.call&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">context</span><span class="p">[</span><span class="s1">&#39;connect_call_id&#39;</span><span class="p">])</span>
+            <span class="n">call</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">recs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">recs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">registry</span><span class="o">.</span><span class="n">clear_cache</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">recs</span>
+</code></pre></div></p>
+<ul>
+<li>
+<p>[ ] <strong>Step 3: <code>recording.py</code></strong> — add <code>task</code>/<code>project</code> M2O and map them on create from the call's link:
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">api</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">models</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Recording</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="s1">&#39;connect.recording&#39;</span>
+
+    <span class="n">task</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span><span class="s1">&#39;project.task&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;set null&#39;</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">project</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span><span class="s1">&#39;project.project&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;set null&#39;</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">model_create_multi</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">vals_list</span><span class="p">):</span>
+        <span class="n">recs</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">vals_list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">recs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">call</span><span class="o">.</span><span class="n">task</span><span class="p">:</span>
+                <span class="n">rec</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">rec</span><span class="o">.</span><span class="n">call</span><span class="o">.</span><span class="n">task</span>
+            <span class="k">elif</span> <span class="n">rec</span><span class="o">.</span><span class="n">call</span><span class="o">.</span><span class="n">project</span><span class="p">:</span>
+                <span class="n">rec</span><span class="o">.</span><span class="n">project</span> <span class="o">=</span> <span class="n">rec</span><span class="o">.</span><span class="n">call</span><span class="o">.</span><span class="n">project</span>
+        <span class="k">return</span> <span class="n">recs</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>[ ] <strong>Step 4: Bridge <code>call.py</code></strong> — two M2Os, by-partner lookup (task, else project), <code>create_task_button</code>:
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo</span><span class="w"> </span><span class="kn">import</span> <span class="n">api</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">odoo.addons.connect.models.settings</span><span class="w"> </span><span class="kn">import</span> <span class="n">debug</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ProjectCall</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">_inherit</span> <span class="o">=</span> <span class="s1">&#39;connect.call&#39;</span>
+
+    <span class="n">task</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span><span class="s1">&#39;project.task&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;set null&#39;</span><span class="p">,</span> <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">project</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Many2one</span><span class="p">(</span><span class="s1">&#39;project.project&#39;</span><span class="p">,</span> <span class="n">ondelete</span><span class="o">=</span><span class="s1">&#39;set null&#39;</span><span class="p">,</span> <span class="n">tracking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Reference</span><span class="p">(</span><span class="n">selection_add</span><span class="o">=</span><span class="p">[</span>
+        <span class="p">(</span><span class="s1">&#39;project.task&#39;</span><span class="p">,</span> <span class="s1">&#39;Task&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;project.project&#39;</span><span class="p">,</span> <span class="s1">&#39;Project&#39;</span><span class="p">)])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rec</span><span class="o">.</span><span class="n">task</span><span class="p">:</span>
+                <span class="n">rec</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="s1">&#39;project.task,</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">rec</span><span class="o">.</span><span class="n">project</span><span class="p">:</span>
+                <span class="n">rec</span><span class="o">.</span><span class="n">ref</span> <span class="o">=</span> <span class="s1">&#39;project.project,</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">project</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">super</span><span class="p">(</span><span class="n">ProjectCall</span><span class="p">,</span> <span class="n">rec</span><span class="p">)</span><span class="o">.</span><span class="n">_get_ref</span><span class="p">()</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">model</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_call_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">error_data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">call_id</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">process_call_event</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">error_data</span><span class="o">=</span><span class="n">error_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">call_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">call_id</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;oduist.license&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">check_license</span><span class="p">(</span><span class="s1">&#39;connect_project&#39;</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">call_id</span>
+        <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">browse</span><span class="p">(</span><span class="n">call_id</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">call</span><span class="o">.</span><span class="n">task</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">call</span><span class="o">.</span><span class="n">project</span> <span class="ow">and</span> <span class="n">call</span><span class="o">.</span><span class="n">partner</span><span class="p">:</span>
+                <span class="n">task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;project.task&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+                    <span class="p">[(</span><span class="s1">&#39;partner_id&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">call</span><span class="o">.</span><span class="n">partner</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+                     <span class="p">(</span><span class="s1">&#39;stage_id.fold&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)],</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;id desc&#39;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">task</span><span class="p">:</span>
+                    <span class="n">call</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">task</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">project</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;project.project&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">search</span><span class="p">(</span>
+                        <span class="p">[(</span><span class="s1">&#39;partner_id&#39;</span><span class="p">,</span> <span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="n">call</span><span class="o">.</span><span class="n">partner</span><span class="o">.</span><span class="n">id</span><span class="p">)],</span> <span class="n">order</span><span class="o">=</span><span class="s1">&#39;id desc&#39;</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">project</span><span class="p">:</span>
+                        <span class="n">call</span><span class="o">.</span><span class="n">project</span> <span class="o">=</span> <span class="n">project</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s1">&#39;Project process_call_event error:&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">call_id</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_task_button</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;oduist.license&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">check_license</span><span class="p">(</span><span class="s1">&#39;connect_project&#39;</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="s1">&#39;Connect Project license is not activated!&#39;</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;connect_call_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;default_partner_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">partner</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s1">&#39;default_name&#39;</span><span class="p">:</span> <span class="s1">&#39;Call from </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partner</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">caller</span><span class="p">),</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;ir.actions.act_window&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_model&#39;</span><span class="p">:</span> <span class="s1">&#39;project.task&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;res_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">id</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="k">else</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="k">else</span> <span class="s1">&#39;New Task&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;view_mode&#39;</span><span class="p">:</span> <span class="s1">&#39;form&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;target&#39;</span><span class="p">:</span> <span class="s1">&#39;current&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;context&#39;</span><span class="p">:</span> <span class="n">context</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">unlink_task</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ensure_one</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">project</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_widget_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_widget_fields</span><span class="p">()</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;task&#39;</span><span class="p">)</span>
+        <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;project&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">fields</span>
+
+    <span class="nd">@api</span><span class="o">.</span><span class="n">constrains</span><span class="p">(</span><span class="s1">&#39;summary&#39;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_project_call_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;oduist.license&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">check_license</span><span class="p">(</span><span class="s1">&#39;connect_project&#39;</span><span class="p">,</span> <span class="n">silent</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.settings&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s1">&#39;register_summary&#39;</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="n">reload_view</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">rec</span><span class="o">.</span><span class="n">task</span> <span class="ow">or</span> <span class="n">rec</span><span class="o">.</span><span class="n">project</span>
+            <span class="k">if</span> <span class="n">target</span> <span class="ow">and</span> <span class="n">rec</span><span class="o">.</span><span class="n">summary</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">register_summary_to_rec</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">rec</span><span class="o">.</span><span class="n">summary</span><span class="p">)</span>
+                <span class="n">reload_view</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">reload_view</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.settings&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">connect_reload_view</span><span class="p">(</span><span class="s1">&#39;project.task&#39;</span><span class="p">)</span>
+</code></pre></div></p>
+</li>
+<li>
+<p>[ ] <strong>Step 5: <code>security/webhook.xml</code></strong> — read+write on <code>project.task</code> and <code>project.project</code> for <code>connect.group_webhook</code> (two <code>ir.model.access</code> rows, <code>project.model_project_task</code>/<code>project.model_project_project</code>, <code>perm_read=1 perm_write=1 perm_create=1 perm_unlink=0</code> on task since the button creates tasks; project read+write only).</p>
+</li>
+<li>
+<p>[ ] <strong>Step 6: Views</strong> — <code>call_views.xml</code>: canonical list/form with the create button (<code>create_task_button</code>, icon <code>fa-tasks</code>, label <code>Task</code>), notebook page shows both <code>task</code> and <code>project</code>. <code>task_views.xml</code>/<code>project_views.xml</code>: smart button (<code>project.view_task_form2</code> / <code>project.edit_project</code>) + a <strong>Recorded Calls</strong> notebook page listing <code>recorded_calls</code> (fields <code>start_time</code>, <code>caller_number</code>, <code>called_number</code>, <code>recording_widget</code>) + phone fields.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 7: Tests</strong> — <code>test_lookup.py</code>: an incoming call whose partner owns an open task links <code>task</code> (not <code>project</code>); when only a project matches, links <code>project</code>. <code>test_recording_link.py</code>: creating a <code>connect.recording</code> whose <code>call.task</code> is set copies <code>task</code> onto the recording and it shows up in <code>task.recorded_calls</code>.</p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="c1"># test_recording_link.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConnectProjectTestCommon</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TestRecordingLink</span><span class="p">(</span><span class="n">ConnectProjectTestCommon</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">test_recording_inherits_task_from_call</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Task</span><span class="o">.</span><span class="n">create</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;T&#39;</span><span class="p">,</span> <span class="s1">&#39;partner_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">partner</span><span class="o">.</span><span class="n">id</span><span class="p">})</span>
+        <span class="n">call</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_call</span><span class="p">(</span><span class="n">partner</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">partner</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">call</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="n">task</span>
+        <span class="n">rec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="p">[</span><span class="s1">&#39;connect.recording&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">({</span><span class="s1">&#39;call&#39;</span><span class="p">:</span> <span class="n">call</span><span class="o">.</span><span class="n">id</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">rec</span><span class="o">.</span><span class="n">task</span><span class="p">,</span> <span class="n">task</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertIn</span><span class="p">(</span><span class="n">rec</span><span class="p">,</span> <span class="n">task</span><span class="o">.</span><span class="n">recorded_calls</span><span class="p">)</span>
+</code></pre></div>
+<ul>
+<li>
+<p>[ ] <strong>Step 8: Push, install, test</strong> — <code>[connect_project] add task/project call bridge + recorded calls</code>, <code>pull_and_apply(install="connect_project")</code>, <code>run_odoo_tests connect_project</code>. Expected: clean, tests pass.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 9: Icon + commit</strong> — shared icon, <code>'images'</code>, <code>[connect_project] add store icon</code>.</p>
+</li>
+</ul>
+<hr />
+<h3 id="task-5-specs-docs-agentsmd-and-pr">Task 5: Specs, docs, AGENTS.md, and PR</h3>
+<p><strong>Files:</strong>
+- Create: <code>specs/connect_account.md</code>, <code>specs/connect_sale.md</code>, <code>specs/connect_hr.md</code>, <code>specs/connect_project.md</code>
+- Modify: <code>AGENTS.md</code>, <code>mkdocs.yml</code>
+- Create: <code>docs/user/domain-bridges.md</code> (or per-module) if UI-facing docs are warranted</p>
+<ul>
+<li>
+<p>[ ] <strong>Step 1: Write the four specs</strong> — follow <code>specs/connect_crm.md</code>: Module Info, Overview, Models (the <code>connect.call</code> deltas + target extension), Security, Views, per-module lookup/auto-create behavior. Note each is provider-agnostic (works for every provider that populates <code>connect.call</code>).</p>
+</li>
+<li>
+<p>[ ] <strong>Step 2: Update <code>AGENTS.md</code></strong> — add the four modules to the Modules list (each: "provider-agnostic <app> bridge — links <code>connect.call</code> to <code>&lt;record&gt;</code>; depends <code>connect</code> + <code>&lt;app&gt;</code>"), the dependency note, the <code>specs/</code> list, the Testing tree, and the <code>run_odoo_tests</code> list.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 3: Update <code>mkdocs.yml</code></strong> — add any new doc pages to nav.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 4: Commit + open the PR</strong> — <code>[misc] document connect_* domain bridges</code>; then <code>gh pr create --base 19.0 --head asterisk-plus-porting --title "Port asterisk_plus satellites: account/sale/hr/project bridges (ODU-344)"</code> with a body summarizing the four modules, the parity-audit finding (crm/helpdesk/phone already at parity), and test evidence. End the body with the Claude Code footer. Do NOT push to <code>19.0</code> (branch-protected).</p>
+</li>
+</ul>
+<hr />
+<h2 id="self-review-notes">Self-Review Notes</h2>
+<ul>
+<li><strong>Spec coverage (ADR-046 Part 1):</strong> account/sale/hr/project each map to Tasks 1–4; the shared pattern (dedicated M2O, <code>process_call_event</code>/<code>register_call</code>/<code>_get_ref</code>/<code>get_widget_fields</code>, stored counts, no <code>update_reference</code> chain) is enforced by the Reference section + per-task code. Vendor-flavour (gs/yeastar), callgroup, website are explicitly OUT of this plan (separate ADR-046 Parts 2/3 cycles).</li>
+<li><strong>Blacklist honored:</strong> no <code>update_reference</code>, no unstored counts, no <code>invalidate_model(flush=True)</code>, no <code>@tools.ormcache</code>, no version-forks, <code>list,form</code> view mode, real ACLs, unique class/rule names.</li>
+<li><strong>Placeholder scan:</strong> model code is given in full per task; views/tests reference the shared pattern with explicit per-module anchors and concrete key test bodies. The connect_account bug-fix (customer <code>out_invoice</code> only) and the hr from-scratch rebuild are called out with tests that lock the corrected behavior.</li>
+<li><strong>Type consistency:</strong> link fields (<code>employee</code>/<code>sale_order</code>/<code>invoice</code>/<code>task</code>+<code>project</code>), lookup methods (<code>get_employee_by_number</code>/<code>get_order_by_partner</code>/<code>get_invoice_by_partner</code>), and button names (<code>create_sale_order_button</code>/<code>create_task_button</code>, <code>unlink_*</code>) are used consistently across each task's model, views, and tests.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; Oduist OÜ
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "navigation.tracking", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
