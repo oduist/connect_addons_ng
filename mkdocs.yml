@@ -40,13 +40,16 @@ nav:
   - Home: index.md
   - Admin Guide:
       - Installation: admin/installation.md
+      - Licensing & Trial: admin/licensing.md
       - Customer Onboarding (FreeSWITCH): admin/customer-onboarding.md
       - Core Configuration: admin/core-setup.md
       - Twilio Integration: admin/twilio-setup.md
+      - Vonage Integration: admin/vonage-setup.md
       - FreeSWITCH Integration: admin/freeswitch-setup.md
       - Pipecat AI Agents: admin/pipecat-setup.md
       - Asterisk Integration: admin/asterisk-setup.md
       - Telnyx Integration: admin/telnyx-setup.md
+      - 3CX Integration: admin/3cx-setup.md
       - LiveKit Integration: admin/livekit-setup.md
       - Infobip Integration: admin/infobip-setup.md
       - Dograh Integration (AI Agents): admin/dograh-setup.md
@@ -65,6 +68,7 @@ nav:
       - Recordings & Transcriptions: user/recordings.md
       - Customer Memory: user/memory.md
       - Call Flows (IVR): user/callflows.md
+      - Calls and Business Records: user/business-records.md
       - AI Voice Agents: user/ai-agents.md
 
 extra:

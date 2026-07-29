@@ -40,7 +40,7 @@ Collect **before** starting; every item below blocks a later step.
 | DNS control for the customer's FreeSWITCH FQDN (e.g. `fs.customer.example.com`) | Let's Encrypt (TLS-ALPN) validates against this name; Verto WSS and XML-RPC use it. |
 | Customer's Odoo: public URL + admin login | Modules are installed and all PBX configuration is done there. |
 | SIP trunk credentials from the provider | Proxy, username/password (or the provider's IP list for IP-auth trunks), the DID numbers. |
-| A password vault entry for this customer | Four secrets are generated during onboarding (webhook token, firewall token, ESL password, XML-RPC password) and several fields mask themselves after saving — record values at the moment of generation. |
+| A password vault entry for this customer | Keep the webhook token, firewall token, ESL password, and firewall dashboard password there. The XML-RPC password is generated and stored internally by Odoo and is not exposed to operators. |
 
 Ports that must be reachable on the FreeSWITCH host (open in the cloud
 security group / host firewall):
@@ -67,9 +67,11 @@ Traefik), `8081/tcp` (firewall service HTTP, behind Traefik),
     scp -r connect_freeswitch/deploy/ root@fs.customer.example.com:/opt/freeswitch
     ```
 
-    The folder carries the FreeSWITCH static configuration
-    (`freeswitch/conf/`), the Traefik dynamic config (`traefik/`) and the
-    `.env` / compose templates that the next steps customize. Keep
+    The folder carries the FreeSWITCH image build sources, the Traefik dynamic
+    config (`traefik/`) and the `.env` / compose templates that the next steps
+    customize. The production container uses the bootstrap configuration
+    baked into `oduist/freeswitch`; the host copy under `freeswitch/conf/` is
+    not mounted at runtime. Keep
     `/opt/freeswitch` under configuration management or note it in the
     handover record — it is the only state on the host besides Docker
     volumes.
@@ -97,8 +99,9 @@ Traefik), `8081/tcp` (firewall service HTTP, behind Traefik),
    [TLS/SSL Certificates](freeswitch-setup.md#tlsssl-certificates).
 
 !!! warning "Switch off the staging CA before handover"
-    While `ACME_CASERVER` points at staging, browsers and Odoo (with
-    **Verify TLS Certificate** on) reject the certificate. After the
+    While `ACME_CASERVER` points at staging, browsers and Odoo reject the
+    certificate because XML-RPC certificate verification is always enabled.
+    After the
     stack is verified: comment the line out, `docker compose down`,
     `docker volume rm fs_traefik-acme`, `docker compose up -d`.
 
@@ -106,17 +109,21 @@ Traefik), `8081/tcp` (firewall service HTTP, behind Traefik),
 
 The shipped `connect_freeswitch/deploy/docker-compose.yml` is the
 production FreeSWITCH host stack. It starts only `traefik`, `fs` and
-`firewall`, with `oduist/freeswitch:2.1.0` and
-`oduist/freeswitch-firewall:2.1.0`. The all-in-one local stack that also
+`firewall`, with `oduist/freeswitch:2.1.2` and
+`oduist/freeswitch-firewall:2.1.1`. The all-in-one local stack that also
 starts Odoo + Postgres lives in `docker-compose.full.yml`.
 
-Generate the secrets first and record all of them in the vault:
+The FreeSWITCH image owns its static bootstrap configuration. Do **not** mount
+`./freeswitch/conf` over `/usr/local/freeswitch/etc/freeswitch`: Odoo provides
+the dynamic users, gateways, ACLs and dialplan over `mod_xml_curl`, while the
+image bootstrap is what loads those modules and keeps ESL bound to loopback.
+
+Generate only the host-local secrets here and record them in the vault. Odoo
+generates `FS_WEBHOOK_TOKEN` and `FIREWALL_AGENT_TOKEN` when
+`connect_freeswitch` is installed; retrieve them in step 5 instead of creating
+parallel values:
 
 ```bash
-# FreeSWITCH -> Odoo webhook token (>=24 chars, [A-Za-z0-9_-])
-openssl rand -base64 32 | tr '+/' '-_'
-# Firewall <-> Odoo shared token (same alphabet/length rules)
-openssl rand -base64 32 | tr '+/' '-_'
 # ESL password (fs and firewall containers must match)
 openssl rand -base64 24 | tr '+/' '-_'
 ```
@@ -124,9 +131,7 @@ openssl rand -base64 24 | tr '+/' '-_'
 Append them to `/opt/freeswitch/.env`:
 
 ```bash
-FS_WEBHOOK_TOKEN=<webhook token>
 FS_ESL_PASSWORD=<esl password>
-FIREWALL_AGENT_TOKEN=<firewall token>
 FIREWALL_DASHBOARD_PASSWORD=<pick a strong password>
 ```
 
@@ -135,18 +140,9 @@ the firewall service and the `/firewall` Traefik route. Traefik runs on
 the host network and proxies to the loopback-only listeners
 `127.0.0.1:8080` (FreeSWITCH XML-RPC) and `127.0.0.1:8081` (firewall).
 
-Then start the stack:
-
-```bash
-cd /opt/freeswitch
-docker compose up -d
-docker exec -it freeswitch fs_cli -x "status"   # sanity: FreeSWITCH is up
-```
-
-!!! note "First start before Odoo is configured"
-    Until the webhook token is paired in Odoo (next step), every
-    FreeSWITCH → Odoo call fails with HTTP 401 by design. Expect noisy
-    xml_curl errors in the FreeSWITCH log at this point.
+Do not start `fs` or `firewall` yet. Their required tokens are generated by
+Odoo in the next step. Starting with made-up or empty values produces expected
+401 errors and adds no useful bootstrap capability.
 
 ## 5. Odoo: modules and settings
 
@@ -160,18 +156,40 @@ docker exec -it freeswitch fs_cli -x "status"   # sanity: FreeSWITCH is up
     |---|---|
     | WebSocket URL | `wss://fs.customer.example.com:48082` |
     | Domain | `fs.customer.example.com` |
-    | FreeSWITCH Webhook Token | The `FS_WEBHOOK_TOKEN` value from `.env` — the field masks itself after saving, see [Webhook Token Pairing](freeswitch-setup.md#webhook-token-pairing). |
     | XML-RPC Host | `fs.customer.example.com` |
-    | XML-RPC Port | `443` |
-    | XML-RPC User / Password | Pick and vault a credential pair. FreeSWITCH fetches these from Odoo through xml_curl when `mod_xml_rpc` loads — set them here, then restart the `fs` container once so the module picks them up. |
-    | Verify TLS Certificate | On (production certificate). Off only while the staging CA is active. |
 
-3. Restart the `fs` container (`docker compose restart fs`) so
-   FreeSWITCH re-reads directory/dialplan/configuration with the paired
-   token and the XML-RPC credentials.
-4. Click **CHECK STATUS** on the settings form — **Server Status** must
+    XML-RPC always uses verified HTTPS on port `443`. The username is fixed to
+    `odoo`; Odoo generates and stores the password internally. Changing the
+    host rotates that password.
+
+3. Retrieve the automatically generated protected settings with Oduflow's
+   `run_odoo_shell` (or an equivalent administrative Odoo shell for a manual
+   deployment):
+
+    ```python
+    settings = env["connect.settings"].sudo()
+    print("FS_WEBHOOK_TOKEN=" + (settings.get_param("freeswitch_webhook_token") or ""))
+    print("FIREWALL_AGENT_TOKEN=" + (settings.get_param("firewall_service_token") or ""))
+    ```
+
+    Append those two values to `/opt/freeswitch/.env`. Do not commit them or
+    repeat them in tickets and deployment summaries. Oduflow service updates
+    must preserve the complete existing environment because `env_vars` is a
+    full replacement.
+4. Start the stack and verify ESL:
+
+    ```bash
+    cd /opt/freeswitch
+    docker compose up -d
+    docker exec freeswitch sh -c 'fs_cli -p "$FS_ESL_PASSWORD" -x status'
+    ```
+
+5. Click **CHECK STATUS** on the settings form — **Server Status** must
    show `UP — <version>`. Anything else: follow the decision table in
    [Checking server status](freeswitch-setup.md#checking-server-status).
+
+    Restart FreeSWITCH after every later XML-RPC host change so
+    `mod_xml_rpc` loads the rotated password.
 
 ## 6. Firewall
 
@@ -182,9 +200,11 @@ Full reference: [Firewall Service](firewall.md). Onboarding order:
     * toggle **Firewall Enabled** on;
     * set **Firewall Service URL** to `https://fs.customer.example.com`
       (Odoo appends `/firewall/sync`; Traefik routes the `/firewall`
-      prefix to the loopback-only firewall service);
-    * paste the `FIREWALL_AGENT_TOKEN` value from `.env` into
-      **Firewall Service Token** (masks after saving);
+      prefix to the service — the default
+      `http://host.docker.internal:8081` only works when Odoo runs on
+      the same host);
+    * leave the generated **Firewall Service Token** unchanged; the value
+      already deployed as `AGENT_TOKEN` is the same protected Odoo setting;
     * keep the default port lists (`5060,5061,5080,5081`) and timeouts.
 2. **Connect → FreeSWITCH → Firewall → Whitelist**: add the trunk
    provider's signaling IPs and the customer's office NAT exits. Saving
@@ -267,7 +287,7 @@ this table:
 | FreeSWITCH FQDN + host IP | `fs.customer.example.com`, provider/region of the VM |
 | Deploy path on the host | e.g. `/opt/freeswitch` (compose, `.env`, Traefik config) |
 | Odoo URL | the `ODOO_URL` the containers point at |
-| Secrets (vault reference) | webhook token, firewall token, ESL password, XML-RPC user/password, firewall dashboard password |
+| Secrets (vault reference) | webhook token, firewall token, ESL password, firewall dashboard password |
 | Trunk provider | account, proxy, auth mode (register vs IP-auth), support contact |
 | DIDs | numbers and their routing (user/callflow) |
 | Image tags deployed | `oduist/freeswitch:<tag>`, `oduist/freeswitch-firewall:<tag>` |

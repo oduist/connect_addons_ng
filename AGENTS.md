@@ -18,11 +18,17 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_infobip`** — Infobip integration (event-driven Calls API, NO TwiML analog — ADR-036). Owns `connect.infobip.{exten,number,outgoing_callerid,user_callflow,message_configuration,whatsapp_sender,whatsapp_template}`; voice = webhook events → REST actions (Dialog bridges, platform-side `connectTimeout`), per-user WebRTC identities (no per-user SIP), vendored infobip-rtc phone widget, SMS + WhatsApp, recordings downloaded into attachments. No IVR/callflows in v1. **Infobip** submenu under the Connect app.
 - **`connect_dograh`** — Dograh AI voice agents on FreeSWITCH (ADR-041). Owns `connect.dograh.agent`; depends on `connect` AND `connect_freeswitch`. Inbound: per-call dialplan posts Dograh's `/inbound/run` webhook and attaches mod_audio_fork (L16/16 kHz) to the returned media WebSocket; outbound: Dograh calls `/dograh/api/originate`. Ships a vendored freeswitch provider package for Dograh under `connect_dograh/deploy/` (overlay image `oduist/dograh-api`). **Dograh** submenu under the Connect app.
 - **`connect_bird`** — Bird.com (ex-MessageBird) integration. Owns `connect.bird.{number,message_template,message_configuration,webhook}`; SMS/WhatsApp send/receive via the Bird developer platform (`{region}.platform.bird.com/v1`, Bearer `bk_...` keys, raw httpx — the official SDK covers only email and is not used), template-first messaging (SMS + WhatsApp templates), voice-call ledger from `voice.*` events, click-to-call via two-leg callback originate (no web phone — Bird has no WebRTC SDK), recordings fetched by cron, delivery statuses polled until the platform ships `sms.*` webhook events. Single `/bird/webhook` endpoint with Standard-Webhooks signature. **Bird** submenu under the Connect app. See ADR-038.
+- **`connect_3cx`** — 3CX integration for existing customer 3CX V20 PBXs. Owns **no** PBX-configuration models. Phase 1 (ADR-034, PRO/AI editions): server-side CRM template — `/3cx/webhook/*` controllers (contact lookup at call arrival, call journaling at call end, contact creation) + a generated CRM template downloaded from the settings form; click-to-call opens the 3CX Web Client dial URL (`originate_call` returns an act_url; core `redial()` returns it through). Phase 2 / deep tier (ADR-035, AI 8SC+ only, opt-in, mock-validated): `oduist/3cx-agent` sidecar (`connect_3cx/deploy/agent/`) holding the Call Control WSS — live channel events via `connect.channel.on_threecx_participant_event`, originate through the agent (dial-URL fallback), XAPI recording download; ReportCall then merges into agent-created calls. No web phone (3CX exposes no third-party WebRTC/WSS) and no SMS. **3CX** submenu under the Connect app.
+- **`connect_elevenlabs`** — ElevenLabs Conversational-AI voice agents, as a **Twilio add-on** (ADR-046). Owns `connect.elevenlabs_{agent,agent_tool,agent_prompt,agent_template,agent_transfer,voice,file}` + `connect.agent_tool_params`; retargets the PBX `_inherit`s to `connect.twilio.{callflow,number,exten,outgoing_callerid}` and adds `is_published` to `connect.twilio.exten`; webhook-driven (conversation-initiation + HMAC post-call), agent calling over ElevenLabs native SIP ingress. **ElevenLabs** submenu under the Connect app. Depends `['connect','connect_twilio','calendar']`. Sub-modules: `connect_elevenlabs_helpdesk` (needs Enterprise `helpdesk`), `connect_elevenlabs_knowledge`, `connect_elevenlabs_sale`. See `specs/connect_elevenlabs.md`.
 - **`connect_memory`** — external AI memory base (ADR-043): `connect.memory.{outbox,inbox,mixin,backfill}` outbox/inbox pull contract + `mail.thread` correspondence capture + `res.partner` summary/backfill; provider-neutral (Hindsight/Cognee); Odoo emits events and never calls the engine; external sidecar in `deploy/`. **Memory** submenu under the Connect app. Depends on `connect`.
 - **`connect_memory_sale`** — domain module for memory events on `sale.order`/`account.move`/`account.partial.reconcile` + hourly payment-behavior digest (`connect.memory.sale.mixin`). Depends on `connect_memory`, `sale`, `account`.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
+- **`connect_hr`** — provider-agnostic HR bridge — links `connect.call` to `hr.employee` (by number, no auto-create); depends `connect` + `hr`.
+- **`connect_sale`** — provider-agnostic Sale bridge — links `connect.call` to `sale.order` (by partner, open orders); depends `connect` + `sale`.
+- **`connect_account`** — provider-agnostic Accounting bridge — links `connect.call` to `account.move` (by partner, open customer invoices only); depends `connect` + `account`.
+- **`connect_project`** — provider-agnostic Project bridge — links `connect.call` to `project.task`/`project.project` (by partner, open task first); depends `connect` + `project`.
 
-Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird` and `connect_dograh` all depend on `connect` but are independent of each other. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module). `connect_memory` depends on `connect`; the domain module `connect_memory_sale` depends on `connect_memory` + `sale` + `account`.
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_3cx` and `connect_dograh` all depend on `connect` but are independent of each other. `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046). `connect_crm`, `connect_hr`, `connect_sale`, `connect_account` and `connect_project` are likewise independent, provider-agnostic bridges that only depend on `connect` plus their respective host app. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module). `connect_memory` depends on `connect`; the domain module `connect_memory_sale` depends on `connect_memory` + `sale` + `account`.
 
 ## Architecture
 
@@ -79,6 +85,11 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_dograh.md` — Dograh module spec (models, dialplan flow, controllers, vendored Dograh provider package)
 - `specs/connect_freeswitch_website.md` — Website widgets module spec (snippets, public endpoints)
 - `specs/connect_bird.md` — Bird module spec (models, webhooks, controllers, wizards)
+- `specs/connect_3cx.md` — 3CX module spec (settings/user/channel extensions, webhook controllers, CRM template, sidecar agent)
+- `specs/connect_hr.md` — HR bridge module spec (models, security, views)
+- `specs/connect_sale.md` — Sale bridge module spec (models, security, views)
+- `specs/connect_account.md` — Accounting bridge module spec (models, security, views)
+- `specs/connect_project.md` — Project bridge module spec (models, security, views)
 - `specs/connect_memory.md` — Memory base module spec (outbox/inbox contract, capture, backfill, controllers, deploy sidecar)
 - `specs/connect_memory_sale.md` — Memory Sale domain module spec (sale/invoice/payment events, payment digest)
 - `docs/` — User and admin documentation (MkDocs Material), see `mkdocs.yml` for structure
@@ -190,6 +201,7 @@ Specifically:
 - Telnyx webhook routes are all under `/telnyx/webhook/*` and validate the Ed25519 `telnyx-signature-ed25519` header when enabled
 - Infobip webhook routes are all under `/infobip/webhook/*` and require the shared `infobip_webhook_token` (`?token=` or Basic Auth password) when enabled — Infobip does not sign webhooks
 - Dograh control routes are all under `/dograh/api/*` and require `Authorization: Bearer <dograh_service_token>` (fail-closed; the same shared secret authenticates Odoo→Dograh inbound webhooks)
+- 3CX webhook routes are all under `/3cx/webhook/*` and require the `X-Connect-Api-Key: <threecx_api_key>` header (`Authorization: Bearer` also accepted); they are additionally gated on `threecx_enabled` (agent routes also on `threecx_agent_enabled`)
 - Bird events arrive on the single `/bird/webhook` route and validate the Standard-Webhooks signature (`webhook-id` / `webhook-timestamp` / `webhook-signature`, `whsec_` secret) when enabled
 - Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`, LiveKit web phone in `connect_livekit/static/src/`, Infobip WebRTC phone in `connect_infobip/static/src/`
 - **Module Apps Store descriptions** (`<module>/static/description/index.html`)
@@ -230,6 +242,51 @@ As a result, the published image tags **lag behind** the module manifest version
      docker push oduist/freeswitch-firewall:<short> && docker push oduist/freeswitch-firewall:latest
      ```
 4. The two images are independent — only rebuild the one whose source files actually changed in this release.
+
+### Deploying the `fs` and `firewall` services with Oduflow
+
+`connect_freeswitch` generates the two service credentials automatically on
+install and repairs missing values on upgrade (ADR-045). Do not invent new
+tokens in deployment files and do not rotate an existing token during a
+routine service update.
+
+Use this order:
+
+1. Install or upgrade `connect_freeswitch` before creating the services.
+2. Read the stored values with `run_odoo_shell` under `sudo()`:
+
+   ```python
+   settings = env["connect.settings"].sudo()
+   print("FS_WEBHOOK_TOKEN=" + (settings.get_param("freeswitch_webhook_token") or ""))
+   print("AGENT_TOKEN=" + (settings.get_param("firewall_service_token") or ""))
+   ```
+
+   Treat that tool output as secret material: use it only for the immediately
+   following service calls, never quote it in the final response, commit it,
+   or write it into a repository file. If either value is empty, upgrade
+   `connect_freeswitch` and read it again instead of generating a parallel
+   value outside Odoo.
+3. Before changing an existing service, call `get_service_info(name)`. Use
+   `update_service`, not delete/recreate. Oduflow `env_vars` and `volumes` are
+   full replacements, so merge the new token into the complete existing set
+   and preserve image, host mode, volumes, capabilities, and unrelated env.
+4. The `fs` service must use `host_mode=true` and receive at least
+   `ODOO_URL`, `FS_DOMAIN`, `FS_WEBHOOK_TOKEN`, and `FS_ESL_PASSWORD`. Do not
+   mount anything over `/usr/local/freeswitch/etc/freeswitch`; the bootstrap
+   config is owned by the image. Preserve the sounds and Traefik ACME volumes
+   where configured.
+5. The `firewall` service must use `host_mode=true`, `net_admin=true`, and
+   receive `ODOO_URL`, the Odoo token as `AGENT_TOKEN`,
+   `FS_ESL_HOST=127.0.0.1`, and the same `FS_ESL_PASSWORD` as `fs`. Preserve
+   its cache volume and dashboard variables. Its HTTP listener stays on
+   `127.0.0.1:8081` behind the host-network TLS edge.
+6. Verify with `run_service_command("fs", ...)` using the runtime ESL
+   password, then inspect both service logs. Confirm XML-RPC listens on
+   `127.0.0.1:8080`, ESL on `127.0.0.1:8021`, the firewall reports
+   `esl_connected`, and Odoo's **Check Status** succeeds through HTTPS.
+
+The FreeSWITCH bootstrap and the maintained upstream source patch are
+documented in `connect_freeswitch/deploy/freeswitch/README.md`.
 
 ## Testing FreeSWITCH SIP Calls
 
@@ -284,6 +341,10 @@ connect_addons_ng/
 ├── connect_infobip/tests/test_*.py
 ├── connect_bird/tests/test_*.py
 ├── connect_dograh/tests/test_*.py
+├── connect_hr/tests/test_*.py
+├── connect_sale/tests/test_*.py
+├── connect_account/tests/test_*.py
+├── connect_project/tests/test_*.py
 ├── connect_memory/tests/test_*.py
 ├── connect_memory_sale/tests/test_*.py
 └── connect_helpdesk/tests/
@@ -330,8 +391,13 @@ oduflow run_odoo_tests connect_freeswitch
 oduflow run_odoo_tests connect_asterisk
 oduflow run_odoo_tests connect_crm
 oduflow run_odoo_tests connect_telnyx
+oduflow run_odoo_tests connect_3cx
 oduflow run_odoo_tests connect_infobip
 oduflow run_odoo_tests connect_dograh
+oduflow run_odoo_tests connect_hr
+oduflow run_odoo_tests connect_sale
+oduflow run_odoo_tests connect_account
+oduflow run_odoo_tests connect_project
 oduflow run_odoo_tests connect_memory
 oduflow run_odoo_tests connect_memory_sale
 oduflow run_odoo_tests connect_helpdesk
