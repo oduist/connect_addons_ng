@@ -20,13 +20,15 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_bird`** — Bird.com (ex-MessageBird) integration. Owns `connect.bird.{number,message_template,message_configuration,webhook}`; SMS/WhatsApp send/receive via the Bird developer platform (`{region}.platform.bird.com/v1`, Bearer `bk_...` keys, raw httpx — the official SDK covers only email and is not used), template-first messaging (SMS + WhatsApp templates), voice-call ledger from `voice.*` events, click-to-call via two-leg callback originate (no web phone — Bird has no WebRTC SDK), recordings fetched by cron, delivery statuses polled until the platform ships `sms.*` webhook events. Single `/bird/webhook` endpoint with Standard-Webhooks signature. **Bird** submenu under the Connect app. See ADR-038.
 - **`connect_3cx`** — 3CX integration for existing customer 3CX V20 PBXs. Owns **no** PBX-configuration models. Phase 1 (ADR-034, PRO/AI editions): server-side CRM template — `/3cx/webhook/*` controllers (contact lookup at call arrival, call journaling at call end, contact creation) + a generated CRM template downloaded from the settings form; click-to-call opens the 3CX Web Client dial URL (`originate_call` returns an act_url; core `redial()` returns it through). Phase 2 / deep tier (ADR-035, AI 8SC+ only, opt-in, mock-validated): `oduist/3cx-agent` sidecar (`connect_3cx/deploy/agent/`) holding the Call Control WSS — live channel events via `connect.channel.on_threecx_participant_event`, originate through the agent (dial-URL fallback), XAPI recording download; ReportCall then merges into agent-created calls. No web phone (3CX exposes no third-party WebRTC/WSS) and no SMS. **3CX** submenu under the Connect app.
 - **`connect_elevenlabs`** — ElevenLabs Conversational-AI voice agents, as a **Twilio add-on** (ADR-046). Owns `connect.elevenlabs_{agent,agent_tool,agent_prompt,agent_template,agent_transfer,voice,file}` + `connect.agent_tool_params`; retargets the PBX `_inherit`s to `connect.twilio.{callflow,number,exten,outgoing_callerid}` and adds `is_published` to `connect.twilio.exten`; webhook-driven (conversation-initiation + HMAC post-call), agent calling over ElevenLabs native SIP ingress. **ElevenLabs** submenu under the Connect app. Depends `['connect','connect_twilio','calendar']`. Sub-modules: `connect_elevenlabs_helpdesk` (needs Enterprise `helpdesk`), `connect_elevenlabs_knowledge`, `connect_elevenlabs_sale`. See `specs/connect_elevenlabs.md`.
+- **`connect_memory`** — external AI memory base (ADR-043): `connect.memory.{outbox,inbox,mixin,backfill}` outbox/inbox pull contract + `mail.thread` correspondence capture + `res.partner` summary/backfill; provider-neutral (Hindsight/Cognee); Odoo emits events and never calls the engine; external sidecar in `deploy/`. **Memory** submenu under the Connect app. Depends on `connect`.
+- **`connect_memory_sale`** — domain module for memory events on `sale.order`/`account.move`/`account.partial.reconcile` + hourly payment-behavior digest (`connect.memory.sale.mixin`). Depends on `connect_memory`, `sale`, `account`.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
 - **`connect_hr`** — provider-agnostic HR bridge — links `connect.call` to `hr.employee` (by number, no auto-create); depends `connect` + `hr`.
 - **`connect_sale`** — provider-agnostic Sale bridge — links `connect.call` to `sale.order` (by partner, open orders); depends `connect` + `sale`.
 - **`connect_account`** — provider-agnostic Accounting bridge — links `connect.call` to `account.move` (by partner, open customer invoices only); depends `connect` + `account`.
 - **`connect_project`** — provider-agnostic Project bridge — links `connect.call` to `project.task`/`project.project` (by partner, open task first); depends `connect` + `project`.
 
-Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_3cx` and `connect_dograh` all depend on `connect` but are independent of each other. `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046). `connect_crm`, `connect_hr`, `connect_sale`, `connect_account` and `connect_project` are likewise independent, provider-agnostic bridges that only depend on `connect` plus their respective host app. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module).
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_3cx` and `connect_dograh` all depend on `connect` but are independent of each other. `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046). `connect_crm`, `connect_hr`, `connect_sale`, `connect_account` and `connect_project` are likewise independent, provider-agnostic bridges that only depend on `connect` plus their respective host app. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module). `connect_memory` depends on `connect`; the domain module `connect_memory_sale` depends on `connect_memory` + `sale` + `account`.
 
 ## Architecture
 
@@ -88,6 +90,8 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_sale.md` — Sale bridge module spec (models, security, views)
 - `specs/connect_account.md` — Accounting bridge module spec (models, security, views)
 - `specs/connect_project.md` — Project bridge module spec (models, security, views)
+- `specs/connect_memory.md` — Memory base module spec (outbox/inbox contract, capture, backfill, controllers, deploy sidecar)
+- `specs/connect_memory_sale.md` — Memory Sale domain module spec (sale/invoice/payment events, payment digest)
 - `docs/` — User and admin documentation (MkDocs Material), see `mkdocs.yml` for structure
 
 ## Development Commands
@@ -341,6 +345,8 @@ connect_addons_ng/
 ├── connect_sale/tests/test_*.py
 ├── connect_account/tests/test_*.py
 ├── connect_project/tests/test_*.py
+├── connect_memory/tests/test_*.py
+├── connect_memory_sale/tests/test_*.py
 └── connect_helpdesk/tests/
 ```
 
@@ -392,6 +398,8 @@ oduflow run_odoo_tests connect_hr
 oduflow run_odoo_tests connect_sale
 oduflow run_odoo_tests connect_account
 oduflow run_odoo_tests connect_project
+oduflow run_odoo_tests connect_memory
+oduflow run_odoo_tests connect_memory_sale
 oduflow run_odoo_tests connect_helpdesk
 ```
 

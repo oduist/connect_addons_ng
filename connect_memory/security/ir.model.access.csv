@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_memory_outbox_user,connect.memory.outbox.user,model_connect_memory_outbox,connect.group_user,1,0,0,0
+access_memory_outbox_admin,connect.memory.outbox.admin,model_connect_memory_outbox,connect.group_admin,1,1,1,1
+access_memory_inbox_user,connect.memory.inbox.user,model_connect_memory_inbox,connect.group_user,1,0,1,0
+access_memory_inbox_admin,connect.memory.inbox.admin,model_connect_memory_inbox,connect.group_admin,1,1,1,1
+access_memory_backfill_admin,connect.memory.backfill.admin,model_connect_memory_backfill,connect.group_admin,1,1,1,1
+access_memory_backfill_wizard_admin,connect.memory.backfill.wizard.admin,model_connect_memory_backfill_wizard,connect.group_admin,1,1,1,1
