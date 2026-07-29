@@ -21,8 +21,12 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_3cx`** — 3CX integration for existing customer 3CX V20 PBXs. Owns **no** PBX-configuration models. Phase 1 (ADR-034, PRO/AI editions): server-side CRM template — `/3cx/webhook/*` controllers (contact lookup at call arrival, call journaling at call end, contact creation) + a generated CRM template downloaded from the settings form; click-to-call opens the 3CX Web Client dial URL (`originate_call` returns an act_url; core `redial()` returns it through). Phase 2 / deep tier (ADR-035, AI 8SC+ only, opt-in, mock-validated): `oduist/3cx-agent` sidecar (`connect_3cx/deploy/agent/`) holding the Call Control WSS — live channel events via `connect.channel.on_threecx_participant_event`, originate through the agent (dial-URL fallback), XAPI recording download; ReportCall then merges into agent-created calls. No web phone (3CX exposes no third-party WebRTC/WSS) and no SMS. **3CX** submenu under the Connect app.
 - **`connect_elevenlabs`** — ElevenLabs Conversational-AI voice agents, as a **Twilio add-on** (ADR-046). Owns `connect.elevenlabs_{agent,agent_tool,agent_prompt,agent_template,agent_transfer,voice,file}` + `connect.agent_tool_params`; retargets the PBX `_inherit`s to `connect.twilio.{callflow,number,exten,outgoing_callerid}` and adds `is_published` to `connect.twilio.exten`; webhook-driven (conversation-initiation + HMAC post-call), agent calling over ElevenLabs native SIP ingress. **ElevenLabs** submenu under the Connect app. Depends `['connect','connect_twilio','calendar']`. Sub-modules: `connect_elevenlabs_helpdesk` (needs Enterprise `helpdesk`), `connect_elevenlabs_knowledge`, `connect_elevenlabs_sale`. See `specs/connect_elevenlabs.md`.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
+- **`connect_hr`** — provider-agnostic HR bridge — links `connect.call` to `hr.employee` (by number, no auto-create); depends `connect` + `hr`.
+- **`connect_sale`** — provider-agnostic Sale bridge — links `connect.call` to `sale.order` (by partner, open orders); depends `connect` + `sale`.
+- **`connect_account`** — provider-agnostic Accounting bridge — links `connect.call` to `account.move` (by partner, open customer invoices only); depends `connect` + `account`.
+- **`connect_project`** — provider-agnostic Project bridge — links `connect.call` to `project.task`/`project.project` (by partner, open task first); depends `connect` + `project`.
 
-Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_3cx` and `connect_dograh` all depend on `connect` but are independent of each other. `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046). **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module).
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_3cx` and `connect_dograh` all depend on `connect` but are independent of each other. `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046). `connect_crm`, `connect_hr`, `connect_sale`, `connect_account` and `connect_project` are likewise independent, provider-agnostic bridges that only depend on `connect` plus their respective host app. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module).
 
 ## Architecture
 
@@ -80,6 +84,10 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_freeswitch_website.md` — Website widgets module spec (snippets, public endpoints)
 - `specs/connect_bird.md` — Bird module spec (models, webhooks, controllers, wizards)
 - `specs/connect_3cx.md` — 3CX module spec (settings/user/channel extensions, webhook controllers, CRM template, sidecar agent)
+- `specs/connect_hr.md` — HR bridge module spec (models, security, views)
+- `specs/connect_sale.md` — Sale bridge module spec (models, security, views)
+- `specs/connect_account.md` — Accounting bridge module spec (models, security, views)
+- `specs/connect_project.md` — Project bridge module spec (models, security, views)
 - `docs/` — User and admin documentation (MkDocs Material), see `mkdocs.yml` for structure
 
 ## Development Commands
@@ -329,6 +337,10 @@ connect_addons_ng/
 ├── connect_infobip/tests/test_*.py
 ├── connect_bird/tests/test_*.py
 ├── connect_dograh/tests/test_*.py
+├── connect_hr/tests/test_*.py
+├── connect_sale/tests/test_*.py
+├── connect_account/tests/test_*.py
+├── connect_project/tests/test_*.py
 └── connect_helpdesk/tests/
 ```
 
@@ -376,6 +388,10 @@ oduflow run_odoo_tests connect_telnyx
 oduflow run_odoo_tests connect_3cx
 oduflow run_odoo_tests connect_infobip
 oduflow run_odoo_tests connect_dograh
+oduflow run_odoo_tests connect_hr
+oduflow run_odoo_tests connect_sale
+oduflow run_odoo_tests connect_account
+oduflow run_odoo_tests connect_project
 oduflow run_odoo_tests connect_helpdesk
 ```
 
