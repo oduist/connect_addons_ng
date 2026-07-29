@@ -1,0 +1,1732 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Telephony integration platform for Odoo">
+      
+      
+      
+        <link rel="canonical" href="https://oduist.github.io/connect_addons_ng/superpowers/plans/2026-07-17-connect-memory-port/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Connect Memory Port Implementation Plan - Oduist Connect Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Outfit:300,300i,400,400i,700,700i%7CGeist+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Outfit";--md-code-font:"Geist Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/oduflow.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#connect-memory-port-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Oduist Connect Documentation" class="md-header__button md-logo" aria-label="Oduist Connect Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Oduist Connect Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Connect Memory Port Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Oduist Connect Documentation" class="md-nav__button md-logo" aria-label="Oduist Connect Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Oduist Connect Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Admin Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Admin Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/licensing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Licensing & Trial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/customer-onboarding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Customer Onboarding (FreeSWITCH)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/core-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/twilio-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Twilio Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/vonage-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Vonage Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/freeswitch-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FreeSWITCH Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/pipecat-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipecat AI Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/asterisk-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Asterisk Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/telnyx-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Telnyx Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/3cx-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3CX Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/livekit-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LiveKit Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/infobip-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Infobip Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/dograh-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dograh Integration (AI Agents)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/bird-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bird Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/memory-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Customer Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/parking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Call Parking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/working-schedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Working Schedules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../admin/firewall/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SIP Firewall
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    User Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/calls/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Making and Receiving Calls
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/parking/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Call Parking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/messages/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messages (SMS & WhatsApp)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/meetings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Video Meetings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/recordings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recordings & Transcriptions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Customer Memory
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/callflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Call Flows (IVR)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/business-records/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Calls and Business Records
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../user/ai-agents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Voice Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        File Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="File Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-1-port-and-adapt-connect_memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Port and adapt connect_memory
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-2-port-and-adapt-connect_memory_sale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: Port and adapt connect_memory_sale
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-3-generate-icons-and-apps-store-descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: Generate icons and Apps Store descriptions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-4-write-specs-and-the-adr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: Write specs and the ADR
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-5-documentation-and-agentsmd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: Documentation and AGENTS.md
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-6-full-verification-and-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: Full verification and PR
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-review-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Review Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="connect-memory-port-implementation-plan">Connect Memory Port Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Port <code>connect_memory</code> and <code>connect_memory_sale</code> from the legacy <code>connect_addons</code> repo into <code>connect_addons_ng</code> as native modules that follow this repo's conventions.</p>
+<p><strong>Architecture:</strong> Faithful file copy of both modules (business logic unchanged), then a fixed, enumerable set of adaptations: manifest versioning (<code>19.0.x.y.z</code>), migration folder rename, security remapped to <code>connect.group_user</code>/<code>connect.group_admin</code>, XML xmlid fixes to this repo's menu/group ids, and no committed secrets. Then generate icons/descriptions, write specs/ADR/docs, and update <code>AGENTS.md</code>.</p>
+<p><strong>Tech Stack:</strong> Odoo 19 addons (Python/XML/CSV), oduflow MCP for a branch-scoped Docker test environment, <code>writing-odoo-module-description</code> skill.</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li><strong>Source paths (verbatim copy source):</strong> <code>/Users/poligon/Workspace/odoo19/connect_addons/connect_memory</code> and <code>/Users/poligon/Workspace/odoo19/connect_addons/connect_memory_sale</code>.</li>
+<li><strong>Destination:</strong> repo root <code>/Users/poligon/conductor/workspaces/connect_addons_ng/islamabad/</code>.</li>
+<li><strong>Python is byte-identical across series</strong> — do NOT edit any <code>.py</code> file except <code>__manifest__.py</code> (which is data, not logic). The source already branches on <code>release.version_info[0] &gt;= 19</code>; leave that intact.</li>
+<li><strong>Manifest version scheme:</strong> <code>19.0.&lt;product-tail&gt;</code>. <code>connect_memory</code> → <code>19.0.1.0.1</code>; <code>connect_memory_sale</code> → <code>19.0.1.0.0</code>.</li>
+<li><strong>Bump manifest version at most once</strong> — the port itself is the single release unit; do not re-bump on fix commits.</li>
+<li><strong>Commit message format:</strong> <code>[connect_memory] &lt;subject&gt;</code> / <code>[connect_memory_sale] &lt;subject&gt;</code> / <code>[misc] &lt;subject&gt;</code> for cross-cutting. Lowercase imperative. NO <code>feat:</code>/<code>fix:</code>/<code>chore:</code> prefixes. Square brackets.</li>
+<li><strong>Comments in English only.</strong></li>
+<li><strong>Never commit <code>deploy/.env</code></strong> — only <code>.env.example</code> + <code>.gitignore</code>.</li>
+<li><strong>Branch is <code>nicolaepostica/port-connect-memory</code></strong> (non-conforming to <code>19.0-*</code>, so the <code>odoo_version_check</code> pre-commit hook skips version checks). Do NOT rename it (Conductor forbids renaming without explicit user instruction). Target base for the PR is <code>19.0</code>.</li>
+<li><strong>xmlid map (legacy → ng):</strong> <code>connect.connect_top_menu</code> → <code>connect.menu_connect_root</code>; <code>connect.connect_settings_menu</code> → <code>connect.menu_connect_settings</code>; <code>connect.group_connect_admin</code> → <code>connect.group_admin</code>; user group is <code>connect.group_user</code>.</li>
+</ul>
+<hr />
+<h2 id="file-structure">File Structure</h2>
+<p><strong><code>connect_memory/</code></strong> (copied, then adapted):
+- <code>__manifest__.py</code> — version bumped, <code>images</code> added.
+- <code>__init__.py</code>, <code>models/*.py</code>, <code>controllers/*.py</code> — copied verbatim (no edits).
+- <code>migrations/19.0.1.0.1/post-migrate.py</code> — renamed folder, file verbatim.
+- <code>security/ir.model.access.csv</code> — group refs remapped to Connect groups.
+- <code>data/memory_data.xml</code> — copied verbatim (no group/menu refs).
+- <code>views/memory_menus.xml</code>, <code>views/settings.xml</code> — xmlid/group refs fixed.
+- <code>views/{memory_outbox,memory_inbox,memory_backfill,res_partner}_views.xml</code> — copied verbatim.
+- <code>deploy/*</code> — copied except real <code>.env</code>.
+- <code>tests/*</code> — copied verbatim.
+- <code>static/description/{icon.png,index.html}</code> — generated (Task 3).</p>
+<p><strong><code>connect_memory_sale/</code></strong> (copied, then adapted):
+- <code>__manifest__.py</code> — version bumped, <code>images</code> added.
+- <code>__init__.py</code>, <code>models/*.py</code>, <code>data/memory_sale_data.xml</code>, <code>tests/*</code> — copied verbatim.
+- <code>static/description/{icon.png,index.html}</code> — generated (Task 3).</p>
+<p><strong>Repo-level docs/specs:</strong>
+- <code>specs/connect_memory.md</code>, <code>specs/connect_memory_sale.md</code> — new.
+- <code>specs/decisions/043-connect-memory-outbox-inbox.md</code> — new ADR.
+- <code>docs/admin/memory-setup.md</code>, <code>docs/user/memory.md</code> — new.
+- <code>mkdocs.yml</code>, <code>AGENTS.md</code> — edited.</p>
+<hr />
+<h3 id="task-1-port-and-adapt-connect_memory">Task 1: Port and adapt <code>connect_memory</code></h3>
+<p><strong>Files:</strong>
+- Create (copy): entire <code>connect_memory/</code> tree
+- Modify: <code>connect_memory/__manifest__.py</code>, <code>connect_memory/security/ir.model.access.csv</code>, <code>connect_memory/views/memory_menus.xml</code>, <code>connect_memory/views/settings.xml</code>
+- Rename: <code>connect_memory/migrations/1.0.1/</code> → <code>connect_memory/migrations/19.0.1.0.1/</code>
+- Delete: <code>connect_memory/deploy/.env</code>, all <code>__pycache__/</code></p>
+<p><strong>Interfaces:</strong>
+- Produces: installable module <code>connect_memory</code> exposing models <code>connect.memory.outbox</code>, <code>connect.memory.inbox</code>, <code>connect.memory.mixin</code>, <code>connect.memory.backfill</code>, <code>connect.memory.backfill.wizard</code>; <code>connect.settings</code> fields <code>memory_enabled</code>/<code>memory_service_url</code>/<code>memory_service_token</code>/<code>memory_default_engine</code>/<code>memory_outbox_retention_days</code>; controller routes <code>/connect_memory/{outbox,inbox}/{fetch,ack|answer}</code>. Registers <code>"connect_memory"</code> in <code>odoo.addons.connect.models.license.ODUIST_MODULES</code>.</p>
+<ul>
+<li>[ ] <strong>Step 1: Copy the module tree, drop caches and the real .env</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/Users/poligon/conductor/workspaces/connect_addons_ng/islamabad
+cp<span class="w"> </span>-R<span class="w"> </span>/Users/poligon/Workspace/odoo19/connect_addons/connect_memory<span class="w"> </span>./connect_memory
+find<span class="w"> </span>connect_memory<span class="w"> </span>-name<span class="w"> </span><span class="s1">&#39;__pycache__&#39;</span><span class="w"> </span>-type<span class="w"> </span>d<span class="w"> </span>-prune<span class="w"> </span>-exec<span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="o">{}</span><span class="w"> </span>+
+rm<span class="w"> </span>-f<span class="w"> </span>connect_memory/deploy/.env
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 2: Rename the migration folder to the ng series version</strong></li>
+</ul>
+<p><div class="highlight"><pre><span></span><code>git<span class="w"> </span>-C<span class="w"> </span>/Users/poligon/conductor/workspaces/connect_addons_ng/islamabad<span class="w"> </span>mv<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>connect_memory/migrations/1.0.1<span class="w"> </span>connect_memory/migrations/19.0.1.0.1<span class="w"> </span><span class="m">2</span>&gt;/dev/null<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="o">||</span><span class="w"> </span>mv<span class="w"> </span>connect_memory/migrations/1.0.1<span class="w"> </span>connect_memory/migrations/19.0.1.0.1
+</code></pre></div>
+(The folder is not yet tracked, so <code>git mv</code> may fail — the <code>||</code> plain <code>mv</code> handles that.)</p>
+<ul>
+<li>[ ] <strong>Step 3: Bump the manifest version and add the icon reference</strong></li>
+</ul>
+<p>Edit <code>connect_memory/__manifest__.py</code>:
+- <code>'version': '1.0.1',</code> → <code>'version': '19.0.1.0.1',</code>
+- add <code>'images': ['static/description/icon.png'],</code> immediately after the <code>'license': 'Other proprietary',</code> line.</p>
+<ul>
+<li>[ ] <strong>Step 4: Remap security to Connect groups</strong></li>
+</ul>
+<p>Overwrite <code>connect_memory/security/ir.model.access.csv</code> with exactly:</p>
+<div class="highlight"><pre><span></span><code>id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_memory_outbox_user,connect.memory.outbox.user,model_connect_memory_outbox,connect.group_user,1,0,0,0
+access_memory_outbox_admin,connect.memory.outbox.admin,model_connect_memory_outbox,connect.group_admin,1,1,1,1
+access_memory_inbox_user,connect.memory.inbox.user,model_connect_memory_inbox,connect.group_user,1,0,1,0
+access_memory_inbox_admin,connect.memory.inbox.admin,model_connect_memory_inbox,connect.group_admin,1,1,1,1
+access_memory_backfill_admin,connect.memory.backfill.admin,model_connect_memory_backfill,connect.group_admin,1,1,1,1
+access_memory_backfill_wizard_admin,connect.memory.backfill.wizard.admin,model_connect_memory_backfill_wizard,connect.group_admin,1,1,1,1
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 5: Fix menu xmlids + gate the memory menu on the Connect user group</strong></li>
+</ul>
+<p>In <code>connect_memory/views/memory_menus.xml</code>:
+- replace <code>parent="connect.connect_top_menu"</code> with <code>parent="connect.menu_connect_root"</code>.
+- add <code>groups="connect.group_user"</code> to the <code>menu_memory_root</code> menuitem, so its final form is:</p>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">&lt;menuitem</span><span class="w"> </span><span class="na">id=</span><span class="s">&quot;menu_memory_root&quot;</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Memory&quot;</span>
+<span class="w">              </span><span class="na">parent=</span><span class="s">&quot;connect.menu_connect_root&quot;</span><span class="w"> </span><span class="na">sequence=</span><span class="s">&quot;160&quot;</span>
+<span class="w">              </span><span class="na">groups=</span><span class="s">&quot;connect.group_user&quot;</span><span class="nt">/&gt;</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 6: Fix the settings menu parent + admin group ref</strong></li>
+</ul>
+<p>In <code>connect_memory/views/settings.xml</code>, on the <code>memory_settings_menu</code> menuitem:
+- replace <code>parent="connect.connect_settings_menu"</code> with <code>parent="connect.menu_connect_settings"</code>.
+- replace <code>groups="connect.group_connect_admin"</code> with <code>groups="connect.group_admin"</code>.</p>
+<ul>
+<li>[ ] <strong>Step 7: Sanity-check no stale legacy xmlids remain</strong></li>
+</ul>
+<p>Run:
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">&quot;connect_top_menu\|connect_settings_menu\|group_connect_admin\|base.group_system\|base.group_user&quot;</span><span class="w"> </span>connect_memory/
+</code></pre></div>
+Expected: no matches (empty output).</p>
+<ul>
+<li>[ ] <strong>Step 8: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>connect_memory
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;[connect_memory] port external AI memory module to 19.0&quot;</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 9: Verify install + tests in the branch environment</strong></li>
+</ul>
+<p>Push the branch, then (oduflow MCP) <code>pull_and_apply</code>, install <code>connect_memory</code>, and run its test suite. Per the stale-template memory: on <code>create_environment</code> override <code>repo_url</code> to this repo and upgrade <code>connect</code> before installing. Env name = the branch name.
+<div class="highlight"><pre><span></span><code>oduflow: pull_and_apply
+oduflow: install_odoo_modules [&quot;connect_memory&quot;]
+oduflow: run_odoo_tests connect_memory
+</code></pre></div>
+Expected: module installs without ParseError/access errors; all ported tests (<code>test_capture</code>, <code>test_outbox</code>, <code>test_inbox</code>, <code>test_backfill</code>, <code>test_controllers</code>) pass.</p>
+<hr />
+<h3 id="task-2-port-and-adapt-connect_memory_sale">Task 2: Port and adapt <code>connect_memory_sale</code></h3>
+<p><strong>Files:</strong>
+- Create (copy): entire <code>connect_memory_sale/</code> tree
+- Modify: <code>connect_memory_sale/__manifest__.py</code>
+- Delete: all <code>__pycache__/</code></p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>connect.memory.mixin</code> and <code>connect.memory.outbox</code> from Task 1.
+- Produces: installable module <code>connect_memory_sale</code> exposing <code>connect.memory.sale.mixin</code> and capture on <code>sale.order</code>/<code>account.move</code>/<code>account.partial.reconcile</code>, plus <code>res.partner._memory_sale_payment_digest</code>. Registers <code>"connect_memory_sale"</code> in <code>ODUIST_MODULES</code>.</p>
+<ul>
+<li>[ ] <strong>Step 1: Copy the module tree and drop caches</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/Users/poligon/conductor/workspaces/connect_addons_ng/islamabad
+cp<span class="w"> </span>-R<span class="w"> </span>/Users/poligon/Workspace/odoo19/connect_addons/connect_memory_sale<span class="w"> </span>./connect_memory_sale
+find<span class="w"> </span>connect_memory_sale<span class="w"> </span>-name<span class="w"> </span><span class="s1">&#39;__pycache__&#39;</span><span class="w"> </span>-type<span class="w"> </span>d<span class="w"> </span>-prune<span class="w"> </span>-exec<span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="o">{}</span><span class="w"> </span>+
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 2: Bump the manifest version and add the icon reference</strong></li>
+</ul>
+<p>Edit <code>connect_memory_sale/__manifest__.py</code>:
+- <code>"version": "1.0.0",</code> → <code>"version": "19.0.1.0.0",</code>
+- add <code>"images": ["static/description/icon.png"],</code> immediately after the <code>"license": "Other proprietary",</code> line.</p>
+<ul>
+<li>[ ] <strong>Step 3: Sanity-check no legacy refs</strong></li>
+</ul>
+<p>Run:
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">&quot;connect_top_menu\|connect_settings_menu\|group_connect_admin\|base.group_system&quot;</span><span class="w"> </span>connect_memory_sale/
+</code></pre></div>
+Expected: no matches.</p>
+<ul>
+<li>[ ] <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>connect_memory_sale
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;[connect_memory_sale] port sale/payment memory events to 19.0&quot;</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 5: Verify install + tests</strong></li>
+</ul>
+<p>(oduflow MCP) <code>pull_and_apply</code>, install <code>connect_memory_sale</code> (pulls <code>sale</code>, <code>account</code>), run its tests.
+<div class="highlight"><pre><span></span><code>oduflow: pull_and_apply
+oduflow: install_odoo_modules [&quot;connect_memory_sale&quot;]
+oduflow: run_odoo_tests connect_memory_sale
+</code></pre></div>
+Expected: installs; <code>test_sale_capture</code>, <code>test_invoice_capture</code>, <code>test_payment_capture</code>, <code>test_payment_digest</code> pass.</p>
+<hr />
+<h3 id="task-3-generate-icons-and-apps-store-descriptions">Task 3: Generate icons and Apps Store descriptions</h3>
+<p><strong>Files:</strong>
+- Create: <code>connect_memory/static/description/{icon.png,index.html}</code>
+- Create: <code>connect_memory_sale/static/description/{icon.png,index.html}</code></p>
+<p><strong>Interfaces:</strong>
+- Consumes: the <code>images</code> manifest keys added in Tasks 1–2 (they reference <code>static/description/icon.png</code>).</p>
+<ul>
+<li>[ ] <strong>Step 1: Invoke the description skill for <code>connect_memory</code></strong></li>
+</ul>
+<p>Use the <code>writing-odoo-module-description</code> skill (<code>.claude/skills/</code>). Point it at <code>connect_memory</code>; it carries the Oduist house style template and the code→features extraction procedure. Produce <code>static/description/index.html</code> and an <code>icon.png</code>.</p>
+<ul>
+<li>[ ] <strong>Step 2: Invoke the description skill for <code>connect_memory_sale</code></strong></li>
+</ul>
+<p>Same, for <code>connect_memory_sale</code>.</p>
+<ul>
+<li>[ ] <strong>Step 3: Verify the icon paths resolve</strong></li>
+</ul>
+<p><div class="highlight"><pre><span></span><code>ls<span class="w"> </span>connect_memory/static/description/icon.png<span class="w"> </span>connect_memory_sale/static/description/icon.png
+</code></pre></div>
+Expected: both files exist (manifests already reference them).</p>
+<ul>
+<li>[ ] <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>connect_memory/static<span class="w"> </span>connect_memory_sale/static
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;[misc] add Apps Store descriptions and icons for connect_memory modules&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-4-write-specs-and-the-adr">Task 4: Write specs and the ADR</h3>
+<p><strong>Files:</strong>
+- Create: <code>specs/connect_memory.md</code>
+- Create: <code>specs/connect_memory_sale.md</code>
+- Create: <code>specs/decisions/043-connect-memory-outbox-inbox.md</code></p>
+<p><strong>Interfaces:</strong>
+- Consumes: the ported modules (source of truth for model/field/route lists).</p>
+<ul>
+<li>[ ] <strong>Step 1: Write <code>specs/connect_memory.md</code></strong></li>
+</ul>
+<p>Follow the format of <code>specs/connect_bird.md</code> (Module Info block → Overview → Models → Controllers → Security → Views → Data/crons → Deploy sidecar). Document, from the actual code:
+- Models: <code>connect.memory.outbox</code> (fields + <code>enqueue</code>/<code>fetch_batch</code>/<code>ack</code>/<code>_cron_vacuum_sent</code>, dedup on <code>dedup_key</code>+<code>content_hash</code>, the <code>release.version_info[0] &gt;= 19</code> Constraint branch), <code>connect.memory.inbox</code> (<code>submit</code>/<code>claim_batch</code>/<code>store_answer</code>), <code>connect.memory.mixin</code> (master switch + day+module-cached license gate <code>_memory_emit</code>), <code>mail.thread</code> capture override, <code>connect.memory.backfill</code> + wizard, <code>res.partner</code> buttons.
+- <code>connect.settings</code> fields + the standalone Memory form/menu.
+- Controller: the four token-protected JSON-RPC routes.
+- Security: <code>connect.group_user</code> read (outbox/inbox, +create on inbox); <code>connect.group_admin</code> full; backfill/wizard admin-only.
+- Data: vacuum + backfill crons; <code>ODUIST_MODULES</code> registration; <code>post_init_hook</code>.
+- Deploy: the <code>hindsight_gateway.py</code> sidecar (pull-based, token-auth).</p>
+<ul>
+<li>[ ] <strong>Step 2: Write <code>specs/connect_memory_sale.md</code></strong></li>
+</ul>
+<p>Same format. Document <code>connect.memory.sale.mixin</code>, the <code>sale.order</code> created/lifecycle/state_change capture (tracked scalars + line diff), <code>account.move</code> posted invoice/refund, <code>account.partial.reconcile</code> payment + <code>late_payment</code> signal, <code>res.partner._memory_sale_payment_digest</code> hourly cron + <code>memory_payment_digest_date</code> cursor + the three <code>ir.config_parameter</code> knobs. Depends on <code>connect_memory</code>, <code>sale</code>, <code>account</code>; separate <code>ODUIST_MODULES</code> registration.</p>
+<ul>
+<li>[ ] <strong>Step 3: Write ADR <code>043-connect-memory-outbox-inbox.md</code></strong></li>
+</ul>
+<p>Follow the format of an existing <code>specs/decisions/NNN-*.md</code>. Record: problem (bring external AI memory to Connect without coupling Odoo to any engine); options (Odoo calls the engine directly vs. an outbox/inbox pull contract vs. a message bus); decision (outbox/inbox JSONB tables; Odoo emits events and never calls the engine; an external per-engine sidecar pulls/acks; engine-neutral envelope; per-module Connect-license gate; capture never breaks the host operation). Note the domain-module pattern (<code>connect_memory_sale</code>, future <code>connect_memory_crm</code>).</p>
+<ul>
+<li>[ ] <strong>Step 4: Commit</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>specs/connect_memory.md<span class="w"> </span>specs/connect_memory_sale.md<span class="w"> </span>specs/decisions/043-connect-memory-outbox-inbox.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;[misc] add connect_memory specs and ADR-043&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-5-documentation-and-agentsmd">Task 5: Documentation and <code>AGENTS.md</code></h3>
+<p><strong>Files:</strong>
+- Create: <code>docs/admin/memory-setup.md</code>, <code>docs/user/memory.md</code>
+- Modify: <code>mkdocs.yml</code>, <code>AGENTS.md</code></p>
+<ul>
+<li>[ ] <strong>Step 1: Write <code>docs/admin/memory-setup.md</code></strong></li>
+</ul>
+<p>Admin guide: install <code>connect_memory</code> (+ <code>connect_memory_sale</code> for sales events); Connect → Configuration → Memory form (enable capture, set service URL + shared token, default engine, outbox retention days); deploy the external gateway (<code>connect_memory/deploy/</code>, <code>hindsight_gateway.py</code>, <code>.env.example</code> → <code>.env</code>, docker-compose); the pull contract (<code>/connect_memory/outbox/*</code>, <code>/connect_memory/inbox/*</code>, <code>X-Memory-Token</code>); backfilling history (per-partner button + all-partners wizard/cron). Match the tone/structure of <code>docs/admin/bird-setup.md</code>.</p>
+<ul>
+<li>[ ] <strong>Step 2: Write <code>docs/user/memory.md</code></strong></li>
+</ul>
+<p>User guide: what customer memory is; the partner "Memory" smart button + "Customer summary" and "Load correspondence to memory" buttons; how answers appear (Inbox). Match the tone of an existing <code>docs/user/*.md</code>.</p>
+<ul>
+<li>[ ] <strong>Step 3: Wire both pages into <code>mkdocs.yml</code> nav</strong></li>
+</ul>
+<p>Add under Admin Guide (after the Bird line):
+<div class="highlight"><pre><span></span><code><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Memory Setup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">admin/memory-setup.md</span>
+</code></pre></div>
+Add under User Guide (after Recordings):
+<div class="highlight"><pre><span></span><code><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">Customer Memory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">user/memory.md</span>
+</code></pre></div></p>
+<ul>
+<li>
+<p>[ ] <strong>Step 4: Update <code>AGENTS.md</code></strong></p>
+</li>
+<li>
+<p>Add two bullets to the <strong>Modules</strong> list:</p>
+</li>
+<li><code>connect_memory</code> — external AI memory base: <code>connect.memory.{outbox,inbox,mixin,backfill}</code> outbox/inbox pull contract + <code>mail.thread</code> correspondence capture + <code>res.partner</code> summary/backfill; provider-neutral (Hindsight/Cognee); external sidecar in <code>deploy/</code>. Depends on <code>connect</code>.</li>
+<li><code>connect_memory_sale</code> — memory events for <code>sale.order</code>/<code>account.move</code>/<code>account.partial.reconcile</code> + payment-behavior digest. Depends on <code>connect_memory</code>, <code>sale</code>, <code>account</code>.</li>
+<li>Add to the <strong>Dependencies</strong> paragraph that <code>connect_memory</code> depends on <code>connect</code>, and <code>connect_memory_sale</code> depends on <code>connect_memory</code> + <code>sale</code> + <code>account</code>.</li>
+<li>Add <code>specs/connect_memory.md</code> and <code>specs/connect_memory_sale.md</code> to the <strong>Key Files</strong> spec list.</li>
+<li>Add <code>connect_memory/tests/test_*.py</code> and <code>connect_memory_sale/tests/test_*.py</code> to the <strong>Testing → Architecture</strong> tree.</li>
+<li>
+<p>Add <code>oduflow run_odoo_tests connect_memory</code> and <code>... connect_memory_sale</code> to the <strong>Running Tests</strong> list.</p>
+</li>
+<li>
+<p>[ ] <strong>Step 5: Commit</strong></p>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>docs/admin/memory-setup.md<span class="w"> </span>docs/user/memory.md<span class="w"> </span>mkdocs.yml<span class="w"> </span>AGENTS.md
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;[misc] document connect_memory modules and register in AGENTS.md&quot;</span>
+</code></pre></div>
+<hr />
+<h3 id="task-6-full-verification-and-pr">Task 6: Full verification and PR</h3>
+<p><strong>Files:</strong> none (verification + PR only).</p>
+<ul>
+<li>[ ] <strong>Step 1: Fresh install of both modules together</strong></li>
+</ul>
+<p>Push the branch. (oduflow MCP) on a clean env: <code>pull_and_apply</code>, then install <code>connect_memory</code> and <code>connect_memory_sale</code>. Confirm no install/upgrade errors in the tool response.</p>
+<ul>
+<li>[ ] <strong>Step 2: Run both test suites</strong></li>
+</ul>
+<p><div class="highlight"><pre><span></span><code>oduflow: run_odoo_tests connect_memory
+oduflow: run_odoo_tests connect_memory_sale
+</code></pre></div>
+Expected: all green. Paste failing output verbatim if any; do not claim success without the passing output.</p>
+<ul>
+<li>[ ] <strong>Step 3: UI smoke test (agent-browser)</strong></li>
+</ul>
+<p>Reset admin password (<code>reset_admin_password</code>, env = branch), log in <code>admin</code>/<code>test</code>. Confirm: Connect → Configuration → Memory form opens and <code>memory_enabled</code> toggles; open a customer partner and confirm the "Memory" smart button + "Customer summary" / "Load correspondence to memory" header buttons render. Screenshot to <code>/tmp/memory_*.png</code> and read it back.</p>
+<ul>
+<li>[ ] <strong>Step 4: Open the PR</strong></li>
+</ul>
+<p><div class="highlight"><pre><span></span><code>gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span>--base<span class="w"> </span><span class="m">19</span>.0<span class="w"> </span>--title<span class="w"> </span><span class="s2">&quot;Port connect_memory + connect_memory_sale&quot;</span><span class="w"> </span>--body<span class="w"> </span><span class="s2">&quot;&lt;summary + test evidence&gt;&quot;</span>
+</code></pre></div>
+End the PR body with the Claude Code footer. Do NOT push to <code>19.0</code> directly (branch-protected).</p>
+<hr />
+<h2 id="self-review-notes">Self-Review Notes</h2>
+<ul>
+<li><strong>Spec coverage:</strong> Every adaptation item in the design doc maps to a task — versioning (T1/T2 step "bump"), migrations rename (T1 s2), security→Connect groups (T1 s4), XML xmlid fixes (T1 s5–s6), no-secret deploy (T1 s1), icon/description (T3), AGENTS.md/specs/docs/ADR (T4/T5), verification (T6).</li>
+<li><strong>Placeholder scan:</strong> security CSV and xmlid edits are given verbatim; description/spec/doc bodies are content-generation tasks with explicit source-of-truth and format references (not code), which is appropriate.</li>
+<li><strong>Type consistency:</strong> model names, route paths, and <code>ODUIST_MODULES</code> registration names are used consistently across tasks and match the source.</li>
+<li><strong>Do-not-edit-Python invariant</strong> is called out in Global Constraints and honored — only <code>__manifest__.py</code>, CSV, and XML are edited.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; Oduist OÜ
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "navigation.tracking", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
