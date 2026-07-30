@@ -3,6 +3,7 @@ from . import test_callflow
 from . import test_cdr_direction
 from . import test_exten
 from . import test_firewall
+from . import test_fs_fifo_routing
 from . import test_gateway_profile
 from . import test_inbound_did
 from . import test_outgoing_callerid
