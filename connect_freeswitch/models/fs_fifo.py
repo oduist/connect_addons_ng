@@ -67,10 +67,21 @@ class FsFifo(models.Model):
             return 'user/{}@{}'.format(target, fs_domain)
         return ''
 
+    def _dialplan_target(self):
+        """Destination FreeSWITCH dials to reach this queue.
+
+        The user-facing extension if one is assigned, else the internal
+        ``fs_fifo_<id>`` handle — so the queue is always routable as a
+        callflow/IVR fallback without requiring a numbered extension
+        (the controller resolves ``fs_fifo_<id>`` back to this record).
+        """
+        self.ensure_one()
+        return self.exten_number or 'fs_fifo_%d' % self.id
+
     def generate_dialplan(self, params, exten=None):
         """Generate FreeSWITCH dialplan XML for this FIFO queue."""
         self.ensure_one()
-        number = exten.number if exten else self.exten_number or str(self.id)
+        number = exten.number if exten else self._dialplan_target()
 
         fs_domain = self.env['connect.settings'].sudo().get_param(
             'freeswitch_domain') or '${domain}'
