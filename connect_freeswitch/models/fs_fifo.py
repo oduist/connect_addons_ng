@@ -50,6 +50,49 @@ class FsFifo(models.Model):
     )
     record_calls = fields.Boolean(default=False)
 
+    # Fields whose change alters the generated fifo.conf (mod_fifo consumers),
+    # so FreeSWITCH must re-read it for the change to take effect (ADR-049).
+    _FIFO_RELOAD_FIELDS = ('member_user_ids', 'member_endpoint_ids', 'max_wait_time')
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records._trigger_fifo_reload()
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if any(field in vals for field in self._FIFO_RELOAD_FIELDS):
+            self._trigger_fifo_reload()
+        return res
+
+    def unlink(self):
+        self._trigger_fifo_reload()
+        return super().unlink()
+
+    def _trigger_fifo_reload(self):
+        """Schedule one post-commit ``reload mod_fifo`` so FreeSWITCH re-reads
+        fifo.conf after this queue's members/config change.
+
+        Deferred to after commit because FreeSWITCH re-fetches fifo.conf over
+        xml_curl on a separate connection — it must see committed data. Deduped
+        per transaction via the postcommit callback registry.
+        """
+        callbacks = self.env.cr.postcommit
+        if not callbacks.data.get('connect_fs_fifo_reload'):
+            callbacks.data['connect_fs_fifo_reload'] = True
+            callbacks.add(self._do_fifo_reload)
+
+    def _do_fifo_reload(self):
+        """Best-effort ``reload mod_fifo`` — never break the save if FS is down."""
+        # Release the dedupe flag first, so a later transaction on the same
+        # cursor schedules its own reload instead of being swallowed.
+        self.env.cr.postcommit.data.pop('connect_fs_fifo_reload', None)
+        try:
+            self.env['connect.settings'].sudo().freeswitch_api('reload', 'mod_fifo')
+        except Exception:
+            logger.exception('FS Queue: reload mod_fifo failed')
+
     def create_extension(self):
         self.ensure_one()
         return self.env['connect.freeswitch.exten'].create_extension(self, self._name)
@@ -67,10 +110,21 @@ class FsFifo(models.Model):
             return 'user/{}@{}'.format(target, fs_domain)
         return ''
 
+    def _dialplan_target(self):
+        """Destination FreeSWITCH dials to reach this queue.
+
+        The user-facing extension if one is assigned, else the internal
+        ``fs_fifo_<id>`` handle — so the queue is always routable as a
+        callflow/IVR fallback without requiring a numbered extension
+        (the controller resolves ``fs_fifo_<id>`` back to this record).
+        """
+        self.ensure_one()
+        return self.exten_number or 'fs_fifo_%d' % self.id
+
     def generate_dialplan(self, params, exten=None):
         """Generate FreeSWITCH dialplan XML for this FIFO queue."""
         self.ensure_one()
-        number = exten.number if exten else self.exten_number or str(self.id)
+        number = exten.number if exten else self._dialplan_target()
 
         fs_domain = self.env['connect.settings'].sudo().get_param(
             'freeswitch_domain') or '${domain}'
