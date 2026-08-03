@@ -1641,13 +1641,14 @@
 <p>The voicemail greeting can be customized per call flow. The voicemail prompt must be set for callflow voicemail to trigger.</p>
 <h2 id="fs-queues-freeswitch-only">FS Queues (FreeSWITCH-only)</h2>
 <p>When the <code>connect_freeswitch</code> module is installed, call flows can route calls into an <strong>FS Queue</strong> — a hold area where the caller hears Music-on-Hold while agents are being rung. The first agent to answer takes the call.</p>
-<p>A queue can be used three ways:</p>
+<p>A queue can be used in several ways:</p>
 <ul>
-<li><strong>Directly as an extension destination</strong> — dial the queue's extension and you enter the queue.</li>
+<li><strong>Directly as an extension destination</strong> — give the queue an extension number, then dialing it enters the queue. <em>(The extension is optional and only needed for direct dialing.)</em></li>
 <li><strong>As an IVR choice</strong> — any IVR menu option can point to a queue.</li>
 <li><strong>As the "no choice" default of an IVR</strong> — if the caller doesn't press anything, the call is transferred into the queue.</li>
 <li><strong>As a fallback for a ring group</strong> — if nobody in the ring group answers, the call is moved into the queue before voicemail.</li>
 </ul>
+<p>Used as an IVR or ring-group destination, a queue needs <strong>no extension of its own</strong> — it is reached automatically.</p>
 <h3 id="what-the-caller-experiences">What the caller experiences</h3>
 <ol>
 <li>A brief "please hold" (the queue answers and starts Music-on-Hold).</li>
@@ -1664,6 +1665,7 @@
 <li>whether to announce the caller's position,</li>
 <li>what to do on timeout (hangup, voicemail, transfer).</li>
 </ul>
+<p>Changes to a queue's agents or wait time take effect on the <strong>next call automatically</strong> — no restart or manual step.</p>
 
 
 
