@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import logging
 import secrets
 from urllib.parse import urljoin
 
@@ -8,6 +9,8 @@ from odoo import api, fields, models, release
 from odoo.exceptions import ValidationError
 if release.version_info[0] >= 19:
     from odoo.models import Constraint
+
+logger = logging.getLogger(__name__)
 
 REMOTE_FIELDS = {
     "name", "description", "instructions", "greeting", "model",
@@ -376,7 +379,19 @@ class TelnyxAIAssistant(models.Model):
                 rec = self.with_context(skip_telnyx_ai_sync=True).create(vals)
                 # Once imported, Odoo becomes the source of truth and adds
                 # its signed variables webhook plus the allowlisted tools.
-                rec._update_remote()
+                # A single assistant with an invalid remote config (e.g. a
+                # decommissioned model) must not abort the whole account sync.
+                try:
+                    rec._update_remote()
+                except Exception as e:
+                    logger.warning(
+                        "AI assistant '%s' (model %s) push failed: %s",
+                        rec.name, rec.model or "default", e)
+                    self.env["connect.settings"].connect_notify(
+                        "AI assistant '{}' could not be synchronized "
+                        "(model '{}'): {}".format(
+                            rec.name, rec.model or "default", e),
+                        title="AI Assistant Sync Warning", warning=True)
         return True
 
     def action_pull_from_telnyx(self):

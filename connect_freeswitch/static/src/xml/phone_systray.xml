@@ -64,7 +64,7 @@
                            placeholder="Enter number"/>
                 </div>
                 <div class="o_phone_incoming_info" t-if="isIncoming or isCallActive">
-                    <div class="o_incoming_caller_name" t-esc="props.callerName || 'Unknown'"/>
+                    <div class="o_incoming_caller_name" t-esc="displayCallerName"/>
                     <div class="o_incoming_caller_number" t-esc="props.callerNumber"/>
                 </div>
                 <div class="o_phone_call_status" t-if="props.callState !== 'idle'">

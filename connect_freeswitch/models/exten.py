@@ -45,6 +45,8 @@ class Exten(models.Model):
         return 'exten' if 'exten' in dst._fields else None
 
     def _link_dst(self, dst, exten):
+        if not dst:
+            return
         field_name = self._dst_exten_field(dst)
         if field_name:
             dst[field_name] = exten
@@ -122,9 +124,14 @@ class Exten(models.Model):
 
     def _set_dst(self):
         for rec in self:
-            if rec.dst:
-                rec.write({'model': rec.dst._name, 'res_id': rec.dst.id})
-                self._link_dst(rec.dst, rec)
+            # Capture the destination before writing model/res_id: reading
+            # rec.dst again after the write can transiently recompute to None
+            # (non-stored Reference field), which broke the back-link and
+            # crashed _link_dst with an AttributeError on None.
+            dst = rec.dst
+            if dst:
+                rec.write({'model': dst._name, 'res_id': dst.id})
+                self._link_dst(dst, rec)
             else:
                 rec.write({'model': False, 'res_id': False})
 

@@ -519,10 +519,48 @@ export class Phone extends Component {
                     if (session.accepted) {
                         session._emit('disconnect', call)
                     } else {
+                        if (call.direction === 'outbound') {
+                            this._notifyCallFailure(call).catch(() => {})
+                        }
                         session._emit('cancel', call)
                     }
                 }
                 break
+        }
+    }
+
+    async _notifyCallFailure(call) {
+        // Explain why an outbound call never got connected (ADR-040):
+        // without this, a billing-blocked Telnyx account looks exactly
+        // like a random call drop.
+        const cause = call.cause || ''
+        if (['ORIGINATOR_CANCEL', 'NORMAL_CLEARING', 'PURGE'].includes(cause)) {
+            // The user hung up before the answer — nothing to explain.
+            return
+        }
+        const sipCode = call.sipCode ? String(call.sipCode) : ''
+        const causeMessages = {
+            USER_BUSY: 'The number you dialed is busy.',
+            CALL_REJECTED: 'The call was rejected.',
+            UNALLOCATED_NUMBER: 'Number not found or not routable.',
+            INVALID_NUMBER_FORMAT: 'Invalid number format.',
+            NO_ANSWER: 'No answer.',
+            NO_USER_RESPONSE: 'No answer.',
+        }
+        const message = causeMessages[cause] ||
+            `Call failed: ${cause}${sipCode ? ` (SIP ${sipCode})` : ''}`
+        this.notification.add(message, {title: 'Call failed', type: 'warning'})
+        if (sipCode === '404' || cause === 'UNALLOCATED_NUMBER') {
+            // The ambiguous "not found" case: confirm against the account
+            // balance server-side before blaming the dialed number.
+            const res = await this.orm.call(
+                'connect.settings', 'telnyx_check_call_failure', [],
+                {cause, sip_code: sipCode})
+            if (res && res.balance_blocked) {
+                this.notification.add(res.message, {
+                    title: 'Calls blocked', type: 'danger', sticky: true,
+                })
+            }
         }
     }
 

@@ -5,6 +5,7 @@ from . import test_exten
 from . import test_firewall
 from . import test_fs_fifo_routing
 from . import test_gateway_profile
+from . import test_i18n
 from . import test_inbound_did
 from . import test_outgoing_callerid
 from . import test_parking

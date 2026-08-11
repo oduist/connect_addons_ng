@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Telnyx
 - **Technical:** `connect_telnyx`
-- **Version:** 19.0.1.0.0
+- **Version:** 19.0.1.3.0
 - **Depends:** `connect`
 - **Python deps:** `telnyx`, `nacl` (PyNaCl)
 - **Application:** False
@@ -88,7 +88,12 @@ Methods: `get_telnyx_client()` (SDK client), `telnyx_sync()` (apps →
 domains → numbers → caller IDs + messaging profile),
 `_ensure_telnyx_messaging_profile()`, `originate_call()` (core
 dispatcher override for the `'telnyx'` key; originates via
-`POST /texml/Accounts/{sid}/Calls`), `get_telnyx_balance()`, `write()`
+`POST /texml/Accounts/{sid}/Calls`), `get_telnyx_balance()`,
+`telnyx_check_call_failure(cause, sip_code)` (ADR-040: web-phone RPC
+for unanswered outbound failures; verifies `GET /v2/balance` with
+`sudo` and returns `{balance_blocked, message}` — Connect groups only,
+the amount appears only for `connect.group_admin`, API errors are
+swallowed to `connect.debug`), `write()`
 (protected-field masking). Own standalone settings form view + menu via
 `open_settings_form()`.
 
@@ -342,7 +347,13 @@ bundle `lib/telnyx-webrtc.js`, global `TelnyxWebRTC.TelnyxRTC`):
   the `accept`/`disconnect`/`cancel` handlers. Outgoing calls dial
   `sip:<number>@<subdomain>.sip.telnyx.com` so Odoo routes them. Token
   refresh re-initializes the client. Remote audio attaches to
-  `#connect-telnyx-remote-audio`.
+  `#connect-telnyx-remote-audio`. Unanswered outbound failures raise a
+  warning notification with the mapped hangup cause (busy / rejected /
+  number not found / generic `cause` + SIP code; user-initiated
+  `ORIGINATOR_CANCEL`/`NORMAL_CLEARING` stay silent); the ambiguous
+  404/`UNALLOCATED_NUMBER` case additionally calls
+  `connect.settings.telnyx_check_call_failure()` and shows a sticky
+  danger notification when the account balance is exhausted (ADR-040).
 - Mail integration: `telnyx-sms-reply` / `telnyx-whatsapp-reply` /
   `telnyx-rcs-reply` chatter actions, the Notification icon patch for
   the `WhatsApp`/`RCS` types, and a WhatsApp *Message* button on the
