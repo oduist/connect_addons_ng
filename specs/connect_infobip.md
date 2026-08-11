@@ -4,7 +4,7 @@
 
 - **Name**: Oduist Connect Infobip
 - **Technical Name**: `connect_infobip`
-- **Version**: 19.0.1.0.0
+- **Version**: 18.0.1.2.0
 - **Depends**: `connect`
 - **Python Dependencies**: none (plain `requests`; the official Infobip
   Python SDK does not cover the Voice/Calls and Numbers APIs — ADR-036)
@@ -233,7 +233,10 @@ audio from the `established` event stream; component-played ringtone
 with a REST-originate fallback (`infobip_webphone_via_rest`); token
 refresh by re-init, proactively at ~90% TTL. Other components/services/
 widgets are mechanical renames of the Telnyx tree; `phone_field.js`
-patches the core PhoneField for click-to-call + WhatsApp composer.
+patches the core PhoneField for click-to-call + WhatsApp composer. The
+**Calls history tab** and the **active-calls systray widget** are imported
+from / registered by core `connect` rather than copied here
+(`@connect/components/calls/calls`, `connect/services/active_calls`).
 
 ## Tests
 

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Top-level ElevenLabs submenu under the Connect app (ADR-031 provider
+         submenu pattern: sequence 50, a Configuration child gated to admins). -->
+    <menuitem id="menu_connect_elevenlabs"
+              name="ElevenLabs"
+              parent="connect.menu_connect_root"
+              sequence="50"/>
+
+    <menuitem id="menu_connect_elevenlabs_config"
+              name="Configuration"
+              parent="menu_connect_elevenlabs"
+              groups="connect.group_admin"
+              sequence="100"/>
+
+</odoo>
