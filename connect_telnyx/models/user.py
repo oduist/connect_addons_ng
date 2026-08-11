@@ -32,6 +32,10 @@ class User(models.Model):
         selection_add=[('telnyx', 'Telnyx')],
         ondelete={'telnyx': 'set null'},
     )
+    message_provider = fields.Selection(
+        selection_add=[('telnyx', 'Telnyx')],
+        ondelete={'telnyx': 'set null'},
+    )
     telnyx_exten = fields.Many2one(
         'connect.telnyx.exten', ondelete='set null', readonly=True,
         string='Telnyx Extension')

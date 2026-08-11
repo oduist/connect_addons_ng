@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Bird submenu of the Connect app. All provider submenus share the
+         same sequence so they appear after Calls in installation order (equal
+         sequence falls back to id order); the core Configuration menu
+         (seq 100) always stays last. -->
+    <menuitem id="menu_connect_bird"
+              name="Bird"
+              parent="connect.menu_connect_root"
+              sequence="50"/>
+
+    <menuitem id="menu_bird_messages"
+              name="Messages"
+              parent="menu_connect_bird"
+              sequence="70"/>
+
+    <menuitem id="menu_bird_messages_list"
+              name="Messages"
+              parent="menu_bird_messages"
+              action="connect.action_connect_message"
+              sequence="10"/>
+
+    <menuitem id="menu_bird_config"
+              name="Configuration"
+              parent="menu_connect_bird"
+              groups="connect.group_admin"
+              sequence="100"/>
+</odoo>

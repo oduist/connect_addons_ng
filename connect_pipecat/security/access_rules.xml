@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_pipecat_agent_admin" model="ir.model.access">
+        <field name="name">connect.pipecat.agent admin</field>
+        <field name="model_id" ref="model_connect_pipecat_agent"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+    <record id="access_pipecat_agent_user" model="ir.model.access">
+        <field name="name">connect.pipecat.agent user</field>
+        <field name="model_id" ref="model_connect_pipecat_agent"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_pipecat_agent_webhook" model="ir.model.access">
+        <field name="name">connect.pipecat.agent webhook</field>
+        <field name="model_id" ref="model_connect_pipecat_agent"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="pipecat_agent_webhook_rule" model="ir.rule">
+        <field name="name">connect.pipecat.agent webhook</field>
+        <field name="model_id" ref="model_connect_pipecat_agent"/>
+        <field name="groups" eval="[(4, ref('connect.group_webhook'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_exten_pipecat_webhook" model="ir.model.access">
+        <field name="name">connect.freeswitch.exten pipecat webhook</field>
+        <field name="model_id" ref="connect_freeswitch.model_connect_freeswitch_exten"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+</odoo>

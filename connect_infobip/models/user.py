@@ -42,6 +42,10 @@ class User(models.Model):
         selection_add=[('infobip', 'Infobip')],
         ondelete={'infobip': 'set null'},
     )
+    message_provider = fields.Selection(
+        selection_add=[('infobip', 'Infobip')],
+        ondelete={'infobip': 'set null'},
+    )
     infobip_exten = fields.Many2one(
         'connect.infobip.exten', ondelete='set null', readonly=True,
         string='Infobip Extension')

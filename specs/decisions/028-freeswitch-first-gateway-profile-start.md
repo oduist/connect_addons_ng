@@ -29,8 +29,11 @@ There are **two** root causes, and a correct fix must close both:
    But `_reload_sofia_profile()` ran *inside* `create()`, **before** the
    transaction committed. Under PostgreSQL `READ COMMITTED`, the xml_curl
    request cannot see the uncommitted gateway, so `_get_sofia_config` finds no
-   active gateways and returns `_not_found()` — FreeSWITCH gets an empty config
-   and the profile starts without the gateway (or not at all). This is why the
+   active gateways. (At the time of this ADR that returned `_not_found()`;
+   **ADR-047** later dropped that gate, so the `external` profile is now served
+   unconditionally — but the visibility race for the *gateway* itself still
+   requires the post-commit deferral decided here.) FreeSWITCH gets a config
+   without the gateway (or, back then, none at all). This is why the
    *manual* `start` works (the row is committed by then) but a synchronous
    `start` issued from `create()` would not reliably help. The same race
    applies to `_reload_acl()`, whose `gateways` ACL is also served via

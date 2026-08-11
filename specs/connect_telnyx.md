@@ -347,9 +347,12 @@ bundle `lib/telnyx-webrtc.js`, global `TelnyxWebRTC.TelnyxRTC`):
   `telnyx-rcs-reply` chatter actions, the Notification icon patch for
   the `WhatsApp`/`RCS` types, and a WhatsApp *Message* button on the
   phone field widget (ADR-033).
-- The rest (calls/contacts/favorites/tray components, active-calls
-  service, phone field widget, actions service) is the Twilio code with
-  renamed registry keys and the `telnyx_exten_number` field.
+- The rest (contacts/favorites/tray components, phone field widget,
+  actions service) is the Twilio code with renamed registry keys and the
+  `telnyx_exten_number` field. The **Calls history tab** and the
+  **active-calls systray widget** are no longer copied here — they are
+  imported from / registered by core `connect`
+  (`@connect/components/calls/calls`, `connect/services/active_calls`).
 
 ---
 

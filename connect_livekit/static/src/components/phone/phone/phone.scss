@@ -1,0 +1,100 @@
+.lk-phone {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1056;
+    width: 280px;
+    background: var(--o-view-background-color, #fff);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+
+    .lk-phone-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+        .lk-phone-title {
+            font-weight: 600;
+        }
+
+        .lk-phone-close {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            opacity: 0.6;
+
+            &:hover {
+                opacity: 1;
+            }
+        }
+    }
+
+    .lk-phone-body {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 14px;
+
+        .lk-phone-number {
+            padding: 8px 10px;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        .lk-phone-peer {
+            font-size: 17px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .lk-phone-status {
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        .lk-phone-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .lk-btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            background: #e9ecef;
+            cursor: pointer;
+
+            &.lk-btn-call {
+                background: #28a745;
+                color: #fff;
+            }
+
+            &.lk-btn-hangup {
+                background: #dc3545;
+                color: #fff;
+
+                .fa-phone {
+                    transform: rotate(135deg);
+                }
+            }
+        }
+    }
+
+    .lk-phone-audio {
+        display: none;
+    }
+}
+
+.lk-toggle-phone {
+    border: none;
+    background: transparent;
+
+    &.lk-busy {
+        color: #dc3545;
+    }
+}

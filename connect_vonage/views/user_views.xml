@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inherit core user list to add Vonage-specific columns -->
+    <record id="view_connect_user_tree_vonage" model="ir.ui.view">
+        <field name="name">connect.user.tree.vonage</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user']" position="after">
+                <field name="username"/>
+            </xpath>
+            <xpath expr="//field[@name='outgoing_callerid']" position="after">
+                <field name="client_enabled" string="Web"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit core user form to add Vonage-specific fields -->
+    <record id="view_connect_user_form_vonage" model="ir.ui.view">
+        <field name="name">connect.user.form.vonage</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user']" position="after">
+                <field name="username"/>
+            </xpath>
+
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="vonage_user_id"/>
+            </xpath>
+
+            <!-- Add Phone tab with Web Phone settings to notebook -->
+            <xpath expr="//page[@name='organization']" position="before">
+                <page name="phone" string="Phone">
+                    <group>
+                        <group string="Web Phone">
+                            <field name="client_enabled" string="Enabled"/>
+                            <field name="client_ring_timeout" string="Ring Timeout"
+                                   invisible="client_enabled == False"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

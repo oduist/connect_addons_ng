@@ -7,16 +7,10 @@ from odoo import http
 from odoo.http import request, Response
 from odoo.addons.connect.models.settings import debug
 
+from ..constants import FREESWITCH_XMLRPC_INTERNAL_PORT, FREESWITCH_XMLRPC_USER
 from .token_auth import check_fs_webhook_auth, unauthorized_response
 
 _logger = logging.getLogger(__name__)
-
-# Internal plain-HTTP port mod_xml_rpc listens on. It is never exposed
-# directly: Traefik terminates TLS in front of it and proxies here. The
-# public HTTPS port Odoo connects to lives in the freeswitch_xmlrpc_port
-# setting (default 443) and is intentionally decoupled from this one.
-FS_XMLRPC_INTERNAL_PORT = 8080
-
 
 def pretty_xml(xml_str):
     """Pretty-print XML string with proper indentation."""
@@ -426,6 +420,16 @@ class FreeSwitchXMLController(http.Controller):
                     parts.append(invalid_xml)
                     return ''.join(parts)
 
+        # FS Queue by internal handle: a callflow / IVR fallback transfers to
+        # fs_fifo_<id> when the queue has no user-facing extension (ADR-048).
+        fifo_handle = re.match(r'^fs_fifo_(\d+)$', destination)
+        if fifo_handle:
+            fifo = request.env['connect.fs_fifo'].sudo().browse(
+                int(fifo_handle.group(1)))
+            if fifo.exists():
+                parts.append(fifo.generate_dialplan(params))
+                return ''.join(parts)
+
         # Try exact extension match
         exten = Exten.search([('number', '=', destination)], limit=1)
         if exten:
@@ -492,14 +496,18 @@ class FreeSwitchXMLController(http.Controller):
         return self._not_found()
 
     def _get_sofia_config(self, params):
-        """Serve sofia.conf with gateways from Odoo."""
+        """Serve sofia.conf with the external profile and any configured gateways.
+
+        The external profile is rendered *unconditionally* — SIP endpoints
+        register against it and calls are bridged via ``sofia/external/...``
+        even when no gateway records exist. Answering "not found" here when
+        there are no gateways left FreeSWITCH without any sofia config, so the
+        profile could not start on a fresh env (ADR-047).
+        """
         Gateway = request.env['connect.freeswitch.gateway'].sudo()
         gateways = Gateway.search([('active', '=', True)])
 
-        if not gateways:
-            return self._not_found()
-
-        # Render each gateway individually
+        # Render each gateway individually (empty string when there are none)
         gateways_xml = '\n'.join(gw.generate_sofia_gateway_xml() for gw in gateways)
 
         sofia_log_level = request.env['connect.settings'].sudo().get_param('freeswitch_sofia_log_level') or '0'
@@ -537,19 +545,18 @@ class FreeSwitchXMLController(http.Controller):
     def _get_xml_rpc_config(self, params):
         """Serve xml_rpc.conf with credentials from Odoo settings."""
         settings = request.env['connect.settings'].sudo()
-        user = settings.get_param('freeswitch_xmlrpc_user')
-        password = settings.get_param('freeswitch_xmlrpc_password')
+        password = settings._get_freeswitch_xmlrpc_password()
 
-        if not user or not password:
+        if not password:
             return self._not_found()
 
         # Fixed internal port; Traefik fronts it with TLS (see constant above).
-        port = str(FS_XMLRPC_INTERNAL_PORT)
+        port = str(FREESWITCH_XMLRPC_INTERNAL_PORT)
 
         Template = request.env['connect.freeswitch.template'].sudo()
         config_xml = Template.render('config_xml_rpc', {
             'port': port,
-            'user': user,
+            'user': FREESWITCH_XMLRPC_USER,
             'password': password,
         })
 

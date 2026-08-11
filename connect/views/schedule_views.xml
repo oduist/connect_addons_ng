@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Working Schedule -->
+    <record id="view_connect_schedule_tree" model="ir.ui.view">
+        <field name="name">connect.schedule.tree</field>
+        <field name="model">connect.schedule</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="calendar_id"/>
+                <field name="tz"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_connect_schedule_form" model="ir.ui.view">
+        <field name="name">connect.schedule.form</field>
+        <field name="model">connect.schedule</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="generate_slots" type="object"
+                            string="Regenerate Availability"
+                            class="btn-secondary" icon="fa-refresh"
+                            groups="connect.group_admin"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_slots" type="object"
+                                class="oe_stat_button" icon="fa-calendar"
+                                string="Availability"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="calendar_id"/>
+                            <field name="tz"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Special Working Days" name="special_days">
+                            <field name="special_day_ids">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="date"/>
+                                    <field name="work_from" widget="float_time"/>
+                                    <field name="work_to" widget="float_time"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Public Holidays" name="holidays">
+                            <field name="holiday_ids">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="date_from"/>
+                                    <field name="date_to"/>
+                                    <field name="prompt_message"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Preview" name="preview">
+                            <field name="preview_html" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_connect_schedule" model="ir.actions.act_window">
+        <field name="name">Working Schedules</field>
+        <field name="res_model">connect.schedule</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Special Working Day -->
+    <record id="view_connect_schedule_special_day_tree" model="ir.ui.view">
+        <field name="name">connect.schedule.special_day.tree</field>
+        <field name="model">connect.schedule.special_day</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="work_from" widget="float_time"/>
+                <field name="work_to" widget="float_time"/>
+                <field name="schedule_ids" widget="many2many_tags"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_connect_schedule_special_day_form" model="ir.ui.view">
+        <field name="name">connect.schedule.special_day.form</field>
+        <field name="model">connect.schedule.special_day</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="date"/>
+                            <field name="work_from" widget="float_time"/>
+                            <field name="work_to" widget="float_time"/>
+                        </group>
+                        <group>
+                            <field name="schedule_ids" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_connect_schedule_special_day" model="ir.actions.act_window">
+        <field name="name">Special Working Days</field>
+        <field name="res_model">connect.schedule.special_day</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Availability slots -->
+    <record id="view_connect_schedule_slot_calendar" model="ir.ui.view">
+        <field name="name">connect.schedule.slot.calendar</field>
+        <field name="model">connect.schedule.slot</field>
+        <field name="arch" type="xml">
+            <calendar date_start="start" date_stop="stop" all_day="allday"
+                      color="schedule_id" mode="week" quick_create="0"
+                      create="0" edit="0" delete="0" event_open_popup="1">
+                <field name="schedule_id" filters="1"/>
+                <field name="slot_type"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="view_connect_schedule_slot_tree" model="ir.ui.view">
+        <field name="name">connect.schedule.slot.tree</field>
+        <field name="model">connect.schedule.slot</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="schedule_id"/>
+                <field name="slot_type"/>
+                <field name="name"/>
+                <field name="start"/>
+                <field name="stop"/>
+                <field name="allday" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_connect_schedule_slot_search" model="ir.ui.view">
+        <field name="name">connect.schedule.slot.search</field>
+        <field name="model">connect.schedule.slot</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="schedule_id"/>
+                <field name="name"/>
+                <filter name="filter_available" string="Available"
+                        domain="[('slot_type', '=', 'available')]"/>
+                <filter name="filter_closed" string="Closed"
+                        domain="[('slot_type', '=', 'closed')]"/>
+                <separator/>
+                <filter name="filter_schedule" string="Working Schedule"
+                        domain="[('slot_type', '=', 'schedule')]"/>
+                <filter name="filter_holiday" string="Public Holidays"
+                        domain="[('slot_type', '=', 'holiday')]"/>
+                <filter name="filter_special" string="Special Working Days"
+                        domain="[('slot_type', '=', 'special')]"/>
+                <group>
+                    <filter name="group_schedule" string="Schedule"
+                            context="{'group_by': 'schedule_id'}"/>
+                    <filter name="group_type" string="Type"
+                            context="{'group_by': 'slot_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_connect_schedule_slot" model="ir.actions.act_window">
+        <field name="name">Availability</field>
+        <field name="res_model">connect.schedule.slot</field>
+        <field name="view_mode">calendar,list</field>
+        <field name="context">{'search_default_filter_available': 1, 'search_default_filter_closed': 1}</field>
+    </record>
+
+    <!-- Menus -->
+    <menuitem id="menu_connect_availability"
+              name="Availability"
+              parent="menu_connect_root"
+              action="action_connect_schedule_slot"
+              groups="connect.group_user"
+              sequence="25"/>
+
+    <menuitem id="menu_connect_schedule"
+              name="Working Schedules"
+              parent="menu_connect_settings"
+              action="action_connect_schedule"
+              groups="connect.group_admin"
+              sequence="40"/>
+
+    <menuitem id="menu_connect_schedule_special_day"
+              name="Special Working Days"
+              parent="menu_connect_settings"
+              action="action_connect_schedule_special_day"
+              groups="connect.group_admin"
+              sequence="41"/>
+
+    <menuitem id="menu_connect_resource_calendar"
+              name="Working Times"
+              parent="menu_connect_settings"
+              action="resource.action_resource_calendar_form"
+              groups="connect.group_admin"
+              sequence="42"/>
+
+</odoo>

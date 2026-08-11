@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_connect_call_tree_hr" model="ir.ui.view">
+        <field name="name">connect.call.tree.hr</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.view_connect_call_tree"/>
+        <field name="arch" type="xml">
+            <field name="partner" position="after">
+                <field name="employee" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_connect_call_form_hr" model="ir.ui.view">
+        <field name="name">connect.call.form.hr</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.view_connect_call_form"/>
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page name="hr" string="Employee">
+                    <group>
+                        <group>
+                            <field name="employee"/>
+                        </group>
+                        <group>
+                            <button name="unlink_employee" type="object" string="Unlink"
+                                    invisible="not employee"/>
+                        </group>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+</odoo>

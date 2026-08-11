@@ -21,6 +21,14 @@ in front of the SIP ports consults at line rate:
 | `connect_fw_expire_short` | 30 s | ACCEPT — challenge response window after a SIP 401 |
 | `connect_fw_expire_long` | 24 h | DROP — default-deny after a challenge is sent but not answered |
 
+Both address families are covered: each table above is the IPv4
+(`family inet`) set, and a `6`-suffixed twin (`connect_fw_whitelist6`,
+`connect_fw_banned6`, …) holds the IPv6 entries, consulted by an
+identical `connect_fw_voip` chain installed via `ip6tables`. Whitelist
+and blacklist entries in Odoo accept both families and are routed to
+the right set automatically; on hosts without IPv6 (`ipv6.disable=1`)
+the service logs an error for the v6 family and keeps protecting IPv4.
+
 In addition, an `iptables -m string` filter at the bottom of the chain
 DROPs known SIP-scanner User-Agents (`friendly-scanner`, `sipvicious`,
 `sipcli`, `VaxSIPUserAgent`, `sundayddr`, `sipsak`, `sip-scan`) before
@@ -97,7 +105,7 @@ The service container must:
 | `FS_ESL_HOST` | usually `127.0.0.1` |
 | `FS_ESL_PORT` | usually `8021` |
 | `FS_ESL_PASSWORD` | password of FreeSWITCH `mod_event_socket`. The shipped FS image bakes in `ConnectNGESLPassword`; set `FS_ESL_PASSWORD` on both containers if you want a different value. |
-| `HTTP_BIND_HOST`, `HTTP_BIND_PORT` | where the service listens (default `0.0.0.0:8081`) |
+| `HTTP_BIND_HOST`, `HTTP_BIND_PORT` | where the service listens. The production compose binds `127.0.0.1:8081` and exposes `/firewall` through Traefik. |
 | `DASHBOARD_USER`, `DASHBOARD_PASSWORD` | basic-auth credentials for the dashboard / JSON API |
 
 Optionally:
@@ -111,7 +119,7 @@ Optionally:
 
 ```yaml
 firewall:
-  image: oduist/freeswitch-firewall:1.1.0
+  image: oduist/freeswitch-firewall:2.1.1
   network_mode: host
   cap_add: [NET_ADMIN]
   environment:
@@ -119,6 +127,7 @@ firewall:
     AGENT_TOKEN: <copy from Firewall Service Token in Odoo settings>
     FS_ESL_HOST: 127.0.0.1
     FS_ESL_PASSWORD: ConnectNGESLPassword
+    HTTP_BIND_HOST: 127.0.0.1
     DASHBOARD_USER: admin
     DASHBOARD_PASSWORD: <pick a strong password>
   volumes:
@@ -131,18 +140,19 @@ A ready preset for `oduflow` lives at
 ## Setting up in Odoo
 
 1. Install or upgrade `connect_freeswitch` — `post_init_hook` (or the
-   per-version migration on upgrade) generates an initial **Firewall
-   Service Token** and creates the agent singleton.
+   per-version migration on upgrade) runs the missing-only deployment
+   bootstrap, generates both service tokens, and creates the agent singleton.
 2. Open **Connect → FreeSWITCH → Configuration → Settings**, page **Firewall**, as an admin:
    * Toggle **Firewall Enabled** on.
    * Set **Firewall Service URL** to where Traefik (or whichever
      reverse-proxy you use) reaches the service container.
-   * **Firewall Service Token**: either keep the auto-generated value
-     or paste your own (≥24 chars, `[A-Za-z0-9_-]` only). Copy the
-     value into the `AGENT_TOKEN` env var of the firewall service
-     container **before saving**, because the field gets masked back
-     to `****` immediately after. Restart the service container so it
-     picks up the new token.
+   * **Firewall Service Token**: leave the auto-generated value unchanged
+     during normal installation. Oduflow reads the protected
+     `firewall_service_token` with a sudo Odoo shell and passes it directly as
+     the service's `AGENT_TOKEN`. For a manual deployment, retrieve the same
+     setting through an administrative Odoo shell. Entering a value in this
+     masked field is an explicit rotation and requires updating and restarting
+     the service in the same maintenance window.
    * Adjust port lists and timeouts if you need to deviate from the
      defaults.
 3. Connect → FreeSWITCH → Firewall → **Whitelist**: add your trunk providers,
@@ -172,7 +182,7 @@ A ready preset for `oduflow` lives at
 | Setting | Default | Effect |
 |---|---|---|
 | Firewall Enabled | False | Master switch. When off, the service still runs but reports `firewall_enabled=False`. |
-| Firewall Service URL | `http://host.docker.internal:8081` | Odoo posts `/firewall/sync` here. |
+| Firewall Service URL | See deployment | Odoo posts `/firewall/sync` here. In production set this to `https://<freeswitch-host>`; Traefik routes the `/firewall` prefix to the loopback-only service on `127.0.0.1:8081`. |
 | Firewall Service Token | *generated* | Shared Bearer secret. ≥24 chars, `[A-Za-z0-9_-]` only. The service uses the same value for both directions; restart the container after changing it. |
 | Heartbeat Interval | 60 s | How often the service pings Odoo. |
 | Event Retention | 30 days | How long the audit log is kept; the daily cron prunes older. |
@@ -204,13 +214,17 @@ curl -sk -u admin:<pw> https://<host>/firewall/api/heartbeat | jq
 # 2. Is ESL really connected?
 docker logs <firewall-container> | grep -E "ESL connected|Reconciler|AUTO-BAN"
 
-# 3. Look at the actual kernel state.
+# 3. Look at the actual kernel state (the "6"-suffixed sets and
+#    ip6tables are the IPv6 side).
 ipset list connect_fw_banned
+ipset list connect_fw_banned6
 ipset list connect_fw_authenticated
 iptables -L connect_fw_voip -v -n
+ip6tables -L connect_fw_voip -v -n
 
-# 4. Verify the chain is hooked into INPUT.
+# 4. Verify the chain is hooked into INPUT for both families.
 iptables -L INPUT -v -n | grep connect_fw_voip
+ip6tables -L INPUT -v -n | grep connect_fw_voip
 ```
 
 If the agent stays *offline* in Odoo:
@@ -231,10 +245,15 @@ If you see events arrive in Odoo but no auto-bans land in `ipset`:
   `Operation not permitted`, visible in the service logs;
 * the kernel does not have the `ip_set` / `xt_set` modules
   available — typical on hardened/minimal hosts. `modprobe ip_set`
-  on the host fixes it.
+  on the host fixes it. The IPv6 side additionally needs `ip6_tables` /
+  `ip6table_filter`; on hosts booted with `ipv6.disable=1` the service
+  logs an error for the v6 family and continues IPv4-only — that is the
+  expected degradation, not a fault.
 
 ## Architecture-level reference
 
 See `specs/decisions/014-freeswitch-firewall-service.md` for the
 design decisions behind this stack (six-table ipset model, direct
-HTTP control plane, hardcoded UA blacklist, single-instance, IPv4-only).
+HTTP control plane, hardcoded UA blacklist, single-instance) and
+`specs/decisions/037-firewall-ipv6-support.md` for how IPv6 was
+layered in (parallel `inet6` sets + `ip6tables` chain).
