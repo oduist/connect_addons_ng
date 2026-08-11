@@ -34,4 +34,4 @@ Install the **connect** core module plus the integration module(s) matching your
 4. Set up phone numbers in the provider menu, e.g. **Connect > Twilio > Numbers** or **Connect > FreeSWITCH > Numbers**
 5. Start making calls from the phone widget in the Odoo navbar
 
-See the [Admin Guide](admin/installation.md) for detailed setup instructions.
+See the [Admin Guide](Core/admin/installation.md) for detailed setup instructions.

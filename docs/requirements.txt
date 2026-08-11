@@ -2,3 +2,6 @@
 # mkdocs-material pulls in mkdocs, pymdown-extensions and the rest of the
 # stack used by mkdocs.yml (admonition, pymdownx.*, tables, attr_list).
 mkdocs-material==9.7.6
+
+# Aggregates each module's docs/ folder into one site (see root mkdocs.yml).
+mkdocs-monorepo-plugin==1.1.2
