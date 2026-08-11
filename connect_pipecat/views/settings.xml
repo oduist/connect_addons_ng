@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="connect_settings_form_pipecat" model="ir.ui.view">
+        <field name="name">connect.settings.form.pipecat</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" ref="connect_freeswitch.connect_settings_form_freeswitch"/>
+        <field name="arch" type="xml">
+            <page name="freeswitch" position="after">
+                <page name="pipecat" string="Pipecat AI">
+                    <group>
+                        <group string="Sidecar">
+                            <field name="pipecat_sidecar_url" placeholder="wss://pipecat.example.com"/>
+                            <field name="display_pipecat_service_token" password="True" placeholder="****"/>
+                            <field name="pipecat_status"/>
+                            <button name="check_pipecat_status" type="object"
+                                    string="CHECK STATUS" class="btn btn-info"/>
+                        </group>
+                        <group string="AI Provider Keys">
+                            <field name="display_openai_api_key" password="True"/>
+                            <field name="display_deepgram_api_key" password="True"/>
+                            <field name="display_elevenlabs_api_key" password="True"/>
+                            <field name="display_anthropic_api_key" password="True"/>
+                        </group>
+                    </group>
+                </page>
+            </page>
+        </field>
+    </record>
+</odoo>

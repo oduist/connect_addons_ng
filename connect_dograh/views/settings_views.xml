@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Standalone Dograh settings form on the shared connect.settings
+         singleton: only Dograh fields, opened from the Dograh menu. -->
+    <record id="connect_settings_form_dograh" model="ir.ui.view">
+        <field name="name">connect.settings.form.dograh</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" eval="False"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <sheet>
+                    <notebook>
+                        <page name="dograh" string="Dograh">
+                            <group>
+                                <group string="Dograh API" name="dograh_api">
+                                    <field name="dograh_api_url"
+                                           placeholder="https://dograh-api.example.com"/>
+                                    <field name="dograh_status" readonly="1"/>
+                                    <button colspan="2" name="check_dograh_status"
+                                            type="object" string="CHECK STATUS"
+                                            class="btn btn-primary"/>
+                                </group>
+                                <group string="FreeSWITCH Provider" name="dograh_provider">
+                                    <div colspan="2">
+                                        <small>Configure a <strong>FreeSWITCH (Oduist
+                                        Connect)</strong> telephony provider in Dograh
+                                        with the same Account ID and Service Token,
+                                        and this Odoo base URL.</small>
+                                    </div>
+                                    <field name="dograh_account_id"/>
+                                    <field name="display_dograh_service_token"
+                                           password="1"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.actions.server" id="dograh_settings_action">
+        <field name="type">ir.actions.server</field>
+        <field name="name">Dograh Settings</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="connect.model_connect_settings"/>
+        <field name="code">action = model.open_settings_form("connect_dograh.connect_settings_form_dograh", "Dograh Settings")</field>
+    </record>
+
+    <menuitem id="menu_dograh_settings"
+              name="Settings"
+              parent="menu_dograh_config"
+              action="dograh_settings_action"
+              groups="connect.group_admin"
+              sequence="10"/>
+
+</odoo>

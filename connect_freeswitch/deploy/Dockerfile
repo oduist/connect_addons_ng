@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libedit-dev zlib1g-dev uuid-dev libspeex-dev libspeexdsp-dev \
     # Module deps
     libopus-dev libsndfile1-dev libtiff-dev libjpeg-dev \
+    libwebsockets-dev libboost-system-dev libboost-thread-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Build libks2 (needed for mod_verto, mod_rtc) ────────────────────────────
@@ -45,11 +46,22 @@ RUN ldconfig
 RUN git clone --depth 1 --branch ${FS_VERSION} \
     https://github.com/signalwire/freeswitch.git /usr/src/freeswitch
 
+# mod_xml_rpc has no listen-address setting and otherwise binds its management
+# API to every host interface. Keep the plain-HTTP backend loopback-only; the
+# public route is the managed Traefik HTTPS edge (ADR-044).
+COPY patches/mod_xml_rpc-loopback.patch /tmp/mod_xml_rpc-loopback.patch
+RUN git -C /usr/src/freeswitch apply --check /tmp/mod_xml_rpc-loopback.patch \
+    && git -C /usr/src/freeswitch apply /tmp/mod_xml_rpc-loopback.patch
+
 # ── Add mod_piper_tts to the source tree ────────────────────────────────────
 RUN git clone --depth 1 --branch ${MOD_PIPER_TTS_VERSION} \
     https://github.com/aks-devs/mod_piper_tts.git /tmp/mod_piper_tts \
     && cp -r /tmp/mod_piper_tts/sources \
        /usr/src/freeswitch/src/mod/asr_tts/mod_piper_tts
+
+# mod_audio_fork is vendored so image builds do not depend on a mutable or
+# disappearing third-party repository.
+COPY mod_audio_fork /usr/src/freeswitch/src/mod/applications/mod_audio_fork
 
 # ── Bootstrap FreeSWITCH (cached independently of module list) ─────────────
 WORKDIR /usr/src/freeswitch
@@ -73,6 +85,7 @@ applications/mod_dptools
 applications/mod_http_cache
 applications/mod_fifo
 applications/mod_valet_parking
+applications/mod_audio_fork
 formats/mod_local_stream
 dialplans/mod_dialplan_xml
 codecs/mod_opus
@@ -88,6 +101,15 @@ RUN ./configure \
     --without-python \
     --without-erlang \
     --without-java
+
+# The vendored mod_audio_fork sources predate FreeSWITCH's strict in-tree
+# module CFLAGS (-Werror -pedantic -Wdeclaration-after-statement), and the
+# in-tree build ignores per-module Makefile.am CFLAGS. Neutralize bare -Werror
+# across the build files so the vendored code compiles verbatim; the warnings
+# remain visible but non-fatal. -Werror=<name> forms are left untouched.
+RUN find . \( -name Makefile -o -name '*.mk' -o -name 'modmake.rules' -o -name 'modmake.rulesam' \) -print0 \
+    | xargs -0 -r sed -i -E 's/-Werror($|[[:space:]])/-Wno-error\1/g'
+
 RUN make -j$(nproc)
 RUN make install
 
@@ -108,7 +130,7 @@ RUN mkdir -p /staging/usr/lib \
     && ldconfig -N /staging/usr/lib
 
 # ── Download piper binary ───────────────────────────────────────────────────
-RUN curl -fSL \
+RUN curl -fSL --http1.1 --retry 5 --retry-all-errors --retry-delay 2 \
     https://github.com/rhasspy/piper/releases/download/v${PIPER_VERSION}/piper_amd64.tar.gz \
     -o /tmp/piper.tar.gz \
     && mkdir -p /opt/piper \
@@ -162,8 +184,8 @@ zh:zh_CN:huayan:medium" \
          dest="/opt/piper/models/${full}-${dest_voice}-${quality}"; \
          url="${base}/${short}/${full}/${voice}/${quality}/${full}-${voice}-${quality}"; \
          echo "==> ${full}-${dest_voice}-${quality}"; \
-         curl -fSL "${url}.onnx"      -o "${dest}.onnx"; \
-         curl -fSL "${url}.onnx.json" -o "${dest}.onnx.json"; \
+         curl -fSL --http1.1 --retry 5 --retry-all-errors --retry-delay 2 "${url}.onnx"      -o "${dest}.onnx"; \
+         curl -fSL --http1.1 --retry 5 --retry-all-errors --retry-delay 2 "${url}.onnx.json" -o "${dest}.onnx.json"; \
        done
 
 ###############################################################################
@@ -222,6 +244,6 @@ ENV ODOO_URL=http://localhost:8069 \
 VOLUME ["/usr/share/freeswitch/sounds"]
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-    CMD fs_cli -x "status" | grep -q ^UP || exit 1
+    CMD fs_cli -p "${FS_ESL_PASSWORD:-ConnectNGESLPassword}" -x "status" | grep -q '^UP' || exit 1
 
 ENTRYPOINT ["/docker-entrypoint.sh"]

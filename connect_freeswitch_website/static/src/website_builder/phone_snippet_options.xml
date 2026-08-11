@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="connect_freeswitch_website.PhoneStatusOption">
+    <BuilderRow label.translate="Phone Number">
+        <BuilderMany2One
+            action="'connectPhoneNumber'"
+            model="'connect.freeswitch.number'"
+            domain="[['schedule_enabled', '=', true], ['schedule_id', '!=', false]]"
+            allowUnselect="false"/>
+    </BuilderRow>
+    <BuilderRow label.translate="Show Time" tooltip.translate="Show until when the number is available, or when it opens again">
+        <BuilderCheckbox dataAttributeAction="'showTime'" dataAttributeActionValue="'true'"/>
+    </BuilderRow>
+    <BuilderRow label.translate="Phone Link" tooltip.translate="Link the phone number with tel: prefix">
+        <BuilderCheckbox dataAttributeAction="'linkPhone'" dataAttributeActionValue="'true'"/>
+    </BuilderRow>
+    <BuilderRow label.translate="Status Link" tooltip.translate="Web page opened when clicking the status indicator">
+        <BuilderUrlPicker placeholder.translate="e.g. /contactus" dataAttributeAction="'linkPage'"/>
+    </BuilderRow>
+</t>
+
+<t t-name="connect_freeswitch_website.PhoneOpeningHoursOption">
+    <BuilderRow label.translate="Phone Number">
+        <BuilderMany2One
+            action="'connectPhoneNumber'"
+            model="'connect.freeswitch.number'"
+            domain="[['schedule_enabled', '=', true], ['schedule_id', '!=', false]]"
+            allowUnselect="false"/>
+    </BuilderRow>
+    <BuilderRow label.translate="Days Ahead">
+        <BuilderNumberInput dataAttributeAction="'days'" min="1" max="60"/>
+    </BuilderRow>
+    <BuilderRow label.translate="Show Labels" tooltip.translate="Display the names of public holidays and special working days">
+        <BuilderCheckbox dataAttributeAction="'showLabels'" dataAttributeActionValue="'true'"/>
+    </BuilderRow>
+    <BuilderRow label.translate="Date Format">
+        <BuilderSelect dataAttributeAction="'dateFormat'">
+            <BuilderSelectItem dataAttributeActionValue="'long'">Long (Saturday, 08.08.2026)</BuilderSelectItem>
+            <BuilderSelectItem dataAttributeActionValue="'short'">Short (08.08.2026)</BuilderSelectItem>
+        </BuilderSelect>
+    </BuilderRow>
+</t>
+
+</templates>

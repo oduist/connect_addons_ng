@@ -8,12 +8,12 @@ for the current auth model.
 ## Build
 
 ```
-docker buildx build --platform linux/amd64,linux/arm64 \
+docker build --platform linux/amd64 \
     --provenance=false --sbom=false \
-    -t oduist/freeswitch-firewall:2.1.0 \
+    -t oduist/freeswitch-firewall:2.1.1 \
     -t oduist/freeswitch-firewall:latest \
     .
-docker push oduist/freeswitch-firewall:2.1.0
+docker push oduist/freeswitch-firewall:2.1.1
 docker push oduist/freeswitch-firewall:latest
 ```
 

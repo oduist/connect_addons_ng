@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect LiveKit
 - **Technical:** `connect_livekit`
-- **Version:** 19.0.1.0.0
+- **Version:** 18.0.1.0.0
 - **Depends:** `connect`
 - **Python deps:** `livekit-api`
 - **Application:** False

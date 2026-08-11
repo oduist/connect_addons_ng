@@ -1,10 +1,11 @@
-# Traefik dynamic configuration: route HTTPS XML-RPC traffic to FreeSWITCH.
+# Traefik dynamic configuration: route HTTPS control-plane traffic to the
+# host-networked FreeSWITCH and firewall services.
 #
 # mod_xml_rpc has no native TLS, so Traefik terminates HTTPS here (the cert is
 # issued by the letsencrypt resolver configured on the websecure entrypoint,
 # see docker-compose.yml) and proxies to the internal plain-HTTP port (8080) on
-# the host where FreeSWITCH runs (network_mode: host). The host is reached via
-# host.docker.internal, mapped to the gateway through extra_hosts.
+# the host loopback interface. Traefik and FreeSWITCH both use
+# network_mode: host, so the plain-HTTP listener never leaves the host.
 #
 # HTTP Basic Auth is still enforced by mod_xml_rpc itself; Traefik only adds the
 # TLS layer that keeps the credential off the wire in cleartext.
@@ -12,14 +13,26 @@
 http:
   routers:
     freeswitch-xmlrpc:
-      rule: "PathPrefix(`/RPC2`)"
+      rule: 'Host(`{{ env "FS_DOMAIN" }}`) && PathPrefix(`/RPC2`)'
       entryPoints:
         - websecure
       service: freeswitch-xmlrpc
-      tls: {}
+      tls:
+        certResolver: letsencrypt
+    firewall:
+      rule: 'Host(`{{ env "FS_DOMAIN" }}`) && PathPrefix(`/firewall`)'
+      entryPoints:
+        - websecure
+      service: firewall
+      tls:
+        certResolver: letsencrypt
 
   services:
     freeswitch-xmlrpc:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:8080"
+          - url: "http://127.0.0.1:8080"
+    firewall:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:8081"

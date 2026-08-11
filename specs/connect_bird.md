@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Bird
 - **Technical:** `connect_bird`
-- **Version:** 19.0.1.0.0
+- **Version:** 18.0.1.0.0
 - **Depends:** `connect`
 - **Python deps:** none (raw HTTP via `httpx`, already required by core)
 - **Application:** False

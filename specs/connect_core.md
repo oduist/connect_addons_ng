@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect
 - **Technical:** `connect`
-- **Version:** 19.0.4.1.0
+- **Version:** 18.0.4.2.0
 - **Depends:** `base`, `mail`, `contacts`, `sms`, `resource`
 - **Python deps:** `phonenumbers`, `jinja2`, `openai` (for transcription - not Twilio-specific), `PyJWT`
 - **Application:** True
@@ -381,7 +381,7 @@ links).
 `connect.user_callflow` (+`_call`) and `connect.message_configuration` no longer
 exist in core. See `specs/connect_twilio.md`, `specs/connect_freeswitch.md` and
 `specs/connect_asterisk.md` for their per-provider successors. The
-`connect` 19.0.4.0.0 pre-migration archives the old tables as `_*_legacy`.
+`connect` 18.0.4.0.0 pre-migration archives the old tables as `_*_legacy`.
 
 ---
 
@@ -699,6 +699,32 @@ Connect (root, seq 10)
       +-- Working Times (admin, seq 42, resource.calendar)
       +-- License (admin)
 ```
+
+---
+
+## Frontend (connect/static/src/)
+
+Core owns the provider-agnostic phone-widget pieces that read the shared
+ledger, so they are defined once instead of being copy-pasted per provider
+(`web.assets_backend`):
+
+- `components/license_banner/` — license banner systray item.
+- `components/calls/` — shared **Calls history tab** (`Calls` / `CallDetail`,
+  templates `connect.calls` / `connect.call_detail`). Provider phone panels
+  import it (`import {Calls} from "@connect/components/calls/calls"`) and mount
+  it as a child; it reads `connect.call.get_widget_calls` and `connect.favorite`
+  and triggers `busPhoneMakeCall` on the provider bus for click-to-call.
+- `services/active_calls/` — shared **active-calls systray widget**
+  (`ConnectActiveCallsTray` + `ConnectActiveCallsPopup`, service
+  `connect_active_calls`). Registered **once**, gated on
+  `connect.group_user`; clicking the `fa-server` "Toggle Calls" tray icon shows
+  in-progress calls (`connect.call.get_widget_calls`, domain
+  `status = in-progress`). Previously duplicated in each of connect_twilio /
+  connect_telnyx / connect_infobip.
+
+The provider-specific WebRTC dialer (its own systray icon + `Phone` main
+component per SDK) stays in each provider module and is out of scope for this
+sharing.
 
 ---
 
