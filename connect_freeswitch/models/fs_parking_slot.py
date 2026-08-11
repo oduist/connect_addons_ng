@@ -1,7 +1,7 @@
 import logging
 import re
 
-from odoo import api, fields, models, release
+from odoo import api, fields, models, release, _
 from odoo.exceptions import UserError
 
 logger = logging.getLogger(__name__)
@@ -66,23 +66,23 @@ class FreeSwitchParkingSlot(models.Model):
         self.ensure_one()
         if self.is_occupied:
             raise UserError(
-                "Slot %s is already occupied." % self.exten)
+                _("Slot %s is already occupied.", self.exten))
         call = self.env['connect.call'].browse(call_id) if call_id else self.env['connect.call']
         if not call.exists():
-            raise UserError("Call not found.")
+            raise UserError(_("Call not found."))
 
         uuid = self._find_remote_leg_uuid(call)
         if not uuid:
             raise UserError(
-                "Cannot find an active channel for this call. "
-                "Make sure the call is still in progress.")
+                _("Cannot find an active channel for this call. "
+                  "Make sure the call is still in progress."))
 
         settings = self.env['connect.settings']
         args = "{uuid} {slot} XML default".format(uuid=uuid, slot=self.exten)
         result = settings.freeswitch_api('uuid_transfer', args)
         if not result or str(result).startswith('-ERR'):
             raise UserError(
-                "FreeSWITCH rejected the park: %s" % (result or 'no response'))
+                _("FreeSWITCH rejected the park: %s", result or 'no response'))
 
         self.sudo().write({
             'parked_call': call.id,
@@ -97,8 +97,8 @@ class FreeSwitchParkingSlot(models.Model):
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
-                'title': 'Call Parked',
-                'message': 'Call parked on slot %s' % self.exten,
+                'title': _("Call Parked"),
+                'message': _("Call parked on slot %s", self.exten),
                 'type': 'success',
                 'sticky': False,
             },
@@ -112,9 +112,9 @@ class FreeSwitchParkingSlot(models.Model):
         """
         self.ensure_one()
         if self.is_occupied:
-            raise UserError("Slot %s is already occupied." % self.exten)
+            raise UserError(_("Slot %s is already occupied.", self.exten))
         if not uuid:
-            raise UserError("No channel UUID provided.")
+            raise UserError(_("No channel UUID provided."))
 
         settings = self.env['connect.settings']
         remote_uuid = self._resolve_remote_leg(uuid, settings) or uuid
@@ -124,7 +124,7 @@ class FreeSwitchParkingSlot(models.Model):
         result = settings.freeswitch_api('uuid_transfer', args)
         if not result or str(result).startswith('-ERR'):
             raise UserError(
-                "FreeSWITCH rejected the park: %s" % (result or 'no response'))
+                _("FreeSWITCH rejected the park: %s", result or 'no response'))
 
         caller_number = self._get_channel_var(
             remote_uuid, 'caller_id_number', settings)
@@ -146,8 +146,8 @@ class FreeSwitchParkingSlot(models.Model):
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
-                'title': 'Call Parked',
-                'message': 'Call parked on slot %s' % self.exten,
+                'title': _("Call Parked"),
+                'message': _("Call parked on slot %s", self.exten),
                 'type': 'success',
                 'sticky': False,
             },
@@ -195,9 +195,9 @@ class FreeSwitchParkingSlot(models.Model):
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
-                'title': 'Parking Sync',
-                'message': ('%d stale slot(s) cleared.' % cleared
-                            if cleared else 'All slots in sync.'),
+                'title': _("Parking Sync"),
+                'message': (_("%d stale slot(s) cleared.", cleared)
+                            if cleared else _("All slots in sync.")),
                 'type': 'info',
                 'sticky': False,
             },
@@ -208,7 +208,7 @@ class FreeSwitchParkingSlot(models.Model):
         and bridging into the slot's valet extension."""
         self.ensure_one()
         if not self.is_occupied:
-            raise UserError("Slot %s is empty." % self.exten)
+            raise UserError(_("Slot %s is empty.", self.exten))
 
         user = self.env.user
         connect_user = self.env['connect.user'].search([
@@ -216,17 +216,17 @@ class FreeSwitchParkingSlot(models.Model):
             ('active', '=', True),
         ], limit=1)
         if not connect_user:
-            raise UserError("You don't have a Connect user configured.")
+            raise UserError(_("You don't have a Connect user configured."))
 
         settings = self.env['connect.settings']
         domain = settings.get_param('freeswitch_domain')
         if not domain:
-            raise UserError("FreeSWITCH domain is not configured.")
+            raise UserError(_("FreeSWITCH domain is not configured."))
 
         endpoint_parts = self.env['connect.call']._build_user_bridge(
             connect_user, domain)
         if not endpoint_parts:
-            raise UserError("You don't have any ringable endpoints.")
+            raise UserError(_("You don't have any ringable endpoints."))
 
         # parked_caller_name / parked_caller_number originate from the
         # parking webhook (the inbound caller's SIP caller-id) and are
@@ -254,13 +254,13 @@ class FreeSwitchParkingSlot(models.Model):
         logger.info("Unpark slot %s: FS result: %r", self.exten, result)
         if not result or str(result).startswith('-ERR'):
             raise UserError(
-                "FreeSWITCH rejected the unpark: %s" % (result or 'no response'))
+                _("FreeSWITCH rejected the unpark: %s", result or 'no response'))
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
-                'title': 'Retrieving Call',
-                'message': 'Ringing your phone to pick up slot %s' % self.exten,
+                'title': _("Retrieving Call"),
+                'message': _("Ringing your phone to pick up slot %s", self.exten),
                 'type': 'info',
                 'sticky': False,
             },

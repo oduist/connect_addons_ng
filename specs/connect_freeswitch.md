@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect FreeSWITCH
 - **Technical:** `connect_freeswitch`
-- **Version:** 19.0.2.1.2
+- **Version:** 19.0.2.1.4
 - **Depends:** `connect`, `web`
 - **Application:** False
 - **License:** Proprietary
@@ -474,7 +474,28 @@ incoming. See **`specs/decisions/028-cdr-direction-from-dialplan-variable.md`**.
 
 ---
 
+## Frontend i18n (ADR-038)
+
+Softphone UI strings (phone systray/dialpad, parking panel,
+endpoint-password widget) go through `_t()` from
+`@web/core/l10n/translation`; string literals inside OWL template
+expressions live in component getters (`displayCallerName`,
+`revealToggleLabel`) so the exporter sees them. The Python parking
+toasts/errors (`fs_parking_slot.py`, park branch of `call.py`) use
+`_()`. The `i18n/` catalog (`connect_freeswitch.pot` + `de.po`,
+`fr.po`, `it.po`, `ru.po`) is hand-maintained and **scoped to the
+softphone UI**; base-language file names cover the Swiss locales via
+Odoo's base-lang fallback. `verto_client.js` is deliberately not
+translated (console-only strings). When adding softphone strings,
+update the catalog in the same commit.
+
+---
+
 ## Tests
+
+`connect_freeswitch/tests/test_i18n.py` covers the i18n catalog: web and
+python code-translation bundles for de_DE/fr_CH/it_CH/ru_RU load and
+contain key softphone terms (proves po validity and base-lang fallback).
 
 `connect_freeswitch/tests/test_firewall.py` covers:
 
