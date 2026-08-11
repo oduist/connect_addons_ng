@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Read-only: process_call_event() only sets call.invoice (a field on
+         connect.call, already writable by the webhook user via core
+         security). get_invoice_by_partner() and register_summary_to_rec()
+         both run .sudo()/with_user(SUPERUSER_ID), bypassing ACLs. There is
+         no create button (invoices are never created from a call) and
+         unlink_invoice() runs as the Connect user (their own rights), not
+         the webhook user. So the webhook user never creates, writes or
+         unlinks account.move directly, only needs read. -->
+    <record id="access_account_move_webhook" model="ir.model.access">
+        <field name="name">account.move webhook</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+</odoo>

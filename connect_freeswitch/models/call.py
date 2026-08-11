@@ -1,6 +1,6 @@
 import logging
 import re
-from odoo import fields, models, api
+from odoo import fields, models, api, _
 from odoo.exceptions import UserError
 from odoo.addons.connect.models.settings import debug
 from odoo.addons.connect.models.call import CALL_END_STATUSES
@@ -46,19 +46,19 @@ class Call(models.Model):
         """
         self.ensure_one()
         if self.status in CALL_END_STATUSES:
-            raise UserError("This call is already ended.")
+            raise UserError(_("This call is already ended."))
         if self.fs_parked_slot:
             raise UserError(
-                "This call is already parked on slot %s."
-                % self.fs_parked_slot.exten)
+                _("This call is already parked on slot %s.",
+                  self.fs_parked_slot.exten))
         Slot = self.env['connect.freeswitch.parking.slot']
         slot = Slot.search(
             [('active', '=', True), ('parked_uuid', '=', False)],
             order='sequence, exten', limit=1)
         if not slot:
             raise UserError(
-                "No free parking slots available. Configure additional "
-                "slots under Connect → Configuration → Parking Slots.")
+                _("No free parking slots available. Configure additional "
+                  "slots under Connect → Configuration → Parking Slots."))
         return slot.action_park_call(self.id)
 
     @api.model
@@ -76,13 +76,13 @@ class Call(models.Model):
         if slot_id:
             slot = Slot.browse(int(slot_id))
             if not slot.exists() or not slot.active:
-                raise UserError("Selected parking slot is not available.")
+                raise UserError(_("Selected parking slot is not available."))
         else:
             slot = Slot.search(
                 [('active', '=', True), ('parked_uuid', '=', False)],
                 order='sequence, exten', limit=1)
             if not slot:
-                raise UserError("No free parking slots available.")
+                raise UserError(_("No free parking slots available."))
         return slot.action_park_channel_uuid(uuid)
 
     @api.model

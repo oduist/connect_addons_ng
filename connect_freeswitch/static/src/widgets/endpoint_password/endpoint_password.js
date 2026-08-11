@@ -31,6 +31,10 @@ export class EndpointPasswordField extends Component {
         this.state.revealed = !this.state.revealed
     }
 
+    get revealToggleLabel() {
+        return this.state.revealed ? _t("Hide password") : _t("Show password")
+    }
+
     async copyToClipboard() {
         if (!this.value) {
             return

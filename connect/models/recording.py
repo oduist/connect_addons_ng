@@ -59,11 +59,15 @@ class Recording(models.Model):
         temp_file_path = None
         try:
             client = self.env['connect.settings'].get_openai_client()
-            with NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
+            # OpenAI infers the audio container from the file extension, so
+            # keep the original one when the filename is known.
+            suffix = os.path.splitext(self.recording_filename or '')[1] or '.mp3'
+            with NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
                 if self.recording_attachment:
                     # Providers whose recording downloads require API auth
                     # store the audio bytes on the record instead of
-                    # exposing a public media_url (e.g. connect_infobip).
+                    # exposing a public media_url (e.g. connect_infobip,
+                    # Asterisk or LiveKit sidecars).
                     temp_file.write(base64.b64decode(self.recording_attachment))
                 else:
                     # Bounded download: media_url points at the provider's

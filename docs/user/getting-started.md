@@ -22,6 +22,10 @@ The phone widget is a browser-based phone embedded in Odoo. Click the phone icon
 
     The widget automatically reconnects if the connection drops.
 
+    The FreeSWITCH widget follows your Odoo interface language — German,
+    French, Italian and Russian translations ship with the module; other
+    languages fall back to English.
+
 ### Widget Tabs
 
 | Tab | Description |

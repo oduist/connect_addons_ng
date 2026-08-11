@@ -8,6 +8,12 @@
  * palette. The header/footer stay dark in BOTH schemes as a brand bar.
  */
 
+/* Material loads Outfit only in 300/400/700, so our font-weight:600 (h2/h3,
+   active nav, table headers, buttons) collapsed to 700 — no true semibold
+   tier. Supplement the missing medium/semibold weights. Must stay at the very
+   top: @import has to precede all other rules. */
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@500;600&display=fallback");
+
 /* ------------------------------------------------------------------ *
  * Shared brand accents (scheme-independent)
  * ------------------------------------------------------------------ */
@@ -136,6 +142,12 @@
 /* ------------------------------------------------------------------ *
  * Typography
  * ------------------------------------------------------------------ */
+/* Base reading size: bump content text from 16px to 20px. Headings, code and
+   other typeset elements are em-based, so they scale up proportionally. */
+.md-typeset {
+  font-size: 1rem;
+}
+
 .md-typeset h1,
 .md-typeset h2,
 .md-typeset h3 {
@@ -167,6 +179,11 @@
 /* ------------------------------------------------------------------ *
  * Navigation
  * ------------------------------------------------------------------ */
+/* Bump the left nav + right TOC menu text from 14px to 18px. */
+.md-nav {
+  font-size: 0.9rem;
+}
+
 /* Clickable page links: accent on hover / focus / active. Scoped away from
    section labels (which are <label>, not links) so headers never look clickable. */
 [data-md-color-scheme="slate"]
@@ -188,7 +205,7 @@
 .md-nav__item--section > .md-nav__link:focus {
   color: var(--md-default-fg-color--light);
   text-transform: uppercase;
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   letter-spacing: 0.09em;
   font-weight: 700;
   cursor: default;
@@ -240,7 +257,7 @@
   border-radius: 10px;
   border-width: 1px;
   border-left-width: 3px;
-  font-size: 0.72rem;
+  font-size: 0.9rem;
 }
 [data-md-color-scheme="slate"] .md-typeset .admonition,
 [data-md-color-scheme="slate"] .md-typeset details {
@@ -345,7 +362,7 @@
   border: 1px solid var(--odu-border);
   border-radius: 10px;
   overflow: hidden;
-  font-size: 0.72rem;
+  font-size: 0.9rem;
 }
 [data-md-color-scheme="slate"] .md-typeset table:not([class]) th {
   background-color: var(--odu-surface-2);
