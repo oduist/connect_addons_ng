@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect',
-    'version': '18.0.4.2.0',
+    'version': '18.0.4.2.1',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Communication platform for Odoo',
@@ -42,6 +42,7 @@
         ],
     },
     'post_init_hook': 'post_init_hook',
+    'images': ['static/description/icon.png'],
     'installable': True,
     'application': True,
     'license': 'Other proprietary',

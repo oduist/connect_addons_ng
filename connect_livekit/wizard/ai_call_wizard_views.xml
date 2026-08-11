@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_livekit_ai_call_wizard_form" model="ir.ui.view">
+        <field name="name">connect.livekit.ai_call_wizard.form</field>
+        <field name="model">connect.livekit.ai_call_wizard</field>
+        <field name="arch" type="xml">
+            <form string="Call with Agent">
+                <group>
+                    <field name="agent"/>
+                    <field name="caller_id"/>
+                    <field name="to_number" widget="phone"/>
+                    <field name="partner"/>
+                </group>
+                <footer>
+                    <button name="action_call" type="object" string="Call"
+                            class="btn-primary"/>
+                    <button string="Cancel" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

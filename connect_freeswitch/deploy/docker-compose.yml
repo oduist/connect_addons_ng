@@ -1,42 +1,14 @@
 services:
-  odoo:
-    image: odoo:19.0
-    depends_on:
-      - db
-    ports:
-      - "8069:8069"
-    restart: unless-stopped
-    environment:
-      - HOST=db
-      - USER=odoo
-      - PASSWORD=odoo
-      - ODOO_HTTP_SOCKET_TIMEOUT=20
-    volumes:
-      - odoo-data:/var/lib/odoo
-      - ../..:/mnt/extra-addons
-      - ./odoo.conf:/etc/odoo/odoo.conf
-    command: odoo -d connect_fs_19 --dev=xml --workers=2
-
-
-  db:
-    image: postgres:16
-    restart: unless-stopped
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=odoo
-      - POSTGRES_PASSWORD=odoo
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-
-  # TLS edge in front of FreeSWITCH. mod_xml_rpc has no native TLS, so Traefik
-  # terminates HTTPS for it (see traefik/dynamic.yml) and proxies to the
-  # internal :8080 port over host.docker.internal. Its ACME store (the
-  # traefik-acme volume) is shared with the fs container, whose entrypoint
-  # extracts the same certificate for Verto/WSS.
+  # TLS edge for XML-RPC (/RPC2) and the firewall dashboard/API
+  # (/firewall). Traefik runs on the host network so it can reach the
+  # loopback-only FreeSWITCH and firewall HTTP listeners directly.
   traefik:
     image: traefik:v3.3
     container_name: traefik
+    network_mode: host
     restart: unless-stopped
+    environment:
+      - FS_DOMAIN=${FS_DOMAIN:?Set FS_DOMAIN in deploy/.env}
     command:
       - "--global.checknewversion=false"
       - "--global.sendanonymoususage=false"
@@ -57,18 +29,15 @@ services:
       # Defaults to production Let's Encrypt; set ACME_CASERVER to the staging
       # URL while testing to avoid rate limits (see deploy/.env).
       - "--certificatesresolvers.letsencrypt.acme.caserver=${ACME_CASERVER:-https://acme-v02.api.letsencrypt.org/directory}"
-    ports:
-      - "80:80"
-      - "443:443"
-    extra_hosts:
-      # Let Traefik (bridge network) reach the host-networked fs container.
-      - "host.docker.internal:host-gateway"
     volumes:
       - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
       - traefik-acme:/acme
 
   fs:
-    image: safarov/freeswitch:latest
+    # The curated bootstrap configuration is part of this image. Do not bind
+    # mount a host configuration directory over it; Odoo supplies the dynamic
+    # directory/dialplan/configuration sections through mod_xml_curl.
+    image: oduist/freeswitch:2.1.2
     container_name: freeswitch
     hostname: freeswitch
     network_mode: host
@@ -78,24 +47,44 @@ services:
       - SOUND_TYPES=music:en-us-callie
       - EPMD=false
       - DUMPCAP=false
-      - ODOO_URL=${ODOO_URL}
+      - ODOO_URL=${ODOO_URL:?Set ODOO_URL in deploy/.env}
       # Shared secret for FreeSWITCH -> Odoo HTTP calls; must match the
       # FreeSWITCH Webhook Token in Odoo settings (ADR-025).
-      - FS_WEBHOOK_TOKEN=${FS_WEBHOOK_TOKEN}
+      - FS_WEBHOOK_TOKEN=${FS_WEBHOOK_TOKEN:?Set FS_WEBHOOK_TOKEN in deploy/.env}
       # Domain used by the oduist/freeswitch entrypoint to extract the Traefik
-      # ACME cert for Verto. Ignored by the safarov image used here by default.
-      - FS_DOMAIN=${FS_DOMAIN:-localhost}
+      # ACME cert for Verto and configure the SIP/WebRTC realm.
+      - FS_DOMAIN=${FS_DOMAIN:?Set FS_DOMAIN in deploy/.env}
+      # Must match the firewall service's FS_ESL_PASSWORD.
+      - FS_ESL_PASSWORD=${FS_ESL_PASSWORD:?Set FS_ESL_PASSWORD in deploy/.env}
     volumes:
       - freeswitch-sounds:/usr/share/freeswitch/sounds
-      - ./freeswitch/conf:/etc/freeswitch
-      - ./freeswitch/logs:/var/log/freeswitch
-      - ./freeswitch/dumpcap:/dumpcap
       # Shared Traefik ACME store; the oduist/freeswitch entrypoint reads
       # /etc/traefik/acme.json to reuse Traefik's certificate for Verto.
       - traefik-acme:/etc/traefik
 
+  # SIP brute-force protection; see docs/admin/firewall.md.
+  firewall:
+    image: oduist/freeswitch-firewall:2.1.1
+    container_name: firewall
+    network_mode: host
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - ODOO_URL=${ODOO_URL:?Set ODOO_URL in deploy/.env}
+      - AGENT_TOKEN=${FIREWALL_AGENT_TOKEN:?Set FIREWALL_AGENT_TOKEN in deploy/.env}
+      - FS_ESL_HOST=127.0.0.1
+      - FS_ESL_PORT=8021
+      - FS_ESL_PASSWORD=${FS_ESL_PASSWORD:?Set FS_ESL_PASSWORD in deploy/.env}
+      - HTTP_BIND_HOST=127.0.0.1
+      - HTTP_BIND_PORT=8081
+      - DASHBOARD_USER=admin
+      - DASHBOARD_PASSWORD=${FIREWALL_DASHBOARD_PASSWORD:?Set FIREWALL_DASHBOARD_PASSWORD in deploy/.env}
+      - LOG_LEVEL=INFO
+    volumes:
+      - firewall-cache:/var/lib/connect-firewall
+
 volumes:
   freeswitch-sounds:
-  odoo-data:
-  postgres-data:
+  firewall-cache:
   traefik-acme:

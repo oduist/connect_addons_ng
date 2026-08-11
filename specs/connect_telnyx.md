@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Telnyx
 - **Technical:** `connect_telnyx`
-- **Version:** 19.0.1.0.0
+- **Version:** 18.0.1.3.0
 - **Depends:** `connect`
 - **Python deps:** `telnyx`, `nacl` (PyNaCl)
 - **Application:** False

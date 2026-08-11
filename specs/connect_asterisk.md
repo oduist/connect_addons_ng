@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Asterisk
 - **Technical:** `connect_asterisk`
-- **Version:** 19.0.2.0.0
+- **Version:** 18.0.2.1.0
 - **Depends:** `connect`, `web`
 - **Application:** False
 - **License:** Proprietary

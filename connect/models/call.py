@@ -356,7 +356,10 @@ class Call(models.Model):
 
     def redial(self):
         self.ensure_one()
-        self.env['connect.settings'].originate_call(
+        # Return the provider result: URL-based providers (3CX) hand back
+        # an ir.actions.act_url that the web client must execute; other
+        # providers return a plain truthy value, which buttons ignore.
+        return self.env['connect.settings'].originate_call(
             number=self.called if self.direction == 'outgoing' else self.caller,
         )
 

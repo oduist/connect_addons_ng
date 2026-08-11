@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect
 - **Technical:** `connect`
-- **Version:** 19.0.4.1.0
+- **Version:** 18.0.4.2.0
 - **Depends:** `base`, `mail`, `contacts`, `sms`, `resource`
 - **Python deps:** `phonenumbers`, `jinja2`, `openai` (for transcription - not Twilio-specific), `PyJWT`
 - **Application:** True
@@ -381,7 +381,7 @@ links).
 `connect.user_callflow` (+`_call`) and `connect.message_configuration` no longer
 exist in core. See `specs/connect_twilio.md`, `specs/connect_freeswitch.md` and
 `specs/connect_asterisk.md` for their per-provider successors. The
-`connect` 19.0.4.0.0 pre-migration archives the old tables as `_*_legacy`.
+`connect` 18.0.4.0.0 pre-migration archives the old tables as `_*_legacy`.
 
 ---
 

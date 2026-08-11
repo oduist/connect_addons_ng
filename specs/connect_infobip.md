@@ -4,7 +4,7 @@
 
 - **Name**: Oduist Connect Infobip
 - **Technical Name**: `connect_infobip`
-- **Version**: 19.0.1.0.0
+- **Version**: 18.0.1.2.0
 - **Depends**: `connect`
 - **Python Dependencies**: none (plain `requests`; the official Infobip
   Python SDK does not cover the Voice/Calls and Numbers APIs — ADR-036)

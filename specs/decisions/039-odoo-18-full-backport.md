@@ -20,12 +20,10 @@ Only version-specific assets and migration entry points may differ.
 ## Decision
 
 Backport the final Odoo 19 tree as a single release-oriented synchronization,
-using commit `da78cc790e5d39d9c30f2b779e20e59535c9cc66` as the complete product
-snapshot. Cross-series compatibility fixes delivered after the snapshot are
-limited to Python parity commits
-`2597cdb212892602b0728eda462d462b6c69bb82` and
-`2ccf2b21d93064f8afd5b0aae80ee3d101e5f4d0`; later Odoo 19 product changes do
-not automatically expand this backport.
+using commit `e678ed0ad5984b5c3739e4cb3f05660a8417a547` as the source baseline and
+including the cross-series `res.groups` test compatibility change delivered
+with this ADR. The resulting source snapshot commit is recorded in the Odoo 18
+backport pull request.
 
 The Odoo 18 port will:
 
@@ -43,6 +41,5 @@ The Odoo 18 port will:
 
 The Odoo 18 pull request is intentionally large but represents one auditable
 product-state transition. Review can compare Python directly with the recorded
-Odoo 19 snapshot plus the explicitly recorded compatibility commit, while the
-remaining review focuses on manifests, migrations, and Odoo 18-specific
-frontend assets.
+Odoo 19 snapshot, while the remaining review focuses on manifests, migrations,
+and Odoo 18-specific frontend assets.
