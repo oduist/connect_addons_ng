@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inherit core number list to add Vonage columns -->
+    <record id="view_connect_number_tree_vonage" model="ir.ui.view">
+        <field name="name">connect.number.tree.vonage</field>
+        <field name="model">connect.number</field>
+        <field name="inherit_id" ref="connect.view_connect_number_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='callflow']" position="after">
+                <field name="ncco"/>
+                <field name="country" optional="hide"/>
+                <field name="features" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit core number form to add Vonage fields -->
+    <record id="view_connect_number_form_vonage" model="ir.ui.view">
+        <field name="name">connect.number.form.vonage</field>
+        <field name="model">connect.number</field>
+        <field name="inherit_id" ref="connect.view_connect_number_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='callflow']" position="after">
+                <field name="ncco"
+                       invisible="destination != 'ncco'"
+                       required="destination == 'ncco'"/>
+            </xpath>
+            <xpath expr="//field[@name='is_default']" position="before">
+                <field name="country"/>
+                <field name="features"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

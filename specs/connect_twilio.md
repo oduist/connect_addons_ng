@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Twilio
 - **Technical:** `connect_twilio`
-- **Version:** 19.0.2.0.0
+- **Version:** 18.0.2.2.0
 - **Depends:** `connect`
 - **Python deps:** `twilio`
 - **Application:** False

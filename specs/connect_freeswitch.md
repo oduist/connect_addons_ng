@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect FreeSWITCH
 - **Technical:** `connect_freeswitch`
-- **Version:** 19.0.2.1.0
+- **Version:** 18.0.2.1.2
 - **Depends:** `connect`, `web`
 - **Application:** False
 - **License:** Proprietary
@@ -38,6 +38,8 @@ Major features:
 - call parking with BLF subscriptions (ADR-012);
 - gateway / outgoing route management;
 - piper TTS module embedded in the image;
+- vendored `mod_audio_fork` for bidirectional 16 kHz L16 WebSocket media
+  used by `connect_pipecat` (ADR-035);
 - SIP brute-force firewall integration (see below, ADR-014).
 
 ---
@@ -53,7 +55,7 @@ firewall-related fields:
 |---|---|---|
 | `firewall_enabled` | Boolean | master toggle |
 | `firewall_service_url` | Char | base URL of the firewall service container |
-| `firewall_service_token` / `display_firewall_service_token` | Char | shared Bearer secret used in **both** directions (Odoo → `/firewall/sync` on the service and service → `/freeswitch/firewall/api/*` on Odoo). Masked; admin-only; validator requires ≥24 chars urlsafe. |
+| `firewall_service_token` / `display_firewall_service_token` | Char | shared Bearer secret used in **both** directions (Odoo → `/firewall/sync` on the service and service → `/freeswitch/firewall/api/*` on Odoo). Masked; admin-only; validator requires ≥24 chars urlsafe. Generated missing-only by `ensure_deployment_tokens()` on install and upgrade, then passed to the firewall service as `AGENT_TOKEN` (ADR-045). |
 | `firewall_heartbeat_interval` | Integer | seconds, default 60 |
 | `firewall_event_retention_days` | Integer | how long the audit log is kept; default 30 |
 | `firewall_tcp_ports`, `firewall_udp_ports` | Char | comma-separated ports protected by the iptables chain |
@@ -61,11 +63,15 @@ firewall-related fields:
 | `firewall_authenticated_timeout` | Integer | trust TTL after a successful registration (7 days, sliding) |
 | `firewall_expire_short_timeout` | Integer | challenge-response window (30 s) |
 | `firewall_expire_long_timeout` | Integer | default-deny TTL after a challenge is sent but not answered (24 h) |
-| `freeswitch_webhook_token` / `display_freeswitch_webhook_token` | Char | shared secret authenticating every FreeSWITCH → Odoo HTTP call (`/freeswitch/xml`, `/freeswitch/webhook/*`). Masked; admin-only; auto-generated (`secrets.token_urlsafe(32)`) by the field default, `post_init_hook` and the 19.0.1.10.6 migration (`ensure_webhook_token`). Paired with the container via the `FS_WEBHOOK_TOKEN` env var. See ADR-025 |
+| `freeswitch_webhook_token` / `display_freeswitch_webhook_token` | Char | shared secret authenticating every FreeSWITCH → Odoo HTTP call (`/freeswitch/xml`, `/freeswitch/webhook/*`). Masked; admin-only; auto-generated (`secrets.token_urlsafe(32)`) by the field default and missing-only deployment bootstrap. Paired with the container via `FS_WEBHOOK_TOKEN`. See ADR-025 and ADR-045. |
+| `freeswitch_xmlrpc_host` | Char | the only operator-managed XML-RPC setting: DNS hostname of the Traefik edge. Normalized to lowercase without a trailing dot; changing it rotates the hidden password. |
+| `freeswitch_xmlrpc_password` | Char | admin-only internal credential, generated with `secrets.token_urlsafe(32)` and never exposed in the settings view. The XML-RPC username is the constant `odoo`. See ADR-044. |
 
 `write()` is extended to:
 * validate the Firewall Service Token and the FreeSWITCH Webhook Token
   (length + character set) when an admin edits them in the UI;
+* normalize and validate `freeswitch_xmlrpc_host`, rotating the hidden
+  credential when the normalized hostname changes;
 * schedule a `/firewall/sync` POST via `cr.postcommit` whenever any
   `firewall_*` field changes.
 
@@ -79,14 +85,11 @@ XML-RPC connectivity to FreeSWITCH (ADR-004, ADR-027, ADR-030):
   returning a `(result, error)` tuple. `error` is `None` on success or
   one of `NOT CONFIGURED` / `UNREACHABLE` / `AUTH FAILED` /
   `INVALID RESPONSE`. The connection is **always HTTPS**
-  (`https://<host>:<port>/RPC2`): `mod_xml_rpc` has no native TLS, so
-  Traefik terminates HTTPS in front of it and proxies to the fixed
-  internal port `8080`. The `freeswitch_xmlrpc_port` setting is the
-  **public** Traefik port (default `443`); the internal port lives in
-  the `FS_XMLRPC_INTERNAL_PORT` controller constant. The
-  `freeswitch_xmlrpc_tls_verify` Boolean (default on) controls TLS
-  certificate verification — turn it off only behind a self-signed dev
-  certificate (ADR-030).
+  (`https://odoo:<hidden-password>@<host>:443/RPC2`) with certificate
+  verification always enabled. `mod_xml_rpc` has no native TLS, so
+  Traefik terminates HTTPS and proxies to the fixed loopback listener
+  `127.0.0.1:8080`. Port, username, password, and TLS verification are
+  not operator-configurable (ADR-044).
 * `freeswitch_api(command, args)` — thin wrapper returning the response
   string or `False`; used wherever only success/failure matters.
 * `check_freeswitch_status()` — backs the **CHECK STATUS** button;
@@ -195,10 +198,15 @@ calls the `/freeswitch/firewall/api/*` HTTP controllers with
 authenticates Odoo → service calls (`/firewall/sync`,
 `/firewall/api/bans/<ip>`).
 
-The token (`connect.settings.firewall_service_token` / its display
-twin) is bootstrapped on install / upgrade by `setup_firewall(env)` in
-`connect_freeswitch/__init__.py` and validated on admin edits
-(≥24 chars, `[A-Za-z0-9_-]` only).
+The service tokens are bootstrapped together on install / upgrade by
+`ensure_deployment_tokens(env)` in `connect_freeswitch/__init__.py`. It calls
+the backward-compatible `setup_firewall()` and `ensure_webhook_token()`
+helpers, fills only missing values, and also ensures the firewall agent
+singleton exists. Existing credentials are never rotated. Both stored fields
+are admin-only and validated on admin edits (≥24 chars,
+`[A-Za-z0-9_-]` only). Oduflow reads them with a sudo Odoo shell only for
+passing `freeswitch_webhook_token` to `fs` as `FS_WEBHOOK_TOKEN` and
+`firewall_service_token` to `firewall` as `AGENT_TOKEN` (ADR-045).
 
 ### FreeSWITCH → Odoo endpoint authentication (ADR-025)
 
@@ -342,21 +350,21 @@ Connect > FreeSWITCH (seq 50)
 
 ---
 
-## Migration (19.0.2.0.0, ADR-031)
+## Migrations
 
 Production runs FreeSWITCH only, so `connect_freeswitch` is the only provider
 module with a data migration (connect_twilio / connect_asterisk ship none):
 
-* **connect 19.0.4.0.0 pre-migration** (in the core module) renames the moved
+* **connect 18.0.4.0.0 pre-migration** (in the core module) renames the moved
   PBX tables to `_*_legacy` archives so the registry cleanup cannot drop them,
   and removes the sms.composer inherit view (the wizard moved to
   connect_twilio).
-* **connect_freeswitch 19.0.2.0.0 pre-migration** stashes the
+* **connect_freeswitch 18.0.2.0.0 pre-migration** stashes the
   `connect_fs_fifo` exten FKs (`exten`, `fallback_exten_id`) and the
   `fs_fifo_endpoint_rel` M2M rows into temporary `_mig_*` columns/tables and
   drops the stale constraints, so the fresh FK to the still-empty
   `connect_freeswitch_exten` table cannot abort the upgrade.
-* **connect_freeswitch 19.0.2.0.0 post-migration** copies the legacy data
+* **connect_freeswitch 18.0.2.0.0 post-migration** copies the legacy data
   **id-preserving** into the new models
   (`_connect_exten_legacy` → `connect_freeswitch_exten`, callflow(+choice,
   ring-users rel), number, endpoint, outgoing_callerid), remaps the exten
@@ -364,20 +372,56 @@ module with a data migration (connect_twilio / connect_asterisk ship none):
   `connect.freeswitch.callflow`, …), transfers the legacy `connect_user`
   columns (`exten`, `outgoing_callerid`) into the new per-provider columns,
   and restores the stashed fifo FKs.
+* **connect_freeswitch 18.0.2.1.2 post-migration** removes the obsolete
+  operator-managed XML-RPC fields, rotates the hidden XML-RPC password once,
+  and runs the idempotent deployment bootstrap so both service tokens exist
+  without changing any value already configured (ADR-044, ADR-045).
 
 ---
 
 ## Deploy
 
+`deploy/docker-compose.yml` is the default production FreeSWITCH host
+stack. It starts only Traefik, `oduist/freeswitch:2.1.2` and
+`oduist/freeswitch-firewall:2.1.1`; Odoo and Postgres are deliberately
+not part of that file. `deploy/docker-compose.full.yml` is the
+standalone local all-in-one variant that also starts Odoo 19 and
+Postgres.
+
+Traefik runs with `network_mode: host` and is the public TLS edge for
+both XML-RPC (`/RPC2` → `127.0.0.1:8080`) and the firewall
+dashboard/API (`/firewall` → `127.0.0.1:8081`). The firewall service
+also runs on the host network but binds HTTP to loopback; SIP/RTP and
+kernel firewall handling stay on the host network.
+
 ### FreeSWITCH image (`deploy/`)
 
 `oduist/freeswitch` is built from source (`v1.10.12`) with a curated
 module list (sofia, fifo, verto, http_cache, piper_tts, …). Config
-lives under `deploy/freeswitch/conf/`. `docker-entrypoint.sh` runs
-sound-file download, TLS extraction from Traefik ACME, and now also
-substitutes `FS_ESL_PASSWORD` into `event_socket.conf.xml`. The
-baked-in ESL password is `ConnectNGESLPassword` (project-specific,
-not the FreeSWITCH default `ClueCon`).
+lives under `deploy/freeswitch/conf/` and is copied into the image as its
+immutable bootstrap; production must not bind mount a host directory over
+`/usr/local/freeswitch/etc/freeswitch` (ADR-043). Odoo supplies dynamic
+directory, dialplan, and configuration sections through `mod_xml_curl`.
+`docker-entrypoint.sh` runs sound-file download, TLS extraction from Traefik
+ACME, and substitutes `FS_ESL_PASSWORD` into `event_socket.conf.xml`. ESL
+listens only on `127.0.0.1:8021`. The baked-in fallback password is
+`ConnectNGESLPassword` (project-specific, not the FreeSWITCH default
+`ClueCon`), and the image healthcheck uses the runtime environment value when
+set, with that baked value as its fallback, so custom passwords remain
+healthy.
+
+Traefik's file-provider route renders `FS_DOMAIN` into a `Host` matcher and
+sets the `letsencrypt` certificate resolver explicitly. This gives ACME a
+domain to issue and restricts `/RPC2` routing to the configured FreeSWITCH
+host. Traefik, FreeSWITCH, and the firewall service all use host networking;
+Traefik proxies to `127.0.0.1:8080`. The pinned FreeSWITCH source carries a
+small `mod_xml_rpc` patch because upstream exposes no listen-address setting
+and otherwise binds `8080` on every interface (ADR-044).
+
+`deploy/freeswitch/README.md` is the maintenance contract for the static
+bootstrap and the source-level FreeSWITCH customizations. It records the
+configuration boundary, the exact upstream patch, and the checks required
+when the pinned FreeSWITCH version changes.
 
 `vars.xml` defines the `us-ring` ringback tone (`%(2000,4000,440,480)`)
 because the image wipes FreeSWITCH's stock configs; the dialplan

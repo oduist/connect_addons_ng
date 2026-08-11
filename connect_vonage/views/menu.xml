@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_connect_vonage"
+              name="Vonage"
+              parent="connect.menu_connect_root"
+              sequence="60"/>
+</odoo>

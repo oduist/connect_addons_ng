@@ -87,6 +87,34 @@ class TestRecording(ConnectTestCommon):
         with self.assertRaises(ValidationError):
             rec.get_transcript()
 
+    def test_transcribe_recording_from_attachment(self):
+        """Test transcribe_recording reads the attachment when no media_url."""
+        rec = self.env['connect.recording'].with_context(
+            skip_transcription=True).create({
+            'recording_attachment': b'YXVkaW9fZGF0YQ==',
+            'recording_filename': 'recording.ogg',
+            'duration': 5,
+        })
+        with self.mock_openai_client(summary_text='<p>Attachment Summary</p>'):
+            with patch('odoo.addons.connect.models.recording.requests.get') as mock_get:
+                rec.transcribe_recording('test-key', 'Summarize this')
+                mock_get.assert_not_called()
+        self.assertEqual(rec.summary, '<p>Attachment Summary</p>')
+        self.assertFalse(rec.transcription_error)
+
+    def test_get_transcript_attachment_only(self):
+        """Test get_transcript accepts attachment-only recordings."""
+        rec = self.env['connect.recording'].with_context(
+            skip_transcription=True).create({
+            'recording_attachment': b'YXVkaW9fZGF0YQ==',
+            'recording_filename': 'recording.wav',
+        })
+        self.env['connect.settings'].set_param('openai_api_key', 'test-key')
+        with self.mock_openai_client():
+            # Must not raise 'Recording is not available yet!'
+            rec.get_transcript()
+        self.assertFalse(rec.transcription_error)
+
     def test_transcribe_recording_mock(self):
         """Test transcribe_recording with mocked OpenAI."""
         with self.mock_openai_client(summary_text='<p>AI Summary</p>'):

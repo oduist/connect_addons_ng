@@ -37,5 +37,6 @@
 
     <!-- TTS -->
     <load module="mod_piper_tts"/>
+    <load module="mod_audio_fork"/>
   </modules>
 </configuration>
