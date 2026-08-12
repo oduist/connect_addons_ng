@@ -167,14 +167,33 @@ class Settings(models.Model):
                         title="Sync Warning", warning=True)
             self.connect_notify(
                 "Telnyx account synced successfully", title="Sync Complete")
+        except ValidationError:
+            raise
         except Exception as e:
-            if 'Authentication failed' in str(e) or '401' in str(e):
+            status = getattr(e, 'status_code', None)
+            text = str(e)
+            if status == 401 or 'Authentication failed' in text or '401' in text:
                 raise ValidationError(
                     'Error authenticating requests to the Telnyx API! '
                     'Check your API key!'
                 )
-            else:
-                raise
+            if (status == 403 or '10006' in text
+                    or 'not authorized' in text.lower()):
+                # Telnyx API keys are account-wide (no per-resource scopes),
+                # so a 403 here is an account-level restriction — typically
+                # the Voice / TeXML product is not enabled or the account is
+                # not verified — not a key permission the user can toggle.
+                raise ValidationError(
+                    'Telnyx denied access to a required resource (HTTP 403). '
+                    'Your Telnyx account is not authorized to use this '
+                    'product — most often Voice / TeXML applications. Telnyx '
+                    'API keys grant full account access and cannot be scoped '
+                    'per resource, so this is an account-level restriction, '
+                    'not an API key permission. Verify your account and '
+                    'enable Voice in the Telnyx Mission Control portal '
+                    '(https://portal.telnyx.com), then run Sync again.'
+                )
+            raise
 
     def _ensure_telnyx_messaging_profile(self):
         """Get or create the messaging profile used for Odoo messaging."""
