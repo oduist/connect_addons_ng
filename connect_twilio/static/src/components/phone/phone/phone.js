@@ -12,6 +12,34 @@ import {user} from "@web/core/user"
 
 const uid = user.userId
 
+// Connection diagnostics: single prefix so admins can filter the browser
+// console by "[Connect Phone]" when a web phone fails to connect / call.
+const LOG_PREFIX = '[Connect Phone]'
+const clog = (...args) => console.log(LOG_PREFIX, ...args)
+const cwarn = (...args) => console.warn(LOG_PREFIX, ...args)
+const cerror = (...args) => console.error(LOG_PREFIX, ...args)
+
+// Human-readable hints for the most common Twilio Voice error codes so the
+// reason a phone won't connect is obvious straight from the console.
+function explainTwilioError(error) {
+    const code = error && error.code
+    const hints = {
+        20101: 'Invalid Access Token — check Twilio API Key/Secret and Account SID in Connect settings.',
+        20104: 'Access Token expired — the token TTL elapsed; it should auto-refresh.',
+        31005: 'Connection error (transport/WebSocket to Twilio failed) — check network/firewall/proxy and that wss to Twilio is allowed.',
+        31009: 'Transport error — no transport available to send the message.',
+        31201: 'Error acquiring microphone — no audio input device available.',
+        31202: 'Microphone permission denied by the user/browser.',
+        31208: 'Microphone permission prompt was dismissed — grant mic access for this site.',
+        31402: 'Media acquisition failed — the browser could not get the microphone (permissions, no device, or it is used by another app). This is the #1 reason an outgoing call ends instantly.',
+        31003: 'ICE connection failed — media path could not be established (NAT/firewall blocking UDP/media).',
+        31000: 'General/unknown Twilio Voice error.',
+        31204: 'Access Token: invalid signature.',
+        31205: 'Access Token expired.',
+    }
+    return hints[code] || (error && error.explanation) || ''
+}
+
 export class Phone extends Component {
     static template = 'connect_twilio.phone'
     static props = {
@@ -506,37 +534,80 @@ export class Phone extends Component {
     }
 
     async updateToken() {
-        const {token} = await this.orm.call('connect.user', 'get_client_token')
-        if (token) this.userAgent.updateToken(token)
+        const result = await this.orm.call('connect.user', 'get_client_token')
+        const {token, error} = result || {}
+        if (error) {
+            cerror('get_client_token returned an error:', error)
+            return
+        }
+        if (token) {
+            clog('Fetched a fresh access token — updating device.')
+            this.userAgent.updateToken(token)
+        } else {
+            cerror('get_client_token returned no token — the phone cannot connect. Likely the user is not Client Enabled or Twilio username/domain/TwiML app are missing.')
+        }
     }
 
     initUserAgent() {
         const self = this
         if (!self.state.isActive) {
+            cwarn('Web phone is not active (state.isActive is false) — device will not be initialized.')
             return
         }
 
+        // Log what we start with: a missing/empty token means the server
+        // (connect.user.get_client_token) refused — usually client not
+        // enabled, or username/domain/TwiML app missing in Connect settings.
+        clog('Initializing Twilio Device', {
+            tokenPresent: !!self.token,
+            tokenLength: self.token ? String(self.token).length : 0,
+            edge: self.edge,
+        })
+        if (!self.token) {
+            cerror('No Twilio access token — cannot connect. Check the user is Client Enabled and that Twilio username/domain/TwiML app are configured.')
+        }
+
+        // logLevel: 2 = "info" (loglevel scale: 0 trace, 1 debug, 2 info,
+        // 3 warn, 4 error, 5 silent). At info the Twilio SDK itself logs
+        // registration and connection lifecycle so "registered"/"connecting"
+        // messages are visible when diagnosing a phone that won't connect.
         self.userAgent = new Twilio.Device(self.token, {
             edge: self.edge,
-            logLevel: 4,
+            logLevel: 2,
             codecPreferences: ["opus", "pcmu"]
+        })
+
+        // Device lifecycle: these tell you exactly how far the connection got.
+        self.userAgent.on('registering', () => {
+            clog('Device registering… (edge:', self.userAgent.edge, ')')
+        })
+        self.userAgent.on('registered', () => {
+            clog('Device REGISTERED — web phone is connected to Twilio (identity:', self.userAgent.identity, ', edge:', self.userAgent.edge, ')')
+        })
+        self.userAgent.on('unregistered', () => {
+            cwarn('Device UNREGISTERED — web phone is no longer connected to Twilio. If it flaps, the same user identity is likely registered in another tab/device.')
         })
 
         this.setIncomingVolume()
         self.userAgent.on('tokenWillExpire', () => {
-            console.log('tokenWillExpire REFRESH')
+            clog('Access token is about to expire — refreshing token…')
             self.updateToken().then()
         })
 
         self.userAgent.on('error', (error) => {
+            // Always surface the full error with a decoded reason.
+            cerror('Device error:', {
+                name: error && error.name,
+                code: error && error.code,
+                message: error && error.message,
+                reason: explainTwilioError(error),
+            }, error)
             if (error.name === 'AccessTokenExpired') {
-                console.log('AccessTokenExpired')
+                clog('AccessTokenExpired — refreshing token…')
                 self.updateToken().then()
             } else if (error.name === 'AccessTokenInvalid') {
-                console.log('AccessTokenInvalid')
+                cerror('AccessTokenInvalid — the phone cannot connect. Verify Twilio API Key/Secret/Account SID in Connect settings.')
                 self.bus.trigger('busTraySetException', {exception: error.name})
-            } else {
-                console.log(error)
             }
         })
         let lastTime = (new Date()).getTime()
@@ -643,8 +714,16 @@ export class Phone extends Component {
             }
         })
 
-        self.userAgent.register().catch(() => {
-            console.warn('Failed to registered device!')
+        clog('Calling device.register()…')
+        self.userAgent.register().then(() => {
+            clog('device.register() resolved (registration accepted).')
+        }).catch((error) => {
+            cerror('device.register() FAILED — web phone did not connect:', {
+                name: error && error.name,
+                code: error && error.code,
+                message: error && error.message,
+                reason: explainTwilioError(error),
+            }, error)
         })
     }
 
@@ -677,7 +756,41 @@ export class Phone extends Component {
             Called: phoneNumber,
         }
 
-        self.session = await self.userAgent.connect({params})
+        // A call needs microphone access (getUserMedia). If the device is not
+        // registered, or the mic can't be acquired, connect() throws here —
+        // this is the most common "call ends instantly" failure.
+        clog('Placing outgoing call', {
+            to: phoneNumber,
+            deviceState: self.userAgent && self.userAgent.state,
+        })
+        if (self.userAgent && self.userAgent.state !== 'registered') {
+            cwarn('Placing a call while device is not "registered" (state:', self.userAgent && self.userAgent.state, ') — the call may fail.')
+        }
+        try {
+            self.session = await self.userAgent.connect({params})
+        } catch (error) {
+            cerror('Failed to start outgoing call — connect() threw:', {
+                name: error && error.name,
+                code: error && error.code,
+                message: error && error.message,
+                reason: explainTwilioError(error),
+            }, error)
+            self.state.phone_status = self.status.ended
+            await self.setCallStatus('Failed')
+            await self.endCall()
+            self.session = null
+            return
+        }
+
+        // Surface call-level errors (e.g. media/ICE failures) during the call.
+        self.session.on("error", function (error) {
+            cerror('Call error:', {
+                name: error && error.name,
+                code: error && error.code,
+                message: error && error.message,
+                reason: explainTwilioError(error),
+            }, error)
+        })
 
         self.session.on("accept", async function () {
             // console.log('outgoing -> accepted: ', data)
