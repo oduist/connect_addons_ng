@@ -22,7 +22,7 @@ When you create a PBX user and link it to an Odoo user, the Connect User group i
 | Channels | Read | Full | Read, Write, Create |
 | Messages | Read, Write, Create | Full | Read, Write, Create |
 | Recordings | Read | Full | Read, Write, Create |
-| PBX Users | Read | Full | — |
+| PBX Users | Read | Full | Read |
 | Numbers (per provider) | Read | Full | — |
 | Caller IDs (per provider) | Read | Full | — |
 | Extensions (per provider) | Read | Full | — |
@@ -59,7 +59,7 @@ FreeSWITCH webhooks (`/freeswitch/xml`, `/freeswitch/webhook/*`) do not have sig
 
 ### Webhook User
 
-A special inactive Odoo user (`connect.user_connect_webhook`) is defined in core data. All webhook handlers use this user's context (via `sudo()`) to create and update records with proper permissions. This user belongs to the Connect Webhook group.
+A special inactive Odoo user (`connect.user_connect_webhook`) is defined in core data. All webhook handlers use this user's context to process provider events with explicit model permissions. This user belongs to the Connect Webhook group and has read-only access to PBX users so routing callbacks can resolve their destination.
 
 ## Record Rules
 

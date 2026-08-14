@@ -600,7 +600,7 @@ All models get access rules for the three groups:
 | `connect.channel` | Read | Full | Create+Read |
 | `connect.message` | Read | Full | Create+Read |
 | `connect.recording` | Read | Full | Create+Read |
-| `connect.user` | Read | Full | - |
+| `connect.user` | Read | Full | Read |
 | `connect.debug` | - | Full | Create |
 | `connect.settings` | - | Full | - |
 | `connect.favorite` | Read+Write | Full | - |

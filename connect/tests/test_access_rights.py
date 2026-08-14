@@ -22,6 +22,11 @@ class TestAccessRights(ConnectTestCommon):
             login='ar_connect_admin',
             groups='base.group_user,connect.group_admin',
         )
+        cls.webhook_user = new_test_user(
+            cls.env,
+            login='ar_connect_webhook',
+            groups='base.group_user,connect.group_webhook',
+        )
         # A connect.user owned by the plain Connect User, so the
         # "own records only" record rules let that user see it.
         cls.connect_user_own = cls._create_connect_user(
@@ -113,6 +118,17 @@ class TestAccessRights(ConnectTestCommon):
         self.env['connect.user'].with_user(self.connect_admin).with_context(
             no_clear_cache=True,
         ).create({'user': other.id})
+
+    def test_connect_user_webhook_can_read(self):
+        """Webhook user can read PBX users required for call routing."""
+        self.connect_user_own.with_user(self.webhook_user).read(['name'])
+
+    def test_connect_user_webhook_cannot_write(self):
+        """Webhook user cannot modify PBX user configuration."""
+        with self.assertRaises(AccessError):
+            self.connect_user_own.with_user(self.webhook_user).write({
+                'name': 'Not allowed',
+            })
 
     # --- connect.message ---
 
