@@ -214,7 +214,7 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `uri` | Char | Computed: `user@domain` |
 | `connect_uri` | Char | Computed: with edge prefix |
 | `application` | Many2one | `connect.twilio.twiml` |
-| `whatsapp_sender_id` | Many2one | `connect.whatsapp_sender` |
+| `whatsapp_sender_id` | Many2one | `connect.whatsapp_sender`; selectable senders must be synchronized and `ONLINE` |
 | `twilio_edge` | Selection | Twilio edge location |
 
 **Additional Methods:**
@@ -486,7 +486,7 @@ Twilio WhatsApp sender/business account management.
 | Method | Description |
 |--------|-------------|
 | `sync()` | Sync WhatsApp senders from Twilio messaging API |
-| `get_default_sender()` | Return the default WhatsApp sender |
+| `get_default_sender()` | Return an `ONLINE`, synchronized sender in user preference → global default → fallback order; unavailable preferences/defaults are skipped |
 | `send_whatsapp()` | Send WhatsApp message via Twilio API |
 | `chatter_post()` | Post WhatsApp message to partner chatter |
 | `update_message_status()` | Webhook: update message delivery status |

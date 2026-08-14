@@ -141,6 +141,10 @@ Click **Sync** to import senders from your Twilio account.
 | **Messaging Limit** | Daily message limit. |
 | **Voice Application** | TwiML app for WhatsApp voice calls. |
 
+Only synchronized senders with status **Online** can be assigned to a user or
+selected automatically for a new outgoing message or WhatsApp call. An offline
+personal or default sender is skipped in favor of the next online sender.
+
 ### WhatsApp Message Templates
 
 Navigate to **Connect > Twilio > Messages > WhatsApp Templates** to manage pre-approved message templates.

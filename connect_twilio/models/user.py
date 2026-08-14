@@ -152,6 +152,7 @@ class User(models.Model):
         'connect.whatsapp_sender',
         string='WhatsApp Sender',
         ondelete='set null',
+        domain=[('no_sync', '=', False), ('status', '=', 'ONLINE')],
     )
     twilio_edge = fields.Selection(
         selection=SIP_TWILIO_EDGES,
