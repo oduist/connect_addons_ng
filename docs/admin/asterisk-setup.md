@@ -81,9 +81,9 @@ Topology notes:
 
 For each Odoo user create a **Connect User** (**Connect > Users**) and
 add an **Endpoint** under **Connect > Asterisk > Endpoints** with the *Asterisk
-Channel* of their phone (e.g. `PJSIP/101`). The same `PJSIP/101` example is
-shown as a placeholder when adding an endpoint inline from the Connect User
-form. The endpoint matches AMI
+Channel* of their phone (e.g. `PJSIP/101`). When adding an endpoint inline
+from the Connect User form, the row shows `Endpoint Name` and `PJSIP/101` as
+input placeholders. The endpoint matches AMI
 events to the user and is dialed first on click-to-call. Optional
 per-endpoint settings: originate context, auto-answer SIP header, SIP
 transport. To let the dialplan route a DID to a user, map it under

@@ -30,7 +30,8 @@
                 <page name="asterisk_endpoints" string="Asterisk Endpoints">
                     <field name="asterisk_endpoint_ids">
                         <list editable="bottom">
-                            <field name="name"/>
+                            <field name="name"
+                                   placeholder="Endpoint Name"/>
                             <field name="asterisk_channel"
                                    placeholder="PJSIP/101"/>
                             <field name="asterisk_sip_transport"/>
