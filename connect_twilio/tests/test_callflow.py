@@ -57,6 +57,20 @@ class TestTwilioCallflow(TwilioTestCommon):
             prompt.xpath("ancestor::group[@invisible='not gather_input']")
         )
 
+    def test_invalid_message_is_aligned_with_gather_settings(self):
+        """Gather settings and their validation message share one row."""
+        view = self.env.ref('connect_twilio.view_twilio_callflow_form')
+        arch = etree.fromstring(view.arch_db.encode())
+        gather_settings = arch.xpath("//group[@string='Gather Settings']")[0]
+        invalid_message = arch.xpath(
+            "//group[@string='Invalid Input Message']"
+        )[0]
+
+        self.assertIs(gather_settings.getparent(), invalid_message.getparent())
+        self.assertEqual(
+            gather_settings.getparent().get('invisible'), 'not gather_input'
+        )
+
     def test_callflow_with_choices(self):
         exten = self.env['connect.twilio.exten'].create({'number': '400'})
         self.callflow.write({

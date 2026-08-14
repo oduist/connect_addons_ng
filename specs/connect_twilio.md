@@ -334,7 +334,9 @@ callflow field set (name, `exten`/`exten_number` → `connect.twilio.exten`,
 `prompt_message` is independent of `gather_input`: `render()` emits it inside
 `<Gather>` when input is enabled and as a standalone `<Say>` otherwise. The
 call-flow form therefore keeps Prompt Message visible in both modes; Gather
-Settings, Invalid Input Message and Choices remain conditional (ADR-051).
+Settings, Invalid Input Message and Choices remain conditional. Gather Settings
+and Invalid Input Message share a row, while Prompt Message uses a separate
+full-width section (ADR-051).
 
 `connect.twilio.callflow_choice`: `callflow` (required), `choice_digits`
 (required), `exten` (`connect.twilio.exten`, required), `speech`.

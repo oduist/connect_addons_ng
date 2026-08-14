@@ -38,7 +38,8 @@ A ring group rings multiple users simultaneously. The first user to answer gets 
 The **Prompt Message** remains available when **Gather Input** is disabled. In
 that mode it is played once as a greeting before the users are rung; no keypad
 or speech input is collected. Enabling Gather Input turns the same prompt into
-the introduction to the IVR choices.
+the introduction to the IVR choices. When enabled, **Gather Settings** and
+**Invalid Input Message** appear together in one row above the prompt.
 
 **Example:**
 

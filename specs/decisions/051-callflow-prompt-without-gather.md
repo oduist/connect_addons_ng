@@ -16,7 +16,9 @@ configured message that they could not see or edit.
 
 Always display Prompt Message on the Twilio call-flow form. Continue hiding
 Gather Settings, Invalid Input Message, Choices, and other input-specific
-configuration while Gather Input is disabled.
+configuration while Gather Input is disabled. Place Invalid Input Message in
+the same row as Gather Settings because both configure the input-collection
+phase. Display Prompt Message in its own full-width section below that row.
 
 The rendering behavior remains unchanged: a non-empty prompt is played in both
 modes, while Gather Input only controls whether Twilio collects DTMF or speech.
@@ -26,3 +28,4 @@ modes, while Gather Input only controls whether Twilio collects DTMF or speech.
 - The form accurately exposes every prompt that callers can hear.
 - Ring-group-only flows can configure a greeting without enabling input.
 - Gather-only validation and choice fields remain out of the way when unused.
+- Related Gather configuration is visually grouped in one row.
