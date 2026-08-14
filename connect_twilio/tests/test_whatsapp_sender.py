@@ -11,6 +11,10 @@ class TestWhatsAppSender(TwilioTestCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.sender_model = cls.env['connect.whatsapp_sender']
+        cls.sender_model.search([]).write({
+            'is_default': False,
+            'no_sync': True,
+        })
         cls.offline_sender = cls.sender_model.create({
             'number': '+15550001001',
             'status': 'OFFLINE',
