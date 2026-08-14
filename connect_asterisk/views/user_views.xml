@@ -31,7 +31,8 @@
                     <field name="asterisk_endpoint_ids">
                         <list editable="bottom">
                             <field name="name"/>
-                            <field name="asterisk_channel"/>
+                            <field name="asterisk_channel"
+                                   placeholder="PJSIP/101"/>
                             <field name="asterisk_sip_transport"/>
                             <field name="asterisk_originate_enabled"/>
                             <field name="asterisk_auto_answer_header"
