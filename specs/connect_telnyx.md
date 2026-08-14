@@ -285,13 +285,15 @@ to the co-installation limitation of ADR-032 §9.
 
 ### whatsapp_composer.py - `connect.telnyx.whatsapp_composer` (ADR-033)
 
-Transient wizard: sender (default via `get_default_sender`), phone,
+Transient wizard: sender (default via `get_default_sender`), phone rendered
+with `widget="phone"`,
 approved template + variables JSON with live body preview, freeform
 body. Mirrors the Twilio composer UX.
 
 ### rcs_composer.py - `connect.telnyx.rcs_composer` (ADR-033)
 
-Transient wizard: agent (default via `get_default_agent`), phone, body,
+Transient wizard: agent (default via `get_default_agent`), phone rendered with
+`widget="phone"`, body,
 SMS-fallback toggle + fallback sender (defaults to the default outgoing
 caller ID).
 

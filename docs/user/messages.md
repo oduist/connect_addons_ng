@@ -11,11 +11,16 @@ Each message shows:
 | Field | Description |
 |-------|-------------|
 | **Direction** | Arrow icon indicating incoming or outgoing. |
-| **From / To** | Phone numbers. |
+| **From / To** | Phone numbers rendered with Odoo's phone control. |
 | **Body** | Message text. |
 | **Status** | Delivery status with icon. |
 | **Partner** | Linked contact. |
 | **Media** | Inline image/audio player for MMS content. |
+
+The **From** and **To** values in message history, and the recipient field in
+WhatsApp and RCS composers, use the standard phone control. A displayed number
+can therefore use the configured click-to-call provider consistently with
+other phone fields in Odoo.
 
 ## Sending SMS
 

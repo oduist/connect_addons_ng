@@ -18,7 +18,9 @@
 
 ### Click-to-Call
 
-Click any phone number field on a partner form, lead, or other record to dial it directly.
+Click any phone number field on a partner form, lead, call, channel, or other
+record to dial it directly. Caller and called numbers in Connect lists and
+forms use the same standard phone control.
 
 ### Extension Dialing
 
@@ -51,7 +53,8 @@ During an active call:
 2. Enter the destination number or extension
 3. Confirm the transfer
 
-The call is handed off to the new destination.
+The destination uses the standard phone control. The call is handed off to the
+new destination after confirmation.
 
 ## Call History
 

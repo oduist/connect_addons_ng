@@ -6,8 +6,8 @@
         <field name="arch" type="xml">
             <list default_order="id desc">
                 <field name="direction"/>
-                <field name="caller"/>
-                <field name="called"/>
+                <field name="caller" widget="phone"/>
+                <field name="called" widget="phone"/>
                 <field name="partner"/>
                 <field name="status"/>
                 <field name="duration_human" string="Duration"/>
@@ -66,8 +66,8 @@
                         <page name="channels" string="Channels">
                             <field name="channels">
                                 <list>
-                                    <field name="caller"/>
-                                    <field name="called"/>
+                                    <field name="caller" widget="phone"/>
+                                    <field name="called" widget="phone"/>
                                     <field name="technical_direction" string="Direction"/>
                                     <field name="status"/>
                                     <field name="duration_human" string="Duration"/>

@@ -20,8 +20,8 @@
                 </button>
             </xpath>
             <field name="partner_id" position="after">
-                <field name="partner_phone" readonly="1"/>
-                <field name="partner_mobile" readonly="1"/>
+                <field name="partner_phone" widget="phone" readonly="1"/>
+                <field name="partner_mobile" widget="phone" readonly="1"/>
             </field>
         </field>
     </record>

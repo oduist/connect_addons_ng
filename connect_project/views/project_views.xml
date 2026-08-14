@@ -20,16 +20,16 @@
                 </button>
             </xpath>
             <field name="partner_id" position="after">
-                <field name="partner_phone" readonly="1"/>
-                <field name="partner_mobile" readonly="1"/>
+                <field name="partner_phone" widget="phone" readonly="1"/>
+                <field name="partner_mobile" widget="phone" readonly="1"/>
             </field>
             <notebook position="inside">
                 <page name="recorded_calls" string="Recorded Calls">
                     <field name="recorded_calls">
                         <list>
                             <field name="start_time"/>
-                            <field name="caller_number"/>
-                            <field name="called_number"/>
+                            <field name="caller_number" widget="phone"/>
+                            <field name="called_number" widget="phone"/>
                             <field name="recording_widget" widget="html"/>
                         </list>
                     </field>

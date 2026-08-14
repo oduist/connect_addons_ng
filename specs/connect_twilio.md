@@ -547,11 +547,11 @@ WhatsApp message sending wizard. Uses `whatsapp_sender.send_whatsapp()` to send 
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `sender_id` | Many2one | `connect.whatsapp_sender` |
-| `partner_id` | Many2one | `res.partner` |
-| `phone_number` | Char | |
+| `whatsapp_sender_id` | Many2one | `connect.whatsapp_sender` |
+| `phone` | Char | Recipient; rendered with `widget="phone"` |
 | `body` | Text | |
-| `template_id` | Many2one | `connect.message_content_template` |
+| `content_template_id` | Many2one | `connect.message_content_template` |
+| `content_variables` | Text | Template variables as JSON |
 
 ---
 
@@ -619,7 +619,7 @@ Default WhatsApp content template: `voice_call_request` - used for voice call co
 | `views/whatsapp_sender_views.xml` | List + form for WhatsApp senders (profile, status, sync) |
 | `views/message_content_template_views.xml` | List + form + search for WhatsApp templates (approval workflow) |
 | `wizard/sms_composer_views.xml` | SMS composer form (moved from core) |
-| `wizard/whatsapp_composer_views.xml` | WhatsApp message sending wizard form (sender, phone, template, body) |
+| `wizard/whatsapp_composer_views.xml` | WhatsApp message sending wizard form (sender, recipient with `phone` widget, template, body) |
 
 ### Menu Items
 

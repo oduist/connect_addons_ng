@@ -11,6 +11,10 @@ If call recording is enabled for your account, calls are automatically recorded.
 
 Click the play button on any recording to listen in your browser. You can also download recordings for offline access.
 
+Caller and called numbers in the recording list and form use the standard
+phone control, so a dialable number can be used for click-to-call directly
+from the recording history.
+
 ### Recording Settings
 
 Recording can be enabled at multiple levels (configured by your administrator):
