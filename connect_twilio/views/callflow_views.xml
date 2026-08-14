@@ -45,11 +45,11 @@
                             <field name="gather_hints" invisible="gather_input_type == 'dtmf'"/>
                         </group>
                     </group>
-                    <group invisible="not gather_input">
+                    <group>
                         <group string="Prompt Message">
                             <field name="prompt_message" nolabel="1" colspan="2"/>
                         </group>
-                        <group string="Invalid Input Message">
+                        <group string="Invalid Input Message" invisible="not gather_input">
                             <field name="invalid_input_message" nolabel="1" colspan="2"/>
                         </group>
                     </group>

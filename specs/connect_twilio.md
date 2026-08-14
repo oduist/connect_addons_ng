@@ -331,6 +331,11 @@ callflow field set (name, `exten`/`exten_number` → `connect.twilio.exten`,
 | `create_extension()` | Create associated `connect.twilio.exten` |
 | `_get_language_selection()` | BCP-47 language list — **duplicated** with `connect.freeswitch.callflow`, `connect.telnyx.callflow` and core `connect.user`; changes must be applied to all four (ADR-031/ADR-037) |
 
+`prompt_message` is independent of `gather_input`: `render()` emits it inside
+`<Gather>` when input is enabled and as a standalone `<Say>` otherwise. The
+call-flow form therefore keeps Prompt Message visible in both modes; Gather
+Settings, Invalid Input Message and Choices remain conditional (ADR-051).
+
 `connect.twilio.callflow_choice`: `callflow` (required), `choice_digits`
 (required), `exten` (`connect.twilio.exten`, required), `speech`.
 
