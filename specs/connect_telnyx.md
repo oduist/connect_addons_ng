@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Telnyx
 - **Technical:** `connect_telnyx`
-- **Version:** 19.0.1.3.0
+- **Version:** 19.0.1.4.0
 - **Depends:** `connect`
 - **Python deps:** `telnyx`, `nacl` (PyNaCl)
 - **Application:** False
@@ -88,9 +88,12 @@ Methods: `get_telnyx_client()` (SDK client), `telnyx_sync()` (apps →
 domains → numbers → caller IDs + messaging profile),
 with persistent warning notifications for non-fatal optional-resource and
 AI-assistant synchronization failures,
+`_ensure_telnyx_account_sid()` (stores the account SID reported by
+`GET /v2/whoami` as `organization_id`; a failure only warns),
 `_ensure_telnyx_messaging_profile()`, `originate_call()` (core
 dispatcher override for the `'telnyx'` key; originates via
-`POST /texml/Accounts/{sid}/Calls`), `get_telnyx_balance()`,
+`POST /texml/Accounts/{sid}/Calls` with the mandatory `ApplicationSid`
+of the number application), `get_telnyx_balance()`,
 `telnyx_check_call_failure(cause, sip_code)` (ADR-040: web-phone RPC
 for unanswered outbound failures; verifies `GET /v2/balance` with
 `sudo` and returns `{balance_blocked, message}` — Connect groups only,
@@ -164,12 +167,22 @@ constraints (`_manage_telnyx_*`).
 ### number.py - `connect.telnyx.number`
 
 Same shape as the Twilio number minus per-number webhook URLs: Telnyx
-numbers are attached to the domain's routing TeXML app
-(`phone_numbers.update(connection_id=…)`) and to the messaging profile;
-inbound calls arrive on the shared `/telnyx/webhook/number` route and
-are dispatched by `Called`/`To` (`route_call()` → `render()`).
-`destination` Selection: `user` / `callflow` / `texml`. Numbers have no
-default flag; outbound defaults live on `connect.telnyx.outgoing_callerid`.
+numbers are attached to the **number-routing TeXML app** (`Number Calls`,
+`get_number_app()`, `phone_numbers.update(connection_id=…)`) and, when the
+number supports SMS, to the messaging profile. A messaging failure is
+logged and does not abort the sync — numbers without SMS capability are
+still valid voice numbers.
+
+Inbound calls therefore arrive on that app's webhook
+(`/telnyx/webhook/texml/<app id>` → `route_call()`) and are dispatched by
+`Called`/`To`: `render_inbound()` honours `destination`, falls back to an
+extension carrying the same number, and never re-originates a call to the
+dialled number. `connect.telnyx.domain.route_call()` delegates to
+`render_inbound()` for numbers that are still attached to the domain
+application, and refuses to dial out unless the caller is on our SIP
+subdomain. `destination` Selection: `user` / `callflow` / `texml` /
+`ai_assistant`. Numbers have no default flag; outbound defaults live on
+`connect.telnyx.outgoing_callerid`.
 
 ### outgoing_callerid.py - `connect.telnyx.outgoing_callerid`
 
@@ -315,7 +328,9 @@ user grant.
 ## Data
 
 - `data/texml.xml` — `SIP Domain Calls` routing app (model_method →
-  `connect.telnyx.domain.route_call`), `Reject`, `Connection Failed`.
+  `connect.telnyx.domain.route_call`), `Number Calls` app (model_method →
+  `connect.telnyx.number.route_call`, the application every number is
+  attached to), `Reject`, `Connection Failed`.
 - `data/ir_cron.xml` — `telnyx_fetch_call_prices_batch()` every 5 min.
 
 ---
