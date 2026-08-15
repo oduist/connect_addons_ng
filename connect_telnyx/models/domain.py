@@ -120,14 +120,29 @@ class Domain(models.Model):
             },
         )
 
+    def _connection_outbound_params(self):
+        """Outbound settings a credential connection needs to dial out.
+
+        A connection without an outbound voice profile registers fine and
+        then has every outgoing INVITE rejected by Telnyx, before any
+        webhook reaches Odoo.
+        """
+        profile_id = self.env[
+            'connect.settings']._ensure_telnyx_outbound_voice_profile()
+        return {'outbound_voice_profile_id': profile_id} if profile_id else None
+
     def create_telnyx_domain(self, client):
         self.ensure_one()
         username, password = self._generate_connection_credentials(self.subdomain)
-        connection = client.credential_connections.create(
-            connection_name=self.friendly_name,
-            user_name=username,
-            password=password,
-        )
+        create_params = {
+            'connection_name': self.friendly_name,
+            'user_name': username,
+            'password': password,
+        }
+        outbound = self._connection_outbound_params()
+        if outbound:
+            create_params['outbound'] = outbound
+        connection = client.credential_connections.create(**create_params)
         self.write(
             {
                 "sid": connection.data.id,
@@ -219,10 +234,11 @@ class Domain(models.Model):
     def update_telnyx_domain(self, client):
         self.ensure_one()
         try:
-            client.credential_connections.update(
-                self.sid,
-                connection_name=self.friendly_name,
-            )
+            update_params = {'connection_name': self.friendly_name}
+            outbound = self._connection_outbound_params()
+            if outbound:
+                update_params['outbound'] = outbound
+            client.credential_connections.update(self.sid, **update_params)
             self._set_app_subdomain(client)
             debug(self, "Domain {} updated".format(self.friendly_name))
         except Exception as e:

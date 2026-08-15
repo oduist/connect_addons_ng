@@ -192,3 +192,38 @@ class TestTelnyxChannelMapping(TelnyxTestCommon):
         }
         result = str(user.telnyx_render(request=request))
         self.assertIn('callerId="+15550007777"', result)
+
+
+@tagged('post_install', '-at_install')
+class TestTelnyxOutboundVoiceProfile(TelnyxTestCommon):
+    """Telnyx rejects an outbound call from a connection that carries no
+    outbound voice profile, before any webhook reaches Odoo."""
+
+    def test_profile_is_taken_from_the_account(self):
+        self.env['connect.settings'].sudo().set_param(
+            'telnyx_outbound_voice_profile_id', False)
+
+        def api_response(_self, method, path, **kwargs):
+            self.assertEqual((method, path), ('GET', 'outbound_voice_profiles'))
+            return {'data': [{'id': 'ovp-1', 'name': 'Default', 'enabled': True}]}
+
+        with patch.object(Settings, 'telnyx_api_request', autospec=True,
+                          side_effect=api_response):
+            profile_id = self.env[
+                'connect.settings']._ensure_telnyx_outbound_voice_profile()
+        self.assertEqual(profile_id, 'ovp-1')
+
+    def test_texml_app_params_carry_the_profile(self):
+        self.env['connect.settings'].sudo().set_param(
+            'telnyx_outbound_voice_profile_id', 'ovp-1')
+        params = self.env['connect.telnyx.number'].get_number_app(
+        )._texml_app_params()
+        self.assertEqual(
+            params['outbound'], {'outbound_voice_profile_id': 'ovp-1'})
+
+    def test_connection_params_carry_the_profile(self):
+        self.env['connect.settings'].sudo().set_param(
+            'telnyx_outbound_voice_profile_id', 'ovp-1')
+        self.assertEqual(
+            self.domain._connection_outbound_params(),
+            {'outbound_voice_profile_id': 'ovp-1'})

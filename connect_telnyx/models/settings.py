@@ -214,6 +214,35 @@ class Settings(models.Model):
             debug(self, 'Telnyx account SID set to {}.'.format(account_sid))
         return account_sid
 
+    def _ensure_telnyx_outbound_voice_profile(self):
+        """Return the outbound voice profile every connection must carry.
+
+        Telnyx refuses an outbound call from a connection that has no
+        outbound voice profile — the INVITE is rejected before any
+        webhook is sent, so a SIP hardphone registers fine and then
+        cannot dial out at all.
+        """
+        profile_id = self.sudo().get_param('telnyx_outbound_voice_profile_id')
+        if profile_id:
+            return profile_id
+        response = self.telnyx_api_request(
+            'GET', 'outbound_voice_profiles', params={'page[size]': 20})
+        for profile in response.get('data') or []:
+            if profile.get('enabled', True):
+                profile_id = profile.get('id')
+                break
+        if not profile_id:
+            created = self.telnyx_api_request(
+                'POST', 'outbound_voice_profiles',
+                payload={'name': 'Odoo Connect', 'traffic_type': 'conversational',
+                         'service_plan': 'global'})
+            profile_id = (created.get('data') or {}).get('id')
+        if profile_id:
+            self.sudo().set_param(
+                'telnyx_outbound_voice_profile_id', profile_id)
+            debug(self, 'Telnyx outbound voice profile: {}'.format(profile_id))
+        return profile_id
+
     def _ensure_telnyx_messaging_profile(self):
         """Get or create the messaging profile used for Odoo messaging."""
         client = self.get_telnyx_client()
