@@ -90,6 +90,23 @@ translator):
    use them to provision a hardphone; the web phone authenticates with a
    short-lived token automatically.
 
+### SIP username and password
+
+Both are issued by Telnyx when the credential is created, and the API
+accepts neither on create nor on update — **a password cannot be typed in
+or changed in place**, which is why both fields are read-only in Odoo.
+
+- **Reading them:** Connect > Users > *the user* > Telnyx Phone tab. Both
+  fields are shown in the clear with a copy button, so they can be pasted
+  straight into a hardphone. They are visible to the Connect User and
+  Connect Admin groups.
+- **Rotating them:** press **Regenerate SIP credential** (Connect Admin
+  only). Odoo deletes the credential in Telnyx and asks for a new one, so
+  the **username changes as well** and the hardphone must be configured
+  again with both new values.
+- The web phone is unaffected: it authenticates with a short-lived token
+  fetched per session, not with these credentials.
+
 ### Webhooks
 
 All webhooks are served under `/telnyx/webhook/*`. The public URL of the

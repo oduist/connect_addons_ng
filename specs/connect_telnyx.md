@@ -150,12 +150,16 @@ password is visible to the user for hardphone provisioning).
 | `telnyx_sip_enabled` / `telnyx_client_enabled` | Boolean | client default = `_telnyx_is_only_provider()` **and** a domain exists (a web phone needs one to register against) |
 | `telnyx_sip_priority` / `telnyx_client_priority` | Selection | `1`/`2` |
 | `telnyx_sip_ring_timeout` / `telnyx_client_ring_timeout` | Integer | |
-| `telnyx_sip_credential_sid` / `telnyx_sip_username` / `telnyx_sip_password` | Char | hardphone credential |
+| `telnyx_sip_credential_sid` / `telnyx_sip_username` / `telnyx_sip_password` | Char | hardphone credential, readonly (issued by Telnyx); username and password are shown in the clear with a copy button to the Connect groups |
 | `telnyx_client_credential_sid` / `telnyx_client_username` | Char | web phone credential |
 | `telnyx_uri` | Char | computed `<username>@sip.telnyx.com` |
 
 Methods: `_create_telnyx_credential()` / `_ensure_telnyx_credentials()`
-/ `delete_telnyx_credentials()`; `telnyx_render()` +
+/ `delete_telnyx_credentials()` /
+`action_regenerate_telnyx_sip_credential()` (Telnyx issues the SIP
+username and password and accepts neither on create nor on update, so a
+rotation deletes the credential and creates a new one — the username
+changes too; `connect.group_admin` only); `telnyx_render()` +
 `telnyx_render_sip/client/voicemail` (user_callflow chain, TeXML
 `<Dial><Sip>`; user greeting/voicemail `<Say>` carries
 `connect.user.language`/`voice`, fallbacks `en-US` / `Polly.Joanna` —

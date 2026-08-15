@@ -192,6 +192,46 @@ class User(models.Model):
         if self.telnyx_client_enabled and not self.telnyx_client_credential_sid:
             self._create_telnyx_credential('client', client=client)
 
+    def action_regenerate_telnyx_sip_credential(self):
+        """Issue a fresh SIP credential for a hardphone.
+
+        Telnyx generates the SIP username and password itself and accepts
+        neither on create nor on update, so a password cannot be changed
+        in place: the only way to rotate it is to drop the credential and
+        ask for a new one. The username changes as well, which is why the
+        hardphone has to be reconfigured afterwards.
+        """
+        self.ensure_one()
+        if not self.env.user.has_group('connect.group_admin'):
+            raise ValidationError(
+                'Only a Connect administrator can regenerate a SIP '
+                'credential.')
+        if not self.telnyx_sip_enabled:
+            raise ValidationError(
+                'Enable the Telnyx SIP phone for user {} first!'.format(
+                    self.name))
+        client = self.env['connect.settings'].get_telnyx_client()
+        old_sid = self.telnyx_sip_credential_sid
+        if old_sid:
+            try:
+                client.telephony_credentials.delete(old_sid)
+            except Exception as e:
+                if 'not found' not in str(e).lower() and '404' not in str(e):
+                    raise ValidationError(format_connect_response(e))
+                logger.warning(
+                    'Telnyx credential %s was not present in Telnyx.', old_sid)
+        self.with_context(skip_telnyx_sync=True).write({
+            'telnyx_sip_credential_sid': False,
+            'telnyx_sip_username': False,
+            'telnyx_sip_password': False,
+        })
+        self._create_telnyx_credential('sip', client=client)
+        self.env['connect.settings'].connect_notify(
+            'A new SIP username and password were issued for {}. '
+            'Configure the hardphone again.'.format(self.name),
+            title='Telnyx SIP Credential', sticky=True)
+        return True
+
     def delete_telnyx_credentials(self):
         self.ensure_one()
         client = self.env['connect.settings'].get_telnyx_client()
