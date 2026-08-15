@@ -61,6 +61,30 @@ class TestTelnyxOriginate(TelnyxTestCommon):
         self.assertEqual(len(channel), 1)
         self.assertEqual(channel.called, '+15559998888')
 
+    def test_originate_omits_empty_custom_headers(self):
+        """Telnyx rejects an X- header with an empty value."""
+        captured = {}
+        with patch.object(Settings, 'get_telnyx_client', autospec=True,
+                          return_value=self._client(captured)):
+            self.env['connect.settings'].originate_call(
+                '+15559998888', user=self.caller.user)
+        self.assertNotIn('=&', captured['to'])
+        self.assertFalse(captured['to'].endswith('='))
+        self.assertIn('X-autoAnswer=yes', captured['to'])
+        self.assertNotIn('X-Partner', captured['to'])
+
+    def test_originate_keeps_custom_headers_that_have_a_value(self):
+        captured = {}
+        partner = self.env['res.partner'].create({'name': 'Callee'})
+        with patch.object(Settings, 'get_telnyx_client', autospec=True,
+                          return_value=self._client(captured)):
+            self.env['connect.settings'].originate_call(
+                '+15559998888', res_model='res.partner', res_id=partner.id,
+                user=self.caller.user)
+        self.assertIn('X-Partner={}'.format(partner.id), captured['to'])
+        self.assertIn('X-CallerName=Callee', captured['to'])
+        self.assertNotIn('=&', captured['to'])
+
     def test_originate_resolves_a_missing_account_sid(self):
         self.settings.set_param('telnyx_account_sid', False)
         captured = {}
