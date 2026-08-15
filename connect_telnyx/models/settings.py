@@ -164,7 +164,7 @@ class Settings(models.Model):
                     logger.warning('%s sync failed: %s', title, e)
                     self.connect_notify(
                         "{} sync failed: {}".format(title, e),
-                        title="Sync Warning", warning=True)
+                        title="Sync Warning", warning=True, sticky=True)
             self.connect_notify(
                 "Telnyx account synced successfully", title="Sync Complete")
         except ValidationError:

@@ -391,7 +391,8 @@ class TelnyxAIAssistant(models.Model):
                         "AI assistant '{}' could not be synchronized "
                         "(model '{}'): {}".format(
                             rec.name, rec.model or "default", e),
-                        title="AI Assistant Sync Warning", warning=True)
+                        title="AI Assistant Sync Warning", warning=True,
+                        sticky=True)
         return True
 
     def action_pull_from_telnyx(self):

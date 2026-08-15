@@ -86,6 +86,8 @@ idempotent `connect.recording` row with `source = telnyx-ai`.
 
 Methods: `get_telnyx_client()` (SDK client), `telnyx_sync()` (apps →
 domains → numbers → caller IDs + messaging profile),
+with persistent warning notifications for non-fatal optional-resource and
+AI-assistant synchronization failures (ADR-050),
 `_ensure_telnyx_messaging_profile()`, `originate_call()` (core
 dispatcher override for the `'telnyx'` key; originates via
 `POST /texml/Accounts/{sid}/Calls`), `get_telnyx_balance()`,

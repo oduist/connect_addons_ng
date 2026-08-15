@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from contextlib import ExitStack
 from unittest.mock import patch
 
 from odoo.tests import TransactionCase, tagged
@@ -75,3 +76,38 @@ class TestTelnyxSyncErrors(TransactionCase):
             with self.assertRaises(ValidationError) as cm:
                 self.Settings.telnyx_sync()
         self.assertEqual(str(cm.exception), 'WhatsApp not enabled')
+
+    def test_optional_sync_error_notification_is_sticky(self):
+        sync_models = [
+            'connect.telnyx.texml',
+            'connect.telnyx.ai_assistant',
+            'connect.telnyx.domain',
+            'connect.telnyx.number',
+            'connect.telnyx.outgoing_callerid',
+            'connect.telnyx.whatsapp_sender',
+            'connect.telnyx.whatsapp_template',
+            'connect.telnyx.rcs_agent',
+        ]
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(
+                Settings, '_ensure_telnyx_messaging_profile',
+                autospec=True, return_value=True))
+            for model_name in sync_models:
+                kwargs = {'autospec': True, 'return_value': True}
+                if model_name == 'connect.telnyx.whatsapp_sender':
+                    kwargs = {
+                        'autospec': True,
+                        'side_effect': ValidationError('Not enabled'),
+                    }
+                stack.enter_context(patch.object(
+                    type(self.env[model_name]), 'sync', **kwargs))
+            notify_mock = stack.enter_context(patch.object(
+                Settings, 'connect_notify', autospec=True))
+
+            self.Settings.telnyx_sync()
+
+        warning_call = next(
+            call for call in notify_mock.call_args_list
+            if call.kwargs.get('title') == 'Sync Warning'
+        )
+        self.assertTrue(warning_call.kwargs.get('sticky'))

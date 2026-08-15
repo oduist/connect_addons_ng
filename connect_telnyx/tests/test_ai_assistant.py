@@ -83,6 +83,37 @@ class TestTelnyxAIAssistant(TransactionCase):
         self.assertTrue(records.imported)
         self.assertTrue(records.record_calls)
 
+    def test_sync_push_failure_notification_is_sticky(self):
+        settings = self.env['connect.settings'].sudo()
+        settings.set_param('telnyx_ai_summary_insight_id', 'insight-test')
+        settings.set_param('telnyx_ai_summary_group_id', 'group-test')
+        remote_item = {
+            'id': 'assistant-warning',
+            'name': 'Unsupported Agent',
+            'instructions': 'Imported instructions.',
+        }
+
+        def api_response(_settings, method, path, **kwargs):
+            if method == 'GET' and path == 'ai/assistants':
+                return {'data': [remote_item]}
+            return remote_item
+
+        assistant_model = type(self.env['connect.telnyx.ai_assistant'])
+        with patch.object(
+                Settings, 'telnyx_api_request', autospec=True,
+                side_effect=api_response), patch.object(
+                    assistant_model, '_update_remote', autospec=True,
+                    side_effect=RuntimeError('Unsupported model')), patch.object(
+                        Settings, 'connect_notify', autospec=True
+                    ) as notify_mock:
+            self.env['connect.telnyx.ai_assistant'].sync()
+
+        warning_call = next(
+            call for call in notify_mock.call_args_list
+            if call.kwargs.get('title') == 'AI Assistant Sync Warning'
+        )
+        self.assertTrue(warning_call.kwargs.get('sticky'))
+
     def test_create_respects_auto_sync_disabled(self):
         settings = self.env['connect.settings'].sudo()
         settings.set_param('telnyx_auto_sync', False)

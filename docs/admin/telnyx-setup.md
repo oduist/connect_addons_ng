@@ -63,6 +63,10 @@ Click **SYNC TELNYX ACCOUNT** to import and wire up Telnyx resources:
 The sync also creates the **Odoo Connect** messaging profile with the
 webhook URL pointing at your Odoo instance.
 
+If an optional WhatsApp/RCS resource or an imported AI Assistant cannot be
+synchronized, Odoo shows a persistent warning. The warning remains visible
+until it is dismissed so the API error can be reviewed and corrected.
+
 ## Voice Routing
 
 Telnyx voice is integrated through **TeXML** (the Twilio-compatible XML
