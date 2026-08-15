@@ -2,6 +2,7 @@
 import json
 import logging
 import hmac
+from urllib.parse import urlencode
 
 from odoo.http import request, Controller, route
 from telnyx.lib.webhook_verification import (
@@ -17,7 +18,25 @@ MAX_AI_WEBHOOK_BYTES = 64 * 1024
 class ConnectTelnyxController(Controller):
 
     @staticmethod
-    def check_signature():
+    def raw_body():
+        """The exact bytes Telnyx signed.
+
+        TeXML webhooks are form-encoded, and Odoo parses the form before
+        the controller runs, which leaves `get_data()` empty. Rebuild the
+        body from the parsed form in that case, preserving the order the
+        fields arrived in.
+        """
+        httprequest = request.httprequest
+        body = httprequest.get_data(cache=True)
+        if body:
+            return body
+        form = getattr(httprequest, 'form', None)
+        if not form:
+            return b''
+        return urlencode(list(form.items(multi=True))).encode()
+
+    @classmethod
+    def check_signature(cls):
         """Validate the Ed25519 signature over the raw request body
         (telnyx-signature-ed25519 / telnyx-timestamp headers)."""
         settings = request.env['connect.settings'].sudo()
@@ -29,13 +48,17 @@ class ConnectTelnyxController(Controller):
             return False
         try:
             verify_webhook_signature(
-                request.httprequest.get_data(),
+                cls.raw_body(),
                 dict(request.httprequest.headers),
                 public_key,
             )
             return True
         except WebhookVerificationError as e:
-            logger.error('Telnyx request is not valid: %s', e)
+            logger.error(
+                'Telnyx request to %s is not valid: %s '
+                '(content type %s, %s body bytes)',
+                request.httprequest.path, e,
+                request.httprequest.content_type, len(cls.raw_body()))
             return False
 
     @route('/telnyx/webhook/domain', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
@@ -49,7 +72,7 @@ class ConnectTelnyxController(Controller):
     @route('/telnyx/webhook/callstatus', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def callstatus_webhook(self, **kw):
         if not self.check_signature():
-            return False
+            return ''
         res = request.env['connect.call'].with_user(request.env.ref("connect.user_connect_webhook")).on_telnyx_call_status(kw)
         return f'{res}'
 
@@ -93,7 +116,7 @@ class ConnectTelnyxController(Controller):
     @route('/telnyx/webhook/recordingstatus', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def recording_status_webhook(self, **kw):
         if not self.check_signature():
-            return False
+            return ''
         recording = request.env['connect.recording'].with_user(request.env.ref("connect.user_connect_webhook"))
         res = recording.on_telnyx_recording_status(kw)
         return f'{res}'
