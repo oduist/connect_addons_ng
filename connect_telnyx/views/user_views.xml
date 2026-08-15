@@ -57,16 +57,14 @@
                             <field name="telnyx_sip_password" string="SIP Password"
                                    widget="CopyClipboardChar"
                                    invisible="telnyx_sip_enabled == False"/>
-                            <label for="telnyx_sip_credential_sid" string=" "
-                                   invisible="telnyx_sip_enabled == False"/>
-                            <div invisible="telnyx_sip_enabled == False">
-                                <button name="action_regenerate_telnyx_sip_credential"
-                                        type="object" class="btn-link"
-                                        icon="fa-refresh"
-                                        string="Regenerate SIP credential"
-                                        confirm="Telnyx issues a brand new username and password: the hardphone stops registering until it is configured again. Continue?"
-                                        groups="connect.group_admin"/>
-                            </div>
+                            <button name="action_regenerate_telnyx_sip_credential"
+                                    type="object" class="btn-link ps-0"
+                                    icon="fa-refresh"
+                                    colspan="2"
+                                    string="Regenerate SIP credential"
+                                    invisible="telnyx_sip_enabled == False"
+                                    confirm="Telnyx issues a brand new username and password: the hardphone stops registering until it is configured again. Continue?"
+                                    groups="connect.group_admin"/>
                         </group>
                         <group string="Web Phone">
                             <field name="telnyx_client_enabled" string="Enabled"/>
