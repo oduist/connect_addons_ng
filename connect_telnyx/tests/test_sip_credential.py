@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from unittest.mock import patch
 
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import tagged
 
+from odoo.addons.connect.models.settings import Settings as CoreSettings
 from odoo.addons.connect_telnyx.models.settings import Settings
 
 from .common import TelnyxTestCommon
@@ -51,7 +52,7 @@ class TestTelnyxSipCredential(TelnyxTestCommon):
         deleted = []
         with patch.object(Settings, 'get_telnyx_client', autospec=True,
                           return_value=self._client(deleted)), patch.object(
-                              Settings, 'connect_notify', autospec=True):
+                              CoreSettings, 'connect_notify', autospec=True):
             self.user.with_user(
                 self.user.user).action_regenerate_telnyx_sip_credential()
         self.assertEqual(deleted, ['old-credential'])
@@ -73,10 +74,20 @@ class TestTelnyxSipCredential(TelnyxTestCommon):
             self.user.with_user(
                 self.user.user).action_regenerate_telnyx_sip_credential()
 
-    def test_password_is_readable_by_a_connect_user(self):
-        """The user has to read it to provision a hardphone."""
-        reader = self._create_connect_user('telnyx_sip_reader')
+    def test_password_is_readable_on_own_record(self):
+        """A plain Connect user provisioning a hardphone reads the
+        credential off their own PBX user; the record rule keeps other
+        users' credentials out of reach."""
+        reader = self._create_connect_user(
+            'telnyx_sip_reader',
+            telnyx_domain=self.domain.id,
+            telnyx_sip_enabled=True,
+            telnyx_sip_username='reader-username',
+            telnyx_sip_password='reader-password',
+        )
         reader.user.group_ids |= self.env.ref('connect.group_user')
-        data = self.user.with_user(reader.user).read(
+        data = reader.with_user(reader.user).read(
             ['telnyx_sip_username', 'telnyx_sip_password'])[0]
-        self.assertEqual(data['telnyx_sip_password'], 'old-password')
+        self.assertEqual(data['telnyx_sip_password'], 'reader-password')
+        with self.assertRaises(AccessError):
+            self.user.with_user(reader.user).read(['telnyx_sip_password'])
