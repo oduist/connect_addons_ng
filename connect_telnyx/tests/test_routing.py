@@ -148,3 +148,35 @@ class TestTelnyxRouting(TelnyxTestCommon):
         self.assertEqual(account_sid, 'org-test')
         self.assertEqual(
             self.settings.get_param('telnyx_account_sid'), 'org-test')
+
+
+@tagged('post_install', '-at_install')
+class TestTelnyxChannelMapping(TelnyxTestCommon):
+    """Telnyx reports the call parties differently depending on the
+    webhook, and the ledger has to store them either way."""
+
+    def test_application_webhook_params(self):
+        mapped = self.env['connect.channel']._map_telnyx_params({
+            'CallSid': 'call-1',
+            'Caller': '+15550001111',
+            'Called': '+15550002222',
+            'To': '+15550002222',
+            'CallStatus': 'ringing',
+            'Direction': 'inbound',
+        })
+        self.assertEqual(mapped['caller'], '+15550001111')
+        self.assertEqual(mapped['called'], '+15550002222')
+
+    def test_call_progress_params_use_from_and_to(self):
+        mapped = self.env['connect.channel']._map_telnyx_params({
+            'CallSid': 'call-2',
+            'From': '+15550001111',
+            'To': '+15550002222',
+            'CallerId': '+15550001111',
+            'CallStatus': 'completed',
+            'CallDuration': '9',
+            'Direction': 'inbound',
+        })
+        self.assertEqual(mapped['caller'], '+15550001111')
+        self.assertEqual(mapped['called'], '+15550002222')
+        self.assertEqual(mapped['duration'], 9)
