@@ -62,6 +62,7 @@ class Settings(models.Model):
     # endpoint for it (ADR-032).
     telnyx_account_sid = fields.Char(string="Telnyx Account SID")
     telnyx_messaging_profile_id = fields.Char(readonly=True)
+    telnyx_outbound_voice_profile_id = fields.Char(readonly=True)
     telnyx_ai_summary_insight_id = fields.Char(readonly=True)
     telnyx_ai_summary_group_id = fields.Char(readonly=True)
     telnyx_balance = fields.Char(readonly=True)
