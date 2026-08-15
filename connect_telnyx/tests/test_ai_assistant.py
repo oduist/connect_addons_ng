@@ -4,6 +4,7 @@ from unittest.mock import patch
 from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase, tagged
 
+from odoo.addons.connect.models.settings import Settings as CoreSettings
 from odoo.addons.connect_telnyx.models.settings import Settings
 
 
@@ -15,6 +16,8 @@ class TestTelnyxAIAssistant(TransactionCase):
         super().setUpClass()
         cls.env['ir.config_parameter'].sudo().set_param(
             'connect.api_url', 'https://odoo.example.test/')
+        cls.env['connect.settings'].sudo().set_param(
+            'telnyx_api_key', 'test-api-key')
         cls.Assistant = cls.env['connect.telnyx.ai_assistant'].with_context(
             skip_telnyx_ai_sync=True)
         cls.assistant = cls.Assistant.create({
@@ -74,7 +77,7 @@ class TestTelnyxAIAssistant(TransactionCase):
 
         with patch.object(Settings, 'telnyx_api_request', autospec=True,
                           side_effect=api_response), patch.object(
-                              Settings, 'connect_notify', autospec=True):
+                              CoreSettings, 'connect_notify', autospec=True):
             self.assistant._update_remote()
         self.assertEqual(
             voices, ['Telnyx.Ultra.deleted-voice', DEFAULT_VOICE])
@@ -173,7 +176,7 @@ class TestTelnyxAIAssistant(TransactionCase):
         # The wizard dials through the number application, whatever
         # applications the database already contains.
         number_app = self.env['connect.telnyx.number'].get_number_app()
-        number_app.with_context(install_mode=True).write(
+        number_app.with_context(skip_telnyx_sync=True).write(
             {'sid': 'texml-connection-test'})
         caller_id = self.env['connect.telnyx.outgoing_callerid'].create({
             'number': '+15550009999',

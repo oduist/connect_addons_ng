@@ -145,7 +145,11 @@ class Settings(models.Model):
         if api_url_check:
             raise ValidationError(api_url_check)
         try:
-            self._ensure_telnyx_account_sid()
+            try:
+                self._ensure_telnyx_account_sid()
+            except Exception as e:
+                # Click-to-call needs it, the rest of the sync does not.
+                logger.warning('Cannot resolve the Telnyx account SID: %s', e)
             self._ensure_telnyx_messaging_profile()
             self.env["connect.telnyx.texml"].sync()
             self.env["connect.telnyx.ai_assistant"].sync()

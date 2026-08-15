@@ -129,7 +129,7 @@ class TestTelnyxRouting(TelnyxTestCommon):
         self.settings.set_param(
             'telnyx_messaging_profile_id', 'profile-test')
         self.env['connect.telnyx.number'].get_number_app().with_context(
-            install_mode=True).write({'sid': 'number-app-sid'})
+            skip_telnyx_sync=True).write({'sid': 'number-app-sid'})
         # Must not raise: a number without SMS capability may still be
         # used for voice.
         self.number.update_telnyx_number(Client())

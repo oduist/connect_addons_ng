@@ -18,7 +18,7 @@ class TestTelnyxOriginate(TelnyxTestCommon):
         cls.settings.set_param('telnyx_auto_sync', False)
         cls.settings.set_param('telnyx_account_sid', 'account-test')
         cls.env['connect.telnyx.number'].get_number_app().with_context(
-            install_mode=True).write({'sid': 'number-app-sid'})
+            skip_telnyx_sync=True).write({'sid': 'number-app-sid'})
         cls.env['connect.telnyx.outgoing_callerid'].create({
             'number': '+15550001234',
             'friendly_name': 'Default',

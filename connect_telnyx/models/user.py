@@ -66,7 +66,11 @@ class User(models.Model):
     # explicitly per user.
     telnyx_client_enabled = fields.Boolean(
         'Telnyx Web Phone Enabled',
-        default=lambda self: self._telnyx_is_only_provider())
+        # A web phone needs a domain to register against, so it stays off
+        # until one exists; otherwise adding a PBX user right after the
+        # installation fails the domain constraint.
+        default=lambda self: bool(
+            self._telnyx_is_only_provider() and self._default_telnyx_domain()))
     telnyx_client_priority = fields.Selection(
         [('1', '1'), ('2', '2')], required=True, default='1',
         string='Telnyx web client priority',
