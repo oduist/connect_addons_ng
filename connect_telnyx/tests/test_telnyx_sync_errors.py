@@ -33,7 +33,8 @@ class TestTelnyxSyncErrors(TransactionCase):
         cls.Settings = cls.env['connect.settings']
         # telnyx_sync() guards on a set API key and a secure api_url.
         cls.Settings.set_param('telnyx_api_key', 'KEYtest')
-        cls.Settings.set_param('api_url', 'https://example.odoo.com')
+        cls.env['ir.config_parameter'].sudo().set_param(
+            'connect.api_url', 'https://example.odoo.com')
 
     def test_not_authorized_maps_to_friendly_error(self):
         # A 403 raised anywhere in the sync (here: the first sub-step) must
@@ -102,7 +103,7 @@ class TestTelnyxSyncErrors(TransactionCase):
                 stack.enter_context(patch.object(
                     type(self.env[model_name]), 'sync', **kwargs))
             notify_mock = stack.enter_context(patch.object(
-                Settings, 'connect_notify', autospec=True))
+                type(self.Settings), 'connect_notify', autospec=True))
 
             self.Settings.telnyx_sync()
 

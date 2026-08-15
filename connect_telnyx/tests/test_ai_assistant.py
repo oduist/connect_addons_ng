@@ -99,12 +99,13 @@ class TestTelnyxAIAssistant(TransactionCase):
             return remote_item
 
         assistant_model = type(self.env['connect.telnyx.ai_assistant'])
+        settings_model = type(self.env['connect.settings'])
         with patch.object(
                 Settings, 'telnyx_api_request', autospec=True,
                 side_effect=api_response), patch.object(
                     assistant_model, '_update_remote', autospec=True,
                     side_effect=RuntimeError('Unsupported model')), patch.object(
-                        Settings, 'connect_notify', autospec=True
+                        settings_model, 'connect_notify', autospec=True
                     ) as notify_mock:
             self.env['connect.telnyx.ai_assistant'].sync()
 
