@@ -2,7 +2,7 @@
 import json
 import logging
 import hmac
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from odoo.http import request, Controller, route
 from telnyx.lib.webhook_verification import (
@@ -18,22 +18,27 @@ MAX_AI_WEBHOOK_BYTES = 64 * 1024
 class ConnectTelnyxController(Controller):
 
     @staticmethod
-    def raw_body():
-        """The exact bytes Telnyx signed.
+    def signed_bodies():
+        """The candidate bodies Telnyx may have signed.
 
-        TeXML webhooks are form-encoded, and Odoo parses the form before
-        the controller runs, which leaves `get_data()` empty. Rebuild the
-        body from the parsed form in that case, preserving the order the
-        fields arrived in.
+        TeXML webhooks are form-encoded and Odoo parses the form before
+        the controller runs, which leaves `get_data()` empty. The body is
+        then rebuilt from the parsed form, keeping the order the fields
+        arrived in; both percent-encodings of a space are tried because
+        the rebuilt string has to match Telnyx byte for byte.
         """
         httprequest = request.httprequest
         body = httprequest.get_data(cache=True)
         if body:
-            return body
+            return [body]
         form = getattr(httprequest, 'form', None)
         if not form:
-            return b''
-        return urlencode(list(form.items(multi=True))).encode()
+            return [b'']
+        pairs = list(form.items(multi=True))
+        return [
+            urlencode(pairs).encode(),
+            urlencode(pairs, quote_via=quote).encode(),
+        ]
 
     @classmethod
     def check_signature(cls):
@@ -46,20 +51,21 @@ class ConnectTelnyxController(Controller):
         if not public_key:
             logger.error('Telnyx public key is not configured!')
             return False
-        try:
-            verify_webhook_signature(
-                cls.raw_body(),
-                dict(request.httprequest.headers),
-                public_key,
-            )
-            return True
-        except WebhookVerificationError as e:
-            logger.error(
-                'Telnyx request to %s is not valid: %s '
-                '(content type %s, %s body bytes)',
-                request.httprequest.path, e,
-                request.httprequest.content_type, len(cls.raw_body()))
-            return False
+        bodies = cls.signed_bodies()
+        headers = dict(request.httprequest.headers)
+        error = None
+        for body in bodies:
+            try:
+                verify_webhook_signature(body, headers, public_key)
+                return True
+            except WebhookVerificationError as e:
+                error = e
+        logger.error(
+            'Telnyx request to %s is not valid: %s '
+            '(content type %s, %s body bytes)',
+            request.httprequest.path, error,
+            request.httprequest.content_type, len(bodies[0]))
+        return False
 
     @route('/telnyx/webhook/domain', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def domain_webhook(self, **kw):
