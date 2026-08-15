@@ -147,7 +147,7 @@ password is visible to the user for hardphone provisioning).
 | `telnyx_exten` / `telnyx_exten_number` | M2O / related | registered in `_pbx_number_fields()` |
 | `telnyx_outgoing_callerid` | M2O | |
 | `telnyx_domain` | M2O | guarded default (install-order safe) |
-| `telnyx_sip_enabled` / `telnyx_client_enabled` | Boolean | client default = `_telnyx_is_only_provider()` |
+| `telnyx_sip_enabled` / `telnyx_client_enabled` | Boolean | client default = `_telnyx_is_only_provider()` **and** a domain exists (a web phone needs one to register against) |
 | `telnyx_sip_priority` / `telnyx_client_priority` | Selection | `1`/`2` |
 | `telnyx_sip_ring_timeout` / `telnyx_client_ring_timeout` | Integer | |
 | `telnyx_sip_credential_sid` / `telnyx_sip_username` / `telnyx_sip_password` | Char | hardphone credential |
