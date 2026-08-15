@@ -180,3 +180,15 @@ class TestTelnyxChannelMapping(TelnyxTestCommon):
         self.assertEqual(mapped['caller'], '+15550001111')
         self.assertEqual(mapped['called'], '+15550002222')
         self.assertEqual(mapped['duration'], 9)
+
+    def test_inbound_dialplan_carries_the_caller_id(self):
+        """The web phone shows who is calling only if the Dial verb has
+        a caller ID; an inbound PSTN webhook reports it as From."""
+        user = self._create_web_phone_user('telnyx_caller_id')
+        request = {
+            'To': '+15550001111', 'Called': '+15550001111',
+            'From': '+15550007777', 'CallerId': '+15550007777',
+            'CallSid': 'caller-id-test', 'CallStatus': 'initiated',
+        }
+        result = str(user.telnyx_render(request=request))
+        self.assertIn('callerId="+15550007777"', result)

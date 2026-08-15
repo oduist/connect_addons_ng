@@ -456,10 +456,21 @@ class User(models.Model):
             logger.exception('Error getting Telnyx JWT:')
             return {'error': str(e)}
 
+    @api.model
+    def _telnyx_caller(self, request):
+        """The calling party of a webhook.
+
+        An inbound PSTN webhook reports it as `From`/`CallerId`; only
+        calls placed from our own SIP subdomain carry `Caller`. Without
+        the fallback the dialplan dials the user with no caller ID and
+        the web phone shows an empty number.
+        """
+        return (request.get('Caller') or request.get('From')
+                or request.get('CallerId') or '')
+
     def _get_telnyx_caller_id(self, request, params):
-        caller_user = self.env['connect.user'].get_user_by_telnyx_uri(
-            request.get('Caller')
-        )
+        caller = self._telnyx_caller(request)
+        caller_user = self.env['connect.user'].get_user_by_telnyx_uri(caller)
         if caller_user:
             callerId = caller_user.telnyx_exten.number or ''
             if not callerId:
@@ -467,12 +478,12 @@ class User(models.Model):
                     'Exten not set for user %s', caller_user.name
                 )
         else:
-            callerId = request.get('Caller')
+            callerId = caller
         return callerId
 
     def _get_telnyx_caller_name(self, request, params):
         caller_user = self.env['connect.user'].get_user_by_telnyx_uri(
-            request.get('Caller')
+            self._telnyx_caller(request)
         )
         caller_name = params.get('CallerName', False)
         if caller_user:
