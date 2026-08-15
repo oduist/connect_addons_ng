@@ -100,7 +100,10 @@ class CallFlow(models.Model):
 
     @api.model
     def gather_action(self, flow_id, request):
-        callflow = self.browse(flow_id)
+        # The webhook user may not read the destination records the
+        # choices point at (connect.user in particular), and rendering a
+        # dialplan is not a user-facing read.
+        callflow = self.sudo().browse(flow_id)
         choice = callflow.choices.filtered(
             lambda x: x.choice_digits == request.get('Digits') or
                 (x.speech and request.get('SpeechResult') and x.speech in
@@ -202,7 +205,8 @@ class CallFlow(models.Model):
     def on_call_action(self, flow_id, request):
         response = VoiceResponse()
         if request.get('DialCallStatus') != 'completed':
-            callflow = self.browse(flow_id)
+            # Public webhook: its user cannot read the callflow record.
+            callflow = self.sudo().browse(flow_id)
             if callflow.voicemail_enabled and callflow.voicemail_prompt:
                 api_url = self.env['connect.settings'].sudo().get_param('api_url')
                 record_status_url = urljoin(api_url, 'telnyx/webhook/vm_recordingstatus')

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest.mock import patch
 
+from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.connect_telnyx.models.settings import Settings
@@ -40,6 +41,43 @@ class TestTelnyxAIAssistant(TransactionCase):
             if item.get('webhook', {}).get('name') == 'lookup_contact')
         self.assertEqual(
             webhook['headers'][0]['value'], self.assistant.tool_token)
+
+    def test_imported_assistant_payload_omits_the_hangup_tool(self):
+        """Telnyx keeps the hangup tool an imported assistant already has
+        and rejects a second one."""
+        imported = self.Assistant.create({
+            'name': 'Imported Agent',
+            'instructions': 'Imported.',
+            'sid': 'assistant-imported',
+            'imported': True,
+        })
+        tool_types = [item['type'] for item in imported._remote_payload()['tools']]
+        self.assertNotIn('hangup', tool_types)
+        self.assertIn('webhook', tool_types)
+
+    def test_push_retries_with_a_known_voice_when_telnyx_rejects_it(self):
+        from odoo.addons.connect_telnyx.models.ai_assistant import DEFAULT_VOICE
+        self.assistant.with_context(skip_telnyx_ai_sync=True).write(
+            {'voice': 'Telnyx.Ultra.deleted-voice'})
+        voices = []
+
+        def api_response(_settings, method, path, **kwargs):
+            payload = kwargs.get('payload') or {}
+            voice = (payload.get('voice_settings') or {}).get('voice')
+            voices.append(voice)
+            if voice != DEFAULT_VOICE:
+                raise ValidationError(
+                    'Telnyx API returned HTTP 400: Voice `{}` not found. '
+                    'Ensure the voice ID is valid.'.format(voice))
+            return {'data': {'id': self.assistant.sid, 'name': 'Support Agent',
+                             'instructions': 'Help the caller.'}}
+
+        with patch.object(Settings, 'telnyx_api_request', autospec=True,
+                          side_effect=api_response), patch.object(
+                              Settings, 'connect_notify', autospec=True):
+            self.assistant._update_remote()
+        self.assertEqual(
+            voices, ['Telnyx.Ultra.deleted-voice', DEFAULT_VOICE])
 
     def test_number_renders_ai_assistant_texml(self):
         number = self.env['connect.telnyx.number'].create({
@@ -132,22 +170,11 @@ class TestTelnyxAIAssistant(TransactionCase):
         request_mock.assert_not_called()
 
     def test_ai_call_wizard_uses_texml_connection_endpoint(self):
-        texml = self.env['connect.telnyx.texml'].with_context(
-            install_mode=True
-        ).create({
-            'name': 'Routing App',
-            'code_type': 'model_method',
-            'model': 'connect.telnyx.domain',
-            'method': 'route_call',
-            'sid': 'texml-connection-test',
-        })
-        self.env['connect.telnyx.domain'].with_context(
-            no_telnyx_create=True
-        ).create({
-            'friendly_name': 'Test Domain',
-            'subdomain': 'test-ai',
-            'application': texml.id,
-        })
+        # The wizard dials through the number application, whatever
+        # applications the database already contains.
+        number_app = self.env['connect.telnyx.number'].get_number_app()
+        number_app.with_context(install_mode=True).write(
+            {'sid': 'texml-connection-test'})
         caller_id = self.env['connect.telnyx.outgoing_callerid'].create({
             'number': '+15550009999',
             'friendly_name': 'Test caller',

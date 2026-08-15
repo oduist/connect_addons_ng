@@ -550,7 +550,9 @@ class User(models.Model):
 
     @api.model
     def telnyx_on_call_action(self, record_id, request):
-        user = self.browse(record_id)
+        # Called by the public Dial action webhook, whose user has no
+        # read access on connect.user.
+        user = self.sudo().browse(record_id)
         call_status = request.get('CallStatus')
         if not call_status:
             call_status = request.get('DialCallStatus')

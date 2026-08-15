@@ -38,7 +38,7 @@ class ConnectTelnyxController(Controller):
             logger.error('Telnyx request is not valid: %s', e)
             return False
 
-    @route('/telnyx/webhook/domain', methods=['POST'], type='http', auth='public', csrf=False)
+    @route('/telnyx/webhook/domain', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def domain_webhook(self, **kw):
         if not self.check_signature():
             return '<Response><Say>Invalid Telnyx request!</Say></Response>'
@@ -46,21 +46,21 @@ class ConnectTelnyxController(Controller):
         res = domain.route_call(kw)
         return f'{res}'
 
-    @route('/telnyx/webhook/callstatus', methods=['POST'], type='http', auth='public', csrf=False)
+    @route('/telnyx/webhook/callstatus', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def callstatus_webhook(self, **kw):
         if not self.check_signature():
             return False
         res = request.env['connect.call'].with_user(request.env.ref("connect.user_connect_webhook")).on_telnyx_call_status(kw)
         return f'{res}'
 
-    @route('/telnyx/webhook/number', methods=['POST'], type='http', auth='public', csrf=False)
+    @route('/telnyx/webhook/number', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def number_webhook(self, **kw):
         if not self.check_signature():
             return '<Response><Say>Invalid Telnyx request!</Say></Response>'
         res = request.env['connect.telnyx.number'].with_user(request.env.ref("connect.user_connect_webhook")).route_call(kw)
         return f'{res}'
 
-    @route('/telnyx/webhook/callflow/<int:flow_id>/gather', methods=['POST'], type='http', auth='public', csrf=False)
+    @route('/telnyx/webhook/callflow/<int:flow_id>/gather', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def gather_webhook(self, flow_id, **kw):
         if not self.check_signature():
             return '<Response><Say>Invalid Telnyx request!</Say></Response>'
@@ -68,7 +68,7 @@ class ConnectTelnyxController(Controller):
         res = callflow.gather_action(flow_id, kw)
         return f'{res}'
 
-    @route('/telnyx/webhook/vm_recordingstatus', methods=['POST'], type='http', auth='public', csrf=False)
+    @route('/telnyx/webhook/vm_recordingstatus', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def vm_recording_status_webhook(self, **kw):
         if not self.check_signature():
             return '<Response><Say>Invalid Telnyx request!</Say></Response>'
@@ -76,7 +76,7 @@ class ConnectTelnyxController(Controller):
         res = call.on_telnyx_vm_recording_status(kw)
         return f'{res}'
 
-    @route('/telnyx/webhook/<string:model_name>/call_action/<int:record_id>', methods=['POST'], type='http', auth='public', csrf=False)
+    @route('/telnyx/webhook/<string:model_name>/call_action/<int:record_id>', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def call_action_edit_webhook(self, model_name, record_id, **kw):
         if not self.check_signature():
             return '<Response><Say>Invalid Telnyx request!</Say></Response>'
@@ -90,7 +90,7 @@ class ConnectTelnyxController(Controller):
             res = model.on_call_action(record_id, kw)
         return f'{res}'
 
-    @route('/telnyx/webhook/recordingstatus', methods=['POST'], type='http', auth='public', csrf=False)
+    @route('/telnyx/webhook/recordingstatus', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def recording_status_webhook(self, **kw):
         if not self.check_signature():
             return False
@@ -98,7 +98,7 @@ class ConnectTelnyxController(Controller):
         res = recording.on_telnyx_recording_status(kw)
         return f'{res}'
 
-    @route('/telnyx/webhook/callaction', methods=['POST'], type='http', auth='public', csrf=False)
+    @route('/telnyx/webhook/callaction', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def call_action_webhook(self, **kw):
         if not self.check_signature():
             return '<Response><Say>Invalid Telnyx request!</Say></Response>'
@@ -106,7 +106,7 @@ class ConnectTelnyxController(Controller):
         res = call.telnyx_on_call_action(kw)
         return f'{res}'
 
-    @route('/telnyx/webhook/texml/<int:texml_id>', methods=['POST'], type='http', auth='public', csrf=False)
+    @route('/telnyx/webhook/texml/<int:texml_id>', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def texml_webhook(self, texml_id, **kw):
         if not self.check_signature():
             return '<Response><Say>Invalid Telnyx request!</Say></Response>'
@@ -114,7 +114,7 @@ class ConnectTelnyxController(Controller):
         res = texml.browse(texml_id).render(kw)
         return f'{res}'
 
-    @route('/telnyx/webhook/message', methods=['POST'], type='http', auth='public', csrf=False)
+    @route('/telnyx/webhook/message', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def message_webhook(self, **kw):
         # Telnyx messaging webhooks are v2 JSON envelopes, not form data.
         if not self.check_signature():
@@ -141,7 +141,7 @@ class ConnectTelnyxController(Controller):
 
     @route(
         '/telnyx/webhook/assistant/<int:assistant_id>/variables',
-        methods=['POST'], type='http', auth='public', csrf=False,
+        methods=['POST'], type='http', auth='public', csrf=False, readonly=False,
     )
     def assistant_variables_webhook(self, assistant_id, **kw):
         if not self.check_signature():
@@ -191,7 +191,7 @@ class ConnectTelnyxController(Controller):
 
     @route(
         '/telnyx/webhook/assistant/<int:assistant_id>/tool/<string:tool_name>',
-        methods=['POST'], type='http', auth='public', csrf=False,
+        methods=['POST'], type='http', auth='public', csrf=False, readonly=False,
     )
     def assistant_tool_webhook(self, assistant_id, tool_name, **kw):
         assistant = request.env['connect.telnyx.ai_assistant'].sudo().browse(
@@ -220,7 +220,7 @@ class ConnectTelnyxController(Controller):
 
     @route(
         '/telnyx/webhook/assistant/insights',
-        methods=['POST'], type='http', auth='public', csrf=False,
+        methods=['POST'], type='http', auth='public', csrf=False, readonly=False,
     )
     def assistant_insights_webhook(self, **kw):
         if not self.check_signature():

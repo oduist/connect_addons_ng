@@ -132,27 +132,31 @@ class TelnyxWhatsappTemplate(models.Model):
             raise ValidationError(
                 'No WhatsApp Business Account found. Sync WhatsApp senders first '
                 'or set the Business Account ID on the template.')
-        client = self.env['connect.settings'].get_telnyx_client()
         components = [{'type': 'BODY', 'text': self.body}]
         sample_values = self._ordered_variable_values(self.variables)
         if sample_values:
             components[0]['example'] = {'body_text': [sample_values]}
         try:
-            response = client.whatsapp.templates.create(
-                name=self.name,
-                language=self.language,
-                category=self.category,
-                waba_id=waba_id,
-                components=components,
+            # Called through the settings helper: the SDK WhatsApp
+            # resources double the /v2 path segment (see sender sync).
+            response = self.env['connect.settings'].telnyx_api_request(
+                'POST', 'whatsapp/message_templates',
+                payload={
+                    'name': self.name,
+                    'language': self.language,
+                    'category': self.category,
+                    'waba_id': waba_id,
+                    'components': components,
+                },
             )
         except Exception as e:
             raise ValidationError('Template submit error: {}'.format(
                 format_connect_response(e)))
-        data = getattr(response, 'data', None) or response
+        data = response.get('data') or response
         self.write({
-            'telnyx_id': getattr(data, 'id', False),
-            'template_id': getattr(data, 'template_id', False),
-            'status': getattr(data, 'status', None) or 'PENDING',
+            'telnyx_id': data.get('id', False),
+            'template_id': data.get('template_id', False),
+            'status': data.get('status') or 'PENDING',
             'waba_id': waba_id,
         })
         self.env['connect.settings'].connect_notify(
@@ -168,42 +172,44 @@ class TelnyxWhatsappTemplate(models.Model):
 
     @api.model
     def sync(self):
-        client = self.env['connect.settings'].get_telnyx_client()
         try:
-            items = list(client.whatsapp.templates.list())
+            response = self.env['connect.settings'].telnyx_api_request(
+                'GET', 'whatsapp/message_templates')
+            items = response.get('data') or []
         except Exception as e:
             raise ValidationError("Failed to sync WhatsApp Templates: {}".format(
                 format_connect_response(e)))
         seen_ids = set()
         for item in items:
-            if not item.id:
+            telnyx_id = item.get('id')
+            if not telnyx_id:
                 continue
-            seen_ids.add(item.id)
+            seen_ids.add(telnyx_id)
             components = [
                 c if isinstance(c, dict) else dict(c)
-                for c in (item.components or [])
+                for c in (item.get('components') or [])
             ]
-            waba = item.whatsapp_business_account
+            waba = item.get('whatsapp_business_account') or {}
             vals = {
-                'telnyx_id': item.id,
-                'template_id': item.template_id,
-                'name': item.name,
-                'language': item.language,
-                'category': item.category,
-                'status': item.status or 'PENDING',
-                'rejection_reason': item.rejection_reason,
+                'telnyx_id': telnyx_id,
+                'template_id': item.get('template_id'),
+                'name': item.get('name'),
+                'language': item.get('language'),
+                'category': item.get('category'),
+                'status': item.get('status') or 'PENDING',
+                'rejection_reason': item.get('rejection_reason'),
                 'components': json.dumps(components, default=str),
-                'waba_id': waba.id if waba else False,
+                'waba_id': waba.get('id') if waba else False,
             }
             body = self._template_body_from_components(components)
             if body:
                 vals['body'] = body
-            rec = self.search([('telnyx_id', '=', item.id)], limit=1)
+            rec = self.search([('telnyx_id', '=', telnyx_id)], limit=1)
             if not rec:
                 rec = self.search([
                     ('telnyx_id', '=', False),
-                    ('name', '=', item.name),
-                    ('language', '=', item.language)], limit=1)
+                    ('name', '=', item.get('name')),
+                    ('language', '=', item.get('language'))], limit=1)
             if rec:
                 rec.write(vals)
                 debug(self, 'Updated WhatsApp template {}'.format(rec.name))

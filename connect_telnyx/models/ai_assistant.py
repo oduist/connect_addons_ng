@@ -12,6 +12,10 @@ if release.version_info[0] >= 19:
 
 logger = logging.getLogger(__name__)
 
+# Telnyx validates the voice id against the account; this one ships with
+# every account and is used when the configured voice is unavailable.
+DEFAULT_VOICE = "AWS.Polly.Joanna-Neural"
+
 REMOTE_FIELDS = {
     "name", "description", "instructions", "greeting", "model",
     "voice", "voice_speed", "transcription_model",
@@ -39,7 +43,11 @@ class TelnyxAIAssistant(models.Model):
     )
     greeting = fields.Text(default="Hello! How can I help you today?")
     model = fields.Char(help="Leave empty to use the Telnyx default model.")
-    voice = fields.Char(help="Telnyx voice identifier.")
+    voice = fields.Char(
+        default=DEFAULT_VOICE,
+        help="Telnyx voice identifier, for example AWS.Polly.Joanna-Neural. "
+             "The available ids are listed by the Telnyx text-to-speech "
+             "voices endpoint.")
     voice_speed = fields.Float(default=1.0)
     transcription_model = fields.Char(
         help="For example deepgram/nova-3. Leave empty for Telnyx default."
@@ -129,7 +137,11 @@ class TelnyxAIAssistant(models.Model):
 
     def _tool_payload(self):
         self.ensure_one()
-        tools = [{"type": "hangup", "hangup": {}}]
+        # An assistant imported from Telnyx already carries its own
+        # hangup tool; sending ours would add a second one and Telnyx
+        # rejects the update ("Only one tool of type 'hangup'").
+        tools = [] if (self.imported and self.sid) else [
+            {"type": "hangup", "hangup": {}}]
         if self.enable_contact_tools:
             tools.extend([
                 self._webhook_tool(
@@ -256,27 +268,53 @@ class TelnyxAIAssistant(models.Model):
             self._remote_values(data, imported=self.imported)
         )
 
+    def _push_remote(self, path):
+        """POST the assistant payload, recovering from an unusable voice.
+
+        The account-level default voice can point at a deleted custom
+        voice, and an imported assistant carries whatever voice id Telnyx
+        reported, which Telnyx itself may then reject. Retry once with a
+        known-good voice instead of failing the whole synchronization.
+        """
+        self.ensure_one()
+        settings = self.env["connect.settings"]
+        payload = self._remote_payload()
+        try:
+            return self._unwrap(
+                settings.telnyx_api_request("POST", path, payload=payload))
+        except ValidationError as e:
+            message = str(e)
+            if "Voice" not in message or "not found" not in message:
+                raise
+            if payload.get("voice_settings", {}).get("voice") == DEFAULT_VOICE:
+                raise
+            logger.warning(
+                "Telnyx rejected voice %s for assistant '%s', falling back "
+                "to %s.", self.voice or "(account default)", self.name,
+                DEFAULT_VOICE)
+            payload["voice_settings"] = {
+                "voice": DEFAULT_VOICE,
+                "voice_speed": self.voice_speed or 1.0,
+            }
+            data = self._unwrap(
+                settings.telnyx_api_request("POST", path, payload=payload))
+            settings.connect_notify(
+                "Voice of the AI assistant '{}' was not available in Telnyx "
+                "and was replaced with {}.".format(self.name, DEFAULT_VOICE),
+                title="AI Assistant Voice", warning=True, sticky=True)
+            return data
+
     def _create_remote(self):
         self.ensure_one()
         self._ensure_summary_group()
-        data = self._unwrap(
-            self.env["connect.settings"].telnyx_api_request(
-                "POST", "ai/assistants", payload=self._remote_payload()
-            )
-        )
-        self._apply_remote_data(data)
+        self._apply_remote_data(self._push_remote("ai/assistants"))
 
     def _update_remote(self):
         self.ensure_one()
         if not self.sid:
             return self._create_remote()
-        data = self._unwrap(
-            self.env["connect.settings"].telnyx_api_request(
-                "POST", "ai/assistants/{}".format(self.sid),
-                payload=self._remote_payload(),
-            )
-        )
-        self._apply_remote_data(data)
+        self._apply_remote_data(
+            self._push_remote("ai/assistants/{}".format(self.sid)))
 
     @api.model_create_multi
     def create(self, vals_list):

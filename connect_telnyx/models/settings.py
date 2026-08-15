@@ -145,6 +145,7 @@ class Settings(models.Model):
         if api_url_check:
             raise ValidationError(api_url_check)
         try:
+            self._ensure_telnyx_account_sid()
             self._ensure_telnyx_messaging_profile()
             self.env["connect.telnyx.texml"].sync()
             self.env["connect.telnyx.ai_assistant"].sync()
@@ -194,6 +195,20 @@ class Settings(models.Model):
                     '(https://portal.telnyx.com), then run Sync again.'
                 )
             raise
+
+    def _ensure_telnyx_account_sid(self):
+        """Store the TeXML account SID, which the API reports as the
+        organization id. It is required by every TeXML call and there is
+        no reason to make the administrator copy it by hand."""
+        account_sid = self.sudo().get_param('telnyx_account_sid')
+        if account_sid:
+            return account_sid
+        data = (self.telnyx_api_request('GET', 'whoami') or {}).get('data') or {}
+        account_sid = data.get('organization_id') or data.get('user_id')
+        if account_sid:
+            self.sudo().set_param('telnyx_account_sid', account_sid)
+            debug(self, 'Telnyx account SID set to {}.'.format(account_sid))
+        return account_sid
 
     def _ensure_telnyx_messaging_profile(self):
         """Get or create the messaging profile used for Odoo messaging."""
@@ -249,7 +264,7 @@ class Settings(models.Model):
             return super().originate_call(
                 number, res_model=res_model, res_id=res_id, user=user, **kwargs)
         self.env["oduist.license"].check_license("connect", silent=False)
-        account_sid = self.sudo().get_param("telnyx_account_sid")
+        account_sid = self._ensure_telnyx_account_sid()
         if not account_sid:
             raise ValidationError(
                 "Set the Telnyx Account SID in Telnyx settings first!")
@@ -315,7 +330,13 @@ class Settings(models.Model):
         record_status_url = urljoin(api_url, "telnyx/webhook/recordingstatus")
         texml_url = urljoin(api_url, "telnyx/webhook/callaction")
         debug(self, 'Originate destination TeXML: {}'.format(texml))
+        # Telnyx rejects a TeXML originate without ApplicationSid, even
+        # when the dialplan is supplied inline.
+        application = self.env['connect.telnyx.number'].get_number_app()
+        if not application.sid:
+            application.update_telnyx_app(client)
         call_kwargs = {
+            'application_sid': application.sid,
             'url': texml_url,
             'url_method': 'POST',
             'texml': str(texml),

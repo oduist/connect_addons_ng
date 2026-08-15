@@ -313,6 +313,15 @@ class Domain(models.Model):
             found_num = found.group(1)
         else:
             found_num = to_val
+            # Numbers created before the number application existed are
+            # still attached to this domain application, so an inbound
+            # PSTN leg lands here. Route it as a number call instead of
+            # treating the dialled DID as an outgoing destination.
+            number = self.env["connect.telnyx.number"].sudo().search(
+                [("phone_number", "=", found_num)], limit=1)
+            if number:
+                return self.env["connect.telnyx.number"].sudo().render_inbound(
+                    request, params=params)
         exten = self.env["connect.telnyx.exten"].sudo().search([("number", "=", found_num)])
         if not exten:
             # Get all extensions and match by pattern.
@@ -340,6 +349,10 @@ class Domain(models.Model):
             res = exten.render(request=request, params=params)
             return res
         elif isinstance(found_num, str) and found_num.startswith("+"):
+            # Only calls placed from our own SIP subdomain may dial out;
+            # an inbound PSTN leg must never re-originate a call.
+            if not (request.get("Caller") or '').startswith("sip:"):
+                return "<Response><Say>Extension not found. Goodbye! </Say></Response>"
             return self.originate_external_call(found_num, request, params=params)
         else:
             return "<Response><Say>Extension not found. Goodbye! </Say></Response>"
