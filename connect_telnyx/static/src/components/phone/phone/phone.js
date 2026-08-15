@@ -498,7 +498,10 @@ export class Phone extends Component {
             if (self.state.inCall && !self.session) {
                 self.endCall()
             }
-            self.updateToken().then()
+            // An unusable microphone is not fixed by a fresh token.
+            if (error && error.recoverable !== false) {
+                self.updateToken().then()
+            }
         })
 
         self.userAgent.on('telnyx.notification', (notification) => {
@@ -695,6 +698,11 @@ export class Phone extends Component {
     }
 
     getTelnyxErrorMessage(error) {
+        // The client reports call failures wrapped in an envelope:
+        // {error, callId, sessionId, recoverable}.
+        while (error && error.error) {
+            error = error.error
+        }
         const name = error && (error.name || error.code)
         if (name === 'MEDIA_MICROPHONE_PERMISSION_DENIED' || name === 42001
                 || name === 'NotAllowedError') {
