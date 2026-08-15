@@ -15,7 +15,7 @@ class TestTelnyxWebhookAccess(TelnyxTestCommon):
     def setUpClass(cls):
         super().setUpClass()
         cls.env['connect.settings'].sudo().set_param('telnyx_auto_sync', False)
-        cls.user = cls._create_connect_user('telnyx_webhook_acl')
+        cls.user = cls._create_web_phone_user('telnyx_webhook_acl')
         cls.exten = cls.env['connect.telnyx.exten'].create({
             'number': '101',
             'dst': 'connect.user,{}'.format(cls.user.id),

@@ -22,7 +22,7 @@ class TestTelnyxRouting(TelnyxTestCommon):
                 'phone_number': '+15550001111',
                 'sid': 'number-sid',
             })
-        cls.user = cls._create_connect_user('telnyx_routing')
+        cls.user = cls._create_web_phone_user('telnyx_routing')
 
     def _request(self, **kwargs):
         request = {

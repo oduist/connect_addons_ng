@@ -21,7 +21,7 @@ class TestTelnyxMessaging(TelnyxTestCommon):
         # even when another provider module is installed alongside.
         cls.sender = cls._create_connect_user(
             'telnyx_messaging', message_provider='telnyx')
-        cls.sender.user.groups_id |= cls.env.ref('connect.group_admin')
+        cls.sender.user.group_ids |= cls.env.ref('connect.group_admin')
         cls.env = cls.env(user=cls.sender.user)
         cls.callerid = cls.env['connect.telnyx.outgoing_callerid'].create({
             'number': '+15550005555',

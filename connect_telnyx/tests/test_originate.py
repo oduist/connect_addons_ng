@@ -24,14 +24,8 @@ class TestTelnyxOriginate(TelnyxTestCommon):
             'friendly_name': 'Default',
             'is_default': True,
         })
-        cls.caller = cls._create_connect_user(
-            'telnyx_originate', originate_provider='telnyx',
-            telnyx_client_username='client-user')
-        cls.env['connect.telnyx.user_callflow'].create({
-            'user': cls.caller.id,
-            'callflow_type': 'client',
-            'prio': 1,
-        })
+        cls.caller = cls._create_web_phone_user(
+            'telnyx_originate', originate_provider='telnyx')
 
     def _client(self, captured):
         class Calls:
@@ -61,7 +55,7 @@ class TestTelnyxOriginate(TelnyxTestCommon):
         self.assertEqual(captured['account_sid'], 'account-test')
         self.assertEqual(captured['application_sid'], 'number-app-sid')
         self.assertEqual(captured['from_'], '+15550001234')
-        self.assertIn('client-user', captured['to'])
+        self.assertIn('client-telnyx_originate', captured['to'])
         channel = self.env['connect.channel'].search(
             [('sid', '=', 'call-sid-test')])
         self.assertEqual(len(channel), 1)
