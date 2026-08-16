@@ -6,6 +6,8 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
+                <field name="receptionist_mode"/>
+                <field name="exten_number" string="Extension"/>
                 <field name="model"/>
                 <field name="voice"/>
                 <field name="record_calls"/>
@@ -27,8 +29,8 @@
                             invisible="not sid"/>
                     <button name="action_push_to_telnyx" type="object"
                             string="Push to Telnyx"/>
-                    <button name="action_pull_from_telnyx" type="object"
-                            string="Pull from Telnyx" invisible="not sid"/>
+                    <button name="create_extension" type="object"
+                            string="Create Extension"/>
                     <button name="action_rotate_tool_token" type="object"
                             string="Rotate Tool Token"/>
                 </header>
@@ -40,7 +42,6 @@
                         <group string="Telnyx">
                             <field name="sid"/>
                             <field name="version_id"/>
-                            <field name="imported"/>
                             <field name="last_sync_at"/>
                             <field name="active"/>
                         </group>
@@ -62,6 +63,30 @@
                         </page>
                         <page string="Calling" name="calling">
                             <group>
+                                <group string="Receptionist">
+                                    <field name="receptionist_mode"/>
+                                    <field name="transfer_enabled"/>
+                                    <field name="manager"
+                                           invisible="receptionist_mode != 'personal'"
+                                           required="transfer_enabled and receptionist_mode == 'personal'"/>
+                                    <field name="transfer_callflows" widget="many2many_tags"
+                                           invisible="receptionist_mode != 'company'"
+                                           required="transfer_enabled and receptionist_mode == 'company'"/>
+                                    <field name="check_registration_before_transfer"
+                                           invisible="not transfer_enabled"/>
+                                    <field name="warm_transfer_instructions"
+                                           invisible="not transfer_enabled"/>
+                                </group>
+                                <group string="SIP / WebRTC Extension">
+                                    <field name="domain"/>
+                                    <field name="exten" readonly="1"/>
+                                    <field name="exten_number" readonly="1"/>
+                                    <field name="sip_uri" readonly="1"/>
+                                    <field name="transfer_tool_sid" readonly="1"
+                                           groups="connect.group_admin"/>
+                                </group>
+                            </group>
+                            <group string="Call Settings">
                                 <field name="time_limit_secs"/>
                                 <field name="record_calls"/>
                                 <field name="memory_enabled"/>

@@ -189,12 +189,19 @@ class ConnectTelnyxController(Controller):
             request.env.ref('connect.user_connect_webhook')
         ).telnyx_link_ai_conversation(payload)
         phone = payload.get('telnyx_end_user_target')
-        partner = request.env['res.partner'].sudo().get_partner_by_number(
-            phone) if phone else request.env['res.partner']
+        partner, match_count = assistant.sudo()._strict_partner_match(phone)
         if call and partner and not call.partner:
             call.sudo().partner = partner
+        transfer_targets, unavailable_targets = (
+            assistant.sudo()._transfer_targets())
+        variables = assistant._partner_values(partner, match_count=match_count)
+        variables.update({
+            'transfer_targets': transfer_targets,
+            'transfer_available': bool(transfer_targets),
+            'unavailable_transfer_targets': unavailable_targets,
+        })
         result = {
-            'dynamic_variables': assistant._partner_values(partner),
+            'dynamic_variables': variables,
             'conversation': {
                 'metadata': {
                     'odoo_assistant_id': str(assistant.id),

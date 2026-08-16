@@ -530,6 +530,69 @@ class User(models.Model):
         return 'sip:{}@sip.telnyx.com{}'.format(
             username, '?{}'.format(query) if query else '')
 
+    def _telnyx_registration_status(self, username):
+        """Return live Telnyx registration state for a telephony credential."""
+        self.ensure_one()
+        return self.env['connect.settings'].sudo().telnyx_api_request(
+            'GET', 'sip_registration_status',
+            params={
+                'credential_type': 'telephony_credential',
+                'username': username,
+            },
+            timeout=1.5,
+        )
+
+    def _telnyx_transfer_target(self, check_registration=True):
+        """Select the best SIP/WebRTC credential for an AI warm transfer.
+
+        A negative registration response is authoritative for that device.
+        API errors are advisory: keep one configured credential as a fallback
+        so a status endpoint outage cannot disable all human transfers.
+        """
+        self.ensure_one()
+        candidates = []
+        for order, channel in enumerate(('client', 'sip')):
+            if not self['telnyx_{}_enabled'.format(channel)]:
+                continue
+            username = self['telnyx_{}_username'.format(channel)]
+            if not username:
+                continue
+            priority = int(self['telnyx_{}_priority'.format(channel)] or 99)
+            candidates.append((priority, order, channel, username))
+        candidates.sort()
+        if not candidates:
+            return False
+        if not check_registration:
+            _priority, _order, channel, username = candidates[0]
+            return {
+                'to': self._telnyx_credential_uri(username),
+                'channel': channel,
+                'registration': 'unchecked',
+            }
+        unknown = False
+        for _priority, _order, channel, username in candidates:
+            try:
+                status = self._telnyx_registration_status(username) or {}
+            except Exception as exc:
+                logger.warning(
+                    'Could not check Telnyx %s registration for user %s: %s',
+                    channel, self.name, exc)
+                if not unknown:
+                    unknown = {
+                        'to': self._telnyx_credential_uri(username),
+                        'channel': channel,
+                        'registration': 'unknown',
+                    }
+                continue
+            if status.get('registered') or (
+                    status.get('sip_registration_status') == 'registered'):
+                return {
+                    'to': self._telnyx_credential_uri(username),
+                    'channel': channel,
+                    'registration': 'registered',
+                }
+        return unknown or False
+
     @api.model
     def _telnyx_caller(self, request):
         """The calling party of a webhook.

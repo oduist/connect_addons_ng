@@ -11,6 +11,10 @@ Every AI agent has its own extension number. Dial the extension from any phone
 registered on the PBX, or call a public number that an administrator has routed
 to the agent.
 
+For Telnyx, the internal address is
+`sip:<extension>@<company-subdomain>.sip.telnyx.com`. No external phone number
+is required for that SIP/WebRTC call.
+
 Speak normally after the greeting. You do not need to wait for a long reply to
 finish: start speaking and the agent will stop its playback and listen to the
 new turn.
@@ -18,8 +22,20 @@ new turn.
 ## Transfers
 
 If a human transfer is configured, ask to speak with a person. The agent will
-transfer the same call to the configured extension. If transfer is unavailable,
-the agent should say so rather than disconnecting you.
+first ask why you are calling and collect the relevant context. It then briefs
+the employee privately and bridges the same call. If the employee's SIP/WebRTC
+phone is not registered or transfer is otherwise unavailable, the agent offers
+to register the request rather than disconnecting you.
+
+A personal receptionist transfers to its manager. A company receptionist may
+replace an IVR and route to configured departments such as Sales, Quality, or
+the Director.
+
+## Caller Recognition
+
+When exactly one Odoo contact has the caller's phone number, the agent may use
+that contact's name but must ask the caller to confirm it. If several contacts
+share the number, the agent does not guess a name.
 
 ## Call History And Recordings
 

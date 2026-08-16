@@ -1,5 +1,8 @@
 # 035: Telnyx AI Assistants remain behind the Odoo TeXML router
 
+> Amended by ADR-062: Odoo no longer imports unknown remote assistants, and
+> assistants can now own internal extensions and Odoo-managed transfer tools.
+
 ## Context
 
 Telnyx can assign a number directly to an AI Assistant, but `connect_telnyx`

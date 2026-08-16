@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Telnyx
 - **Technical:** `connect_telnyx`
-- **Version:** 19.0.1.4.1
+- **Version:** 19.0.1.4.3
 - **Depends:** `connect`
 - **Python deps:** `telnyx`, `nacl` (PyNaCl)
 - **Application:** False
@@ -53,12 +53,41 @@ WhatsApp and RCS **messaging** are integrated (ADR-033).
 
 ### ai_assistant.py — `connect.telnyx.ai_assistant`
 
-Manages Telnyx Voice AI Assistants through the v2 API. Stores the prompt,
-greeting, model/voice/transcription settings, recording/memory switches and
-the Odoo tool allowlist. Unknown remote assistants are imported by account
-sync; once imported, Odoo configures its signed dynamic-variables webhook and
-per-assistant tool endpoints. Phone numbers route to assistants through the
-existing TeXML application using `<Connect><AIAssistant>` (ADR-034).
+Manages Telnyx Voice AI Assistants through the v2 API. Odoo is authoritative:
+account sync pushes local assistants and ignores unknown Telnyx assistants;
+there is no remote Pull/import workflow (ADR-062). Stores the prompt, greeting,
+model/voice/transcription settings, recording/memory switches and the Odoo
+tool allowlist.
+
+The always-on `register_call_request` webhook tool stores the qualified title,
+summary and requested action as an internal note on the current `connect.call`.
+Contact/CRM/Helpdesk tools remain individually gated by their assistant flags.
+
+Receptionist routing fields: `receptionist_mode` (`personal` / `company`),
+`transfer_enabled`, personal `manager`, company `transfer_callflows`,
+`check_registration_before_transfer`, `warm_transfer_instructions`,
+`transfer_tool_sid`, `domain`, `exten` / `exten_number`, and computed
+`sip_uri`. Personal assistants target one manager; company assistants flatten
+the configured callflows' `ring_users` into department-labelled human targets.
+
+Odoo creates one Telnyx shared Transfer tool per configured assistant. The tool
+uses dynamic `{{ transfer_targets }}`, `{{telnyx_agent_target}}` as its caller,
+premium voicemail detection with stop-transfer behavior, and a warm briefing
+that includes confirmed identity, reason, context and next step. The variables
+webhook checks each candidate's live telephony-credential registration status;
+definitely offline devices are omitted, while API errors fall back to the
+configured credential as an advisory unknown state.
+
+Phone numbers and `connect.telnyx.exten` records route to assistants through
+the existing TeXML applications using `<Connect><AIAssistant>`. An assistant
+with a domain and extension is directly reachable from registered SIP/WebRTC
+phones at `sip:<extension>@<subdomain>.sip.telnyx.com`.
+
+Caller personalization performs a strict raw/E.164 lookup. A name is exposed
+only when exactly one partner matches; multiple matches set the dynamic result
+to ambiguous and expose no identity. The receptionist policy requires verbal
+confirmation of a single candidate before treating the identity as verified,
+and requires qualification of the call before any transfer.
 
 Completed AI conversations are linked to `connect.call` by conversation and
 Call Control IDs. Transcript and Telnyx Insight summary are stored on an
@@ -183,7 +212,10 @@ changes too; `connect.group_admin` only); `telnyx_render()` +
 `connect.user.language`/`voice`, with `en-US` / System Voice fallbacks —
 ADR-037/ADR-055); `get_telnyx_client_token()` (JWT via
 `telephony_credentials.create_token` + `sip_domain` for the web phone);
-`get_user_by_telnyx_uri()`; `telnyx_on_call_action()` (ADR-057: the child
+`get_user_by_telnyx_uri()`; `_telnyx_registration_status()` (`GET
+/v2/sip_registration_status` with `credential_type=telephony_credential`) /
+`_telnyx_transfer_target()` (priority-ordered registered SIP/WebRTC target,
+advisory API-error fallback); `telnyx_on_call_action()` (ADR-057: the child
 `DialCallStatus` takes precedence over the parent `CallStatus`; completed
 destinations hang up, explicit failure statuses advance the user callflow,
 and unknown statuses fail closed); callflow-managing constraints
@@ -234,7 +266,8 @@ Ring users dial the users' credential SIP URIs.
 ### exten.py - `connect.telnyx.exten`
 
 dst-Reference mechanics (copy of Twilio/FS); `dst` selection:
-`connect.user` / `connect.telnyx.callflow` / `connect.telnyx.texml`;
+`connect.user` / `connect.telnyx.callflow` / `connect.telnyx.texml` /
+`connect.telnyx.ai_assistant`;
 renders `connect.user` destinations via `telnyx_render()`.
 
 ### user_callflow.py, message_configuration.py

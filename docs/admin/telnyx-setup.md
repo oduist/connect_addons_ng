@@ -18,9 +18,9 @@ Navigate to **Connect > Telnyx > Configuration > Settings**.
 
 After the credentials and public HTTPS API URL are configured, open
 **Connect > Telnyx > AI Assistants**. Creating a record creates the Telnyx AI
-Assistant and configures its dynamic-variable and tool webhooks. **Pull from
-Telnyx** refreshes a record; the main **SYNC TELNYX ACCOUNT** action also
-imports assistants created in Mission Control.
+Assistant and configures its dynamic-variable and tool webhooks. Odoo is the
+source of truth: edit assistants in Odoo and use **Push to Telnyx** or account
+sync. Assistants created only in Mission Control are not imported or changed.
 
 To answer an existing Telnyx number with an assistant, open the number and set
 **Destination** to **AI Assistant**. The number remains attached to the Odoo
@@ -28,9 +28,58 @@ TeXML routing application; do not assign it directly to the assistant in
 Mission Control.
 
 The **Call with Assistant** button starts an outbound call using an existing
-owned caller ID. It never buys or assigns a number. Recording and memory are
-off by default and must be enabled on each assistant. CRM and Helpdesk tools
-are published only when the matching Connect modules are installed.
+owned caller ID. It never buys or assigns a number.
+
+### Receptionist routing
+
+Choose one receptionist mode on the assistant:
+
+- **Personal Receptionist** answers for one manager. It qualifies the caller
+  and can warm-transfer to that manager.
+- **Company Receptionist** replaces an IVR. Select department callflows such
+  as Sales, Quality, or Director; their configured ring users become the human
+  transfer candidates.
+
+Enable the manager's SIP phone and/or Web Phone and ensure Telnyx credentials
+exist. With **Check Registration Before Transfer**, Odoo calls
+`GET /v2/sip_registration_status` for each telephony credential. This endpoint
+covers both SIP hardphones and Telnyx WebRTC SDK registrations. A registered
+device is eligible for transfer, but registration does not guarantee that the
+person will answer; busy, rejection, and no-answer remain possible. If the
+status API itself fails, Odoo keeps a configured target as an advisory fallback.
+
+The Telnyx shared Transfer tool dials the selected credential directly and
+performs a warm transfer. Before bridging the caller, the assistant briefs the
+recipient with the confirmed caller name, reason, relevant context, and agreed
+next step. If no recipient is registered, the assistant offers to register the
+request instead.
+
+To make the assistant callable without a public number, select a SIP domain
+and click **Create Extension**. Registered SIP and WebRTC phones can then call
+`sip:<extension>@<subdomain>.sip.telnyx.com` (or dial the extension through the
+configured web phone).
+
+### Caller identity and Odoo tools
+
+At conversation start Odoo searches both phone and mobile numbers. The
+assistant receives a caller name only when exactly one contact matches and
+must ask the caller to confirm it. Duplicate matches are marked ambiguous and
+no name is guessed.
+
+- **Enable Contact Tools** allows strict contact lookup and adding internal
+  notes.
+- **Register Call Request** is always available to save the qualified reason,
+  context, and agreed next step as an internal note on the current call.
+- **Enable CRM Tools** allows creation/update of an open CRM lead when CRM is
+  installed.
+- **Enable Helpdesk Tools** allows creation/update of a ticket when Helpdesk is
+  installed.
+- **Memory Enabled** asks Telnyx to retrieve recent conversations for the same
+  caller. It is Telnyx conversation memory and is independent of the Odoo
+  `connect_memory` module.
+
+Recording and memory are off by default. CRM and Helpdesk tools are published
+only when the matching Odoo models are installed.
 
 Telnyx signs context and insight callbacks with the account Ed25519 public
 key. Odoo tools use a separate random token per assistant; rotate it from the
@@ -93,7 +142,7 @@ logs that and continues, since the number still works for voice.
 The sync also creates the **Odoo Connect** messaging profile with the
 webhook URL pointing at your Odoo instance.
 
-If an optional WhatsApp/RCS resource or an imported AI Assistant cannot be
+If an optional WhatsApp/RCS resource or an Odoo AI Assistant cannot be
 synchronized, Odoo shows a persistent warning. The warning remains visible
 until it is dismissed so the API error can be reviewed and corrected.
 
@@ -221,6 +270,6 @@ configurable sender number. Incoming RCS messages arrive as
 - Attended transfer from the web phone is not available yet.
 - Call cost fetching relies on Telnyx detail records and may lag behind
   call completion.
-- Outbound calls from SIP hardphones go directly through the credential
-  connection (Telnyx handles them); internal extension dialing from
-  hardphones is not routed by Odoo yet.
+- Outbound PSTN calls from SIP hardphones go directly through the credential
+  connection. Internal assistant extensions use the configured Odoo SIP
+  subdomain and TeXML router.
