@@ -449,24 +449,22 @@ class Settings(models.Model):
             ('callflow_type', 'in', ['client', 'sip'])
         ], order='prio', limit=1)
         if first_flow.callflow_type == 'sip':
-            to = 'sip:{}@sip.telnyx.com'.format(connect_user.telnyx_sip_username)
+            to = connect_user._telnyx_credential_uri(
+                connect_user.telnyx_sip_username)
         else:
             # X- URI parameters surface as custom headers in the TelnyxRTC
             # notification, mirroring Twilio's client: URL parameters.
             # Telnyx rejects a header with an empty value ("The
             # 'custom_headers' parameter is invalid"), so only the
             # parameters that carry a value are sent.
-            headers = [
-                ('X-autoAnswer', 'yes'),
-                ('X-Partner', partner_id or ''),
-                ('X-CallerName', caller_name or ''),
-                ('X-From', (number or '').replace('+', '')),
-            ]
-            query = '&'.join(
-                '{}={}'.format(name, value) for name, value in headers if value)
-            to = 'sip:{}@sip.telnyx.com{}'.format(
+            to = connect_user._telnyx_credential_uri(
                 connect_user.telnyx_client_username,
-                '?{}'.format(query) if query else '')
+                [
+                    ('X-autoAnswer', 'yes'),
+                    ('X-Partner', partner_id or ''),
+                    ('X-CallerName', caller_name or ''),
+                    ('X-From', (number or '').replace('+', '')),
+                ])
         exten = self.env["connect.telnyx.exten"].search(
             [("number", "=", number)], limit=1
         )

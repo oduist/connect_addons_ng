@@ -158,7 +158,8 @@ class User(models.Model):
     def _get_telnyx_uri(self):
         for rec in self:
             username = rec.telnyx_sip_username or rec.telnyx_client_username
-            rec.telnyx_uri = '{}@sip.telnyx.com'.format(username) if username else ''
+            host = rec.telnyx_domain.domain_name or 'sip.telnyx.com'
+            rec.telnyx_uri = '{}@{}'.format(username, host) if username else ''
 
     def _create_telnyx_credential(self, channel, client=None):
         """Create one telephony credential (channel: 'sip' or 'client')."""
@@ -322,8 +323,9 @@ class User(models.Model):
             partner_id = False
         # Custom X- headers travel as SIP URI parameters and surface in
         # the TelnyxRTC notification on the web phone.
-        uri = 'sip:{}@sip.telnyx.com?X-CallerName={}&X-Partner={}'.format(
-            self.telnyx_client_username, caller_name or '', partner_id or '')
+        uri = self._telnyx_credential_uri(
+            self.telnyx_client_username,
+            [('X-CallerName', caller_name or ''), ('X-Partner', partner_id or '')])
         dial_client.sip(
             uri,
             statusCallbackEvent='initiated answered completed',
@@ -357,7 +359,7 @@ class User(models.Model):
             )
         dial_sip = Dial(**dial_sip_kwargs)
         dial_sip.sip(
-            'sip:{}@sip.telnyx.com'.format(self.telnyx_sip_username),
+            self._telnyx_credential_uri(self.telnyx_sip_username),
             statusCallbackEvent='initiated answered completed',
             statusCallback=status_url,
         )
@@ -497,6 +499,23 @@ class User(models.Model):
         except Exception as e:
             logger.exception('Error getting Telnyx JWT:')
             return {'error': str(e)}
+
+    def _telnyx_credential_uri(self, username, headers=None):
+        """SIP URI of one of this user's telephony credentials.
+
+        Dialling `user@sip.telnyx.com` is answered with a 403: a
+        credential is reachable on the SIP domain of the credential
+        connection it belongs to. Empty X- header values are dropped as
+        well — Telnyx rejects the leg with "The 'custom_headers'
+        parameter is invalid" when one is empty.
+        """
+        self.ensure_one()
+        host = self.telnyx_domain.domain_name or 'sip.telnyx.com'
+        query = '&'.join(
+            '{}={}'.format(name, value)
+            for name, value in (headers or []) if value)
+        return 'sip:{}@{}{}'.format(
+            username, host, '?{}'.format(query) if query else '')
 
     @api.model
     def _telnyx_caller(self, request):

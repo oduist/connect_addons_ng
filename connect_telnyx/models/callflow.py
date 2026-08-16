@@ -171,7 +171,7 @@ class CallFlow(models.Model):
                         uri = user.telnyx_client_username
                     if not uri:
                         continue
-                    dial.sip('sip:{}@sip.telnyx.com'.format(uri),
+                    dial.sip(user._telnyx_credential_uri(uri),
                         statusCallbackEvent='answered completed',
                         statusCallback=status_url)
             response.append(dial)

@@ -362,3 +362,41 @@ class TestTelnyxOutboundVoiceProfile(TelnyxTestCommon):
         self.assertEqual(
             self.domain._connection_outbound_params(),
             {'outbound_voice_profile_id': 'ovp-1'})
+
+
+@tagged('post_install', '-at_install')
+class TestTelnyxCredentialUri(TelnyxTestCommon):
+    """A credential answers on the SIP domain of its own connection, and
+    Telnyx rejects a leg carrying an empty X- header."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = cls._create_web_phone_user('telnyx_uri')
+
+    def test_uri_uses_the_domain_of_the_connection(self):
+        uri = self.user._telnyx_credential_uri('client-user')
+        self.assertEqual(uri, 'sip:client-user@test-connect.sip.telnyx.com')
+
+    def test_empty_headers_are_dropped(self):
+        uri = self.user._telnyx_credential_uri(
+            'client-user', [('X-CallerName', ''), ('X-Partner', 7)])
+        self.assertEqual(
+            uri, 'sip:client-user@test-connect.sip.telnyx.com?X-Partner=7')
+        self.assertNotIn('=&', uri)
+        self.assertFalse(uri.endswith('='))
+
+    def test_inbound_dialplan_has_no_empty_headers(self):
+        """An inbound PSTN call has neither partner nor caller name, and
+        that used to render '?X-CallerName=&X-Partner=' — Telnyx answered
+        'The custom_headers parameter is invalid' and dropped the leg."""
+        request = {
+            'To': '+15550001111', 'Called': '+15550001111',
+            'From': '+15550009999', 'CallSid': 'uri-test',
+            'CallStatus': 'initiated',
+        }
+        result = str(self.user.telnyx_render(request=request))
+        self.assertIn('@test-connect.sip.telnyx.com', result)
+        self.assertNotIn('=&', result)
+        self.assertNotIn('X-CallerName=<', result)
+        self.assertNotIn('sip.telnyx.com?X-CallerName=&', result)
