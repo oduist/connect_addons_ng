@@ -23,7 +23,8 @@ new turn.
 
 If a human transfer is configured, ask to speak with a person. The agent will
 first ask why you are calling and collect the relevant context. It then briefs
-the employee privately and bridges the same call. If the employee's SIP/WebRTC
+the employee privately and bridges the same call. During that private briefing,
+the caller hears transfer progress or ringback. If the employee's SIP/WebRTC
 phone is not registered or transfer is otherwise unavailable, the agent offers
 to register the request rather than disconnecting you.
 

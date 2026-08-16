@@ -418,10 +418,19 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
         self.assertIn(
             'confirmed identity',
             tool_payload['transfer']['warm_transfer_instructions'])
+        self.assertEqual(
+            tool_payload['transfer']['warm_message_delay_ms'], 2000)
         assistant_payload = next(
             payload for method, path, payload in calls
             if path == 'ai/assistants/assistant-test')
         self.assertEqual(assistant_payload['tool_ids'], ['tool-transfer-test'])
+
+    def test_zero_warm_transfer_delay_restores_immediate_playback(self):
+        self.assistant.with_context(skip_telnyx_ai_sync=True).write({
+            'warm_transfer_message_delay_ms': 0,
+        })
+        payload = self.assistant._transfer_tool_payload()
+        self.assertIsNone(payload['transfer']['warm_message_delay_ms'])
 
     def test_conversation_sync_is_idempotent(self):
         call = self.env['connect.call'].create({

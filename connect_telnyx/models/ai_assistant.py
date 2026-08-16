@@ -48,6 +48,7 @@ REMOTE_FIELDS = {
     "enable_helpdesk_tools", "active", "receptionist_mode",
     "transfer_enabled", "manager", "transfer_callflows",
     "check_registration_before_transfer", "warm_transfer_instructions",
+    "warm_transfer_message_delay_ms",
 }
 
 
@@ -152,6 +153,13 @@ class TelnyxAIAssistant(models.Model):
     warm_transfer_instructions = fields.Text(
         required=True, default=DEFAULT_WARM_TRANSFER_INSTRUCTIONS,
     )
+    warm_transfer_message_delay_ms = fields.Integer(
+        string="Warm Transfer Message Delay (ms)",
+        default=2000,
+        help="Wait after the recipient answers before playing the private "
+             "briefing. Set to 0 to restore immediate playback if the delay "
+             "does not improve WebRTC audio.",
+    )
     domain = fields.Many2one(
         "connect.telnyx.domain", ondelete="set null",
         default=lambda self: self.env["connect.telnyx.domain"].search(
@@ -197,6 +205,14 @@ class TelnyxAIAssistant(models.Model):
                 raise ValidationError(
                     "The AI assistant call limit must be between 30 and "
                     "14,400 seconds."
+                )
+
+    @api.constrains("warm_transfer_message_delay_ms")
+    def _check_warm_transfer_message_delay(self):
+        for rec in self:
+            if rec.warm_transfer_message_delay_ms < 0:
+                raise ValidationError(
+                    "The warm transfer message delay cannot be negative."
                 )
 
     @api.depends("exten.number", "domain.domain_name")
@@ -383,6 +399,9 @@ class TelnyxAIAssistant(models.Model):
                 "warm_transfer_instructions": (
                     self.warm_transfer_instructions
                     or DEFAULT_WARM_TRANSFER_INSTRUCTIONS
+                ),
+                "warm_message_delay_ms": (
+                    self.warm_transfer_message_delay_ms or None
                 ),
                 "voicemail_detection": {
                     "detection_mode": "premium",

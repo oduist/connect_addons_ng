@@ -54,6 +54,18 @@ recipient with the confirmed caller name, reason, relevant context, and agreed
 next step. If no recipient is registered, the assistant offers to register the
 request instead.
 
+**Warm Transfer Message Delay** defaults to `2000` ms. It gives a newly
+answered WebRTC call time to establish its media path before Telnyx plays the
+private briefing. Treat this as a reversible compatibility setting: if a test
+call still has silent briefing audio, or the delay only adds an unnecessary
+pause, set it to `0` and use **Push to Telnyx**. Zero clears the delay and
+restores the previous immediate-playback behavior.
+
+While Telnyx privately briefs the recipient, the caller hears transfer
+progress/ringback. The built-in Transfer tool does not provide caller-side
+hold music. Adding music requires a separate custom Call Control or conference
+transfer flow; it is not enabled by the delay setting.
+
 To make the assistant callable without a public number, select a SIP domain
 and click **Create Extension**. Registered SIP and WebRTC phones can then call
 `sip:<extension>@<subdomain>.sip.telnyx.com` (or dial the extension through the

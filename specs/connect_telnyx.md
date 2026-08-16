@@ -77,17 +77,26 @@ Contact/CRM/Helpdesk tools remain individually gated by their assistant flags.
 Receptionist routing fields: `receptionist_mode` (`personal` / `company`),
 `transfer_enabled`, personal `manager`, company `transfer_callflows`,
 `check_registration_before_transfer`, `warm_transfer_instructions`,
-`transfer_tool_sid`, `domain`, `exten` / `exten_number`, and computed
-`sip_uri`. Personal assistants target one manager; company assistants flatten
-the configured callflows' `ring_users` into department-labelled human targets.
+`warm_transfer_message_delay_ms`, `transfer_tool_sid`, `domain`, `exten` /
+`exten_number`, and computed `sip_uri`. Personal assistants target one manager;
+company assistants flatten the configured callflows' `ring_users` into
+department-labelled human targets.
 
 Odoo creates one Telnyx shared Transfer tool per configured assistant. The tool
 uses dynamic `{{transfer_targets}}`, `{{telnyx_agent_target}}` as its caller,
 premium voicemail detection with stop-transfer behavior, and a warm briefing
-that includes confirmed identity, reason, context and next step. The variables
-webhook checks each candidate's live telephony-credential registration status;
-definitely offline devices are omitted, while API errors fall back to the
-configured credential as an advisory unknown state.
+that includes confirmed identity, reason, context and next step. The default
+`warm_transfer_message_delay_ms = 2000` delays that private audio after answer
+so a WebRTC media path can settle. Setting it to `0` publishes `null` and
+restores immediate playback as the documented rollback for the experiment.
+The variables webhook checks each candidate's live telephony-credential
+registration status; definitely offline devices are omitted, while API errors
+fall back to the configured credential as an advisory unknown state.
+
+The built-in Telnyx Transfer tool provides caller-side transfer progress and
+does not expose hold music. Music on hold requires a separate custom Call
+Control or conference transfer flow that owns playback, recipient dialing and
+leg bridging (ADR-065).
 
 Phone numbers and `connect.telnyx.exten` records route to assistants through
 the existing TeXML applications using `<Connect><AIAssistant>`. An assistant

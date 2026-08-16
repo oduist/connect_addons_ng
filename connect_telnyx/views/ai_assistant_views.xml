@@ -78,6 +78,8 @@
                                            invisible="not transfer_enabled"/>
                                     <field name="warm_transfer_instructions"
                                            invisible="not transfer_enabled"/>
+                                    <field name="warm_transfer_message_delay_ms"
+                                           invisible="not transfer_enabled"/>
                                 </group>
                                 <group string="SIP / WebRTC Extension">
                                     <field name="domain"/>
