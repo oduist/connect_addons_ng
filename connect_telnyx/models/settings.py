@@ -151,6 +151,7 @@ class Settings(models.Model):
             except Exception as e:
                 # Click-to-call needs it, the rest of the sync does not.
                 logger.warning('Cannot resolve the Telnyx account SID: %s', e)
+            self._ensure_telnyx_outbound_voice_profile()
             self._ensure_telnyx_messaging_profile()
             self.env["connect.telnyx.texml"].sync()
             self.env["connect.telnyx.ai_assistant"].sync()
@@ -226,18 +227,26 @@ class Settings(models.Model):
         profile_id = self.sudo().get_param('telnyx_outbound_voice_profile_id')
         if profile_id:
             return profile_id
-        response = self.telnyx_api_request(
-            'GET', 'outbound_voice_profiles', params={'page[size]': 20})
-        for profile in response.get('data') or []:
-            if profile.get('enabled', True):
-                profile_id = profile.get('id')
-                break
-        if not profile_id:
-            created = self.telnyx_api_request(
-                'POST', 'outbound_voice_profiles',
-                payload={'name': 'Odoo Connect', 'traffic_type': 'conversational',
-                         'service_plan': 'global'})
-            profile_id = (created.get('data') or {}).get('id')
+        try:
+            response = self.telnyx_api_request(
+                'GET', 'outbound_voice_profiles', params={'page[size]': 20})
+            for profile in response.get('data') or []:
+                if profile.get('enabled', True):
+                    profile_id = profile.get('id')
+                    break
+            if not profile_id:
+                created = self.telnyx_api_request(
+                    'POST', 'outbound_voice_profiles',
+                    payload={'name': 'Odoo Connect',
+                             'traffic_type': 'conversational',
+                             'service_plan': 'global'})
+                profile_id = (created.get('data') or {}).get('id')
+        except Exception as e:
+            # Attaching the profile is what enables outbound calls, but a
+            # resource is still worth creating without it.
+            logger.warning(
+                'Cannot resolve the Telnyx outbound voice profile: %s', e)
+            return False
         if profile_id:
             self.sudo().set_param(
                 'telnyx_outbound_voice_profile_id', profile_id)

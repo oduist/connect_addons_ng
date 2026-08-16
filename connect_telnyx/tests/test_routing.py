@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+from contextlib import ExitStack
 from unittest.mock import patch
 
+from odoo.exceptions import ValidationError
 from odoo.tests import tagged
 
+from odoo.addons.connect.models.settings import Settings as CoreSettings
 from odoo.addons.connect_telnyx.models.settings import Settings
 
 from .common import TelnyxTestCommon
@@ -220,6 +223,58 @@ class TestTelnyxOutboundVoiceProfile(TelnyxTestCommon):
         )._texml_app_params()
         self.assertEqual(
             params['outbound'], {'outbound_voice_profile_id': 'ovp-1'})
+
+    def test_sync_resolves_the_profile_up_front(self):
+        """The profile is provisioned by the account sync, not by hand."""
+        self.settings = self.env['connect.settings'].sudo()
+        self.settings.set_param('telnyx_outbound_voice_profile_id', False)
+        paths = []
+
+        def api_response(_self, method, path, **kwargs):
+            paths.append(path)
+            if path == 'outbound_voice_profiles':
+                return {'data': [{'id': 'ovp-sync', 'enabled': True}]}
+            return {'data': {}}
+
+        sync_models = [
+            'connect.telnyx.texml', 'connect.telnyx.ai_assistant',
+            'connect.telnyx.domain', 'connect.telnyx.number',
+            'connect.telnyx.outgoing_callerid',
+            'connect.telnyx.whatsapp_sender',
+            'connect.telnyx.whatsapp_template', 'connect.telnyx.rcs_agent',
+        ]
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(
+                Settings, 'telnyx_api_request', autospec=True,
+                side_effect=api_response))
+            stack.enter_context(patch.object(
+                Settings, '_ensure_telnyx_messaging_profile', autospec=True,
+                return_value='profile'))
+            for model_name in sync_models:
+                stack.enter_context(patch.object(
+                    type(self.env[model_name]), 'sync', autospec=True,
+                    return_value=True))
+            stack.enter_context(patch.object(
+                CoreSettings, 'connect_notify', autospec=True))
+            self.env['connect.settings'].telnyx_sync()
+        self.assertIn('outbound_voice_profiles', paths)
+        self.assertEqual(
+            self.env['connect.settings'].get_param(
+                'telnyx_outbound_voice_profile_id'), 'ovp-sync')
+
+    def test_missing_profile_does_not_break_the_resource(self):
+        """A profile that cannot be resolved is logged, not raised."""
+        self.env['connect.settings'].sudo().set_param(
+            'telnyx_outbound_voice_profile_id', False)
+
+        def api_error(_self, method, path, **kwargs):
+            raise ValidationError('Telnyx API returned HTTP 403')
+
+        with patch.object(Settings, 'telnyx_api_request', autospec=True,
+                          side_effect=api_error):
+            params = self.env['connect.telnyx.number'].get_number_app(
+            )._texml_app_params()
+        self.assertNotIn('outbound', params)
 
     def test_connection_params_carry_the_profile(self):
         self.env['connect.settings'].sudo().set_param(
