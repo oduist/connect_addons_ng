@@ -120,14 +120,34 @@ class Domain(models.Model):
             },
         )
 
+    def _connection_outbound_params(self):
+        """Outbound settings a credential connection needs to dial out.
+
+        A connection without an outbound voice profile registers fine and
+        then has every outgoing INVITE rejected by Telnyx, before any
+        webhook reaches Odoo.
+        """
+        profile_id = self.env[
+            'connect.settings']._ensure_telnyx_outbound_voice_profile()
+        return {'outbound_voice_profile_id': profile_id} if profile_id else None
+
     def create_telnyx_domain(self, client):
         self.ensure_one()
         username, password = self._generate_connection_credentials(self.subdomain)
-        connection = client.credential_connections.create(
-            connection_name=self.friendly_name,
-            user_name=username,
-            password=password,
-        )
+        create_params = {
+            'connection_name': self.friendly_name,
+            'user_name': username,
+            'password': password,
+            # Odoo rings a user's phone at sip:<credential>@sip.telnyx.com;
+            # Telnyx answers 403 to such a call until SIP URI calling is
+            # allowed. 'internal' keeps the credentials unreachable from
+            # outside the account.
+            'sip_uri_calling_preference': 'internal',
+        }
+        outbound = self._connection_outbound_params()
+        if outbound:
+            create_params['outbound'] = outbound
+        connection = client.credential_connections.create(**create_params)
         self.write(
             {
                 "sid": connection.data.id,
@@ -219,10 +239,14 @@ class Domain(models.Model):
     def update_telnyx_domain(self, client):
         self.ensure_one()
         try:
-            client.credential_connections.update(
-                self.sid,
-                connection_name=self.friendly_name,
-            )
+            update_params = {
+                'connection_name': self.friendly_name,
+                'sip_uri_calling_preference': 'internal',
+            }
+            outbound = self._connection_outbound_params()
+            if outbound:
+                update_params['outbound'] = outbound
+            client.credential_connections.update(self.sid, **update_params)
             self._set_app_subdomain(client)
             debug(self, "Domain {} updated".format(self.friendly_name))
         except Exception as e:
@@ -313,6 +337,26 @@ class Domain(models.Model):
             found_num = found.group(1)
         else:
             found_num = to_val
+            # Numbers created before the number application existed are
+            # still attached to this domain application, so an inbound
+            # PSTN leg lands here. Route it as a number call instead of
+            # treating the dialled DID as an outgoing destination.
+            number = self.env["connect.telnyx.number"].sudo().search(
+                [("phone_number", "=", found_num)], limit=1)
+            if number:
+                return self.env["connect.telnyx.number"].sudo().render_inbound(
+                    request, params=params)
+        # A credential URI arriving here means a leg meant for a phone was
+        # routed back into the subdomain application; ringing it again
+        # would loop forever.
+        if '@' in found_num or self.env['connect.user'].get_user_by_telnyx_uri(
+                to_val if to_val.startswith('sip:') else 'sip:' + to_val):
+            logger.error(
+                'Telnyx routed a credential leg (%s) back into the subdomain '
+                'application: ring credentials at sip.telnyx.com instead.',
+                to_val)
+            return ("<Response><Say>Call routing loop detected. "
+                    "Check the Telnyx configuration. Goodbye!</Say></Response>")
         exten = self.env["connect.telnyx.exten"].sudo().search([("number", "=", found_num)])
         if not exten:
             # Get all extensions and match by pattern.
@@ -340,6 +384,15 @@ class Domain(models.Model):
             res = exten.render(request=request, params=params)
             return res
         elif isinstance(found_num, str) and found_num.startswith("+"):
+            # Only our own PBX users may dial out through this app; an
+            # inbound PSTN leg must never re-originate a call. Telnyx
+            # identifies the SIP caller by its credential URI, reported
+            # as `From` for a hardphone and as `Caller` for the web
+            # phone, with or without the sip: scheme.
+            caller_uri = self.env['connect.user']._telnyx_caller(request)
+            if not self.env['connect.user'].get_user_by_telnyx_uri(caller_uri):
+                debug(self, "Refusing to dial out for unknown caller %s" % caller_uri)
+                return "<Response><Say>Extension not found. Goodbye! </Say></Response>"
             return self.originate_external_call(found_num, request, params=params)
         else:
             return "<Response><Say>Extension not found. Goodbye! </Say></Response>"

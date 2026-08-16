@@ -17,11 +17,12 @@ class TelnyxAICallWizard(models.TransientModel):
     partner = fields.Many2one('res.partner', ondelete='set null')
 
     def _texml_connection_id(self):
-        domain = self.env['connect.telnyx.domain'].search([], limit=1)
-        connection_id = domain.application.sid if domain else False
+        # Outbound AI calls run through the number application, the same
+        # one click-to-call uses; a SIP domain is not required for them.
+        connection_id = self.env['connect.telnyx.number'].get_number_app().sid
         if not connection_id:
             raise ValidationError(
-                'Synchronize the Telnyx routing TeXML application first.'
+                'Synchronize the Telnyx TeXML applications first.'
             )
         return connection_id
 

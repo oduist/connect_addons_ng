@@ -23,12 +23,29 @@ class Channel(models.Model):
 
     def _map_telnyx_params(self, params):
         """Map Telnyx TeXML webhook params (Twilio-compatible) to the
-        generic channel event dict."""
+        generic channel event dict.
+
+        Only the application webhook carries `Caller`/`Called`; the
+        call-progress callbacks that follow report the same parties as
+        `From`/`To` (plus `CallerId`). Without the fallbacks every event
+        after the first one stored an empty number, leaving calls in the
+        history with no caller and no callee.
+        """
+        caller = (params.get('Caller') or params.get('From')
+                  or params.get('CallerId'))
+        called = params.get('Called') or params.get('To')
+        if caller and '@' in caller:
+            # A SIP credential URI means nothing in the call history;
+            # store the extension of the user it belongs to instead.
+            caller_user = self.env['connect.user'].sudo(
+            ).get_user_by_telnyx_uri(caller)
+            if caller_user and caller_user.telnyx_exten.number:
+                caller = caller_user.telnyx_exten.number
         return {
             'sid': params['CallSid'],
-            'caller': params.get('Caller'),
-            'called': params.get('Called'),
-            'to': params.get('To'),
+            'caller': caller,
+            'called': called,
+            'to': params.get('To') or called,
             'technical_direction': params.get('Direction'),
             'status': params.get('CallStatus'),
             'duration': int(params.get('CallDuration', 0)),

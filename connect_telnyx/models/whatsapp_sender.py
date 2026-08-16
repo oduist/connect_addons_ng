@@ -70,13 +70,13 @@ class TelnyxWhatsappSender(models.Model):
 
     def _prepare_vals_from_api(self, item):
         vals = {
-            'number': item.phone_number,
-            'phone_number_id': item.phone_number_id,
-            'waba_id': item.waba_id,
-            'status': item.status,
-            'display_name': item.display_name,
-            'quality_rating': item.quality_rating,
-            'calling_enabled': bool(item.calling_enabled),
+            'number': item.get('phone_number'),
+            'phone_number_id': item.get('phone_number_id'),
+            'waba_id': item.get('waba_id'),
+            'status': item.get('status'),
+            'display_name': item.get('display_name'),
+            'quality_rating': item.get('quality_rating'),
+            'calling_enabled': bool(item.get('calling_enabled')),
         }
         if vals.get('number'):
             linked = self.env['connect.telnyx.number'].search(
@@ -85,16 +85,21 @@ class TelnyxWhatsappSender(models.Model):
                 vals['number_id'] = linked.id
         return vals
 
-    def _fetch_profile(self, client):
+    def _fetch_profile(self, client=None):
         self.ensure_one()
         try:
-            profile = client.whatsapp.phone_numbers.profile.retrieve(self.number).data
+            # The WhatsApp resources of the Telnyx SDK prefix their paths
+            # with /v2 while the client base URL already ends in /v2, so
+            # these endpoints are called through the settings helper.
+            response = self.env['connect.settings'].telnyx_api_request(
+                'GET', 'whatsapp/phone_numbers/{}/profile'.format(self.number))
+            profile = response.get('data') or {}
             self.with_context(skip_telnyx_sync=True).write({
-                'profile_about': profile.about,
-                'profile_address': profile.address,
-                'profile_description': profile.description,
-                'profile_email': profile.email,
-                'profile_website': profile.website,
+                'profile_about': profile.get('about'),
+                'profile_address': profile.get('address'),
+                'profile_description': profile.get('description'),
+                'profile_email': profile.get('email'),
+                'profile_website': profile.get('website'),
             })
         except Exception as e:
             debug(self, 'Cannot fetch WhatsApp profile for {}: {}'.format(
@@ -110,16 +115,18 @@ class TelnyxWhatsappSender(models.Model):
                           'profile_email', 'profile_website'}
         if not (profile_fields & set(vals.keys())):
             return res
-        client = self.env['connect.settings'].get_telnyx_client()
         for rec in self:
             try:
-                client.whatsapp.phone_numbers.profile.update(
-                    rec.number,
-                    about=rec.profile_about or '',
-                    address=rec.profile_address or '',
-                    description=rec.profile_description or '',
-                    email=rec.profile_email or '',
-                    website=rec.profile_website or '',
+                self.env['connect.settings'].telnyx_api_request(
+                    'PATCH',
+                    'whatsapp/phone_numbers/{}/profile'.format(rec.number),
+                    payload={
+                        'about': rec.profile_about or '',
+                        'address': rec.profile_address or '',
+                        'description': rec.profile_description or '',
+                        'email': rec.profile_email or '',
+                        'website': rec.profile_website or '',
+                    },
                 )
                 debug(self, 'WhatsApp profile for {} updated.'.format(rec.number))
             except Exception as e:
@@ -128,19 +135,21 @@ class TelnyxWhatsappSender(models.Model):
 
     @api.model
     def sync(self):
-        client = self.env['connect.settings'].get_telnyx_client()
         try:
-            items = list(client.whatsapp.phone_numbers.list())
+            response = self.env['connect.settings'].telnyx_api_request(
+                'GET', 'whatsapp/phone_numbers')
+            items = response.get('data') or []
         except Exception as e:
             raise ValidationError("Failed to sync WhatsApp Senders: {}".format(
                 format_connect_response(e)))
         seen_numbers = set()
         for item in items:
-            if not item.phone_number:
+            number = item.get('phone_number')
+            if not number:
                 continue
-            seen_numbers.add(item.phone_number)
+            seen_numbers.add(number)
             vals = self._prepare_vals_from_api(item)
-            rec = self.search([('number', '=', item.phone_number)], limit=1)
+            rec = self.search([('number', '=', number)], limit=1)
             if rec:
                 # Respect local no_sync flag: skip updating this record
                 if rec.no_sync:
@@ -150,7 +159,7 @@ class TelnyxWhatsappSender(models.Model):
             else:
                 rec = self.with_context(skip_telnyx_sync=True).create([vals])[0]
                 debug(self, 'Created a WhatsApp sender {}'.format(rec.number))
-            rec._fetch_profile(client)
+            rec._fetch_profile()
         # Remove local senders missing in Telnyx
         missing = self.search([('number', 'not in', list(seen_numbers))]) if seen_numbers \
             else self.search([])
@@ -246,7 +255,7 @@ class TelnyxWhatsappSender(models.Model):
                 'text': {'body': body or ''},
             }
         try:
-            response = client.messages.send_whatsapp(
+            response = client.messages.whatsapp(
                 from_=self.number,
                 to=recipient,
                 whatsapp_message=whatsapp_message,

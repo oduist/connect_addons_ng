@@ -38,10 +38,40 @@ class Number(models.Model):
         ondelete='set null',
     )
 
+    @api.model
+    def get_number_app(self):
+        """The TeXML application inbound calls to numbers are routed to.
+
+        Telnyx numbers carry no per-number webhook URL, so every number
+        points at one application whose voice_url renders
+        `connect.telnyx.number.route_call` and dispatches by the dialled
+        number (ADR-032).
+        """
+        app = self.env['connect.telnyx.texml'].search(
+            [
+                ('code_type', '=', 'model_method'),
+                ('model', '=', 'connect.telnyx.number'),
+                ('method', '=', 'route_call'),
+            ],
+            limit=1,
+        )
+        if not app:
+            app = self.env['connect.telnyx.texml'].create(
+                {
+                    'model': 'connect.telnyx.number',
+                    'method': 'route_call',
+                    'code_type': 'model_method',
+                    'name': 'Number Calls',
+                    'description': 'Required application!',
+                }
+            )
+        return app
+
     def update_telnyx_number(self, client):
-        """Attach the number to the routing TeXML app (voice) and to the
-        Odoo messaging profile (SMS). Telnyx numbers carry no per-number
-        webhook URLs — routing happens in Odoo by the To number (ADR-032).
+        """Attach the number to the number-routing TeXML app (voice) and
+        to the Odoo messaging profile (SMS). Telnyx numbers carry no
+        per-number webhook URLs — routing happens in Odoo by the To
+        number (ADR-032).
         """
         self.ensure_one()
         if self.is_ignored:
@@ -50,26 +80,15 @@ class Number(models.Model):
                 'Ignoring number {} update.'.format(self.phone_number),
             )
             return
-        domain = self.env['connect.telnyx.domain'].search([], limit=1)
-        if not domain or not domain.application.sid:
-            debug(
-                self,
-                'No Telnyx domain/routing app yet, number {} left unrouted.'.format(
-                    self.phone_number),
-                level='warning',
-            )
-            return
+        app = self.get_number_app()
+        if not app.sid:
+            app.update_telnyx_app(client)
         try:
             client.phone_numbers.update(
                 self.sid,
-                connection_id=domain.application.sid,
+                connection_id=app.sid,
                 customer_reference=self.friendly_name or '',
             )
-            profile_id = self.env['connect.settings'].sudo().get_param(
-                'telnyx_messaging_profile_id')
-            if profile_id:
-                client.phone_numbers.messaging.update(
-                    self.sid, messaging_profile_id=profile_id)
             debug(
                 self,
                 'Number {} updated.'.format(self.phone_number),
@@ -77,6 +96,22 @@ class Number(models.Model):
         except Exception as e:
             logger.exception('Number Update Exception:')
             raise ValidationError(format_connect_response(str(e)))
+        # Messaging is optional: numbers without SMS capability reject the
+        # profile attach, and that must not abort the account sync.
+        profile_id = self.env['connect.settings'].sudo().get_param(
+            'telnyx_messaging_profile_id')
+        if not profile_id:
+            return
+        try:
+            client.phone_numbers.messaging.update(
+                self.sid, messaging_profile_id=profile_id)
+        except Exception as e:
+            debug(
+                self,
+                'Number {} was not attached to the messaging profile: {}'.format(
+                    self.phone_number, format_connect_response(str(e))),
+                level='warning',
+            )
 
     def write(self, vals):
         if 'destination' in vals:
@@ -165,9 +200,27 @@ class Number(models.Model):
             % json.dumps(request, indent=2),
         )
         self.env['connect.call'].on_telnyx_call_status(request)
-        number = self.sudo().search(
-            [('phone_number', '=', request.get('Called') or request.get('To'))]
-        )
+        return self.sudo().render_inbound(request, params=params)
+
+    @api.model
+    def render_inbound(self, request, params={}):
+        """Render the dialplan for a call arriving on one of our numbers.
+
+        Called both from the number application webhook and from
+        `connect.telnyx.domain.route_call()`, which still receives the
+        inbound leg on installations whose numbers are attached to the
+        domain application. The call ledger is updated by the caller.
+        """
+        dialed = request.get('Called') or request.get('To') or ''
+        number = self.sudo().search([('phone_number', '=', dialed)], limit=1)
+        if number and number.destination:
+            return number.render(request=request, params=params)
+        # Numbers may also be routed through an extension carrying the
+        # number itself, the way SIP subdomain calls are.
+        exten = self.env['connect.telnyx.exten'].sudo().search(
+            [('number', '=', dialed)], limit=1)
+        if exten:
+            return exten.render(request=request, params=params)
         if not number:
             return '<Response><Say>Number not found. Goodbye!</Say></Response>'
         return number.render(request=request, params=params)

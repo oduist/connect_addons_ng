@@ -9,6 +9,14 @@
             <field name="description">This is a special app that is responsible for incoming SIP/Client calls</field>
         </record>
 
+        <record id="number_route_call" model="connect.telnyx.texml">
+            <field name="name">Number Calls</field>
+            <field name="code_type">model_method</field>
+            <field name="model">connect.telnyx.number</field>
+            <field name="method">route_call</field>
+            <field name="description">This is a special app that is responsible for incoming calls to numbers</field>
+        </record>
+
         <record id="texml_reject" model="connect.telnyx.texml">
             <field name="name">Reject</field>
             <field name="code_type">texml</field>
