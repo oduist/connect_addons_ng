@@ -107,7 +107,8 @@ class TestTelnyxRouting(TelnyxTestCommon):
         })
         request = self._request(
             To='+15550009999', Called=False,
-            Caller='sip:user@example.sip.telnyx.com')
+            Caller='sip:{}@{}'.format(
+                self.user.telnyx_client_username, self.domain.domain_name))
         with patch.object(type(self.env['connect.call']),
                           'on_telnyx_call_status', autospec=True):
             result = str(self.env['connect.telnyx.domain'].route_call(request))
@@ -281,10 +282,6 @@ class TestTelnyxOutboundVoiceProfile(TelnyxTestCommon):
         calls die before any webhook — say so instead of staying silent."""
         settings = self.env['connect.settings'].sudo()
         settings.set_param('telnyx_outbound_voice_profile_id', 'ovp-1')
-        self.env['connect.telnyx.outgoing_callerid'].create({
-            'number': '+48221811500',
-            'friendly_name': 'PL number',
-        })
 
         def api_response(_self, method, path, **kwargs):
             return {'data': {'id': 'ovp-1', 'name': 'Default',
@@ -292,8 +289,10 @@ class TestTelnyxOutboundVoiceProfile(TelnyxTestCommon):
 
         with patch.object(Settings, 'telnyx_api_request', autospec=True,
                           side_effect=api_response), patch.object(
-                              CoreSettings, 'connect_notify',
-                              autospec=True) as notify:
+                              Settings, '_telnyx_local_regions', autospec=True,
+                              return_value=['PL']), patch.object(
+                                  CoreSettings, 'connect_notify',
+                                  autospec=True) as notify:
             ok = settings._check_telnyx_outbound_destinations()
         self.assertFalse(ok)
         message = notify.call_args[0][1]
@@ -303,10 +302,6 @@ class TestTelnyxOutboundVoiceProfile(TelnyxTestCommon):
     def test_allowed_destination_is_not_reported(self):
         settings = self.env['connect.settings'].sudo()
         settings.set_param('telnyx_outbound_voice_profile_id', 'ovp-1')
-        self.env['connect.telnyx.outgoing_callerid'].create({
-            'number': '+15550004321',
-            'friendly_name': 'US number',
-        })
 
         def api_response(_self, method, path, **kwargs):
             return {'data': {'id': 'ovp-1', 'name': 'Default',
@@ -314,8 +309,10 @@ class TestTelnyxOutboundVoiceProfile(TelnyxTestCommon):
 
         with patch.object(Settings, 'telnyx_api_request', autospec=True,
                           side_effect=api_response), patch.object(
-                              CoreSettings, 'connect_notify',
-                              autospec=True) as notify:
+                              Settings, '_telnyx_local_regions', autospec=True,
+                              return_value=['US']), patch.object(
+                                  CoreSettings, 'connect_notify',
+                                  autospec=True) as notify:
             ok = settings._check_telnyx_outbound_destinations()
         self.assertTrue(ok)
         notify.assert_not_called()
