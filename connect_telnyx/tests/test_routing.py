@@ -276,6 +276,50 @@ class TestTelnyxOutboundVoiceProfile(TelnyxTestCommon):
             )._texml_app_params()
         self.assertNotIn('outbound', params)
 
+    def test_blocked_destination_is_reported(self):
+        """A profile that forbids our own country is the reason outbound
+        calls die before any webhook — say so instead of staying silent."""
+        settings = self.env['connect.settings'].sudo()
+        settings.set_param('telnyx_outbound_voice_profile_id', 'ovp-1')
+        self.env['connect.telnyx.outgoing_callerid'].create({
+            'number': '+48221811500',
+            'friendly_name': 'PL number',
+        })
+
+        def api_response(_self, method, path, **kwargs):
+            return {'data': {'id': 'ovp-1', 'name': 'Default',
+                             'whitelisted_destinations': ['US', 'CA']}}
+
+        with patch.object(Settings, 'telnyx_api_request', autospec=True,
+                          side_effect=api_response), patch.object(
+                              CoreSettings, 'connect_notify',
+                              autospec=True) as notify:
+            ok = settings._check_telnyx_outbound_destinations()
+        self.assertFalse(ok)
+        message = notify.call_args[0][1]
+        self.assertIn('PL', message)
+        self.assertIn('rejected by Telnyx', message)
+
+    def test_allowed_destination_is_not_reported(self):
+        settings = self.env['connect.settings'].sudo()
+        settings.set_param('telnyx_outbound_voice_profile_id', 'ovp-1')
+        self.env['connect.telnyx.outgoing_callerid'].create({
+            'number': '+15550004321',
+            'friendly_name': 'US number',
+        })
+
+        def api_response(_self, method, path, **kwargs):
+            return {'data': {'id': 'ovp-1', 'name': 'Default',
+                             'whitelisted_destinations': ['US', 'CA']}}
+
+        with patch.object(Settings, 'telnyx_api_request', autospec=True,
+                          side_effect=api_response), patch.object(
+                              CoreSettings, 'connect_notify',
+                              autospec=True) as notify:
+            ok = settings._check_telnyx_outbound_destinations()
+        self.assertTrue(ok)
+        notify.assert_not_called()
+
     def test_connection_params_carry_the_profile(self):
         self.env['connect.settings'].sudo().set_param(
             'telnyx_outbound_voice_profile_id', 'ovp-1')

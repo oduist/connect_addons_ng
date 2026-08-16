@@ -3,6 +3,7 @@ import logging
 import re
 from urllib.parse import urljoin
 
+import phonenumbers
 import requests
 
 from odoo import fields, models, api, release
@@ -153,6 +154,7 @@ class Settings(models.Model):
                 logger.warning('Cannot resolve the Telnyx account SID: %s', e)
             self._ensure_telnyx_outbound_voice_profile()
             self._ensure_telnyx_messaging_profile()
+            # Checked after the numbers are known, at the end of the sync.
             self.env["connect.telnyx.texml"].sync()
             self.env["connect.telnyx.ai_assistant"].sync()
             self.env["connect.telnyx.domain"].sync()
@@ -172,6 +174,7 @@ class Settings(models.Model):
                     self.connect_notify(
                         "{} sync failed: {}".format(title, e),
                         title="Sync Warning", warning=True, sticky=True)
+            self._check_telnyx_outbound_destinations()
             self.connect_notify(
                 "Telnyx account synced successfully", title="Sync Complete")
         except ValidationError:
@@ -235,11 +238,14 @@ class Settings(models.Model):
                     profile_id = profile.get('id')
                     break
             if not profile_id:
+                payload = {'name': 'Odoo Connect',
+                           'traffic_type': 'conversational',
+                           'service_plan': 'global'}
+                regions = self._telnyx_local_regions()
+                if regions:
+                    payload['whitelisted_destinations'] = regions
                 created = self.telnyx_api_request(
-                    'POST', 'outbound_voice_profiles',
-                    payload={'name': 'Odoo Connect',
-                             'traffic_type': 'conversational',
-                             'service_plan': 'global'})
+                    'POST', 'outbound_voice_profiles', payload=payload)
                 profile_id = (created.get('data') or {}).get('id')
         except Exception as e:
             # Attaching the profile is what enables outbound calls, but a
@@ -252,6 +258,66 @@ class Settings(models.Model):
                 'telnyx_outbound_voice_profile_id', profile_id)
             debug(self, 'Telnyx outbound voice profile: {}'.format(profile_id))
         return profile_id
+
+    @api.model
+    def _telnyx_local_regions(self):
+        """Country codes Odoo is expected to place calls to.
+
+        Derived from the numbers the account owns and the company
+        country, so a fresh outbound voice profile is not created with
+        Telnyx's US/CA default on, say, a Polish account.
+        """
+        regions = set()
+        numbers = self.env['connect.telnyx.outgoing_callerid'].sudo().search([])
+        numbers |= self.env['connect.telnyx.number'].sudo().search([])
+        for number in numbers.mapped('number') + numbers.mapped('phone_number'):
+            if not number:
+                continue
+            try:
+                parsed = phonenumbers.parse(number, None)
+                region = phonenumbers.region_code_for_number(parsed)
+            except Exception:
+                region = None
+            if region:
+                regions.add(region)
+        country = self.env.company.country_id.code
+        if country:
+            regions.add(country)
+        return sorted(regions)
+
+    def _check_telnyx_outbound_destinations(self):
+        """Warn when the profile forbids the destinations we dial.
+
+        Telnyx rejects an outbound call to a country missing from the
+        profile's whitelist before any webhook is sent, which otherwise
+        looks like a phone that simply cannot dial.
+        """
+        profile_id = self.sudo().get_param('telnyx_outbound_voice_profile_id')
+        if not profile_id:
+            return True
+        try:
+            profile = (self.telnyx_api_request(
+                'GET', 'outbound_voice_profiles/{}'.format(profile_id)
+            ).get('data') or {})
+        except Exception as e:
+            logger.warning('Cannot read the outbound voice profile: %s', e)
+            return True
+        allowed = profile.get('whitelisted_destinations')
+        if not allowed:
+            return True
+        missing = [r for r in self._telnyx_local_regions() if r not in allowed]
+        if not missing:
+            return True
+        message = (
+            "The Telnyx outbound voice profile '{}' allows calls to {} only, "
+            "so calls to {} are rejected by Telnyx. Add the missing "
+            "destinations to the profile in Mission Control.".format(
+                profile.get('name') or profile_id,
+                ', '.join(allowed), ', '.join(missing)))
+        logger.warning(message)
+        self.connect_notify(
+            message, title='Outbound Calls Blocked', warning=True, sticky=True)
+        return False
 
     def _ensure_telnyx_messaging_profile(self):
         """Get or create the messaging profile used for Odoo messaging."""
