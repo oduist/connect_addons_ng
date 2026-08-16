@@ -21,7 +21,7 @@ class TestTelnyxWebhookSignature(HttpCase):
         settings.set_param('telnyx_public_key', base64.b64encode(
             bytes(cls.signing_key.verify_key)).decode())
         cls.texml = cls.env['connect.telnyx.texml'].with_context(
-            skip_telnyx_sync=True).create({
+            install_mode=True).create({
                 'name': 'Signed Reject',
                 'code_type': 'texml',
                 'texml': '<Response><Reject /></Response>',
