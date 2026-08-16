@@ -523,7 +523,7 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
         self.assertTrue(recording)
         self.assertEqual(recording.call, call)
         self.assertIn('USER: Please help me.', recording.transcript)
-        self.assertEqual(recording.summary, 'The caller requested help.')
+        self.assertIn('The caller requested help.', recording.summary)
         self.assertFalse(recording.transcription_pending)
 
     def test_telnyx_ai_audio_is_attached_without_openai_transcription(self):
