@@ -65,6 +65,18 @@ class TestTelnyxSystemVoice(TelnyxTestCommon):
         self.assertIn('Telnyx.NaturalHD.astra', options)
         self.assertIn('AWS.Polly.Marlene-Neural', options)
 
+    def test_voice_catalog_refresh_reopens_settings_in_new_web_load(self):
+        with patch.object(
+                Settings, '_sync_telnyx_tts_voices', autospec=True):
+            action = self.env['connect.settings'].telnyx_sync_tts_voices()
+
+        settings_action = self.env.ref(
+            'connect_telnyx.telnyx_settings_action')
+        self.assertEqual(action['type'], 'ir.actions.act_url')
+        self.assertEqual(action['target'], 'self')
+        self.assertIn('/web?telnyx_voices=', action['url'])
+        self.assertIn('#action={}'.format(settings_action.id), action['url'])
+
     def test_texml_app_applies_system_voice_to_custom_markup(self):
         self.env['connect.settings'].sudo().set_param(
             'telnyx_system_voice', 'woman')

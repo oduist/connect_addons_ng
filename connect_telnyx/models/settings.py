@@ -160,7 +160,14 @@ class Settings(models.Model):
 
     def telnyx_sync_tts_voices(self):
         self._sync_telnyx_tts_voices()
-        return {"type": "ir.actions.client", "tag": "reload"}
+        action = self.env.ref("connect_telnyx.telnyx_settings_action")
+        cache_key = fields.Datetime.now().strftime("%Y%m%d%H%M%S%f")
+        return {
+            "type": "ir.actions.act_url",
+            "url": "/web?telnyx_voices={}#action={}".format(
+                cache_key, action.id),
+            "target": "self",
+        }
 
     @api.model
     def telnyx_apply_system_voice(self, content):
