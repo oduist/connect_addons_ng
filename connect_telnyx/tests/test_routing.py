@@ -374,15 +374,17 @@ class TestTelnyxCredentialUri(TelnyxTestCommon):
         super().setUpClass()
         cls.user = cls._create_web_phone_user('telnyx_uri')
 
-    def test_uri_uses_the_domain_of_the_connection(self):
+    def test_uri_rings_the_generic_host(self):
+        """A credential is rung at sip.telnyx.com; the domain subdomain
+        is the inbound side and would loop the leg back into Odoo."""
         uri = self.user._telnyx_credential_uri('client-user')
-        self.assertEqual(uri, 'sip:client-user@test-connect.sip.telnyx.com')
+        self.assertEqual(uri, 'sip:client-user@sip.telnyx.com')
+        self.assertNotIn(self.domain.subdomain, uri)
 
     def test_empty_headers_are_dropped(self):
         uri = self.user._telnyx_credential_uri(
             'client-user', [('X-CallerName', ''), ('X-Partner', 7)])
-        self.assertEqual(
-            uri, 'sip:client-user@test-connect.sip.telnyx.com?X-Partner=7')
+        self.assertEqual(uri, 'sip:client-user@sip.telnyx.com?X-Partner=7')
         self.assertNotIn('=&', uri)
         self.assertFalse(uri.endswith('='))
 
@@ -396,7 +398,21 @@ class TestTelnyxCredentialUri(TelnyxTestCommon):
             'CallStatus': 'initiated',
         }
         result = str(self.user.telnyx_render(request=request))
-        self.assertIn('@test-connect.sip.telnyx.com', result)
+        self.assertIn('@sip.telnyx.com', result)
         self.assertNotIn('=&', result)
         self.assertNotIn('X-CallerName=<', result)
         self.assertNotIn('sip.telnyx.com?X-CallerName=&', result)
+
+    def test_domain_refuses_a_credential_leg(self):
+        """A leg addressed at a credential must never be re-routed by the
+        subdomain application: that is an infinite loop."""
+        request = {
+            'To': 'client-telnyx_uri@test-connect.sip.telnyx.com',
+            'From': '+15550009999', 'CallSid': 'loop-test',
+            'CallStatus': 'initiated',
+        }
+        with patch.object(type(self.env['connect.call']),
+                          'on_telnyx_call_status', autospec=True):
+            result = str(self.env['connect.telnyx.domain'].route_call(request))
+        self.assertIn('loop', result.lower())
+        self.assertNotIn('<Dial', result)

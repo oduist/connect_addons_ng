@@ -338,6 +338,17 @@ class Domain(models.Model):
             if number:
                 return self.env["connect.telnyx.number"].sudo().render_inbound(
                     request, params=params)
+        # A credential URI arriving here means a leg meant for a phone was
+        # routed back into the subdomain application; ringing it again
+        # would loop forever.
+        if '@' in found_num or self.env['connect.user'].get_user_by_telnyx_uri(
+                to_val if to_val.startswith('sip:') else 'sip:' + to_val):
+            logger.error(
+                'Telnyx routed a credential leg (%s) back into the subdomain '
+                'application: ring credentials at sip.telnyx.com instead.',
+                to_val)
+            return ("<Response><Say>Call routing loop detected. "
+                    "Check the Telnyx configuration. Goodbye!</Say></Response>")
         exten = self.env["connect.telnyx.exten"].sudo().search([("number", "=", found_num)])
         if not exten:
             # Get all extensions and match by pattern.

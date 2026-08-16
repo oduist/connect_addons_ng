@@ -158,8 +158,7 @@ class User(models.Model):
     def _get_telnyx_uri(self):
         for rec in self:
             username = rec.telnyx_sip_username or rec.telnyx_client_username
-            host = rec.telnyx_domain.domain_name or 'sip.telnyx.com'
-            rec.telnyx_uri = '{}@{}'.format(username, host) if username else ''
+            rec.telnyx_uri = '{}@sip.telnyx.com'.format(username) if username else ''
 
     def _create_telnyx_credential(self, channel, client=None):
         """Create one telephony credential (channel: 'sip' or 'client')."""
@@ -501,21 +500,24 @@ class User(models.Model):
             return {'error': str(e)}
 
     def _telnyx_credential_uri(self, username, headers=None):
-        """SIP URI of one of this user's telephony credentials.
+        """SIP URI used to ring one of this user's telephony credentials.
 
-        Dialling `user@sip.telnyx.com` is answered with a 403: a
-        credential is reachable on the SIP domain of the credential
-        connection it belongs to. Empty X- header values are dropped as
-        well — Telnyx rejects the leg with "The 'custom_headers'
-        parameter is invalid" when one is empty.
+        The host is always `sip.telnyx.com`: that is where Telnyx
+        delivers a call to the device registered with the credential.
+        The domain's own subdomain is the *inbound* side — anything
+        dialled at `<subdomain>.sip.telnyx.com` is handed to the routing
+        TeXML application, so ringing a credential there loops the call
+        straight back into Odoo instead of reaching the phone.
+
+        Empty X- header values are dropped: Telnyx rejects the leg with
+        "The 'custom_headers' parameter is invalid" when one is empty.
         """
         self.ensure_one()
-        host = self.telnyx_domain.domain_name or 'sip.telnyx.com'
         query = '&'.join(
             '{}={}'.format(name, value)
             for name, value in (headers or []) if value)
-        return 'sip:{}@{}{}'.format(
-            username, host, '?{}'.format(query) if query else '')
+        return 'sip:{}@sip.telnyx.com{}'.format(
+            username, '?{}'.format(query) if query else '')
 
     @api.model
     def _telnyx_caller(self, request):
