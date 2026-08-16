@@ -61,9 +61,17 @@ numbers is missing from it.
 
 | Field | Description |
 |-------|-------------|
+| **System Voice** | Default TeXML `<Say>` voice. The module adds it to every `<Say>` without an explicit prompt-level voice; user and callflow voice overrides still win. Default: `Polly.Joanna`. |
 | **Auto Sync** | Automatically push changes to Telnyx when creating/updating records in Odoo. |
 | **Verify Telnyx Requests** | Validate the `telnyx-signature-ed25519` header on incoming webhooks. Recommended for production. |
 | **Fetch Call Prices** | Retrieve call cost from Telnyx detail records after each call completes (best effort). |
+
+The voice list comes from Telnyx `GET /v2/text-to-speech/voices`, so it can
+include Telnyx voices, supported third-party providers, and cloned voices
+available to the account. Click **REFRESH VOICES** after adding a voice in
+Voice Design Lab. The normal **SYNC TELNYX ACCOUNT** action refreshes the same
+catalog. If the catalog cannot be fetched, the current selection and the basic
+TeXML voices remain available.
 
 ### Sync
 
@@ -89,6 +97,11 @@ until it is dismissed so the API error can be reviewed and corrected.
 
 Telnyx voice is integrated through **TeXML** (the Twilio-compatible XML
 translator):
+
+Before returning TeXML, Odoo adds **System Voice** to every `<Say>` that does
+not already carry `voice`. This also covers routing/service notices, custom
+TeXML, TeXPy, and nested `<Say>` nodes inside `<Gather>`. An explicit voice on
+a user prompt, callflow prompt, or custom `<Say>` is preserved.
 
 1. Create a **SIP Domain** (Connect > Telnyx > SIP Domains). This creates
    a Telnyx *credential connection* (hosting per-user SIP credentials)

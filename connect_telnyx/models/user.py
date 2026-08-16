@@ -8,7 +8,7 @@ from odoo import fields, models, api
 from odoo.exceptions import ValidationError
 
 from odoo.addons.connect.models.settings import debug
-from .settings import format_connect_response
+from .settings import TELNYX_SYSTEM_VOICE_DEFAULT, format_connect_response
 from .texml_response import Dial, VoiceResponse, pretty_xml
 
 logger = logging.getLogger(__name__)
@@ -372,19 +372,23 @@ class User(models.Model):
 
     def get_telnyx_greeting_message(self, response):
         self.ensure_one()
+        voice = self.voice or self.env['connect.settings'].sudo().get_param(
+            'telnyx_system_voice', TELNYX_SYSTEM_VOICE_DEFAULT)
         response.say(
             self.greeting_message,
             language=self.language or 'en-US',
-            voice=self.voice or 'Polly.Joanna',
+            voice=voice,
         )
 
     def get_telnyx_voicemail_prompt(self, response):
         self.ensure_one()
         voicemail_prompt = self.telnyx_render_voicemail_prompt()
+        voice = self.voice or self.env['connect.settings'].sudo().get_param(
+            'telnyx_system_voice', TELNYX_SYSTEM_VOICE_DEFAULT)
         response.say(
             voicemail_prompt,
             language=self.language or 'en-US',
-            voice=self.voice or 'Polly.Joanna',
+            voice=voice,
         )
 
     def telnyx_render_voicemail(self, response, request, params):

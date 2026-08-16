@@ -37,6 +37,9 @@
                             </group>
                             <group>
                                 <group string="Calls">
+                                    <field name="telnyx_system_voice"/>
+                                    <button name="telnyx_sync_tts_voices" type="object"
+                                            string="REFRESH VOICES" class="btn btn-secondary"/>
                                     <field name="telnyx_fetch_call_prices"/>
                                     <field name="telnyx_outbound_destinations"
                                            placeholder="PL, DE, US — empty allows every destination"/>

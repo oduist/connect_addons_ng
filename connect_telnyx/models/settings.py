@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import logging
 import re
 from urllib.parse import urljoin
@@ -27,6 +28,13 @@ TELNYX_PROTECTED_FIELDS = [
 ]
 
 TELNYX_API_BASE = "https://api.telnyx.com/v2/"
+TELNYX_SYSTEM_VOICE_DEFAULT = "Polly.Joanna"
+TELNYX_BASIC_VOICES = [
+    ("man", "Man (basic en-US)"),
+    ("woman", "Woman (basic en-US)"),
+    ("alice", "Alice (premium)"),
+    (TELNYX_SYSTEM_VOICE_DEFAULT, "Joanna (Amazon Polly)"),
+]
 
 
 def format_connect_response(text):
@@ -83,6 +91,84 @@ class Settings(models.Model):
         string="Fetch Call Prices",
         help="Enable fetching call costs from Telnyx detail records after call completion."
     )
+    telnyx_system_voice = fields.Selection(
+        selection="_get_telnyx_voice_selection",
+        default=TELNYX_SYSTEM_VOICE_DEFAULT,
+        required=True,
+        string="System Voice",
+        help="Voice added to every Telnyx TeXML Say without its own voice. "
+             "Refresh the catalog after adding voices in Telnyx.",
+    )
+    telnyx_tts_voices = fields.Text(readonly=True)
+
+    @api.model
+    def _get_telnyx_voice_selection(self):
+        """Return the cached account voice catalog without a live API call."""
+        options = dict(TELNYX_BASIC_VOICES)
+        settings = self.sudo().search([], limit=1)
+        try:
+            voices = json.loads(settings.telnyx_tts_voices or "[]")
+        except (TypeError, ValueError):
+            voices = []
+        if not isinstance(voices, list):
+            voices = []
+        for voice in voices:
+            voice_id = voice.get("id") or voice.get("voice_id")
+            if not voice_id:
+                continue
+            details = [
+                voice.get("provider"),
+                voice.get("language"),
+                voice.get("gender"),
+            ]
+            details = [value for value in details if value]
+            name = voice.get("name") or voice_id
+            label = (
+                "{} ({})".format(name, ", ".join(details))
+                if details else name
+            )
+            options[voice_id] = "{} - {}".format(label, voice_id)
+        if settings.telnyx_system_voice:
+            options.setdefault(
+                settings.telnyx_system_voice, settings.telnyx_system_voice)
+        return list(options.items())
+
+    @api.model
+    def _sync_telnyx_tts_voices(self):
+        """Cache the current account catalog used by System Voice."""
+        response = self.telnyx_api_request("GET", "text-to-speech/voices")
+        voices = response.get("voices") or response.get("data") or []
+        if not isinstance(voices, list):
+            voices = []
+        normalized = []
+        for voice in voices:
+            if not isinstance(voice, dict):
+                continue
+            voice_id = voice.get("id") or voice.get("voice_id")
+            if not voice_id:
+                continue
+            normalized.append({
+                "id": voice_id,
+                "name": voice.get("name"),
+                "provider": voice.get("provider"),
+                "language": voice.get("language"),
+                "gender": voice.get("gender"),
+            })
+        self.sudo().set_param(
+            "telnyx_tts_voices", json.dumps(normalized, sort_keys=True))
+        return normalized
+
+    def telnyx_sync_tts_voices(self):
+        self._sync_telnyx_tts_voices()
+        return {"type": "ir.actions.client", "tag": "reload"}
+
+    @api.model
+    def telnyx_apply_system_voice(self, content):
+        from .texml_response import apply_say_voice
+
+        voice = self.sudo().get_param(
+            "telnyx_system_voice", TELNYX_SYSTEM_VOICE_DEFAULT)
+        return apply_say_voice(content, voice)
 
     @api.model
     def get_telnyx_client(self):
@@ -161,6 +247,11 @@ class Settings(models.Model):
                 logger.warning('Cannot resolve the Telnyx account SID: %s', e)
             self._ensure_telnyx_outbound_voice_profile()
             self._ensure_telnyx_messaging_profile()
+            try:
+                self._sync_telnyx_tts_voices()
+            except Exception as e:
+                logger.warning(
+                    "Cannot refresh the Telnyx TTS voice catalog: %s", e)
             # Checked after the numbers are known, at the end of the sync.
             self.env["connect.telnyx.texml"].sync()
             self.env["connect.telnyx.ai_assistant"].sync()

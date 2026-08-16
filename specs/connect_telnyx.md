@@ -67,8 +67,10 @@ idempotent `connect.recording` row with `source = telnyx-ai`.
 ### texml_response.py — TeXML builder (no Odoo model)
 
 `VoiceResponse`, `Gather`, `Dial` (+`sip()`/`number()`/`conference()`),
-`pretty_xml()` — an ElementTree-based mini-clone of
+`pretty_xml()`, `apply_say_voice()` — an ElementTree-based mini-clone of
 `twilio.twiml.voice_response` covering the verbs the module renders.
+The finalizer adds the configured System Voice to every `<Say>` that does not
+already have an explicit voice (ADR-055).
 
 ### settings.py - `_inherit = 'connect.settings'`
 
@@ -85,6 +87,8 @@ idempotent `connect.recording` row with `source = telnyx-ai`.
 | `telnyx_auto_sync` | Boolean | Default: True |
 | `telnyx_verify_requests` | Boolean | Default: True |
 | `telnyx_fetch_call_prices` | Boolean | |
+| `telnyx_system_voice` | Selection | Dynamic cached Telnyx voice catalog; default `Polly.Joanna` |
+| `telnyx_tts_voices` | Text | Readonly JSON cache from `GET /v2/text-to-speech/voices` |
 
 Methods: `get_telnyx_client()` (SDK client), `telnyx_sync()` (apps →
 domains → numbers → caller IDs + messaging profile),
@@ -95,7 +99,10 @@ AI-assistant synchronization failures,
 `_ensure_telnyx_messaging_profile()`, `originate_call()` (core
 dispatcher override for the `'telnyx'` key; originates via
 `POST /texml/Accounts/{sid}/Calls` with the mandatory `ApplicationSid`
-of the number application), `get_telnyx_balance()`,
+of the number application), `_sync_telnyx_tts_voices()` /
+`telnyx_sync_tts_voices()` (cache/refresh the account voice catalog),
+`telnyx_apply_system_voice()` (finalize all missing Say voices),
+`get_telnyx_balance()`,
 `telnyx_check_call_failure(cause, sip_code)` (ADR-040: web-phone RPC
 for unanswered outbound failures; verifies `GET /v2/balance` with
 `sudo` and returns `{balance_blocked, message}` — Connect groups only,
@@ -168,8 +175,8 @@ rotation deletes the credential and creates a new one — the username
 changes too; `connect.group_admin` only); `telnyx_render()` +
 `telnyx_render_sip/client/voicemail` (user_callflow chain, TeXML
 `<Dial><Sip>`; user greeting/voicemail `<Say>` carries
-`connect.user.language`/`voice`, fallbacks `en-US` / `Polly.Joanna` —
-ADR-037); `get_telnyx_client_token()` (JWT via
+`connect.user.language`/`voice`, with `en-US` / System Voice fallbacks —
+ADR-037/ADR-055); `get_telnyx_client_token()` (JWT via
 `telephony_credentials.create_token` + `sip_domain` for the web phone);
 `get_user_by_telnyx_uri()`; `telnyx_on_call_action()`; callflow-managing
 constraints (`_manage_telnyx_*`).
@@ -212,8 +219,9 @@ constraint — copy of Twilio/FS, fix all three), `friendly_name`,
 ### callflow.py - `connect.telnyx.callflow` + `_choice`
 
 Full copy of the Twilio callflow (Gather/Say/Dial/Record rendering via
-the TeXML builder); `voice` default `Polly.Joanna`; language list is the
-shared BCP-47 copy. Ring users dial the users' credential SIP URIs.
+the TeXML builder); optional `voice` overrides System Voice, otherwise the
+callflow follows the global setting; language list is the shared BCP-47 copy.
+Ring users dial the users' credential SIP URIs.
 
 ### exten.py - `connect.telnyx.exten`
 

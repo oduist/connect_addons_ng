@@ -5,6 +5,7 @@ from . import test_originate
 from . import test_recording
 from . import test_routing
 from . import test_sip_credential
+from . import test_system_voice
 from . import test_telnyx_sync_errors
 from . import test_user_prompts
 from . import test_webhook_access
