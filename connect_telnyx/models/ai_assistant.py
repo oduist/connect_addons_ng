@@ -336,7 +336,7 @@ class TelnyxAIAssistant(models.Model):
             "type": "transfer",
             "display_name": "Odoo warm transfer - {}".format(self.name),
             "transfer": {
-                "targets": "{{ transfer_targets }}",
+                "targets": "{{transfer_targets}}",
                 "from": "{{telnyx_agent_target}}",
                 "warm_transfer_instructions": (
                     self.warm_transfer_instructions

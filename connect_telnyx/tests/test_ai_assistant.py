@@ -354,7 +354,7 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
             payload for method, path, payload in calls
             if (method, path) == ('POST', 'ai/tools'))
         self.assertEqual(
-            tool_payload['transfer']['targets'], '{{ transfer_targets }}')
+            tool_payload['transfer']['targets'], '{{transfer_targets}}')
         self.assertEqual(
             tool_payload['transfer']['from'], '{{telnyx_agent_target}}')
         self.assertIn(

@@ -71,7 +71,7 @@ Receptionist routing fields: `receptionist_mode` (`personal` / `company`),
 the configured callflows' `ring_users` into department-labelled human targets.
 
 Odoo creates one Telnyx shared Transfer tool per configured assistant. The tool
-uses dynamic `{{ transfer_targets }}`, `{{telnyx_agent_target}}` as its caller,
+uses dynamic `{{transfer_targets}}`, `{{telnyx_agent_target}}` as its caller,
 premium voicemail detection with stop-transfer behavior, and a warm briefing
 that includes confirmed identity, reason, context and next step. The variables
 webhook checks each candidate's live telephony-credential registration status;

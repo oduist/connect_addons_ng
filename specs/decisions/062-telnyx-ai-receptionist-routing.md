@@ -45,7 +45,7 @@ transfer instructions. The built-in `telnyx_agent_target` variable is a valid
    Existing models are reused; no generic model access or arbitrary tool
    execution is introduced.
 4. Odoo manages one shared Telnyx Transfer tool per assistant. Its target list
-   is the dynamic variable `transfer_targets`, its `from` value is
+   is the dynamic variable `{{transfer_targets}}`, its `from` value is
    `{{telnyx_agent_target}}`, and its warm-transfer instructions require a
    concise briefing with the confirmed caller identity, reason, context, and
    agreed next step.
