@@ -122,6 +122,11 @@ a user prompt, callflow prompt, or custom `<Say>` is preserved.
    > Telnyx Phone tab). Telnyx generates the SIP username and password —
    use them to provision a hardphone; the web phone authenticates with a
    short-lived token automatically.
+4. User destinations are tried in their configured priority order. Odoo
+   advances to the next destination or voicemail only when Telnyx reports an
+   explicit unsuccessful Dial result, such as busy or no answer. Once a SIP or
+   web-phone destination was answered, ending that leg terminates the inbound
+   call instead of starting voicemail.
 
 ### SIP username and password
 

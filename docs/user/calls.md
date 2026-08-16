@@ -89,7 +89,10 @@ Click the **Redial** button on any call record to call that number again.
 
 ## Voicemail
 
-If voicemail is enabled for your account and you miss a call, the caller can leave a voice message. Voicemail recordings appear on the call record with an inline audio player.
+If voicemail is enabled for your account and no configured phone answers, the
+caller can leave a voice message. Voicemail does not start after an answered
+phone call ends. Recordings appear on the call record with an inline audio
+player.
 
 ## Availability Calendar
 

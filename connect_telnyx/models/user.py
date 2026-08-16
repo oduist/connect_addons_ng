@@ -13,6 +13,13 @@ from .texml_response import Dial, VoiceResponse, pretty_xml
 
 logger = logging.getLogger(__name__)
 
+FAILED_DIAL_STATUSES = frozenset({
+    'busy',
+    'canceled',
+    'failed',
+    'no-answer',
+})
+
 
 class User(models.Model):
     """Telnyx presence of a PBX user.
@@ -635,13 +642,15 @@ class User(models.Model):
         # Called by the public Dial action webhook, whose user has no
         # read access on connect.user.
         user = self.sudo().browse(record_id)
-        call_status = request.get('CallStatus')
-        if not call_status:
-            call_status = request.get('DialCallStatus')
-        if call_status != 'completed':
-            dialplan = user.telnyx_render(request)
-            return dialplan
-        else:
-            response = VoiceResponse()
-            response.hangup()
-            return response.to_xml()
+        dial_status = (
+            request.get('DialCallStatus') or request.get('CallStatus')
+        )
+        if dial_status in FAILED_DIAL_STATUSES:
+            return user.telnyx_render(request)
+        if dial_status != 'completed':
+            logger.warning(
+                'Ending Telnyx user call action %s with unexpected Dial '
+                'status %r', record_id, dial_status)
+        response = VoiceResponse()
+        response.hangup()
+        return response.to_xml()

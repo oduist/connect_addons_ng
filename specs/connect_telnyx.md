@@ -178,8 +178,11 @@ changes too; `connect.group_admin` only); `telnyx_render()` +
 `connect.user.language`/`voice`, with `en-US` / System Voice fallbacks —
 ADR-037/ADR-055); `get_telnyx_client_token()` (JWT via
 `telephony_credentials.create_token` + `sip_domain` for the web phone);
-`get_user_by_telnyx_uri()`; `telnyx_on_call_action()`; callflow-managing
-constraints (`_manage_telnyx_*`).
+`get_user_by_telnyx_uri()`; `telnyx_on_call_action()` (ADR-057: the child
+`DialCallStatus` takes precedence over the parent `CallStatus`; completed
+destinations hang up, explicit failure statuses advance the user callflow,
+and unknown statuses fail closed); callflow-managing constraints
+(`_manage_telnyx_*`).
 
 ### number.py - `connect.telnyx.number`
 
