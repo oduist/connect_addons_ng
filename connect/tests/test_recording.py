@@ -236,8 +236,11 @@ class TestRecording(ConnectTestCommon):
 
         with patch(
             'odoo.addons.connect.models.recording.Recording.get_transcript',
-        ) as mock_get_transcript:
+        ) as mock_get_transcript, patch.object(
+            self.env.cr, 'commit',
+        ) as mock_commit:
             self.env['connect.recording']._cron_transcribe_recordings()
 
         mock_get_transcript.assert_not_called()
+        mock_commit.assert_called_once_with()
         self.assertFalse(rec.transcription_pending)
