@@ -138,6 +138,11 @@ class Domain(models.Model):
             'connection_name': self.friendly_name,
             'user_name': username,
             'password': password,
+            # Odoo rings a user's phone at sip:<credential>@sip.telnyx.com;
+            # Telnyx answers 403 to such a call until SIP URI calling is
+            # allowed. 'internal' keeps the credentials unreachable from
+            # outside the account.
+            'sip_uri_calling_preference': 'internal',
         }
         outbound = self._connection_outbound_params()
         if outbound:
@@ -234,7 +239,10 @@ class Domain(models.Model):
     def update_telnyx_domain(self, client):
         self.ensure_one()
         try:
-            update_params = {'connection_name': self.friendly_name}
+            update_params = {
+                'connection_name': self.friendly_name,
+                'sip_uri_calling_preference': 'internal',
+            }
             outbound = self._connection_outbound_params()
             if outbound:
                 update_params['outbound'] = outbound

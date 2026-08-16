@@ -416,3 +416,56 @@ class TestTelnyxCredentialUri(TelnyxTestCommon):
             result = str(self.env['connect.telnyx.domain'].route_call(request))
         self.assertIn('loop', result.lower())
         self.assertNotIn('<Dial', result)
+
+
+@tagged('post_install', '-at_install')
+class TestTelnyxSipUriCalling(TelnyxTestCommon):
+    """Telnyx answers 403 to sip:<credential>@sip.telnyx.com until the
+    connection allows SIP URI calling."""
+
+    def _client(self, captured):
+        class Connections:
+            @staticmethod
+            def create(**kwargs):
+                captured['create'] = kwargs
+                return type('Response', (), {'data': type('Data', (), {
+                    'id': 'connection-new'})()})()
+
+            @staticmethod
+            def update(sid, **kwargs):
+                captured['update'] = kwargs
+                return True
+
+        class Applications:
+            @staticmethod
+            def update(sid, **kwargs):
+                return True
+
+        class Client:
+            credential_connections = Connections()
+            texml_applications = Applications()
+
+        return Client()
+
+    def test_created_connection_accepts_internal_sip_uri_calls(self):
+        captured = {}
+        domain = self.env['connect.telnyx.domain'].with_context(
+            no_telnyx_create=True).create({
+                'friendly_name': 'Uri Calling',
+                'subdomain': 'uri-calling',
+                'application': self.env[
+                    'connect.telnyx.domain'].get_domain_app().id,
+            })
+        domain.application.with_context(skip_telnyx_sync=True).write(
+            {'sid': 'app-sid'})
+        domain.create_telnyx_domain(self._client(captured))
+        self.assertEqual(
+            captured['create'].get('sip_uri_calling_preference'), 'internal')
+
+    def test_updated_connection_keeps_sip_uri_calls_allowed(self):
+        captured = {}
+        self.domain.application.with_context(skip_telnyx_sync=True).write(
+            {'sid': 'app-sid'})
+        self.domain.update_telnyx_domain(self._client(captured))
+        self.assertEqual(
+            captured['update'].get('sip_uri_calling_preference'), 'internal')

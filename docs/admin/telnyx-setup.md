@@ -93,7 +93,13 @@ translator):
 1. Create a **SIP Domain** (Connect > Telnyx > SIP Domains). This creates
    a Telnyx *credential connection* (hosting per-user SIP credentials)
    and reserves a SIP subdomain (`<subdomain>.sip.telnyx.com`) on the
-   routing TeXML application, so web-phone calls are routed by Odoo.
+   routing TeXML application, so web-phone calls are routed by Odoo. The
+   connection is created with **SIP URI calling** set to *internal*:
+   Odoo rings a phone at `sip:<credential>@sip.telnyx.com`, and Telnyx
+   answers such a call with `403 Forbidden` while that setting is off.
+   The subdomain is the inbound side only — ringing a credential there
+   would hand the call back to the routing application instead of the
+   phone.
 2. Assign inbound numbers (Connect > Telnyx > Numbers) to a user, a call
    flow, a TeXML app or an AI assistant. Inbound calls to a number are
    dispatched by the dialled number; a number with no destination answers

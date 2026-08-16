@@ -260,15 +260,25 @@ The Twilio SIP-domain analog (ADR-032 §3). One record manages:
 
 - a **credential connection** (`sid`; generated connection-level
   user/password, stored username only) hosting per-user telephony
-  credentials;
+  credentials. Created and kept with `sip_uri_calling_preference =
+  'internal'` (Telnyx returns `403` to `sip:<credential>@sip.telnyx.com`
+  otherwise) and with the account's outbound voice profile (no outbound
+  call is allowed without one);
 - the **routing TeXML app** (`application`, default `get_domain_app()`)
   whose `inbound.sip_subdomain` = `subdomain`
   (`sip_subdomain_receive_settings='only_my_connections'`).
 
-`route_call()` routes web-phone calls: exten match → render; `+E164` →
-`originate_external_call()` (TeXML `<Dial><Number>` with the user's
-caller ID). `sync()` follows the Twilio rules (never import
-Telnyx-only, create Odoo-only, update common).
+The subdomain is the **inbound** side only: everything dialled at it is
+handed to the routing application, so credentials are rung at
+`sip.telnyx.com` (`connect.user._telnyx_credential_uri()`) and
+`route_call()` refuses a credential leg to break the loop.
+
+`route_call()` routes web-phone calls: exten match → render; a dialled
+`+E164` from a known PBX user → `originate_external_call()` (TeXML
+`<Dial><Number>` with the user's caller ID), and an unknown caller is
+refused. A PSTN leg for one of our numbers is delegated to
+`connect.telnyx.number.render_inbound()`. `sync()` follows the Twilio
+rules (never import Telnyx-only, create Odoo-only, update common).
 
 ---
 
