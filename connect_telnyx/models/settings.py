@@ -147,6 +147,79 @@ class Settings(models.Model):
                 "Telnyx API returned an invalid JSON response."
             ) from exc
 
+    @api.model
+    def telnyx_api_list(self, path, params=None, page_size=100):
+        """Return a complete Telnyx v2 collection.
+
+        Destructive synchronizers must never reconcile against a partial or
+        malformed page, because absence is meaningful only after the entire
+        remote collection has been read successfully (ADR-050).
+        """
+        items = []
+        page_number = 1
+        expected_total = None
+        expected_pages = None
+        while True:
+            page_params = dict(params or {})
+            page_params.update({
+                'page[number]': page_number,
+                'page[size]': page_size,
+            })
+            response = self.telnyx_api_request(
+                'GET', path, params=page_params)
+            if not isinstance(response, dict) or not isinstance(
+                    response.get('data'), list):
+                raise ValidationError(
+                    'Telnyx API returned an invalid collection response for '
+                    '{}.'.format(path))
+            page_items = response['data']
+            items.extend(page_items)
+            meta = response.get('meta') or {}
+            if not isinstance(meta, dict):
+                raise ValidationError(
+                    'Telnyx API returned invalid pagination metadata for '
+                    '{}.'.format(path))
+            try:
+                total_pages = (
+                    int(meta['total_pages'])
+                    if meta.get('total_pages') is not None else None)
+                total_results = (
+                    int(meta['total_results'])
+                    if meta.get('total_results') is not None else None)
+                response_page = (
+                    int(meta['page_number'])
+                    if meta.get('page_number') is not None else page_number)
+            except (TypeError, ValueError) as exc:
+                raise ValidationError(
+                    'Telnyx API returned invalid pagination metadata for '
+                    '{}.'.format(path)) from exc
+            if response_page != page_number:
+                raise ValidationError(
+                    'Telnyx API returned page {} while page {} was requested '
+                    'for {}.'.format(response_page, page_number, path))
+            if page_number == 1:
+                expected_pages = total_pages
+                expected_total = total_results
+            elif expected_pages != total_pages:
+                raise ValidationError(
+                    'Telnyx API changed the page count while listing {}.'.format(
+                        path))
+            elif total_results != expected_total:
+                raise ValidationError(
+                    'Telnyx API changed the result count while listing {}.'.format(
+                        path))
+            if total_pages:
+                if page_number >= total_pages:
+                    break
+            elif len(page_items) < page_size:
+                break
+            page_number += 1
+        if expected_total is not None and len(items) != expected_total:
+            raise ValidationError(
+                'Telnyx API returned {} of {} results for {}.'.format(
+                    len(items), expected_total, path))
+        return items
+
     def telnyx_sync(self):
         if not self.sudo().get_param("telnyx_api_key"):
             raise ValidationError("You must set the Telnyx API key!")

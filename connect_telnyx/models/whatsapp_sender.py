@@ -136,9 +136,8 @@ class TelnyxWhatsappSender(models.Model):
     @api.model
     def sync(self):
         try:
-            response = self.env['connect.settings'].telnyx_api_request(
-                'GET', 'whatsapp/phone_numbers')
-            items = response.get('data') or []
+            items = self.env['connect.settings'].telnyx_api_list(
+                'whatsapp/phone_numbers')
         except Exception as e:
             raise ValidationError("Failed to sync WhatsApp Senders: {}".format(
                 format_connect_response(e)))
@@ -161,8 +160,10 @@ class TelnyxWhatsappSender(models.Model):
                 debug(self, 'Created a WhatsApp sender {}'.format(rec.number))
             rec._fetch_profile()
         # Remove local senders missing in Telnyx
-        missing = self.search([('number', 'not in', list(seen_numbers))]) if seen_numbers \
-            else self.search([])
+        missing_domain = [('no_sync', '=', False)]
+        if seen_numbers:
+            missing_domain.append(('number', 'not in', list(seen_numbers)))
+        missing = self.search(missing_domain)
         if missing:
             debug(self, 'Removing missing WhatsApp Senders: {}'.format(', '.join(
                 [k.number for k in missing])))

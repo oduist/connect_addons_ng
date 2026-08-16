@@ -86,7 +86,10 @@ idempotent `connect.recording` row with `source = telnyx-ai`.
 | `telnyx_verify_requests` | Boolean | Default: True |
 | `telnyx_fetch_call_prices` | Boolean | |
 
-Methods: `get_telnyx_client()` (SDK client), `telnyx_sync()` (apps →
+Methods: `get_telnyx_client()` (SDK client), `telnyx_api_request()` (raw v2
+request helper), `telnyx_api_list()` (page-number/page-size iterator that
+requires a valid `data` list on every page before returning; ADR-050),
+`telnyx_sync()` (apps →
 domains → numbers → caller IDs + messaging profile),
 with persistent warning notifications for non-fatal optional-resource and
 AI-assistant synchronization failures,
@@ -177,7 +180,10 @@ numbers are attached to the **number-routing TeXML app** (`Number Calls`,
 `get_number_app()`, `phone_numbers.update(connection_id=…)`) and, when the
 number supports SMS, to the messaging profile. A messaging failure is
 logged and does not abort the sync — numbers without SMS capability are
-still valid voice numbers.
+still valid voice numbers. `get_number_app()` uses narrowly scoped elevated
+access for this mandatory system resource, so an authorized Connect user can
+complete its lazy click-to-call bootstrap without write access to arbitrary
+TeXML applications (ADR-050).
 
 Inbound calls therefore arrive on that app's webhook
 (`/telnyx/webhook/texml/<app id>` → `route_call()`) and are dispatched by
@@ -186,7 +192,9 @@ extension carrying the same number, and never re-originates a call to the
 dialled number. `connect.telnyx.domain.route_call()` delegates to
 `render_inbound()` for numbers that are still attached to the domain
 application, and refuses to dial out unless the caller is on our SIP
-subdomain. `destination` Selection: `user` / `callflow` / `texml` /
+subdomain. The same normalized `Caller`/`From` identity selects the user's
+personal caller ID and recording preference for the outbound leg.
+`destination` Selection: `user` / `callflow` / `texml` /
 `ai_assistant`. Numbers have no default flag; outbound defaults live on
 `connect.telnyx.outgoing_callerid`.
 
@@ -215,8 +223,10 @@ Same shape as the Twilio counterparts (`connect.telnyx.*`).
 
 ### whatsapp_sender.py - `connect.telnyx.whatsapp_sender` (ADR-033)
 
-WhatsApp-enabled phone numbers synced from
-`whatsapp.phone_numbers.list()` (+ profile subresource). Fields:
+WhatsApp-enabled phone numbers synced from the raw
+`GET /v2/whatsapp/phone_numbers` collection (+ profile subresource). Every
+page is fetched and validated before missing records are removed; `no_sync`
+records are neither updated nor deleted (ADR-050). Fields:
 `number` (unique), `phone_number_id`, `waba_id`, `status`,
 `display_name`, `quality_rating`, `calling_enabled` (info only),
 editable `profile_*` (pushed via `profile.update`), `number_id`,
@@ -227,7 +237,8 @@ an inbound message within 24h — else a template; creates
 
 ### whatsapp_template.py - `connect.telnyx.whatsapp_template` (ADR-033)
 
-Meta-approved templates synced from `whatsapp.templates.list()`
+Meta-approved templates synced from the complete paginated raw
+`GET /v2/whatsapp/message_templates` collection (ADR-050)
 (`telnyx_id`, `template_id`, `name`, `language`, `category`, `status`,
 `rejection_reason`, raw `components`, extracted `body`).
 `create_in_telnyx()` submits a body-only template for approval;

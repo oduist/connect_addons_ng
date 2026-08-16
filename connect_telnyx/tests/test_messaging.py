@@ -87,3 +87,145 @@ class TestTelnyxMessaging(TelnyxTestCommon):
         self.assertTrue(
             hasattr(client.messages, 'whatsapp'),
             'The Telnyx SDK no longer exposes messages.whatsapp')
+
+    def test_whatsapp_sender_sync_reads_every_page_before_deleting(self):
+        second = self.env['connect.telnyx.whatsapp_sender'].create({
+            'number': '+15550000002',
+            'phone_number_id': 'phone-2',
+        })
+        requested_pages = []
+
+        def api_response(_self, method, path, **kwargs):
+            self.assertEqual((method, path), (
+                'GET', 'whatsapp/phone_numbers'))
+            page = kwargs['params']['page[number]']
+            requested_pages.append(page)
+            items = [{
+                'phone_number': '+15550000001',
+                'phone_number_id': 'phone-1',
+            }] if page == 1 else [{
+                'phone_number': second.number,
+                'phone_number_id': second.phone_number_id,
+            }]
+            return {
+                'data': items,
+                'meta': {
+                    'page_number': page,
+                    'total_pages': 2,
+                    'total_results': 2,
+                },
+            }
+
+        sender_model = type(self.env['connect.telnyx.whatsapp_sender'])
+        with patch.object(Settings, 'telnyx_api_request', autospec=True,
+                          side_effect=api_response), patch.object(
+                              sender_model, '_fetch_profile', autospec=True,
+                              return_value=None):
+            self.env['connect.telnyx.whatsapp_sender'].sync()
+
+        self.assertEqual(requested_pages, [1, 2])
+        self.assertTrue(second.exists())
+
+    def test_whatsapp_template_sync_reads_every_page_before_deleting(self):
+        second = self.env['connect.telnyx.whatsapp_template'].create({
+            'name': 'page_two',
+            'language': 'en',
+            'category': 'UTILITY',
+            'telnyx_id': 'template-2',
+            'status': 'APPROVED',
+        })
+        requested_pages = []
+
+        def item(template_id, name):
+            return {
+                'id': template_id,
+                'name': name,
+                'language': 'en',
+                'category': 'UTILITY',
+                'status': 'APPROVED',
+                'components': [],
+            }
+
+        def api_response(_self, method, path, **kwargs):
+            self.assertEqual((method, path), (
+                'GET', 'whatsapp/message_templates'))
+            page = kwargs['params']['page[number]']
+            requested_pages.append(page)
+            items = [item('template-1', 'page_one')] if page == 1 else [
+                item(second.telnyx_id, second.name)]
+            return {
+                'data': items,
+                'meta': {
+                    'page_number': page,
+                    'total_pages': 2,
+                    'total_results': 2,
+                },
+            }
+
+        with patch.object(Settings, 'telnyx_api_request', autospec=True,
+                          side_effect=api_response):
+            self.env['connect.telnyx.whatsapp_template'].sync()
+
+        self.assertEqual(requested_pages, [1, 2])
+        self.assertTrue(second.exists())
+
+    def test_malformed_whatsapp_collection_never_deletes_local_records(self):
+        template = self.env['connect.telnyx.whatsapp_template'].create({
+            'name': 'keep_on_error',
+            'language': 'en',
+            'category': 'UTILITY',
+            'telnyx_id': 'template-keep',
+            'status': 'APPROVED',
+        })
+        with patch.object(Settings, 'telnyx_api_request', autospec=True,
+                          return_value={}):
+            with self.assertRaises(ValidationError):
+                self.env['connect.telnyx.whatsapp_template'].sync()
+        self.assertTrue(template.exists())
+
+    def test_incomplete_whatsapp_collection_never_deletes_local_records(self):
+        template = self.env['connect.telnyx.whatsapp_template'].create({
+            'name': 'keep_on_partial_page',
+            'language': 'en',
+            'category': 'UTILITY',
+            'telnyx_id': 'template-partial',
+            'status': 'APPROVED',
+        })
+
+        def api_response(_self, method, path, **kwargs):
+            page = kwargs['params']['page[number]']
+            return {
+                'data': [{
+                    'id': 'template-other',
+                    'name': 'other',
+                    'language': 'en',
+                    'category': 'UTILITY',
+                    'status': 'APPROVED',
+                    'components': [],
+                }] if page == 1 else [],
+                'meta': {
+                    'page_number': page,
+                    'total_pages': 2,
+                    'total_results': 2,
+                },
+            }
+
+        with patch.object(Settings, 'telnyx_api_request', autospec=True,
+                          side_effect=api_response):
+            with self.assertRaises(ValidationError):
+                self.env['connect.telnyx.whatsapp_template'].sync()
+        self.assertTrue(template.exists())
+
+    def test_no_sync_sender_is_not_deleted_when_remote_is_empty(self):
+        sender = self.env['connect.telnyx.whatsapp_sender'].create({
+            'number': '+15550000003',
+            'phone_number_id': 'phone-3',
+            'no_sync': True,
+        })
+        with patch.object(Settings, 'telnyx_api_request', autospec=True,
+                          return_value={
+                              'data': [],
+                              'meta': {'page_number': 1, 'total_pages': 1},
+                          }):
+            self.env['connect.telnyx.whatsapp_sender'].sync()
+        self.assertTrue(sender.exists())
