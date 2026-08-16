@@ -168,6 +168,12 @@ the URL on the recording record for playback, but redacts it from Telnyx debug
 payloads so temporary download credentials are not persisted in
 `connect.debug`.
 
+For outbound calls placed from the Telnyx web phone or a SIP credential, Odoo
+applies the originating PBX user's **Record Calls** setting to the generated
+TeXML `<Dial>`. Telnyx may identify that user in different webhook fields;
+Odoo normalizes those variants before selecting the caller ID and recording
+policy.
+
 ## Messaging
 
 SMS/MMS use the **Odoo Connect** messaging profile created by the sync.

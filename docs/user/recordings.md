@@ -18,6 +18,9 @@ Recording can be enabled at multiple levels (configured by your administrator):
 - **Per user** — Enable/disable recording for a specific PBX user
 - **Per call flow** — Enable/disable recording for calls through a specific callflow
 
+The per-user setting also applies to outgoing calls placed from that user's
+Telnyx web phone or SIP phone.
+
 ### In-Call Recording Control
 
 When runtime recording control is available for your phone provider, the phone

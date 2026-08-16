@@ -303,8 +303,10 @@ handed to the routing application, so credentials are rung at
 
 `route_call()` routes web-phone calls: exten match → render; a dialled
 `+E164` from a known PBX user → `originate_external_call()` (TeXML
-`<Dial><Number>` with the user's caller ID), and an unknown caller is
-refused. A PSTN leg for one of our numbers is delegated to
+`<Dial><Number>` with the user's caller ID and `record_calls` policy), and an
+unknown caller is refused. The originating user is resolved consistently from
+`Caller`, `From`, or `CallerId`, because Telnyx may omit `Caller` for the
+web-phone SIP leg. A PSTN leg for one of our numbers is delegated to
 `connect.telnyx.number.render_inbound()`. `sync()` follows the Twilio
 rules (never import Telnyx-only, create Odoo-only, update common).
 

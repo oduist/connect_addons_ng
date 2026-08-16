@@ -114,6 +114,24 @@ class TestTelnyxRouting(TelnyxTestCommon):
             result = str(self.env['connect.telnyx.domain'].route_call(request))
         self.assertIn('<Number', result)
 
+    def test_domain_records_outbound_call_when_caller_is_in_from(self):
+        self.env['connect.telnyx.outgoing_callerid'].create({
+            'number': '+15550003333',
+            'friendly_name': 'Default',
+            'is_default': True,
+        })
+        request = self._request(
+            To='+15550009999', Called=False, Caller=False,
+            From='{}@sip.telnyx.eu'.format(
+                self.user.telnyx_client_username),
+            CallerId=self.user.telnyx_client_username,
+        )
+        with patch.object(type(self.env['connect.call']),
+                          'on_telnyx_call_status', autospec=True):
+            result = str(self.env['connect.telnyx.domain'].route_call(request))
+        self.assertIn('record="record-from-answer"', result)
+        self.assertIn('recordingStatusCallback=', result)
+
     def test_domain_routes_bare_sip_uri_to_extension(self):
         """Telnyx may omit sip: from the routing webhook destination."""
         self.env['connect.telnyx.exten'].create({

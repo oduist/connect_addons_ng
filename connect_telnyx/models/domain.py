@@ -403,8 +403,8 @@ class Domain(models.Model):
         default_number = self.env["connect.telnyx.outgoing_callerid"].search(
             [("is_default", "=", True)], limit=1
         )
-        # Find the user by caller.
-        user = self.env["connect.user"].get_user_by_telnyx_uri(request.get("Caller"))
+        caller_uri = self.env["connect.user"]._telnyx_caller(request)
+        user = self.env["connect.user"].get_user_by_telnyx_uri(caller_uri)
         if user and user.telnyx_outgoing_callerid:
             callerId = user.telnyx_outgoing_callerid.number
         else:
