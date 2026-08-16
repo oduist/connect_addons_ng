@@ -103,8 +103,13 @@ selected contact/fallback language before following an allowed caller language
 change.
 
 Completed AI conversations are linked to `connect.call` by conversation and
-Call Control IDs. Transcript and Telnyx Insight summary are stored on an
-idempotent `connect.recording` row with `source = telnyx-ai`.
+Call Control IDs. Transcript, Telnyx Insight summary, and the downloaded MP3
+are stored on one idempotent `connect.recording` row with
+`source = telnyx-ai` (ADR-064). The documented insight event is resolved by
+`data.payload.call_control_id`; `data.payload.results` supplies the summary.
+The conversation batch is a repair path for delayed or missed webhooks.
+Because Telnyx has already transcribed these calls, every create/update uses
+`skip_transcription` and never queues OpenAI transcription.
 
 ### texml_response.py — TeXML builder (no Odoo model)
 
@@ -188,9 +193,14 @@ connect_twilio and connect_telnyx leaves the last-loaded module owning
 
 `on_telnyx_recording_status()` (TeXML recording callback + fetch of the
 recording resource), `telnyx_prepare_data()` (maps `download_urls`,
-`duration_millis`, and a resolvable API leg identifier). The webhook's TeXML
-`CallSid` relation remains authoritative when the recording API returns an
-unmatched UUID `call_leg_id`, so API enrichment cannot orphan the recording.
+`duration_millis`, and a resolvable API leg identifier), and
+`telnyx_attach_ai_audio()` (Call Recordings API lookup by `call_control_id`
+plus bounded MP3/WAV download). `telnyx_recording_id` stores the physical
+recording resource separately from the AI conversation SID. AI audio is saved
+in `recording_attachment` because provider download URLs expire, and the write
+is explicitly excluded from the OpenAI transcription queue. The webhook's
+TeXML `CallSid` relation remains authoritative when the recording API returns
+an unmatched UUID `call_leg_id`, so API enrichment cannot orphan the recording.
 Raw Telnyx webhook debug payloads redact `RecordingUrl` before they are stored
 in `connect.debug`; the unmodified URL is still used for recording playback.
 

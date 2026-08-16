@@ -54,8 +54,12 @@ make an English-only voice multilingual.
 
 Calls to AI agents appear in **Connect -> Calls** like any other call. When
 recording is enabled, the conversation is recorded and shows up under
-**Recordings** on the call form, where the standard transcription and
-summarization tools apply.
+**Recordings** on the call form.
+
+For a Telnyx AI agent, the same recording contains the downloaded audio, the
+Telnyx conversation transcript, and the Telnyx insight summary. Since the
+transcript is already complete, Odoo does not send that audio to OpenAI for a
+second transcription.
 
 Dograh agents may also expose the full workflow-level transcript in the Dograh
 dashboard. Ask your administrator for access.

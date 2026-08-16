@@ -261,7 +261,10 @@ class ConnectTelnyxController(Controller):
         if payload is None:
             return request.make_json_response(
                 {'error': 'invalid_json'}, status=400)
-        request.env['connect.call'].with_user(
+        recording = request.env['connect.call'].with_user(
             request.env.ref('connect.user_connect_webhook')
         ).telnyx_apply_ai_insights(payload)
-        return request.make_json_response({'ok': True})
+        return request.make_json_response({
+            'ok': bool(recording),
+            'deferred': not bool(recording),
+        })

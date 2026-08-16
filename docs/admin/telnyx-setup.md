@@ -113,6 +113,20 @@ limits the agent even when its LLM understands several languages.
 Recording and memory are off by default. CRM and Helpdesk tools are published
 only when the matching Odoo models are installed.
 
+When assistant recording is enabled, Telnyx produces the audio, conversation
+messages, and configured insight summary. Odoo stores all three on one
+**Recordings** row after the call. The audio is downloaded into an Odoo
+attachment because Telnyx's signed download URL expires. Telnyx is already the
+transcription provider for this path, so the recording is never sent to
+OpenAI for a second transcription, even when global call transcription is
+enabled.
+
+The signed insight webhook normally performs this synchronization immediately.
+**Sync Telnyx AI Conversations** runs every five minutes as an idempotent repair
+for delayed or missed callbacks. Sanitized development databases commonly have
+scheduled actions disabled; run that action manually when testing historical
+calls in such an environment.
+
 Telnyx signs context and insight callbacks with the account Ed25519 public
 key. Odoo tools use a separate random token per assistant; rotate it from the
 assistant form if it may have been exposed.

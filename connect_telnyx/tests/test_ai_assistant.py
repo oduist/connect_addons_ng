@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from unittest.mock import patch
+import base64
+from unittest.mock import MagicMock, patch
 
 from odoo.exceptions import ValidationError
 from odoo.tests import tagged
@@ -467,3 +468,141 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
         self.assertEqual(len(recordings), 1)
         self.assertIn('USER: I need help.', recordings.transcript)
         self.assertEqual(call.telnyx_ai_conversation_id, 'conversation-test')
+
+    def test_insight_webhook_resolves_conversation_from_call_control_id(self):
+        call = self.env['connect.call'].create({
+            'caller': '+15550005555',
+            'called': '+15550006666',
+            'status': 'completed',
+            'direction': 'incoming',
+            'telnyx_ai_conversation_id': 'conversation-event',
+        })
+        self.env['connect.channel'].create({
+            'sid': 'v3:event-call',
+            'call': call.id,
+            'caller': call.caller,
+            'called': call.called,
+            'status': 'completed',
+            'technical_direction': 'inbound',
+        })
+
+        def api_response(_settings, _method, path, **kwargs):
+            if path == 'ai/conversations/conversation-event':
+                return {'data': {
+                    'id': 'conversation-event',
+                    'metadata': {
+                        'assistant_id': self.assistant.sid,
+                        'call_control_id': 'v3:event-call',
+                    },
+                }}
+            if path.endswith('/messages'):
+                return {'data': [
+                    {'role': 'user', 'text': 'Please help me.'},
+                ]}
+            if path == 'recordings':
+                return {'data': []}
+            self.fail('Unexpected Telnyx API path: {}'.format(path))
+
+        event = {
+            'data': {
+                'record_type': 'event',
+                'event_type': 'call.conversation_insights.generated',
+                'payload': {
+                    'call_control_id': 'v3:event-call',
+                    'results': [{'result': 'The caller requested help.'}],
+                },
+            },
+        }
+        with patch.object(
+                Settings, 'telnyx_api_request', autospec=True,
+                side_effect=api_response):
+            recording = self.env[
+                'connect.call'
+            ].telnyx_apply_ai_insights(event)
+
+        self.assertTrue(recording)
+        self.assertEqual(recording.call, call)
+        self.assertIn('USER: Please help me.', recording.transcript)
+        self.assertEqual(recording.summary, 'The caller requested help.')
+        self.assertFalse(recording.transcription_pending)
+
+    def test_telnyx_ai_audio_is_attached_without_openai_transcription(self):
+        self.env['connect.settings'].sudo().set_param(
+            'transcript_calls', True)
+        call = self.env['connect.call'].create({
+            'caller': '+15550007777',
+            'called': '+15550008888',
+            'status': 'completed',
+            'direction': 'incoming',
+        })
+        self.env['connect.channel'].create({
+            'sid': 'v3:audio-call',
+            'call': call.id,
+            'caller': call.caller,
+            'called': call.called,
+            'status': 'completed',
+            'technical_direction': 'inbound',
+        })
+        conversation = {
+            'id': 'conversation-audio',
+            'metadata': {
+                'assistant_id': self.assistant.sid,
+                'call_control_id': 'v3:audio-call',
+                'telnyx_conversation_channel': 'phone_call',
+            },
+        }
+
+        def api_response(_settings, _method, path, **kwargs):
+            if path.endswith('/messages'):
+                return {'data': [
+                    {'role': 'user', 'text': 'Audio test.'},
+                    {'role': 'assistant', 'text': 'Understood.'},
+                ]}
+            if path.endswith('/conversations-insights'):
+                return {'data': [{
+                    'status': 'completed',
+                    'conversation_insights': [
+                        {'result': 'Audio test completed.'},
+                    ],
+                }]}
+            if path == 'recordings':
+                self.assertEqual(
+                    kwargs['params']['filter[call_control_id]'],
+                    'v3:audio-call',
+                )
+                return {'data': [{
+                    'id': 'recording-audio',
+                    'call_control_id': 'v3:audio-call',
+                    'status': 'completed',
+                    'duration_millis': 4200,
+                    'download_urls': {
+                        'mp3': 'https://example.test/audio.mp3',
+                    },
+                }]}
+            self.fail('Unexpected Telnyx API path: {}'.format(path))
+
+        download = MagicMock()
+        download.headers = {'Content-Length': '5'}
+        download.iter_content.return_value = [b'AUDIO']
+        with patch.object(
+                Settings, 'telnyx_api_request', autospec=True,
+                side_effect=api_response), patch(
+                    'odoo.addons.connect_telnyx.models.recording.requests.get',
+                    return_value=download,
+                ) as get_audio:
+            recording = self.env[
+                'connect.call'
+            ].telnyx_sync_ai_conversation(conversation)
+            self.env['connect.call'].telnyx_sync_ai_conversation(conversation)
+
+        get_audio.assert_called_once_with(
+            'https://example.test/audio.mp3', stream=True, timeout=30)
+        download.raise_for_status.assert_called_once_with()
+        self.assertEqual(recording.telnyx_recording_id, 'recording-audio')
+        self.assertEqual(recording.recording_filename, 'recording-audio.mp3')
+        self.assertEqual(
+            base64.b64decode(recording.recording_attachment), b'AUDIO')
+        self.assertEqual(recording.duration, 4)
+        self.assertFalse(recording.media_url)
+        self.assertFalse(recording.transcription_pending)
+        self.assertFalse(recording.transcription_error)

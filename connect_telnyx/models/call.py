@@ -73,6 +73,13 @@ class Call(models.Model):
         # Core call processing
         call_id = self.process_call_event(channel, error_data)
 
+        conversation_id = params.get('ConversationId')
+        if channel.call and conversation_id:
+            channel.call.write({
+                'telnyx_ai_conversation_id': conversation_id,
+                'telnyx_ai_last_sync_at': fields.Datetime.now(),
+            })
+
         # Desktop notification for incoming SIP calls
         if (channel.call
                 and channel.call.direction == 'incoming'
@@ -344,6 +351,7 @@ class Call(models.Model):
             'status': 'completed',
             'transcript': transcript,
             'summary': summary or '',
+            'transcription_pending': False,
         }
         recording = self.env['connect.recording'].sudo().search(
             [('sid', '=', conversation_id), ('source', '=', 'telnyx-ai')],
@@ -355,6 +363,14 @@ class Call(models.Model):
             recording = self.env['connect.recording'].sudo().with_context(
                 skip_transcription=True
             ).create(vals)
+        call_control_id = metadata.get('call_control_id') or channel.sid
+        try:
+            recording.telnyx_attach_ai_audio(call_control_id)
+        except Exception:
+            logger.exception(
+                'Cannot attach Telnyx AI audio for conversation %s',
+                conversation_id,
+            )
         call.write({
             'telnyx_ai_assistant': assistant.id,
             'telnyx_ai_conversation_id': conversation_id,
@@ -365,14 +381,31 @@ class Call(models.Model):
 
     @api.model
     def telnyx_apply_ai_insights(self, payload):
+        data = payload.get('data') or payload
+        event_payload = data.get('payload') or data
         conversation_id = (
-            payload.get('conversation_id')
-            or (payload.get('data') or {}).get('conversation_id')
+            event_payload.get('conversation_id')
+            or data.get('conversation_id')
+            or payload.get('conversation_id')
         )
+        call_control_id = event_payload.get('call_control_id')
+        if not conversation_id and call_control_id:
+            channel = self.env['connect.channel'].sudo().search(
+                [('sid', '=', call_control_id)], limit=1)
+            conversation_id = channel.call.telnyx_ai_conversation_id
         if not conversation_id:
+            logger.warning(
+                'Cannot match Telnyx AI insight event to a conversation '
+                '(call_control_id=%s).', call_control_id or '',
+            )
             return False
-        insight_items = payload.get('insights') or (
-            payload.get('data') or {}).get('insights') or []
+        insight_items = (
+            event_payload.get('results')
+            or event_payload.get('insights')
+            or data.get('insights')
+            or payload.get('insights')
+            or []
+        )
         summary = ''
         for item in insight_items:
             if item.get('result'):
