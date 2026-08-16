@@ -399,6 +399,10 @@ bundle `lib/telnyx-webrtc.js`, global `TelnyxWebRTC.TelnyxRTC`):
   404/`UNALLOCATED_NUMBER` case additionally calls
   `connect.settings.telnyx_check_call_failure()` and shows a sticky
   danger notification when the account balance is exhausted (ADR-040).
+  Odoo's error-handler registry consumes only the SDK's expected
+  `StaleRequestError` cancellation when a background tab resumes and the
+  signaling socket generation changes; other client and media errors keep
+  their normal handling (ADR-053).
 - Mail integration: `telnyx-sms-reply` / `telnyx-whatsapp-reply` /
   `telnyx-rcs-reply` chatter actions, the Notification icon patch for
   the `WhatsApp`/`RCS` types, and a WhatsApp *Message* button on the
