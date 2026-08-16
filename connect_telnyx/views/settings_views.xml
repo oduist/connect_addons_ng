@@ -38,6 +38,11 @@
                             <group>
                                 <group string="Calls">
                                     <field name="telnyx_fetch_call_prices"/>
+                                    <field name="telnyx_outbound_destinations"
+                                           placeholder="PL, DE, US — empty allows every destination"/>
+                                    <field name="telnyx_outbound_voice_profile_id"
+                                           string="Outbound Voice Profile" readonly="1"
+                                           groups="base.group_no_one"/>
                                 </group>
                                 <group string="Messaging">
                                     <field name="telnyx_messaging_profile_id" readonly="1"/>

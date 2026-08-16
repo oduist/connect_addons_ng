@@ -66,7 +66,11 @@ class User(models.Model):
     # explicitly per user.
     telnyx_client_enabled = fields.Boolean(
         'Telnyx Web Phone Enabled',
-        default=lambda self: self._telnyx_is_only_provider())
+        # A web phone needs a domain to register against, so it stays off
+        # until one exists; otherwise adding a PBX user right after the
+        # installation fails the domain constraint.
+        default=lambda self: bool(
+            self._telnyx_is_only_provider() and self._default_telnyx_domain()))
     telnyx_client_priority = fields.Selection(
         [('1', '1'), ('2', '2')], required=True, default='1',
         string='Telnyx web client priority',
@@ -133,7 +137,9 @@ class User(models.Model):
         usernames (both hardphone and web client)."""
         if not userinfo:
             return super().get_user_by_uri(userinfo)
-        re_call_uri = re.compile(r'^sip:([^@]+)@')
+        # Telnyx reports the calling party of a SIP call as a bare
+        # user@host URI, without the sip: scheme the web phone sends.
+        re_call_uri = re.compile(r'^(?:sip:)?([^@\s]+)@')
         found_username = re_call_uri.search(userinfo)
         if found_username:
             username = found_username.group(1)
@@ -187,6 +193,46 @@ class User(models.Model):
             self._create_telnyx_credential('sip', client=client)
         if self.telnyx_client_enabled and not self.telnyx_client_credential_sid:
             self._create_telnyx_credential('client', client=client)
+
+    def action_regenerate_telnyx_sip_credential(self):
+        """Issue a fresh SIP credential for a hardphone.
+
+        Telnyx generates the SIP username and password itself and accepts
+        neither on create nor on update, so a password cannot be changed
+        in place: the only way to rotate it is to drop the credential and
+        ask for a new one. The username changes as well, which is why the
+        hardphone has to be reconfigured afterwards.
+        """
+        self.ensure_one()
+        if not self.env.user.has_group('connect.group_admin'):
+            raise ValidationError(
+                'Only a Connect administrator can regenerate a SIP '
+                'credential.')
+        if not self.telnyx_sip_enabled:
+            raise ValidationError(
+                'Enable the Telnyx SIP phone for user {} first!'.format(
+                    self.name))
+        client = self.env['connect.settings'].get_telnyx_client()
+        old_sid = self.telnyx_sip_credential_sid
+        if old_sid:
+            try:
+                client.telephony_credentials.delete(old_sid)
+            except Exception as e:
+                if 'not found' not in str(e).lower() and '404' not in str(e):
+                    raise ValidationError(format_connect_response(e))
+                logger.warning(
+                    'Telnyx credential %s was not present in Telnyx.', old_sid)
+        self.with_context(skip_telnyx_sync=True).write({
+            'telnyx_sip_credential_sid': False,
+            'telnyx_sip_username': False,
+            'telnyx_sip_password': False,
+        })
+        self._create_telnyx_credential('sip', client=client)
+        self.env['connect.settings'].connect_notify(
+            'A new SIP username and password were issued for {}. '
+            'Configure the hardphone again.'.format(self.name),
+            title='Telnyx SIP Credential', sticky=True)
+        return True
 
     def delete_telnyx_credentials(self):
         self.ensure_one()
@@ -276,8 +322,9 @@ class User(models.Model):
             partner_id = False
         # Custom X- headers travel as SIP URI parameters and surface in
         # the TelnyxRTC notification on the web phone.
-        uri = 'sip:{}@sip.telnyx.com?X-CallerName={}&X-Partner={}'.format(
-            self.telnyx_client_username, caller_name or '', partner_id or '')
+        uri = self._telnyx_credential_uri(
+            self.telnyx_client_username,
+            [('X-CallerName', caller_name or ''), ('X-Partner', partner_id or '')])
         dial_client.sip(
             uri,
             statusCallbackEvent='initiated answered completed',
@@ -311,7 +358,7 @@ class User(models.Model):
             )
         dial_sip = Dial(**dial_sip_kwargs)
         dial_sip.sip(
-            'sip:{}@sip.telnyx.com'.format(self.telnyx_sip_username),
+            self._telnyx_credential_uri(self.telnyx_sip_username),
             statusCallbackEvent='initiated answered completed',
             statusCallback=status_url,
         )
@@ -452,10 +499,41 @@ class User(models.Model):
             logger.exception('Error getting Telnyx JWT:')
             return {'error': str(e)}
 
+    def _telnyx_credential_uri(self, username, headers=None):
+        """SIP URI used to ring one of this user's telephony credentials.
+
+        The host is always `sip.telnyx.com`: that is where Telnyx
+        delivers a call to the device registered with the credential.
+        The domain's own subdomain is the *inbound* side — anything
+        dialled at `<subdomain>.sip.telnyx.com` is handed to the routing
+        TeXML application, so ringing a credential there loops the call
+        straight back into Odoo instead of reaching the phone.
+
+        Empty X- header values are dropped: Telnyx rejects the leg with
+        "The 'custom_headers' parameter is invalid" when one is empty.
+        """
+        self.ensure_one()
+        query = '&'.join(
+            '{}={}'.format(name, value)
+            for name, value in (headers or []) if value)
+        return 'sip:{}@sip.telnyx.com{}'.format(
+            username, '?{}'.format(query) if query else '')
+
+    @api.model
+    def _telnyx_caller(self, request):
+        """The calling party of a webhook.
+
+        An inbound PSTN webhook reports it as `From`/`CallerId`; only
+        calls placed from our own SIP subdomain carry `Caller`. Without
+        the fallback the dialplan dials the user with no caller ID and
+        the web phone shows an empty number.
+        """
+        return (request.get('Caller') or request.get('From')
+                or request.get('CallerId') or '')
+
     def _get_telnyx_caller_id(self, request, params):
-        caller_user = self.env['connect.user'].get_user_by_telnyx_uri(
-            request.get('Caller')
-        )
+        caller = self._telnyx_caller(request)
+        caller_user = self.env['connect.user'].get_user_by_telnyx_uri(caller)
         if caller_user:
             callerId = caller_user.telnyx_exten.number or ''
             if not callerId:
@@ -463,12 +541,12 @@ class User(models.Model):
                     'Exten not set for user %s', caller_user.name
                 )
         else:
-            callerId = request.get('Caller')
+            callerId = caller
         return callerId
 
     def _get_telnyx_caller_name(self, request, params):
         caller_user = self.env['connect.user'].get_user_by_telnyx_uri(
-            request.get('Caller')
+            self._telnyx_caller(request)
         )
         caller_name = params.get('CallerName', False)
         if caller_user:
@@ -550,7 +628,9 @@ class User(models.Model):
 
     @api.model
     def telnyx_on_call_action(self, record_id, request):
-        user = self.browse(record_id)
+        # Called by the public Dial action webhook, whose user has no
+        # read access on connect.user.
+        user = self.sudo().browse(record_id)
         call_status = request.get('CallStatus')
         if not call_status:
             call_status = request.get('DialCallStatus')

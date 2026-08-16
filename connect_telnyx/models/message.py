@@ -7,6 +7,8 @@ from markupsafe import Markup
 from odoo import models, api, SUPERUSER_ID
 from odoo.exceptions import ValidationError
 
+from .settings import format_connect_response
+
 logger = logging.getLogger(__name__)
 
 FAILED_STATUSES = ['sending_failed', 'delivery_failed']
@@ -311,15 +313,15 @@ class ConnectMessage(models.Model):
         else:
             number = sender_user.connect_user.telnyx_outgoing_callerid
             if not number:
+                # Same fallback as click-to-call: the account default.
+                number = self.env['connect.telnyx.outgoing_callerid'].search(
+                    [('is_default', '=', True)], limit=1)
+            if not number:
                 raise ValidationError(
                     'You dont have an outgoing callerid number!'
                 )
             sender = number.number
         message = self.telnyx_client_send(recipient, sender, body)
-        if not message:
-            raise ValidationError(
-                'Unexpected error! Contact admin or maintainer!'
-            )
         partner = self.env['res.partner'].get_partner_by_number(recipient)
         errors = getattr(message, 'errors', None) or []
         error = errors[0] if errors else None
@@ -387,10 +389,18 @@ class ConnectMessage(models.Model):
             )
             message = response.data
             logger.info('Message to %s is sent.', recipient)
-            return message
         except Exception as e:
-            logger.exception(e)
-            return False
+            # Surface the provider error: "invalid from address",
+            # "number not in the messaging profile" and friends are
+            # actionable, "unexpected error" is not.
+            logger.exception('Cannot send a Telnyx message:')
+            raise ValidationError(
+                'Unable to send the message: {}'.format(
+                    format_connect_response(e)))
+        if not message or not message.id:
+            raise ValidationError(
+                'The Telnyx API did not return a message ID.')
+        return message
 
     def action_retry(self):
         for rec in self:

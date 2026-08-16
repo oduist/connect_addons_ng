@@ -3,6 +3,7 @@ import logging
 import re
 from urllib.parse import urljoin
 
+import phonenumbers
 import requests
 
 from odoo import fields, models, api, release
@@ -62,6 +63,14 @@ class Settings(models.Model):
     # endpoint for it (ADR-032).
     telnyx_account_sid = fields.Char(string="Telnyx Account SID")
     telnyx_messaging_profile_id = fields.Char(readonly=True)
+    telnyx_outbound_voice_profile_id = fields.Char(readonly=True)
+    telnyx_outbound_destinations = fields.Char(
+        string='Outbound Destinations',
+        help="Comma separated ISO country codes Telnyx is allowed to place "
+             "calls to, for example PL, DE, US. Saved straight onto the "
+             "outbound voice profile: a country missing here has its calls "
+             "rejected by Telnyx before Odoo sees them. Leave empty to "
+             "allow every destination.")
     telnyx_ai_summary_insight_id = fields.Char(readonly=True)
     telnyx_ai_summary_group_id = fields.Char(readonly=True)
     telnyx_balance = fields.Char(readonly=True)
@@ -145,7 +154,14 @@ class Settings(models.Model):
         if api_url_check:
             raise ValidationError(api_url_check)
         try:
+            try:
+                self._ensure_telnyx_account_sid()
+            except Exception as e:
+                # Click-to-call needs it, the rest of the sync does not.
+                logger.warning('Cannot resolve the Telnyx account SID: %s', e)
+            self._ensure_telnyx_outbound_voice_profile()
             self._ensure_telnyx_messaging_profile()
+            # Checked after the numbers are known, at the end of the sync.
             self.env["connect.telnyx.texml"].sync()
             self.env["connect.telnyx.ai_assistant"].sync()
             self.env["connect.telnyx.domain"].sync()
@@ -164,7 +180,8 @@ class Settings(models.Model):
                     logger.warning('%s sync failed: %s', title, e)
                     self.connect_notify(
                         "{} sync failed: {}".format(title, e),
-                        title="Sync Warning", warning=True)
+                        title="Sync Warning", warning=True, sticky=True)
+            self._check_telnyx_outbound_destinations()
             self.connect_notify(
                 "Telnyx account synced successfully", title="Sync Complete")
         except ValidationError:
@@ -194,6 +211,159 @@ class Settings(models.Model):
                     '(https://portal.telnyx.com), then run Sync again.'
                 )
             raise
+
+    def _ensure_telnyx_account_sid(self):
+        """Store the TeXML account SID, which the API reports as the
+        organization id. It is required by every TeXML call and there is
+        no reason to make the administrator copy it by hand."""
+        account_sid = self.sudo().get_param('telnyx_account_sid')
+        if account_sid:
+            return account_sid
+        data = (self.telnyx_api_request('GET', 'whoami') or {}).get('data') or {}
+        account_sid = data.get('organization_id') or data.get('user_id')
+        if account_sid:
+            self.sudo().set_param('telnyx_account_sid', account_sid)
+            debug(self, 'Telnyx account SID set to {}.'.format(account_sid))
+        return account_sid
+
+    def _ensure_telnyx_outbound_voice_profile(self):
+        """Return the outbound voice profile every connection must carry.
+
+        Telnyx refuses an outbound call from a connection that has no
+        outbound voice profile — the INVITE is rejected before any
+        webhook is sent, so a SIP hardphone registers fine and then
+        cannot dial out at all.
+        """
+        profile_id = self.sudo().get_param('telnyx_outbound_voice_profile_id')
+        if profile_id:
+            return profile_id
+        try:
+            response = self.telnyx_api_request(
+                'GET', 'outbound_voice_profiles', params={'page[size]': 20})
+            for profile in response.get('data') or []:
+                if profile.get('enabled', True):
+                    profile_id = profile.get('id')
+                    break
+            if not profile_id:
+                payload = {'name': 'Odoo Connect',
+                           'traffic_type': 'conversational',
+                           'service_plan': 'global'}
+                regions = self._telnyx_local_regions()
+                if regions:
+                    payload['whitelisted_destinations'] = regions
+                created = self.telnyx_api_request(
+                    'POST', 'outbound_voice_profiles', payload=payload)
+                profile_id = (created.get('data') or {}).get('id')
+        except Exception as e:
+            # Attaching the profile is what enables outbound calls, but a
+            # resource is still worth creating without it.
+            logger.warning(
+                'Cannot resolve the Telnyx outbound voice profile: %s', e)
+            return False
+        if profile_id:
+            self.sudo().set_param(
+                'telnyx_outbound_voice_profile_id', profile_id)
+            debug(self, 'Telnyx outbound voice profile: {}'.format(profile_id))
+            self._read_telnyx_outbound_destinations(profile_id)
+        return profile_id
+
+    def _read_telnyx_outbound_destinations(self, profile_id=None):
+        """Mirror the profile whitelist into the settings field."""
+        profile_id = profile_id or self.sudo().get_param(
+            'telnyx_outbound_voice_profile_id')
+        if not profile_id:
+            return False
+        try:
+            profile = (self.telnyx_api_request(
+                'GET', 'outbound_voice_profiles/{}'.format(profile_id)
+            ).get('data') or {})
+        except Exception as e:
+            logger.warning('Cannot read the outbound voice profile: %s', e)
+            return False
+        destinations = ', '.join(profile.get('whitelisted_destinations') or [])
+        self.sudo().set_param('telnyx_outbound_destinations', destinations)
+        return destinations
+
+    def _push_telnyx_outbound_destinations(self, destinations):
+        """Save the destinations an administrator typed onto the profile."""
+        profile_id = self.sudo().get_param('telnyx_outbound_voice_profile_id')
+        if not profile_id:
+            profile_id = self._ensure_telnyx_outbound_voice_profile()
+        if not profile_id:
+            raise ValidationError(
+                'Synchronize the Telnyx account first: no outbound voice '
+                'profile is known yet.')
+        regions = [
+            code.strip().upper()
+            for code in (destinations or '').replace(';', ',').split(',')
+            if code.strip()
+        ]
+        self.telnyx_api_request(
+            'PATCH', 'outbound_voice_profiles/{}'.format(profile_id),
+            payload={'whitelisted_destinations': regions})
+        debug(self, 'Telnyx outbound destinations set to {}'.format(
+            regions or 'all'))
+        return regions
+
+    @api.model
+    def _telnyx_local_regions(self):
+        """Country codes Odoo is expected to place calls to.
+
+        Derived from the numbers the account owns and the company
+        country, so a fresh outbound voice profile is not created with
+        Telnyx's US/CA default on, say, a Polish account.
+        """
+        regions = set()
+        callerids = self.env['connect.telnyx.outgoing_callerid'].sudo().search([])
+        numbers = self.env['connect.telnyx.number'].sudo().search([])
+        for number in callerids.mapped('number') + numbers.mapped('phone_number'):
+            if not number:
+                continue
+            try:
+                parsed = phonenumbers.parse(number, None)
+                region = phonenumbers.region_code_for_number(parsed)
+            except Exception:
+                region = None
+            if region:
+                regions.add(region)
+        country = self.env.company.country_id.code
+        if country:
+            regions.add(country)
+        return sorted(regions)
+
+    def _check_telnyx_outbound_destinations(self):
+        """Warn when the profile forbids the destinations we dial.
+
+        Telnyx rejects an outbound call to a country missing from the
+        profile's whitelist before any webhook is sent, which otherwise
+        looks like a phone that simply cannot dial.
+        """
+        profile_id = self.sudo().get_param('telnyx_outbound_voice_profile_id')
+        if not profile_id:
+            return True
+        try:
+            profile = (self.telnyx_api_request(
+                'GET', 'outbound_voice_profiles/{}'.format(profile_id)
+            ).get('data') or {})
+        except Exception as e:
+            logger.warning('Cannot read the outbound voice profile: %s', e)
+            return True
+        allowed = profile.get('whitelisted_destinations')
+        if not allowed:
+            return True
+        missing = [r for r in self._telnyx_local_regions() if r not in allowed]
+        if not missing:
+            return True
+        message = (
+            "The Telnyx outbound voice profile '{}' allows calls to {} only, "
+            "so calls to {} are rejected by Telnyx. Add the missing "
+            "destinations to the profile in Mission Control.".format(
+                profile.get('name') or profile_id,
+                ', '.join(allowed), ', '.join(missing)))
+        logger.warning(message)
+        self.connect_notify(
+            message, title='Outbound Calls Blocked', warning=True, sticky=True)
+        return False
 
     def _ensure_telnyx_messaging_profile(self):
         """Get or create the messaging profile used for Odoo messaging."""
@@ -249,7 +419,7 @@ class Settings(models.Model):
             return super().originate_call(
                 number, res_model=res_model, res_id=res_id, user=user, **kwargs)
         self.env["oduist.license"].check_license("connect", silent=False)
-        account_sid = self.sudo().get_param("telnyx_account_sid")
+        account_sid = self._ensure_telnyx_account_sid()
         if not account_sid:
             raise ValidationError(
                 "Set the Telnyx Account SID in Telnyx settings first!")
@@ -279,19 +449,22 @@ class Settings(models.Model):
             ('callflow_type', 'in', ['client', 'sip'])
         ], order='prio', limit=1)
         if first_flow.callflow_type == 'sip':
-            to = 'sip:{}@sip.telnyx.com'.format(connect_user.telnyx_sip_username)
+            to = connect_user._telnyx_credential_uri(
+                connect_user.telnyx_sip_username)
         else:
             # X- URI parameters surface as custom headers in the TelnyxRTC
             # notification, mirroring Twilio's client: URL parameters.
-            to = (
-                'sip:{}@sip.telnyx.com?X-autoAnswer=yes&X-Partner={}'
-                '&X-CallerName={}&X-From={}'.format(
-                    connect_user.telnyx_client_username,
-                    partner_id or '',
-                    caller_name or '',
-                    (number or '').replace('+', ''),
-                )
-            )
+            # Telnyx rejects a header with an empty value ("The
+            # 'custom_headers' parameter is invalid"), so only the
+            # parameters that carry a value are sent.
+            to = connect_user._telnyx_credential_uri(
+                connect_user.telnyx_client_username,
+                [
+                    ('X-autoAnswer', 'yes'),
+                    ('X-Partner', partner_id or ''),
+                    ('X-CallerName', caller_name or ''),
+                    ('X-From', (number or '').replace('+', '')),
+                ])
         exten = self.env["connect.telnyx.exten"].search(
             [("number", "=", number)], limit=1
         )
@@ -315,7 +488,13 @@ class Settings(models.Model):
         record_status_url = urljoin(api_url, "telnyx/webhook/recordingstatus")
         texml_url = urljoin(api_url, "telnyx/webhook/callaction")
         debug(self, 'Originate destination TeXML: {}'.format(texml))
+        # Telnyx rejects a TeXML originate without ApplicationSid, even
+        # when the dialplan is supplied inline.
+        application = self.env['connect.telnyx.number'].get_number_app()
+        if not application.sid:
+            application.update_telnyx_app(client)
         call_kwargs = {
+            'application_sid': application.sid,
             'url': texml_url,
             'url_method': 'POST',
             'texml': str(texml),
@@ -417,6 +596,10 @@ class Settings(models.Model):
         if self.env.context.get("skip_protected_fields"):
             return super(Settings, self).write(vals)
         res = super(Settings, self).write(vals)
+        if 'telnyx_outbound_destinations' in vals:
+            # Owned by the outbound voice profile in Telnyx, not by Odoo.
+            self._push_telnyx_outbound_destinations(
+                vals['telnyx_outbound_destinations'])
         changed_fields = {}
         for field_name in TELNYX_PROTECTED_FIELDS:
             if vals.get(field_name):

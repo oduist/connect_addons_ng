@@ -5,7 +5,8 @@
 - A Telnyx account ([telnyx.com](https://telnyx.com))
 - An API key (Mission Control Portal > Account > Keys & Credentials)
 - The account **Public Key** (same page) — used to verify webhook signatures
-- The **TeXML Account SID** (your Telnyx account ID, shown in the TeXML section of the portal)
+- The **TeXML Account SID** — filled in automatically by the account sync; you
+  only need it by hand if the sync cannot reach the API
 - At least one Telnyx phone number
 - An **Outbound Voice Profile** (Voice > Outbound Voice Profiles) if you plan to place PSTN calls
 
@@ -41,7 +42,20 @@ assistant form if it may have been exposed.
 |-------|-------------|
 | **API Key** | Your Telnyx v2 API key. Masked for non-managers. |
 | **Public Key** | The Ed25519 public key from Mission Control. Not secret; required to verify webhook signatures. |
-| **Account SID** | The TeXML Account SID (your Telnyx account ID). Required for click-to-call. |
+| **Account SID** | The TeXML Account SID (your Telnyx account ID). Required for click-to-call and filled in by the account sync. |
+
+### Outbound destinations
+
+Telnyx only places calls to the countries whitelisted on the account's
+**outbound voice profile**, and a new profile ships allowing `US, CA` only.
+A call to any other country is rejected by Telnyx *before* it reaches Odoo,
+so a perfectly registered phone simply fails to dial.
+
+The **Outbound Destinations** field on the settings form holds that list as
+comma-separated ISO country codes (`PL, DE, US`); saving it writes straight
+onto the profile. An empty value allows every destination. The account sync
+reads the current list back and warns when a country of one of your own
+numbers is missing from it.
 
 ### Options
 
@@ -57,11 +71,19 @@ Click **SYNC TELNYX ACCOUNT** to import and wire up Telnyx resources:
 
 - TeXML applications (created for each Odoo TeXML app)
 - SIP domains (credential connections + the routing TeXML app subdomain)
-- Phone numbers (attached to the routing app and the messaging profile)
+- Phone numbers (attached to the **Number Calls** application and, when the
+  number supports SMS, to the messaging profile)
 - Outgoing caller IDs (numbers owned in the account)
+
+A number without SMS capability cannot join the messaging profile; the sync
+logs that and continues, since the number still works for voice.
 
 The sync also creates the **Odoo Connect** messaging profile with the
 webhook URL pointing at your Odoo instance.
+
+If an optional WhatsApp/RCS resource or an imported AI Assistant cannot be
+synchronized, Odoo shows a persistent warning. The warning remains visible
+until it is dismissed so the API error can be reviewed and corrected.
 
 ## Voice Routing
 
@@ -71,13 +93,38 @@ translator):
 1. Create a **SIP Domain** (Connect > Telnyx > SIP Domains). This creates
    a Telnyx *credential connection* (hosting per-user SIP credentials)
    and reserves a SIP subdomain (`<subdomain>.sip.telnyx.com`) on the
-   routing TeXML application, so web-phone calls are routed by Odoo.
+   routing TeXML application, so web-phone calls are routed by Odoo. The
+   connection is created with **SIP URI calling** set to *internal*:
+   Odoo rings a phone at `sip:<credential>@sip.telnyx.com`, and Telnyx
+   answers such a call with `403 Forbidden` while that setting is off.
+   The subdomain is the inbound side only — ringing a credential there
+   would hand the call back to the routing application instead of the
+   phone.
 2. Assign inbound numbers (Connect > Telnyx > Numbers) to a user, a call
-   flow or a TeXML app.
+   flow, a TeXML app or an AI assistant. Inbound calls to a number are
+   dispatched by the dialled number; a number with no destination answers
+   with a spoken notice instead of dialling anything.
 3. Enable the **Telnyx Phone** (SIP and/or Web) on users (Connect > Users
    > Telnyx Phone tab). Telnyx generates the SIP username and password —
    use them to provision a hardphone; the web phone authenticates with a
    short-lived token automatically.
+
+### SIP username and password
+
+Both are issued by Telnyx when the credential is created, and the API
+accepts neither on create nor on update — **a password cannot be typed in
+or changed in place**, which is why both fields are read-only in Odoo.
+
+- **Reading them:** Connect > Users > *the user* > Telnyx Phone tab. Both
+  fields are shown in the clear with a copy button, so they can be pasted
+  straight into a hardphone. They are visible to the Connect User and
+  Connect Admin groups.
+- **Rotating them:** press **Regenerate SIP credential** (Connect Admin
+  only). Odoo deletes the credential in Telnyx and asks for a new one, so
+  the **username changes as well** and the hardphone must be configured
+  again with both new values.
+- The web phone is unaffected: it authenticates with a short-lived token
+  fetched per session, not with these credentials.
 
 ### Webhooks
 

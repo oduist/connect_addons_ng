@@ -41,7 +41,7 @@ class TeXMLApp(models.Model):
 
     def _texml_app_params(self):
         self.ensure_one()
-        return {
+        params = {
             'friendly_name': self.name,
             'voice_url': self.voice_url,
             'voice_fallback_url': self.voice_fallback_url or '',
@@ -49,6 +49,13 @@ class TeXMLApp(models.Model):
             'status_callback': self.voice_status_url,
             'status_callback_method': 'post',
         }
+        # Without an outbound voice profile Telnyx rejects every call this
+        # application places towards the PSTN.
+        profile_id = self.env[
+            'connect.settings']._ensure_telnyx_outbound_voice_profile()
+        if profile_id:
+            params['outbound'] = {'outbound_voice_profile_id': profile_id}
+        return params
 
     def _find_telnyx_app_by_name(self, client):
         """Return the remote TeXML app matching this record's friendly_name."""

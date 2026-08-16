@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Telnyx
 - **Technical:** `connect_telnyx`
-- **Version:** 19.0.1.3.0
+- **Version:** 19.0.1.4.0
 - **Depends:** `connect`
 - **Python deps:** `telnyx`, `nacl` (PyNaCl)
 - **Application:** False
@@ -79,6 +79,8 @@ idempotent `connect.recording` row with `source = telnyx-ai`.
 | `telnyx_public_key` | Char | Ed25519 public key for webhook verification |
 | `telnyx_account_sid` | Char | TeXML Account SID — required for click-to-call |
 | `telnyx_messaging_profile_id` | Char | Readonly, set by sync |
+| `telnyx_outbound_voice_profile_id` | Char | Readonly; the profile every connection and TeXML app must carry to dial out |
+| `telnyx_outbound_destinations` | Char | Comma-separated ISO country codes; written straight onto the profile whitelist (empty = all) |
 | `telnyx_balance` | Char | Readonly |
 | `telnyx_auto_sync` | Boolean | Default: True |
 | `telnyx_verify_requests` | Boolean | Default: True |
@@ -86,9 +88,14 @@ idempotent `connect.recording` row with `source = telnyx-ai`.
 
 Methods: `get_telnyx_client()` (SDK client), `telnyx_sync()` (apps →
 domains → numbers → caller IDs + messaging profile),
+with persistent warning notifications for non-fatal optional-resource and
+AI-assistant synchronization failures,
+`_ensure_telnyx_account_sid()` (stores the account SID reported by
+`GET /v2/whoami` as `organization_id`; a failure only warns),
 `_ensure_telnyx_messaging_profile()`, `originate_call()` (core
 dispatcher override for the `'telnyx'` key; originates via
-`POST /texml/Accounts/{sid}/Calls`), `get_telnyx_balance()`,
+`POST /texml/Accounts/{sid}/Calls` with the mandatory `ApplicationSid`
+of the number application), `get_telnyx_balance()`,
 `telnyx_check_call_failure(cause, sip_code)` (ADR-040: web-phone RPC
 for unanswered outbound failures; verifies `GET /v2/balance` with
 `sudo` and returns `{balance_blocked, message}` — Connect groups only,
@@ -142,15 +149,19 @@ password is visible to the user for hardphone provisioning).
 | `telnyx_exten` / `telnyx_exten_number` | M2O / related | registered in `_pbx_number_fields()` |
 | `telnyx_outgoing_callerid` | M2O | |
 | `telnyx_domain` | M2O | guarded default (install-order safe) |
-| `telnyx_sip_enabled` / `telnyx_client_enabled` | Boolean | client default = `_telnyx_is_only_provider()` |
+| `telnyx_sip_enabled` / `telnyx_client_enabled` | Boolean | client default = `_telnyx_is_only_provider()` **and** a domain exists (a web phone needs one to register against) |
 | `telnyx_sip_priority` / `telnyx_client_priority` | Selection | `1`/`2` |
 | `telnyx_sip_ring_timeout` / `telnyx_client_ring_timeout` | Integer | |
-| `telnyx_sip_credential_sid` / `telnyx_sip_username` / `telnyx_sip_password` | Char | hardphone credential |
+| `telnyx_sip_credential_sid` / `telnyx_sip_username` / `telnyx_sip_password` | Char | hardphone credential, readonly (issued by Telnyx); username and password are shown in the clear with a copy button to the Connect groups |
 | `telnyx_client_credential_sid` / `telnyx_client_username` | Char | web phone credential |
 | `telnyx_uri` | Char | computed `<username>@sip.telnyx.com` |
 
 Methods: `_create_telnyx_credential()` / `_ensure_telnyx_credentials()`
-/ `delete_telnyx_credentials()`; `telnyx_render()` +
+/ `delete_telnyx_credentials()` /
+`action_regenerate_telnyx_sip_credential()` (Telnyx issues the SIP
+username and password and accepts neither on create nor on update, so a
+rotation deletes the credential and creates a new one — the username
+changes too; `connect.group_admin` only); `telnyx_render()` +
 `telnyx_render_sip/client/voicemail` (user_callflow chain, TeXML
 `<Dial><Sip>`; user greeting/voicemail `<Say>` carries
 `connect.user.language`/`voice`, fallbacks `en-US` / `Polly.Joanna` —
@@ -162,12 +173,22 @@ constraints (`_manage_telnyx_*`).
 ### number.py - `connect.telnyx.number`
 
 Same shape as the Twilio number minus per-number webhook URLs: Telnyx
-numbers are attached to the domain's routing TeXML app
-(`phone_numbers.update(connection_id=…)`) and to the messaging profile;
-inbound calls arrive on the shared `/telnyx/webhook/number` route and
-are dispatched by `Called`/`To` (`route_call()` → `render()`).
-`destination` Selection: `user` / `callflow` / `texml`. Numbers have no
-default flag; outbound defaults live on `connect.telnyx.outgoing_callerid`.
+numbers are attached to the **number-routing TeXML app** (`Number Calls`,
+`get_number_app()`, `phone_numbers.update(connection_id=…)`) and, when the
+number supports SMS, to the messaging profile. A messaging failure is
+logged and does not abort the sync — numbers without SMS capability are
+still valid voice numbers.
+
+Inbound calls therefore arrive on that app's webhook
+(`/telnyx/webhook/texml/<app id>` → `route_call()`) and are dispatched by
+`Called`/`To`: `render_inbound()` honours `destination`, falls back to an
+extension carrying the same number, and never re-originates a call to the
+dialled number. `connect.telnyx.domain.route_call()` delegates to
+`render_inbound()` for numbers that are still attached to the domain
+application, and refuses to dial out unless the caller is on our SIP
+subdomain. `destination` Selection: `user` / `callflow` / `texml` /
+`ai_assistant`. Numbers have no default flag; outbound defaults live on
+`connect.telnyx.outgoing_callerid`.
 
 ### outgoing_callerid.py - `connect.telnyx.outgoing_callerid`
 
@@ -239,15 +260,25 @@ The Twilio SIP-domain analog (ADR-032 §3). One record manages:
 
 - a **credential connection** (`sid`; generated connection-level
   user/password, stored username only) hosting per-user telephony
-  credentials;
+  credentials. Created and kept with `sip_uri_calling_preference =
+  'internal'` (Telnyx returns `403` to `sip:<credential>@sip.telnyx.com`
+  otherwise) and with the account's outbound voice profile (no outbound
+  call is allowed without one);
 - the **routing TeXML app** (`application`, default `get_domain_app()`)
   whose `inbound.sip_subdomain` = `subdomain`
   (`sip_subdomain_receive_settings='only_my_connections'`).
 
-`route_call()` routes web-phone calls: exten match → render; `+E164` →
-`originate_external_call()` (TeXML `<Dial><Number>` with the user's
-caller ID). `sync()` follows the Twilio rules (never import
-Telnyx-only, create Odoo-only, update common).
+The subdomain is the **inbound** side only: everything dialled at it is
+handed to the routing application, so credentials are rung at
+`sip.telnyx.com` (`connect.user._telnyx_credential_uri()`) and
+`route_call()` refuses a credential leg to break the loop.
+
+`route_call()` routes web-phone calls: exten match → render; a dialled
+`+E164` from a known PBX user → `originate_external_call()` (TeXML
+`<Dial><Number>` with the user's caller ID), and an unknown caller is
+refused. A PSTN leg for one of our numbers is delegated to
+`connect.telnyx.number.render_inbound()`. `sync()` follows the Twilio
+rules (never import Telnyx-only, create Odoo-only, update common).
 
 ---
 
@@ -313,7 +344,9 @@ user grant.
 ## Data
 
 - `data/texml.xml` — `SIP Domain Calls` routing app (model_method →
-  `connect.telnyx.domain.route_call`), `Reject`, `Connection Failed`.
+  `connect.telnyx.domain.route_call`), `Number Calls` app (model_method →
+  `connect.telnyx.number.route_call`, the application every number is
+  attached to), `Reject`, `Connection Failed`.
 - `data/ir_cron.xml` — `telnyx_fetch_call_prices_batch()` every 5 min.
 
 ---
