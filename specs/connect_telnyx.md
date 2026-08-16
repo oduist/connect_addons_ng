@@ -307,7 +307,11 @@ rules (never import Telnyx-only, create Odoo-only, update common).
 All routes under `/telnyx/webhook/`, `auth='public'`, POST. Signature
 validation: Ed25519 over the raw body
 (`telnyx.lib.webhook_verification`), toggled by
-`telnyx_verify_requests`, key = `telnyx_public_key`.
+`telnyx_verify_requests`, key = `telnyx_public_key`. The exact request bytes
+are cached in `ir.http._pre_dispatch` before Odoo parses TeXML form data;
+reconstructed or canonicalized form bodies are never accepted. Invalid Dial
+action callbacks fail closed with a silent `<Hangup/>` response so no security
+error is played into a remaining live leg (ADR-056).
 
 | Route | Description |
 |-------|-------------|

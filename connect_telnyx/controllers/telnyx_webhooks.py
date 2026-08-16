@@ -2,7 +2,6 @@
 import json
 import logging
 import hmac
-from urllib.parse import quote, urlencode
 
 from odoo.http import request, Controller, route
 from telnyx.lib.webhook_verification import (
@@ -23,27 +22,9 @@ class ConnectTelnyxController(Controller):
             'connect.settings'].sudo().telnyx_apply_system_voice(content)
 
     @staticmethod
-    def signed_bodies():
-        """The candidate bodies Telnyx may have signed.
-
-        TeXML webhooks are form-encoded and Odoo parses the form before
-        the controller runs, which leaves `get_data()` empty. The body is
-        then rebuilt from the parsed form, keeping the order the fields
-        arrived in; both percent-encodings of a space are tried because
-        the rebuilt string has to match Telnyx byte for byte.
-        """
-        httprequest = request.httprequest
-        body = httprequest.get_data(cache=True)
-        if body:
-            return [body]
-        form = getattr(httprequest, 'form', None)
-        if not form:
-            return [b'']
-        pairs = list(form.items(multi=True))
-        return [
-            urlencode(pairs).encode(),
-            urlencode(pairs, quote_via=quote).encode(),
-        ]
+    def signed_body():
+        """Return the original bytes captured before Odoo parses the form."""
+        return request.httprequest.environ.get('connect_telnyx.raw_body')
 
     @classmethod
     def check_signature(cls):
@@ -56,21 +37,23 @@ class ConnectTelnyxController(Controller):
         if not public_key:
             logger.error('Telnyx public key is not configured!')
             return False
-        bodies = cls.signed_bodies()
+        body = cls.signed_body()
+        if body is None:
+            logger.error(
+                'Raw body was not captured for Telnyx request to %s',
+                request.httprequest.path)
+            return False
         headers = dict(request.httprequest.headers)
-        error = None
-        for body in bodies:
-            try:
-                verify_webhook_signature(body, headers, public_key)
-                return True
-            except WebhookVerificationError as e:
-                error = e
-        logger.error(
-            'Telnyx request to %s is not valid: %s '
-            '(content type %s, %s body bytes)',
-            request.httprequest.path, error,
-            request.httprequest.content_type, len(bodies[0]))
-        return False
+        try:
+            verify_webhook_signature(body, headers, public_key)
+            return True
+        except WebhookVerificationError as error:
+            logger.error(
+                'Telnyx request to %s is not valid: %s '
+                '(content type %s, %s body bytes)',
+                request.httprequest.path, error,
+                request.httprequest.content_type, len(body))
+            return False
 
     @route('/telnyx/webhook/domain', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def domain_webhook(self, **kw):
@@ -117,8 +100,7 @@ class ConnectTelnyxController(Controller):
     @route('/telnyx/webhook/<string:model_name>/call_action/<int:record_id>', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def call_action_edit_webhook(self, model_name, record_id, **kw):
         if not self.check_signature():
-            return self._texml_response(
-                '<Response><Say>Invalid Telnyx request!</Say></Response>')
+            return '<Response><Hangup/></Response>'
         model = request.env[model_name].with_user(request.env.ref("connect.user_connect_webhook"))
         # connect.user is a shared ledger model, so its Telnyx call-action
         # method carries the telnyx_ prefix (connect_twilio owns the
@@ -140,8 +122,7 @@ class ConnectTelnyxController(Controller):
     @route('/telnyx/webhook/callaction', methods=['POST'], type='http', auth='public', csrf=False, readonly=False)
     def call_action_webhook(self, **kw):
         if not self.check_signature():
-            return self._texml_response(
-                '<Response><Say>Invalid Telnyx request!</Say></Response>')
+            return '<Response><Hangup/></Response>'
         call = request.env['connect.call'].with_user(request.env.ref("connect.user_connect_webhook"))
         res = call.telnyx_on_call_action(kw)
         return self._texml_response(res)

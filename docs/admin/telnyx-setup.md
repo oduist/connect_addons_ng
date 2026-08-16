@@ -149,7 +149,10 @@ the sync.
 
 Webhook authenticity is verified with the account's Ed25519 **Public
 Key** (`telnyx-signature-ed25519` / `telnyx-timestamp` headers). Keep
-**Verify Telnyx Requests** enabled in production.
+**Verify Telnyx Requests** enabled in production. Telnyx signs the POST body
+byte for byte, so a reverse proxy must forward the form body without decoding
+and re-encoding it. If a Dial action signature is invalid, Odoo rejects it and
+silently hangs up the remaining leg instead of playing an error message.
 
 Recording callbacks may contain short-lived signed download URLs. Odoo keeps
 the URL on the recording record for playback, but redacts it from Telnyx debug
