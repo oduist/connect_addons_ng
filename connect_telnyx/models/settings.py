@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 
 import phonenumbers
 import requests
+from babel.core import Locale, UnknownLocaleError
 
 from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError
@@ -30,11 +31,37 @@ TELNYX_PROTECTED_FIELDS = [
 TELNYX_API_BASE = "https://api.telnyx.com/v2/"
 TELNYX_SYSTEM_VOICE_DEFAULT = "Polly.Joanna"
 TELNYX_BASIC_VOICES = [
-    ("man", "Man (basic en-US)"),
-    ("woman", "Woman (basic en-US)"),
-    ("alice", "Alice (premium)"),
-    (TELNYX_SYSTEM_VOICE_DEFAULT, "Joanna (Amazon Polly)"),
+    {
+        "id": "man", "name": "Man", "provider": "basic",
+        "language": "en-US", "gender": "Male",
+    },
+    {
+        "id": "woman", "name": "Woman", "provider": "basic",
+        "language": "en-US", "gender": "Female",
+    },
+    {
+        "id": "alice", "name": "Alice", "provider": "basic",
+        "language": "en-US", "gender": "Female",
+    },
+    {
+        "id": TELNYX_SYSTEM_VOICE_DEFAULT, "name": "Joanna",
+        "provider": "aws", "language": "en-US", "gender": "Female",
+    },
 ]
+TELNYX_PROVIDER_LABELS = {
+    "aws": "Amazon Web Services",
+    "azure": "Microsoft Azure",
+    "basic": "Telnyx Basic",
+    "elevenlabs": "ElevenLabs",
+    "fishaudio": "Fish Audio",
+    "humain": "Humain",
+    "inworld": "Inworld",
+    "minimax": "MiniMax",
+    "resemble": "Resemble AI",
+    "rime": "Rime",
+    "telnyx": "Telnyx",
+    "xai": "xAI",
+}
 
 
 def format_connect_response(text):
@@ -91,8 +118,21 @@ class Settings(models.Model):
         string="Fetch Call Prices",
         help="Enable fetching call costs from Telnyx detail records after call completion."
     )
-    telnyx_system_voice = fields.Selection(
-        selection="_get_telnyx_voice_selection",
+    telnyx_system_voice_language = fields.Selection(
+        selection="_get_telnyx_voice_language_selection",
+        default="en-US",
+        required=True,
+        string="System Voice Language",
+        help="Language used to filter the Telnyx system voice catalog.",
+    )
+    telnyx_system_voice_provider = fields.Selection(
+        selection="_get_telnyx_voice_provider_selection",
+        default="aws",
+        required=True,
+        string="System Voice Provider",
+        help="Provider used to filter the Telnyx system voice catalog.",
+    )
+    telnyx_system_voice = fields.Char(
         default=TELNYX_SYSTEM_VOICE_DEFAULT,
         required=True,
         string="System Voice",
@@ -102,9 +142,8 @@ class Settings(models.Model):
     telnyx_tts_voices = fields.Text(readonly=True)
 
     @api.model
-    def _get_telnyx_voice_selection(self):
-        """Return the cached account voice catalog without a live API call."""
-        options = dict(TELNYX_BASIC_VOICES)
+    def _get_cached_telnyx_voices(self):
+        """Return a normalized, de-duplicated catalog without a live call."""
         settings = self.sudo().search([], limit=1)
         try:
             voices = json.loads(settings.telnyx_tts_voices or "[]")
@@ -112,26 +151,128 @@ class Settings(models.Model):
             voices = []
         if not isinstance(voices, list):
             voices = []
-        for voice in voices:
+        catalog = {}
+        for voice in TELNYX_BASIC_VOICES + voices:
+            if not isinstance(voice, dict):
+                continue
             voice_id = voice.get("id") or voice.get("voice_id")
             if not voice_id:
                 continue
-            details = [
-                voice.get("provider"),
-                voice.get("language"),
-                voice.get("gender"),
-            ]
-            details = [value for value in details if value]
-            name = voice.get("name") or voice_id
-            label = (
-                "{} ({})".format(name, ", ".join(details))
-                if details else name
-            )
-            options[voice_id] = "{} - {}".format(label, voice_id)
-        if settings.telnyx_system_voice:
-            options.setdefault(
-                settings.telnyx_system_voice, settings.telnyx_system_voice)
-        return list(options.items())
+            catalog[voice_id] = {
+                "id": voice_id,
+                "name": voice.get("name") or voice_id,
+                "provider": (voice.get("provider") or "").lower(),
+                "language": voice.get("language") or "",
+                "gender": voice.get("gender") or "",
+            }
+        return list(catalog.values())
+
+    @api.model
+    def _get_telnyx_voice_language_selection(self):
+        languages = {
+            voice["language"] for voice in self._get_cached_telnyx_voices()
+            if voice["language"]
+        }
+        settings = self.sudo().search([], limit=1)
+        current = settings.telnyx_system_voice_language if settings else False
+        if current:
+            languages.add(current)
+        return sorted(
+            ((language, self._get_telnyx_language_label(language))
+             for language in languages),
+            key=lambda item: item[1],
+        )
+
+    @api.model
+    def _get_telnyx_voice_provider_selection(self):
+        providers = {
+            voice["provider"] for voice in self._get_cached_telnyx_voices()
+            if voice["provider"]
+        }
+        settings = self.sudo().search([], limit=1)
+        current = settings.telnyx_system_voice_provider if settings else False
+        if current:
+            providers.add(current)
+        return sorted(
+            ((provider, self._get_telnyx_provider_label(provider))
+             for provider in providers),
+            key=lambda item: item[1],
+        )
+
+    @api.model
+    def _get_telnyx_language_label(self, language):
+        try:
+            name = Locale.parse(language, sep="-").get_display_name("en")
+        except (UnknownLocaleError, ValueError):
+            name = language
+        if name == language:
+            return language
+        return "{} ({})".format(name.title(), language)
+
+    @api.model
+    def _get_telnyx_provider_label(self, provider):
+        return TELNYX_PROVIDER_LABELS.get(
+            provider, provider.replace("_", " ").title())
+
+    @api.model
+    def _format_telnyx_voice_option(self, voice):
+        details = [voice.get("gender"), voice["id"]]
+        return {
+            "value": voice["id"],
+            "label": voice.get("name") or voice["id"],
+            "details": " - ".join(value for value in details if value),
+        }
+
+    @api.model
+    def telnyx_get_voice_options(self, language, provider, search="",
+                                 limit=80):
+        """Return a small readable subset for the voice autocomplete."""
+        if not language or not provider:
+            return []
+        search = (search or "").strip().lower()
+        limit = min(max(int(limit or 80), 1), 100)
+        matches = []
+        for voice in self._get_cached_telnyx_voices():
+            if (voice["language"] != language
+                    or voice["provider"] != provider):
+                continue
+            haystack = "{} {} {}".format(
+                voice.get("name", ""), voice["id"], voice.get("gender", "")
+            ).lower()
+            if search and search not in haystack:
+                continue
+            matches.append(voice)
+        matches.sort(key=lambda voice: (
+            (voice.get("name") or "").lower(), voice["id"].lower()))
+        return [
+            self._format_telnyx_voice_option(voice)
+            for voice in matches[:limit]
+        ]
+
+    @api.model
+    def telnyx_get_voice_label(self, voice_id):
+        for voice in self._get_cached_telnyx_voices():
+            if voice["id"] == voice_id:
+                return self._format_telnyx_voice_option(voice)
+        return {
+            "value": voice_id or "",
+            "label": voice_id or "",
+            "details": voice_id or "",
+        }
+
+    @api.onchange(
+        "telnyx_system_voice_language", "telnyx_system_voice_provider")
+    def _onchange_telnyx_system_voice_filters(self):
+        if not self.telnyx_system_voice:
+            return
+        voice = next((
+            item for item in self._get_cached_telnyx_voices()
+            if item["id"] == self.telnyx_system_voice
+        ), None)
+        if (not voice
+                or voice["language"] != self.telnyx_system_voice_language
+                or voice["provider"] != self.telnyx_system_voice_provider):
+            self.telnyx_system_voice = False
 
     @api.model
     def _sync_telnyx_tts_voices(self):
@@ -150,7 +291,7 @@ class Settings(models.Model):
             normalized.append({
                 "id": voice_id,
                 "name": voice.get("name"),
-                "provider": voice.get("provider"),
+                "provider": (voice.get("provider") or "").lower(),
                 "language": voice.get("language"),
                 "gender": voice.get("gender"),
             })

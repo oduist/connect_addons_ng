@@ -87,7 +87,9 @@ already have an explicit voice (ADR-055).
 | `telnyx_auto_sync` | Boolean | Default: True |
 | `telnyx_verify_requests` | Boolean | Default: True |
 | `telnyx_fetch_call_prices` | Boolean | |
-| `telnyx_system_voice` | Selection | Dynamic cached Telnyx voice catalog; default `Polly.Joanna` |
+| `telnyx_system_voice_language` | Selection | Dynamic language filter built from the cached catalog; default `en-US` |
+| `telnyx_system_voice_provider` | Selection | Dynamic provider filter built from the cached catalog; default `aws` |
+| `telnyx_system_voice` | Char | Telnyx voice ID chosen through a filtered server-backed autocomplete; default `Polly.Joanna` |
 | `telnyx_tts_voices` | Text | Readonly JSON cache from `GET /v2/text-to-speech/voices` |
 
 Methods: `get_telnyx_client()` (SDK client), `telnyx_sync()` (apps →
@@ -101,6 +103,9 @@ dispatcher override for the `'telnyx'` key; originates via
 `POST /texml/Accounts/{sid}/Calls` with the mandatory `ApplicationSid`
 of the number application), `_sync_telnyx_tts_voices()` /
 `telnyx_sync_tts_voices()` (cache/refresh the account voice catalog),
+`telnyx_get_voice_options(language, provider, search, limit)` (bounded
+autocomplete query over the cache), `telnyx_get_voice_label(voice_id)`
+(readable current-value label),
 `telnyx_apply_system_voice()` (finalize all missing Say voices),
 `get_telnyx_balance()`,
 `telnyx_check_call_failure(cause, sip_code)` (ADR-040: web-phone RPC

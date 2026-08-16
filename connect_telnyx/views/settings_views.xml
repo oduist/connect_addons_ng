@@ -36,10 +36,15 @@
                                 </group>
                             </group>
                             <group>
-                                <group string="Calls">
-                                    <field name="telnyx_system_voice"/>
+                                <group string="Voice">
+                                    <field name="telnyx_system_voice_language"/>
+                                    <field name="telnyx_system_voice_provider"/>
+                                    <field name="telnyx_system_voice"
+                                           widget="telnyx_voice"/>
                                     <button name="telnyx_sync_tts_voices" type="object"
                                             string="REFRESH VOICES" class="btn btn-secondary"/>
+                                </group>
+                                <group string="Calls">
                                     <field name="telnyx_fetch_call_prices"/>
                                     <field name="telnyx_outbound_destinations"
                                            placeholder="PL, DE, US — empty allows every destination"/>
@@ -47,7 +52,7 @@
                                            string="Outbound Voice Profile" readonly="1"
                                            groups="base.group_no_one"/>
                                 </group>
-                                <group string="Messaging">
+                                <group string="Messaging" colspan="2">
                                     <field name="telnyx_messaging_profile_id" readonly="1"/>
                                     <field name="telnyx_ai_summary_insight_id" readonly="1"/>
                                     <field name="telnyx_ai_summary_group_id" readonly="1"/>

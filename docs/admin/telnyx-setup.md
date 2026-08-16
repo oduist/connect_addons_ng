@@ -61,17 +61,21 @@ numbers is missing from it.
 
 | Field | Description |
 |-------|-------------|
-| **System Voice** | Default TeXML `<Say>` voice. The module adds it to every `<Say>` without an explicit prompt-level voice; user and callflow voice overrides still win. Default: `Polly.Joanna`. |
+| **System Voice Language** | Language filter for the system voice catalog. Default: English (United States). |
+| **System Voice Provider** | Provider filter for the system voice catalog. Default: Amazon Web Services. |
+| **System Voice** | Default TeXML `<Say>` voice, selected from voices matching the language and provider. Search by voice name, gender, or Telnyx ID. User and callflow voice overrides still win. Default: Joanna (`Polly.Joanna`). |
 | **Auto Sync** | Automatically push changes to Telnyx when creating/updating records in Odoo. |
 | **Verify Telnyx Requests** | Validate the `telnyx-signature-ed25519` header on incoming webhooks. Recommended for production. |
 | **Fetch Call Prices** | Retrieve call cost from Telnyx detail records after each call completes (best effort). |
 
-The voice list comes from Telnyx `GET /v2/text-to-speech/voices`, so it can
+The voice catalog comes from Telnyx `GET /v2/text-to-speech/voices`, so it can
 include Telnyx voices, supported third-party providers, and cloned voices
-available to the account. Click **REFRESH VOICES** after adding a voice in
-Voice Design Lab. The normal **SYNC TELNYX ACCOUNT** action refreshes the same
-catalog. If the catalog cannot be fetched, the current selection and the basic
-TeXML voices remain available.
+available to the account. Select a language and provider first; **System
+Voice** then searches only that matching subset and displays readable voice
+names with gender and the underlying Telnyx ID. Click **REFRESH VOICES** after
+adding a voice in Voice Design Lab. The normal **SYNC TELNYX ACCOUNT** action
+refreshes the same catalog. If the catalog cannot be fetched, the current
+selection and the basic TeXML voices remain available.
 
 ### Sync
 

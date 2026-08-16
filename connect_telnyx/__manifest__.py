@@ -42,6 +42,7 @@
             'connect_telnyx/static/src/widgets/phone_field/*',
             'connect_telnyx/static/src/services/actions/*',
             'connect_telnyx/static/src/services/mail/*',
+            'connect_telnyx/static/src/widgets/voice_field/*',
         ],
     },
     'post_init_hook': 'post_init_hook',

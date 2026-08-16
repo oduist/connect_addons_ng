@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="connect_telnyx.TelnyxVoiceField">
+        <t t-if="props.readonly">
+            <span t-esc="state.displayValue"/>
+        </t>
+        <t t-else="">
+            <AutoComplete t-key="state.revision"
+                          value="state.displayValue"
+                          id="props.id"
+                          placeholder="placeholder"
+                          sources="sources"
+                          autoSelect="false"
+                          onBlur.bind="resetUnselectedInput"/>
+        </t>
+    </t>
+
+</templates>

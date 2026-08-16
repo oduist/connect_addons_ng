@@ -60,10 +60,64 @@ class TestTelnyxSystemVoice(TelnyxTestCommon):
             [voice['id'] for voice in cached],
             ['Telnyx.NaturalHD.astra', 'AWS.Polly.Marlene-Neural'],
         )
-        options = dict(
-            self.env['connect.settings']._get_telnyx_voice_selection())
-        self.assertIn('Telnyx.NaturalHD.astra', options)
-        self.assertIn('AWS.Polly.Marlene-Neural', options)
+        settings = self.env['connect.settings']
+        languages = dict(settings._get_telnyx_voice_language_selection())
+        providers = dict(settings._get_telnyx_voice_provider_selection())
+        self.assertEqual(languages['en-US'], 'English (United States) (en-US)')
+        self.assertEqual(languages['de-DE'], 'German (Germany) (de-DE)')
+        self.assertEqual(providers['aws'], 'Amazon Web Services')
+        self.assertEqual(providers['telnyx'], 'Telnyx')
+
+        telnyx_options = settings.telnyx_get_voice_options(
+            'en-US', 'telnyx', 'astra')
+        aws_options = settings.telnyx_get_voice_options(
+            'de-DE', 'aws', 'female')
+        self.assertEqual(telnyx_options, [{
+            'value': 'Telnyx.NaturalHD.astra',
+            'label': 'Astra',
+            'details': 'female - Telnyx.NaturalHD.astra',
+        }])
+        self.assertEqual(aws_options[0]['value'], 'AWS.Polly.Marlene-Neural')
+
+    def test_voice_options_are_filtered_and_bounded(self):
+        voices = [
+            {
+                'id': 'Telnyx.NaturalHD.voice-{}'.format(index),
+                'name': 'Voice {}'.format(index),
+                'provider': 'telnyx',
+                'language': 'pl-PL',
+                'gender': 'Female',
+            }
+            for index in range(5)
+        ]
+        voices.append({
+            'id': 'AWS.Polly.Ola-Neural',
+            'name': 'Ola',
+            'provider': 'aws',
+            'language': 'pl-PL',
+            'gender': 'Female',
+        })
+        settings = self.env['connect.settings'].sudo()
+        settings.set_param('telnyx_tts_voices', json.dumps(voices))
+
+        options = settings.telnyx_get_voice_options(
+            'pl-PL', 'telnyx', 'voice', limit=2)
+
+        self.assertEqual(len(options), 2)
+        self.assertTrue(all(
+            option['value'].startswith('Telnyx.') for option in options))
+
+    def test_changing_voice_filters_clears_an_incompatible_voice(self):
+        settings = self.env['connect.settings'].sudo().new({
+            'telnyx_system_voice_language': 'en-US',
+            'telnyx_system_voice_provider': 'aws',
+            'telnyx_system_voice': 'Polly.Joanna',
+        })
+
+        settings.telnyx_system_voice_provider = 'basic'
+        settings._onchange_telnyx_system_voice_filters()
+
+        self.assertFalse(settings.telnyx_system_voice)
 
     def test_voice_catalog_refresh_reopens_settings_in_new_web_load(self):
         with patch.object(
