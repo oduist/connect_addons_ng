@@ -114,6 +114,25 @@ class TestTelnyxRouting(TelnyxTestCommon):
             result = str(self.env['connect.telnyx.domain'].route_call(request))
         self.assertIn('<Number', result)
 
+    def test_domain_uses_from_for_the_sip_users_call_preferences(self):
+        personal = self.env['connect.telnyx.outgoing_callerid'].create({
+            'number': '+15550004444',
+            'friendly_name': 'Personal',
+        })
+        self.user.with_context(skip_telnyx_sync=True).write({
+            'telnyx_sip_username': 'hardphone-user',
+            'telnyx_outgoing_callerid': personal.id,
+            'record_calls': True,
+        })
+        request = self._request(
+            To='+15550009999', Called=False, Caller=False,
+            From='hardphone-user@{}'.format(self.domain.domain_name))
+        with patch.object(type(self.env['connect.call']),
+                          'on_telnyx_call_status', autospec=True):
+            result = str(self.env['connect.telnyx.domain'].route_call(request))
+        self.assertIn('callerId="{}"'.format(personal.number), result)
+        self.assertIn('record="record-from-answer"', result)
+
     def test_messaging_failure_does_not_abort_the_number_update(self):
         class Messaging:
             @staticmethod

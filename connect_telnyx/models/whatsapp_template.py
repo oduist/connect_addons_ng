@@ -173,9 +173,8 @@ class TelnyxWhatsappTemplate(models.Model):
     @api.model
     def sync(self):
         try:
-            response = self.env['connect.settings'].telnyx_api_request(
-                'GET', 'whatsapp/message_templates')
-            items = response.get('data') or []
+            items = self.env['connect.settings'].telnyx_api_list(
+                'whatsapp/message_templates')
         except Exception as e:
             raise ValidationError("Failed to sync WhatsApp Templates: {}".format(
                 format_connect_response(e)))

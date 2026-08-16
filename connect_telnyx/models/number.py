@@ -47,7 +47,11 @@ class Number(models.Model):
         `connect.telnyx.number.route_call` and dispatches by the dialled
         number (ADR-032).
         """
-        app = self.env['connect.telnyx.texml'].search(
+        # This is a mandatory provider-owned resource, not user-managed PBX
+        # configuration. A Connect user may trigger its lazy bootstrap through
+        # click-to-call but must not receive general TeXML write access.
+        app_model = self.env['connect.telnyx.texml'].sudo()
+        app = app_model.search(
             [
                 ('code_type', '=', 'model_method'),
                 ('model', '=', 'connect.telnyx.number'),
@@ -56,7 +60,7 @@ class Number(models.Model):
             limit=1,
         )
         if not app:
-            app = self.env['connect.telnyx.texml'].create(
+            app = app_model.create(
                 {
                     'model': 'connect.telnyx.number',
                     'method': 'route_call',

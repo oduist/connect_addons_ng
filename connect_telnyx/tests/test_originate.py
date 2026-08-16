@@ -17,6 +17,8 @@ class TestTelnyxOriginate(TelnyxTestCommon):
         cls.settings = cls.env['connect.settings'].sudo()
         cls.settings.set_param('telnyx_auto_sync', False)
         cls.settings.set_param('telnyx_account_sid', 'account-test')
+        cls.settings.set_param(
+            'telnyx_outbound_voice_profile_id', 'profile-test')
         cls.env['connect.telnyx.number'].get_number_app().with_context(
             skip_telnyx_sync=True).write({'sid': 'number-app-sid'})
         cls.env['connect.telnyx.outgoing_callerid'].create({
@@ -28,6 +30,13 @@ class TestTelnyxOriginate(TelnyxTestCommon):
             'telnyx_originate', originate_provider='telnyx')
 
     def _client(self, captured):
+        class Applications:
+            @staticmethod
+            def create(**kwargs):
+                captured['created_application'] = kwargs
+                return type('Response', (), {'data': type('Data', (), {
+                    'id': 'number-app-created'})()})()
+
         class Calls:
             @staticmethod
             def calls(account_sid, **kwargs):
@@ -43,6 +52,7 @@ class TestTelnyxOriginate(TelnyxTestCommon):
 
         class Client:
             texml = Texml()
+            texml_applications = Applications()
 
         return Client()
 
@@ -99,3 +109,22 @@ class TestTelnyxOriginate(TelnyxTestCommon):
             self.env['connect.settings'].originate_call(
                 '+15559998888', user=self.caller.user)
         self.assertEqual(captured['account_sid'], 'org-resolved')
+
+    def test_connect_user_can_bootstrap_the_number_application(self):
+        """Lazy system-resource creation must not require TeXML write ACLs."""
+        caller = self._create_web_phone_user(
+            'telnyx_originate_connect_user', originate_provider='telnyx')
+        caller.user.group_ids |= self.env.ref('connect.group_user')
+        application = self.env[
+            'connect.telnyx.number'].get_number_app()
+        application.with_context(skip_telnyx_sync=True).write({'sid': False})
+        captured = {}
+        user_env = self.env(user=caller.user)
+
+        with patch.object(Settings, 'get_telnyx_client', autospec=True,
+                          return_value=self._client(captured)):
+            user_env['connect.settings'].originate_call(
+                '+15559997777', user=caller.user)
+
+        self.assertEqual(captured['application_sid'], 'number-app-created')
+        self.assertEqual(application.sid, 'number-app-created')

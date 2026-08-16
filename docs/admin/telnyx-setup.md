@@ -85,6 +85,11 @@ If an optional WhatsApp/RCS resource or an imported AI Assistant cannot be
 synchronized, Odoo shows a persistent warning. The warning remains visible
 until it is dismissed so the API error can be reviewed and corrected.
 
+WhatsApp sender and template lists are read page by page before Odoo removes
+records that no longer exist in Telnyx. If Telnyx returns an incomplete or
+malformed collection, that part of the sync stops without deleting local
+records.
+
 ## Voice Routing
 
 Telnyx voice is integrated through **TeXML** (the Twilio-compatible XML
@@ -108,6 +113,11 @@ translator):
    > Telnyx Phone tab). Telnyx generates the SIP username and password —
    use them to provision a hardphone; the web phone authenticates with a
    short-lived token automatically.
+
+The mandatory **Number Calls** TeXML application is normally created by the
+account sync. If its remote ID is still missing when a Connect user starts a
+click-to-call request, Odoo initializes that system application automatically;
+the user does not need administrative access to TeXML configuration.
 
 ### SIP username and password
 
@@ -158,6 +168,8 @@ Sync button on the list views):
   address, description, email, website) is editable in Odoo and pushed
   back to Telnyx. Mark one sender as **Default**; users may also have a
   personal sender (Connect > Users > Telnyx WhatsApp Sender).
+  **Do not sync** preserves a local sender record without updating or removing
+  it during account reconciliation.
 - **WhatsApp Templates** are synced with their Meta approval status.
   New templates (body text with `{{1}}`-style variables) can be created
   in Odoo and submitted for approval with one click.
