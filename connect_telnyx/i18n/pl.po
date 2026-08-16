@@ -16,11 +16,13 @@ msgstr ""
 "(n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #. module: connect_telnyx
+#. odoo-python
 #: code:addons/connect_telnyx/models/ai_assistant.py:0
 msgid "Hello! I can register your request or connect you with a colleague. Before I do, could you briefly tell me what you are calling about?"
 msgstr "Dzień dobry! Mogę zarejestrować zgłoszenie lub połączyć rozmowę z pracownikiem. Najpierw proszę krótko powiedzieć, w jakiej sprawie Państwo dzwonią."
 
 #. module: connect_telnyx
+#. odoo-python
 #: code:addons/connect_telnyx/models/ai_assistant.py:0
 #, python-format
 msgid "Hello, %(customer_name)s. Am I speaking with %(customer_name)s? I can register your request or connect you with a colleague. Before I do, could you briefly tell me what you are calling about?"
