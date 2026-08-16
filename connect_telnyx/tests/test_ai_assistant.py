@@ -53,7 +53,13 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
             webhook['headers'][0]['value'], self.assistant.tool_token)
         self.assertIn('Odoo receptionist policy', payload['instructions'])
         self.assertIn('register a request', payload['instructions'])
-        self.assertIn('{{conversation_language_name}}', payload['instructions'])
+        for variable in (
+            'conversation_language_name',
+            'conversation_language',
+            'conversation_language_source',
+            'language_switch_allowed',
+        ):
+            self.assertIn('{{%s}}' % variable, payload['instructions'])
         self.assertEqual(payload['greeting'], '{{odoo_initial_greeting}}')
         self.assertEqual(
             payload['dynamic_variables']['conversation_language'], 'en-US')
