@@ -788,15 +788,25 @@ class TelnyxAIAssistant(models.Model):
         localized_env = self.with_context(lang=language_code).env
         language_base = language_code.replace("-", "_").split("_", 1)[0]
         if partner:
+            # Keep translatable strings literal so Odoo's extractor catalogs them.
             localized = localized_env._(
-                CONTACT_GREETING, customer_name=partner.display_name)
+                "Hello, %(customer_name)s. Am I speaking with "
+                "%(customer_name)s? I can register your request or connect "
+                "you with a colleague. Before I do, could you briefly tell "
+                "me what you are calling about?",
+                customer_name=partner.display_name,
+            )
             source = CONTACT_GREETING % {
                 "customer_name": partner.display_name,
             }
             if language_base != "en" and localized == source:
                 return self.greeting or DEFAULT_GREETING
             return localized
-        localized = localized_env._(DEFAULT_GREETING)
+        localized = localized_env._(
+            "Hello! I can register your request or connect you with a "
+            "colleague. Before I do, could you briefly tell me what you are "
+            "calling about?"
+        )
         if language_base != "en" and localized != DEFAULT_GREETING:
             return localized
         return self.greeting or localized
