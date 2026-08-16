@@ -117,12 +117,12 @@ class TestTelnyxRouting(TelnyxTestCommon):
     def test_domain_routes_bare_sip_uri_to_extension(self):
         """Telnyx may omit sip: from the routing webhook destination."""
         self.env['connect.telnyx.exten'].create({
-            'number': '200',
+            'number': '9876',
             'dst': 'connect.user,{}'.format(self.user.id),
         })
         request = self._request(
-            To='200@{}'.format(self.domain.domain_name),
-            Called='200@{}'.format(self.domain.domain_name),
+            To='9876@{}'.format(self.domain.domain_name),
+            Called='9876@{}'.format(self.domain.domain_name),
             From='{}@sip.telnyx.com'.format(
                 self.user.telnyx_client_username),
             Caller='{}@sip.telnyx.com'.format(
