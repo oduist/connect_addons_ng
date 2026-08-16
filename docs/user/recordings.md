@@ -39,14 +39,17 @@ When transcription is enabled, recordings are automatically processed:
 
 ### Viewing Transcripts
 
-On a recording record, you'll see:
+The linked call keeps the transcript and summary permanently. On a retained
+recording record, you'll also see:
 
 | Field | Description |
 |-------|-------------|
 | **Transcript** | Full text of the conversation. |
 | **Summary** | AI-generated summary of the call. |
 
-The summary also appears on the linked call record.
+Both fields remain available on the linked call even if the recording is later
+deleted. Administrators can configure Connect to delete successfully processed
+recordings automatically when audio must not be retained.
 
 ### Manual Transcription
 
@@ -62,8 +65,10 @@ When **Register Summary** is enabled in settings, call summaries are automatical
 
 Navigate to **Connect > Calls > Recordings** to see all recordings in a list view.
 
-The list shows the call, phone numbers, duration, summary, and date. Use the
-column selector to show or hide the optional **Partner** and **Users** columns.
+The list shows retained recordings with their call, phone numbers, duration,
+summary, and date. Successfully transcribed rows may be absent when automatic
+recording deletion is enabled. Use the column selector to show or hide the
+optional **Partner** and **Users** columns.
 
 | Field | Description |
 |-------|-------------|

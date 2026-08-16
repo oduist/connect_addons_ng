@@ -83,6 +83,27 @@ class TestRecording(ConnectTestCommon):
         self.recording.summary = '<p>Synced Summary</p>'
         self.assertEqual(self.call.summary, self.recording.summary)
 
+    def test_sync_transcript_to_call(self):
+        """The call keeps a durable copy of the recording transcript."""
+        self.recording.transcript = 'Durable transcript'
+        self.assertEqual(self.call.transcript, 'Durable transcript')
+
+    def test_unlink_recording_preserves_call_analysis(self):
+        """Deleting audio metadata does not delete call analysis."""
+        call = self._create_call(status='completed')
+        recording = self.env['connect.recording'].with_context(
+            skip_transcription=True,
+        ).create({
+            'call': call.id,
+            'transcript': 'Keep this transcript',
+            'summary': '<p>Keep this summary</p>',
+        })
+
+        recording.unlink()
+
+        self.assertEqual(call.transcript, 'Keep this transcript')
+        self.assertEqual(call.summary, '<p>Keep this summary</p>')
+
     def test_get_transcript_no_key(self):
         """Test get_transcript raises ValidationError without API key."""
         self.env['connect.settings'].sudo().set_param('openai_api_key', False)
@@ -145,6 +166,96 @@ class TestRecording(ConnectTestCommon):
                 self.assertEqual(self.recording.summary, '<p>AI Summary</p>')
                 self.assertFalse(self.recording.transcription_pending)
 
+    def test_successful_transcription_can_delete_recording(self):
+        """Opt-in retention deletes audio after persisting call analysis."""
+        call = self._create_call(status='completed')
+        recording = self.env['connect.recording'].with_context(
+            skip_transcription=True,
+        ).create({
+            'call': call.id,
+            'media_url': 'https://example.com/delete-me.mp3',
+        })
+        self.env['connect.settings'].set_param(
+            'delete_recording_after_transcription', True)
+
+        with self.mock_openai_client(
+            summary_text='<p>Persistent summary</p>',
+        ) as mock_client:
+            mock_client.audio.transcriptions.create.return_value.segments = [
+                MagicMock(start=0, text='Persistent transcript'),
+            ]
+            with patch(
+                'odoo.addons.connect.models.recording.requests.get',
+            ) as mock_get:
+                mock_response = MagicMock()
+                mock_response.raise_for_status = MagicMock()
+                mock_response.iter_content = MagicMock(
+                    return_value=[b'audio_data'])
+                mock_get.return_value = mock_response
+                recording.transcribe_recording('test-key', 'Summarize this')
+
+        self.assertFalse(recording.exists())
+        self.assertIn('Persistent transcript', call.transcript)
+        self.assertEqual(call.summary, '<p>Persistent summary</p>')
+
+    def test_failed_summary_keeps_recording(self):
+        """Processing errors keep the audio available for a retry."""
+        call = self._create_call(status='completed')
+        recording = self.env['connect.recording'].with_context(
+            skip_transcription=True,
+        ).create({
+            'call': call.id,
+            'media_url': 'https://example.com/retry-me.mp3',
+        })
+        self.env['connect.settings'].set_param(
+            'delete_recording_after_transcription', True)
+
+        with self.mock_openai_client() as mock_client:
+            mock_client.audio.transcriptions.create.return_value.segments = [
+                MagicMock(start=0, text='Transcript before summary error'),
+            ]
+            with patch(
+                'odoo.addons.connect.models.recording.requests.get',
+            ) as mock_get, patch(
+                'odoo.addons.connect.models.recording.Recording.make_summary',
+                return_value={'transcription_error': 'Summary failed'},
+            ):
+                mock_response = MagicMock()
+                mock_response.raise_for_status = MagicMock()
+                mock_response.iter_content = MagicMock(return_value=[b'audio'])
+                mock_get.return_value = mock_response
+                recording.transcribe_recording('test-key', 'Summarize this')
+
+        self.assertTrue(recording.exists())
+        self.assertEqual(recording.transcription_error, 'Summary failed')
+        self.assertIn('Transcript before summary error', call.transcript)
+
+    def test_recording_without_call_is_not_auto_deleted(self):
+        """Orphan analysis stays on its recording because no call can own it."""
+        recording = self.env['connect.recording'].with_context(
+            skip_transcription=True,
+        ).create({
+            'media_url': 'https://example.com/orphan.mp3',
+        })
+        self.env['connect.settings'].set_param(
+            'delete_recording_after_transcription', True)
+
+        with self.mock_openai_client() as mock_client:
+            mock_client.audio.transcriptions.create.return_value.segments = [
+                MagicMock(start=0, text='Orphan transcript'),
+            ]
+            with patch(
+                'odoo.addons.connect.models.recording.requests.get',
+            ) as mock_get:
+                mock_response = MagicMock()
+                mock_response.raise_for_status = MagicMock()
+                mock_response.iter_content = MagicMock(return_value=[b'audio'])
+                mock_get.return_value = mock_response
+                recording.transcribe_recording('test-key', 'Summarize this')
+
+        self.assertTrue(recording.exists())
+        self.assertIn('Orphan transcript', recording.transcript)
+
     def test_make_summary_uses_default_gpt5_model(self):
         """Test summaries use the configured GPT-5-compatible parameters."""
         self.env['connect.settings'].set_param(
@@ -195,13 +306,14 @@ class TestRecording(ConnectTestCommon):
         self.assertFalse(self.recording.transcription_pending)
 
     def test_update_transcript_syncs_to_call(self):
-        """Test update_transcript updates linked call summary."""
+        """Test update_transcript updates linked call analysis."""
         with self.mock_connect_reload_view():
             self.recording.update_transcript({
                 'transcript': 'Test',
                 'summary': '<p>Call Summary</p>',
             })
         self.assertEqual(self.call.summary, '<p>Call Summary</p>')
+        self.assertEqual(self.call.transcript, 'Test')
 
     def test_create_with_transcription_enabled(self):
         """Test create triggers transcription when enabled."""

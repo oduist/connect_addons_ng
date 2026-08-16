@@ -414,15 +414,19 @@ works with any combination of installed providers.
 ```
 1. Integration module (Twilio/FreeSWITCH) creates connect.recording record
 2. Core's recording.create() checks settings.transcript_calls
-3. If enabled, calls core's transcribe_recording():
+3. If enabled, marks the recording pending for the transcription cron
+4. The cron calls core's transcribe_recording():
    a. Downloads audio from media_url (may be proxied)
    b. Calls OpenAI Whisper API via settings.get_openai_client()
-   c. Stores transcript text
-4. If transcript exists, calls core's make_summary():
+   c. Stores transcript text on the recording and linked call
+5. If transcript exists, calls core's make_summary():
    a. Calls the OpenAI summary model selected in settings (GPT-5.4 mini by default)
       with summary_prompt
-   b. Stores summary HTML
-5. Core's _sync_summary() posts summary to call's chatter
+   b. Stores summary HTML on the recording and linked call
+6. If delete_recording_after_transcription is enabled and processing succeeded,
+   core deletes the recording row after the call analysis is durable
+7. The call summary registration constraints post the summary to configured
+   business-record chatter targets
 ```
 
 ### SMS Send (via Composer)

@@ -87,6 +87,13 @@ class Settings(models.Model):
         help="Re-stream recordings using Odoo user auth.", default=True
     )
     transcript_calls = fields.Boolean()
+    delete_recording_after_transcription = fields.Boolean(
+        help=(
+            "Delete the Odoo recording and its attachment after a successful "
+            "transcription and summary. The transcript and summary remain on "
+            "the linked call."
+        ),
+    )
     transcript_provider = fields.Selection(
         selection=[('openai', 'Open AI')], default='openai', required=True
     )

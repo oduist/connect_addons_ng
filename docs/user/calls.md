@@ -67,6 +67,7 @@ Each call record shows:
 | **Duration** | Call length in human-readable format (e.g., "2m 30s"). |
 | **Partner** | Linked contact, if recognized. |
 | **Recording** | Inline audio player, if the call was recorded. |
+| **Transcript** | Full AI-generated transcript, retained even when the audio recording is deleted. |
 | **Summary** | AI-generated call summary, if transcription is enabled. |
 
 ### Partner Linking

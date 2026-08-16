@@ -20,6 +20,7 @@ Connect uses OpenAI for automatic call transcription and summarization.
 | Setting | Description |
 |---------|-------------|
 | **Enable Call Transcription** | Automatically transcribe recordings when they are created. |
+| **Delete Recording After Transcription** | Delete the Odoo recording and its attachment after transcript and summary are stored on the linked call. Disabled by default. |
 | **Transcription Provider** | Currently supports OpenAI. |
 | **OpenAI API Key** | Your OpenAI API key. Masked in the UI for non-managers. |
 | **Summary Model** | OpenAI model used for call summaries. Defaults to GPT-5.4 mini; GPT-4o remains available. |
@@ -31,13 +32,19 @@ Connect uses OpenAI for automatic call transcription and summarization.
     2. The **Connect: transcribe pending recordings** scheduled action runs every two minutes
     3. Audio is sent to OpenAI Whisper API for speech-to-text
     4. The transcript is sent to the selected summary model with the summary prompt
-    5. The summary is saved on both the recording and the call record
-    6. If enabled, the summary is posted to the partner's chatter
+    5. The transcript and summary are saved permanently on the call record
+    6. If **Delete Recording After Transcription** is enabled, the successfully processed Odoo recording is deleted
+    7. If enabled, the summary is posted to the partner's chatter
 
     The scheduled action must be active for automatic processing. Sanitized
     development or staging databases may have scheduled actions disabled. A
     manual transcription removes the recording from the queue, and the cron
     skips already-transcribed recordings to avoid duplicate OpenAI requests.
+
+    Automatic deletion only applies to recordings linked to a call and only
+    after successful transcription and summarization. Failed or unlinked
+    recordings are kept. This setting removes the Odoo row and any Odoo-managed
+    attachment; configure provider-side audio retention separately.
 
 
 ## PBX Users

@@ -43,6 +43,7 @@
                             <group>
                                 <group string="Transcription Settings">
                                     <field name="transcript_calls"/>
+                                    <field name="delete_recording_after_transcription"/>
                                     <field name="transcript_provider"/>
                                     <field name="register_summary"/>
                                 </group>

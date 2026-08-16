@@ -45,6 +45,10 @@ class TestSettings(ConnectTestCommon):
         """Test default transcript_provider is openai."""
         self.assertEqual(self.settings.transcript_provider, 'openai')
 
+    def test_recording_deletion_after_transcription_is_opt_in(self):
+        """Audio retention remains enabled unless an admin opts out."""
+        self.assertFalse(self.settings.delete_recording_after_transcription)
+
     def test_default_openai_summary_model(self):
         """Test GPT-5.4 mini is the default summary model."""
         self.assertEqual(self.settings.openai_summary_model, 'gpt-5.4-mini')

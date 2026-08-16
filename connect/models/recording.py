@@ -1,5 +1,4 @@
 import base64
-import json
 import logging
 import os
 import requests
@@ -8,7 +7,6 @@ from markupsafe import escape
 from tempfile import NamedTemporaryFile
 from odoo import fields, models, api, release, SUPERUSER_ID
 from odoo.exceptions import ValidationError
-from .settings import format_connect_response, debug
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +107,7 @@ class Recording(models.Model):
                 segments += '{} {}\n'.format(ts, s.text)
             result['transcript'] = segments
             result.update(self.make_summary(client, summary_prompt, result['transcript']))
-            result['transcription_error'] = False
+            result.setdefault('transcription_error', False)
         except Exception as e:
             logger.exception(f'Transcribe error: {e}')
             result['transcription_error'] = str(e)
@@ -123,6 +121,7 @@ class Recording(models.Model):
                     logger.warning('Could not remove temp file %s', temp_file_path)
             result['transcription_pending'] = False
             self.write(result)
+            self._delete_after_successful_transcription()
 
     def make_summary(self, client, summary_prompt, transcript):
         logger.info('Make summary!')
@@ -183,6 +182,7 @@ class Recording(models.Model):
 
     def update_transcript(self, data):
         self.ensure_one()
+        call = self.call
         transcription_price = data.get('transcription_price')
         if transcription_price:
             transcription_price = round(transcription_price, 2)
@@ -195,13 +195,31 @@ class Recording(models.Model):
             'transcription_pending': False,
         }
         self.with_context(tracking_disable=True).write(vals)
-        if self.call:
-            self.call.summary = data.get('summary')
+        self._delete_after_successful_transcription()
+        if call:
             self.env['connect.settings'].connect_reload_view('connect.call')
         self.env['connect.settings'].connect_reload_view('connect.recording')
         if data.get('notify_uid'):
             self.env['connect.settings'].connect_notify(
                 'Transcript updated', notify_uid=data['notify_uid'])
+
+    def _delete_after_successful_transcription(self):
+        """Remove processed audio only after its analysis is durable."""
+        self.ensure_one()
+        if (
+            not self.exists()
+            or not self.call
+            or not self.transcript
+            or self.transcription_error
+        ):
+            return False
+        delete_recording = self.env['connect.settings'].sudo().get_param(
+            'delete_recording_after_transcription'
+        )
+        if not delete_recording:
+            return False
+        self.unlink()
+        return True
 
     def _get_recording_widget(self):
         proxy_recordings = self.env['connect.settings'].sudo().get_param('proxy_recordings')
@@ -238,6 +256,10 @@ class Recording(models.Model):
     def _get_list_view_summary(self):
         for rec in self:
             rec.list_view_summary = rec.summary
+
+    def unlink(self):
+        self._sync_analysis_to_call()
+        return super().unlink()
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -276,7 +298,8 @@ class Recording(models.Model):
             # matches the previous inline behaviour while avoiding an
             # unbounded retry loop. The commit is safe here — the cron owns
             # its own transaction, unlike create().
-            rec.transcription_pending = False
+            if rec.exists():
+                rec.transcription_pending = False
             self.env.cr.commit()
 
     @api.depends('duration')
@@ -289,7 +312,18 @@ class Recording(models.Model):
             else:
                 record.duration_human = "00:00"
 
-    @api.constrains('summary')
-    def _sync_summary(self):
-        if self.call:
-            self.with_user(SUPERUSER_ID).call.summary = self.summary
+    @api.constrains('call', 'transcript', 'summary')
+    def _sync_analysis_to_call(self):
+        for rec in self.filtered('call'):
+            recordings = self.search(
+                [('call', '=', rec.call.id)], order='id desc'
+            )
+            vals = {}
+            latest_transcript = recordings.filtered('transcript')[:1]
+            latest_summary = recordings.filtered('summary')[:1]
+            if rec == latest_transcript:
+                vals['transcript'] = rec.transcript
+            if rec == latest_summary:
+                vals['summary'] = rec.summary
+            if vals:
+                rec.call.with_user(SUPERUSER_ID).write(vals)
