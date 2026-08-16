@@ -50,7 +50,9 @@ The summary also appears on the linked call record.
 
 ### Manual Transcription
 
-If automatic transcription is disabled, you can manually trigger it by clicking the **Transcribe** button on a recording record.
+You can manually trigger transcription by clicking the **Transcribe** button
+on a recording record. Once the manual attempt finishes, the recording is
+removed from the automatic queue so it is not sent to OpenAI twice.
 
 ### Partner Chatter Integration
 

@@ -295,7 +295,7 @@ Order: `id desc`
 | `transcription_token` | Char | |
 | `transcription_error` | Char | |
 | `transcription_price` | Char | |
-| `transcription_pending` | Boolean | Work-queue flag; set on create when `transcript_calls` is on, cleared by the transcription cron |
+| `transcription_pending` | Boolean | Work-queue flag; set on create when `transcript_calls` is on, cleared after manual, callback, or cron processing |
 | `summary` | Html | |
 | `list_view_summary` | Html | Computed truncated version |
 
@@ -318,12 +318,17 @@ Order: `id desc`
 `_cron_transcribe_recordings()`. Transcription is asynchronous: `create()`
 only flags the recording (`transcription_pending`) so the provider webhook
 that created it returns immediately and the request transaction stays
-atomic.
+atomic. A completed manual or callback-driven transcription clears the same
+flag. The cron also clears stale pending flags on recordings that already have
+a transcript without sending the audio to OpenAI again (ADR-059).
 
 **Notes:**
 - Transcription and summary methods use OpenAI directly (not Twilio), so they belong
   in core. The `openai` Python package is a core dependency.
 - `create()` override auto-triggers transcription if `transcript_calls` setting is enabled.
+- A transcription attempt clears `transcription_pending` after success or a
+  stored error. This preserves the queue's single-attempt behavior and prevents
+  duplicate OpenAI requests after a manual transcription.
 - `transcribe_recording()` prefers the stored `recording_attachment` bytes
   (providers whose downloads require API auth store the file on the record,
   e.g. connect_infobip — ADR-036) and only falls back to downloading

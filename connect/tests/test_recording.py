@@ -133,6 +133,7 @@ class TestRecording(ConnectTestCommon):
 
     def test_transcribe_recording_mock(self):
         """Test transcribe_recording with mocked OpenAI."""
+        self.recording.transcription_pending = True
         with self.mock_openai_client(summary_text='<p>AI Summary</p>'):
             with patch('odoo.addons.connect.models.recording.requests.get') as mock_get:
                 mock_response = MagicMock()
@@ -142,6 +143,7 @@ class TestRecording(ConnectTestCommon):
 
                 self.recording.transcribe_recording('test-key', 'Summarize this')
                 self.assertEqual(self.recording.summary, '<p>AI Summary</p>')
+                self.assertFalse(self.recording.transcription_pending)
 
     def test_make_summary_uses_default_gpt5_model(self):
         """Test summaries use the configured GPT-5-compatible parameters."""
@@ -180,6 +182,7 @@ class TestRecording(ConnectTestCommon):
 
     def test_update_transcript(self):
         """Test update_transcript writes transcript and summary."""
+        self.recording.transcription_pending = True
         with self.mock_connect_reload_view():
             self.recording.update_transcript({
                 'transcript': 'Hello world',
@@ -189,6 +192,7 @@ class TestRecording(ConnectTestCommon):
         self.assertEqual(self.recording.transcript, 'Hello world')
         self.assertEqual(self.recording.summary, '<p>Summary</p>')
         self.assertEqual(self.recording.transcription_price, '0.05')
+        self.assertFalse(self.recording.transcription_pending)
 
     def test_update_transcript_syncs_to_call(self):
         """Test update_transcript updates linked call summary."""
@@ -215,3 +219,25 @@ class TestRecording(ConnectTestCommon):
                     'duration': 10,
                 })
                 self.assertTrue(rec.id)
+                self.assertTrue(rec.transcription_pending)
+
+    def test_cron_skips_already_transcribed_pending_recording(self):
+        """The cron clears stale work without retranscribing it."""
+        self.env['connect.recording'].search([
+            ('transcription_pending', '=', True),
+        ]).transcription_pending = False
+        rec = self.env['connect.recording'].with_context(
+            skip_transcription=True,
+        ).create({
+            'media_url': 'https://example.com/already-done.mp3',
+            'transcript': 'Already transcribed',
+            'transcription_pending': True,
+        })
+
+        with patch(
+            'odoo.addons.connect.models.recording.Recording.get_transcript',
+        ) as mock_get_transcript:
+            self.env['connect.recording']._cron_transcribe_recordings()
+
+        mock_get_transcript.assert_not_called()
+        self.assertFalse(rec.transcription_pending)

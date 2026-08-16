@@ -121,6 +121,7 @@ class Recording(models.Model):
                     os.unlink(temp_file_path)
                 except OSError:
                     logger.warning('Could not remove temp file %s', temp_file_path)
+            result['transcription_pending'] = False
             self.write(result)
 
     def make_summary(self, client, summary_prompt, transcript):
@@ -190,7 +191,8 @@ class Recording(models.Model):
             'transcription_price': str(transcription_price),
             'summary': data.get('summary'),
             'transcription_token': False,
-            'transcription_error': data.get('transcription_error')
+            'transcription_error': data.get('transcription_error'),
+            'transcription_pending': False,
         }
         self.with_context(tracking_disable=True).write(vals)
         if self.call:
@@ -265,7 +267,8 @@ class Recording(models.Model):
         pending = self.search([('transcription_pending', '=', True)], limit=limit)
         for rec in pending:
             try:
-                rec.get_transcript(fail_silently=True)
+                if not rec.transcript:
+                    rec.get_transcript(fail_silently=True)
             except Exception:
                 logger.exception('Cron transcript error for recording %s', rec.id)
             # Clear the flag whether or not it succeeded: transcribe_recording

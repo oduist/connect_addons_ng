@@ -27,11 +27,17 @@ Connect uses OpenAI for automatic call transcription and summarization.
 | **Summary Prompt** | Custom prompt for call summarization. Default: "Summarise this phone call". |
 
 !!! info "How transcription works"
-    1. A call recording is created (by Twilio or FreeSWITCH)
-    2. Audio is sent to OpenAI Whisper API for speech-to-text
-    3. The transcript is sent to the selected summary model with the summary prompt
-    4. The summary is saved on both the recording and the call record
-    5. If enabled, the summary is posted to the partner's chatter
+    1. A call recording is created and added to the transcription queue
+    2. The **Connect: transcribe pending recordings** scheduled action runs every two minutes
+    3. Audio is sent to OpenAI Whisper API for speech-to-text
+    4. The transcript is sent to the selected summary model with the summary prompt
+    5. The summary is saved on both the recording and the call record
+    6. If enabled, the summary is posted to the partner's chatter
+
+    The scheduled action must be active for automatic processing. Sanitized
+    development or staging databases may have scheduled actions disabled. A
+    manual transcription removes the recording from the queue, and the cron
+    skips already-transcribed recordings to avoid duplicate OpenAI requests.
 
 
 ## PBX Users
