@@ -85,11 +85,13 @@ class TestRecording(ConnectTestCommon):
 
     def test_get_transcript_no_key(self):
         """Test get_transcript raises ValidationError without API key."""
+        self.env['connect.settings'].sudo().set_param('openai_api_key', False)
         with self.assertRaises(ValidationError):
             self.recording.get_transcript()
 
     def test_get_transcript_no_key_silent(self):
         """Test get_transcript returns False silently without API key."""
+        self.env['connect.settings'].sudo().set_param('openai_api_key', False)
         result = self.recording.get_transcript(fail_silently=True)
         self.assertFalse(result)
 
