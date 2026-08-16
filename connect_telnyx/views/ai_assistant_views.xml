@@ -49,6 +49,8 @@
                             <field name="model"/>
                             <field name="voice"/>
                             <field name="voice_speed"/>
+                            <field name="language_mode"/>
+                            <field name="default_lang" required="1"/>
                             <field name="transcription_model"/>
                             <field name="transcription_language"/>
                         </group>

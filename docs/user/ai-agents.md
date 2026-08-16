@@ -37,6 +37,19 @@ When exactly one Odoo contact has the caller's phone number, the agent may use
 that contact's name but must ask the caller to confirm it. If several contacts
 share the number, the agent does not guess a name.
 
+## Conversation Language
+
+An administrator can configure the agent to use the language of the single
+contact matched by phone. The first greeting is then prepared in that Odoo
+contact language, and the agent may follow the caller if they clearly switch
+to another language. Unknown or ambiguous callers start in the agent's
+fallback language.
+
+The contact language is maintained on the Odoo contact. A multilingual agent
+also needs automatic or multilingual speech recognition and a TTS voice that
+can actually speak the required languages; changing only the prompt does not
+make an English-only voice multilingual.
+
 ## Call History And Recordings
 
 Calls to AI agents appear in **Connect -> Calls** like any other call. When

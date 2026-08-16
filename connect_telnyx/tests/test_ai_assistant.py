@@ -53,7 +53,53 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
             webhook['headers'][0]['value'], self.assistant.tool_token)
         self.assertIn('Odoo receptionist policy', payload['instructions'])
         self.assertIn('register a request', payload['instructions'])
+        self.assertIn('{{conversation_language_name}}', payload['instructions'])
+        self.assertEqual(payload['greeting'], '{{odoo_initial_greeting}}')
+        self.assertEqual(
+            payload['dynamic_variables']['conversation_language'], 'en-US')
+        self.assertTrue(
+            payload['dynamic_variables']['odoo_initial_greeting'])
+        self.assertEqual(payload['transcription'], {
+            'model': 'deepgram/nova-3',
+            'language': 'auto',
+        })
         self.assertEqual(payload['dynamic_variables_webhook_timeout_ms'], 5000)
+
+    def test_unique_contact_supplies_language_and_localized_greeting(self):
+        partner = self.env['res.partner'].create({
+            'name': 'Language Caller',
+            'phone': '+15550007777',
+            'lang': 'en_US',
+        })
+        values = self.assistant._partner_values(partner, match_count=1)
+        self.assertEqual(values['customer_language'], 'en_US')
+        self.assertEqual(values['conversation_language'], 'en-US')
+        self.assertEqual(values['conversation_language_code'], 'en')
+        self.assertEqual(values['conversation_language_source'], 'contact')
+        self.assertTrue(values['language_switch_allowed'])
+        self.assertIn(partner.display_name, values['odoo_initial_greeting'])
+        self.assertIn('Am I speaking with', values['odoo_initial_greeting'])
+
+    def test_fixed_language_ignores_contact_language_switching(self):
+        partner = self.env['res.partner'].create({
+            'name': 'Fixed Language Caller',
+            'phone': '+15550007778',
+            'lang': 'en_US',
+        })
+        self.assistant.with_context(skip_telnyx_ai_sync=True).language_mode = (
+            'fixed')
+        values = self.assistant._partner_values(partner, match_count=1)
+        self.assertEqual(values['conversation_language_source'], 'agent')
+        self.assertFalse(values['language_switch_allowed'])
+
+    def test_automatic_language_uses_agent_greeting_as_fallback(self):
+        self.assistant.with_context(skip_telnyx_ai_sync=True).language_mode = (
+            'automatic')
+        values = self.assistant._partner_values(
+            self.env['res.partner'], match_count=0)
+        self.assertEqual(values['conversation_language_source'], 'automatic')
+        self.assertTrue(values['language_switch_allowed'])
+        self.assertEqual(values['odoo_initial_greeting'], self.assistant.greeting)
 
     def test_imported_assistant_payload_omits_the_hangup_tool(self):
         """Telnyx keeps the hangup tool an imported assistant already has
@@ -201,6 +247,11 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
             self.assertEqual(kwargs['payload']['To'], '+15550008888')
             self.assertEqual(
                 kwargs['payload']['AIAssistantId'], self.assistant.sid)
+            variables = kwargs['payload']['AIAssistantDynamicVariables']
+            self.assertEqual(variables['customer_name'], partner.display_name)
+            self.assertEqual(variables['conversation_language'], 'en-US')
+            self.assertIn(partner.display_name,
+                          variables['odoo_initial_greeting'])
             return {'call_sid': 'v3:test-ai-call'}
 
         with patch.object(

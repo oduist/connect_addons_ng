@@ -66,6 +66,38 @@ assistant receives a caller name only when exactly one contact matches and
 must ask the caller to confirm it. Duplicate matches are marked ambiguous and
 no name is guessed.
 
+### Languages and multilingual assistants
+
+The assistant form separates the caller-language policy from speech
+recognition:
+
+- **Contact Language, Then Auto-Detect** starts with the language of the one
+  contact matched by phone. If no unique contact language exists, it uses
+  **Agent Language**. The assistant may follow a caller who clearly changes
+  language.
+- **Fixed Agent Language** ignores the contact language and does not switch.
+- **Automatic Detection** greets in **Agent Language**, then follows the
+  language detected from speech.
+
+Activate the required languages in Odoo and set **Language** on each contact.
+Odoo returns the normalized BCP-47 code, language name, and localized initial
+greeting through the signed dynamic-variable webhook. Russian and Polish
+translations of the standard receptionist greeting ship with the module;
+other languages use the configured fallback greeting until their Odoo
+translation is installed.
+
+For multilingual speech recognition, use `deepgram/nova-3` with
+**Transcription Language** set to `auto`; these are the defaults for new
+assistants. Telnyx also supports multilingual alternatives such as
+`deepgram/flux`, Azure, AssemblyAI, xAI, Soniox, and NVIDIA, with different
+language coverage and turn-taking behavior.
+
+Speech output is independent. `AWS.Polly.Joanna-Neural` is English-only, so
+select an Azure Multilingual, MiniMax, Inworld, or another voice whose Telnyx
+catalog entry and provider documentation cover every required language. A
+fixed-language transcription setting or single-language voice intentionally
+limits the agent even when its LLM understands several languages.
+
 - **Enable Contact Tools** allows strict contact lookup and adding internal
   notes.
 - **Register Call Request** is always available to save the qualified reason,

@@ -59,6 +59,17 @@ there is no remote Pull/import workflow (ADR-062). Stores the prompt, greeting,
 model/voice/transcription settings, recording/memory switches and the Odoo
 tool allowlist.
 
+Language routing fields are `language_mode` (`contact` / `fixed` /
+`automatic`) and `default_lang`. New assistants default to multilingual
+`deepgram/nova-3` transcription with `language=auto`. The payload templates
+the first greeting as `{{odoo_initial_greeting}}` and supplies a safe
+assistant-level fallback through `dynamic_variables`. The signed variables
+webhook overrides the greeting and conversation-language variables from the
+strictly matched partner's `lang`; ambiguous matches expose neither identity
+nor contact language. Russian and Polish standard receptionist greeting
+translations ship with the module. TTS language coverage remains a property
+of the selected Telnyx voice (ADR-063).
+
 The always-on `register_call_request` webhook tool stores the qualified title,
 summary and requested action as an internal note on the current `connect.call`.
 Contact/CRM/Helpdesk tools remain individually gated by their assistant flags.
@@ -87,7 +98,9 @@ Caller personalization performs a strict raw/E.164 lookup. A name is exposed
 only when exactly one partner matches; multiple matches set the dynamic result
 to ambiguous and expose no identity. The receptionist policy requires verbal
 confirmation of a single candidate before treating the identity as verified,
-and requires qualification of the call before any transfer.
+requires qualification of the call before any transfer, and begins in the
+selected contact/fallback language before following an allowed caller language
+change.
 
 Completed AI conversations are linked to `connect.call` by conversation and
 Call Control IDs. Transcript and Telnyx Insight summary are stored on an

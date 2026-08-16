@@ -206,6 +206,8 @@ class ConnectTelnyxController(Controller):
                 'metadata': {
                     'odoo_assistant_id': str(assistant.id),
                     'odoo_partner_id': str(partner.id) if partner else '',
+                    'preferred_language': variables.get(
+                        'conversation_language', ''),
                 }
             },
         }

@@ -27,6 +27,11 @@ DEFAULT_GREETING = (
     "Hello! I can register your request or connect you with a colleague. "
     "Before I do, could you briefly tell me what you are calling about?"
 )
+CONTACT_GREETING = (
+    "Hello, %(customer_name)s. Am I speaking with %(customer_name)s? "
+    "I can register your request or connect you with a colleague. Before I "
+    "do, could you briefly tell me what you are calling about?"
+)
 DEFAULT_WARM_TRANSFER_INSTRUCTIONS = (
     "Greet the recipient and briefly explain the caller's confirmed identity, "
     "the reason for the call, the relevant context, and the agreed next step. "
@@ -38,6 +43,7 @@ REMOTE_FIELDS = {
     "name", "description", "instructions", "greeting", "model",
     "voice", "voice_speed", "transcription_model",
     "transcription_language", "time_limit_secs", "record_calls",
+    "language_mode", "default_lang",
     "memory_enabled", "enable_contact_tools", "enable_crm_tools",
     "enable_helpdesk_tools", "active", "receptionist_mode",
     "transfer_enabled", "manager", "transfer_callflows",
@@ -64,12 +70,42 @@ class TelnyxAIAssistant(models.Model):
         default=DEFAULT_VOICE,
         help="Telnyx voice identifier, for example AWS.Polly.Joanna-Neural. "
              "The available ids are listed by the Telnyx text-to-speech "
-             "voices endpoint.")
+             "voices endpoint. Choose a multilingual voice such as Azure "
+             "Multilingual, MiniMax, or Inworld when one assistant must "
+             "speak several languages.")
     voice_speed = fields.Float(default=1.0)
     transcription_model = fields.Char(
-        help="For example deepgram/nova-3. Leave empty for Telnyx default."
+        default="deepgram/nova-3",
+        help="Speech recognition model. Telnyx recommends deepgram/nova-3 "
+             "for multilingual assistants."
     )
-    transcription_language = fields.Char()
+    transcription_language = fields.Char(
+        default="auto",
+        help="Speech recognition language. Use auto for multilingual "
+             "detection, or a supported language code to constrain it."
+    )
+    language_mode = fields.Selection(
+        [
+            ("contact", "Contact Language, Then Auto-Detect"),
+            ("fixed", "Fixed Agent Language"),
+            ("automatic", "Automatic Detection"),
+        ],
+        default="contact", required=True,
+        help="Contact mode uses the language of the single contact matched "
+             "by phone, then follows an explicit caller language change. "
+             "Fixed mode always uses the agent language. Automatic mode "
+             "starts with the agent language and detects the caller's "
+             "language from speech.",
+    )
+    default_lang = fields.Many2one(
+        "res.lang", string="Agent Language", ondelete="restrict",
+        default=lambda self: self.env["res.lang"].search([
+            ("code", "=", self.env.user.lang or "en_US")
+        ], limit=1),
+        help="Greeting and fallback conversation language when no unique "
+             "contact language is available. Activate additional Odoo "
+             "languages before assigning them to contacts."
+    )
     time_limit_secs = fields.Integer(default=1800, required=True)
     record_calls = fields.Boolean(default=False)
     memory_enabled = fields.Boolean(
@@ -307,6 +343,12 @@ class TelnyxAIAssistant(models.Model):
             "Odoo receptionist policy:\n"
             "- {}\n"
             "- Explain that you can register a request or connect the caller.\n"
+            "- Begin in {{conversation_language_name}} "
+            "({{conversation_language}}). The selected language source is "
+            "{{conversation_language_source}}.\n"
+            "- If {{language_switch_allowed}} is true and the caller clearly "
+            "uses another language, switch to it and continue in that "
+            "language. Otherwise keep using the selected language.\n"
             "- Before any transfer, determine why the caller is calling, the "
             "relevant context, and the requested outcome.\n"
             "- If customer_name is present, ask whether you are speaking with "
@@ -396,7 +438,10 @@ class TelnyxAIAssistant(models.Model):
             "name": self.name,
             "description": self.description or "",
             "instructions": self._effective_instructions(),
-            "greeting": self.greeting or "",
+            "greeting": "{{odoo_initial_greeting}}",
+            "dynamic_variables": self._partner_values(
+                self.env["res.partner"], match_count=0
+            ),
             "enabled_features": ["telephony"],
             "dynamic_variables_webhook_url": self._variables_url(),
             "dynamic_variables_webhook_timeout_ms": 5000,
@@ -709,17 +754,74 @@ class TelnyxAIAssistant(models.Model):
             found |= Partner.search([("phone_sanitized", "=", normalized)])
         return (found if len(found) == 1 else Partner), len(found)
 
-    @api.model
+    def _language_values(self, partner=None):
+        self.ensure_one()
+        fallback = self.default_lang
+        if not fallback:
+            fallback = self.env["res.lang"].sudo().search([
+                ("code", "=", self.env.user.lang or "en_US")
+            ], limit=1)
+        language_code = fallback.code or self.env.user.lang or "en_US"
+        source = "agent"
+        switch_allowed = self.language_mode != "fixed"
+        if (self.language_mode == "contact" and partner
+                and partner.lang):
+            language_code = partner.lang
+            source = "contact"
+        elif self.language_mode == "automatic":
+            source = "automatic"
+        language = self.env["res.lang"].sudo().search([
+            ("code", "=", language_code)
+        ], limit=1)
+        bcp47 = language_code.replace("_", "-")
+        return {
+            "conversation_language": bcp47,
+            "conversation_language_code": bcp47.split("-", 1)[0].lower(),
+            "conversation_language_name": language.name or bcp47,
+            "conversation_language_source": source,
+            "language_switch_allowed": switch_allowed,
+        }
+
+    def _initial_greeting(self, partner=None, language_code=None):
+        self.ensure_one()
+        language_code = language_code or self.env.user.lang or "en_US"
+        localized_env = self.with_context(lang=language_code).env
+        language_base = language_code.replace("-", "_").split("_", 1)[0]
+        if partner:
+            localized = localized_env._(
+                CONTACT_GREETING, customer_name=partner.display_name)
+            source = CONTACT_GREETING % {
+                "customer_name": partner.display_name,
+            }
+            if language_base != "en" and localized == source:
+                return self.greeting or DEFAULT_GREETING
+            return localized
+        localized = localized_env._(DEFAULT_GREETING)
+        if language_base != "en" and localized != DEFAULT_GREETING:
+            return localized
+        return self.greeting or localized
+
     def _partner_values(self, partner, match_count=None):
+        self.ensure_one()
+        language_values = self._language_values(partner)
+        language_code = language_values["conversation_language"].replace(
+            "-", "_"
+        )
         if not partner:
             count = match_count or 0
-            return {
+            values = {
                 "found": False,
                 "ambiguous": count > 1,
                 "match_count": count,
                 "customer_name": "",
+                "customer_email": "",
+                "customer_language": "",
             }
-        return {
+            values.update(language_values)
+            values["odoo_initial_greeting"] = self._initial_greeting(
+                language_code=language_code)
+            return values
+        values = {
             "found": True,
             "ambiguous": False,
             "match_count": 1,
@@ -731,7 +833,13 @@ class TelnyxAIAssistant(models.Model):
             ),
             "email": partner.email or "",
             "language": partner.lang or "",
+            "customer_email": partner.email or "",
+            "customer_language": partner.lang or "",
         }
+        values.update(language_values)
+        values["odoo_initial_greeting"] = self._initial_greeting(
+            partner=partner, language_code=language_code)
+        return values
 
     def _resolve_partner_match(self, payload, call_control_id=None):
         self.ensure_one()
