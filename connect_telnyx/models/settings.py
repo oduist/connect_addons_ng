@@ -268,9 +268,9 @@ class Settings(models.Model):
         Telnyx's US/CA default on, say, a Polish account.
         """
         regions = set()
-        numbers = self.env['connect.telnyx.outgoing_callerid'].sudo().search([])
-        numbers |= self.env['connect.telnyx.number'].sudo().search([])
-        for number in numbers.mapped('number') + numbers.mapped('phone_number'):
+        callerids = self.env['connect.telnyx.outgoing_callerid'].sudo().search([])
+        numbers = self.env['connect.telnyx.number'].sudo().search([])
+        for number in callerids.mapped('number') + numbers.mapped('phone_number'):
             if not number:
                 continue
             try:
