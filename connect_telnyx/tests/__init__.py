@@ -2,6 +2,7 @@ from . import test_ai_assistant
 from . import test_call_failure
 from . import test_messaging
 from . import test_originate
+from . import test_recording
 from . import test_routing
 from . import test_sip_credential
 from . import test_telnyx_sync_errors

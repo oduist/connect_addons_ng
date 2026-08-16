@@ -137,6 +137,11 @@ Webhook authenticity is verified with the account's Ed25519 **Public
 Key** (`telnyx-signature-ed25519` / `telnyx-timestamp` headers). Keep
 **Verify Telnyx Requests** enabled in production.
 
+Recording callbacks may contain short-lived signed download URLs. Odoo keeps
+the URL on the recording record for playback, but redacts it from Telnyx debug
+payloads so temporary download credentials are not persisted in
+`connect.debug`.
+
 ## Messaging
 
 SMS/MMS use the **Odoo Connect** messaging profile created by the sync.

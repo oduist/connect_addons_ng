@@ -9,6 +9,7 @@ from odoo.addons.connect.models.settings import debug
 from odoo.addons.connect.models.call import CALL_END_STATUSES
 
 from .texml_response import VoiceResponse
+from .utils import format_telnyx_debug_payload
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,10 @@ class Call(models.Model):
 
     @api.model
     def telnyx_on_call_action(self, params):
-        debug(self, 'On call action: %s' % params)
+        debug(
+            self,
+            'On call action: %s' % format_telnyx_debug_payload(params),
+        )
         response = VoiceResponse()
         response.hangup()
         return response.to_xml()
@@ -100,7 +104,7 @@ class Call(models.Model):
     def on_telnyx_vm_recording_status(self, params):
         debug(
             self.sudo(),
-            'On recording status: %s' % json.dumps(params, indent=2),
+            'On recording status: %s' % format_telnyx_debug_payload(params),
         )
         channel = self.sudo().env['connect.channel'].search(
             [('sid', '=', params['CallSid'])]

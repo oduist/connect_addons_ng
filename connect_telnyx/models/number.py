@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
 import logging
 
 from odoo import fields, models, api
@@ -8,6 +7,7 @@ from odoo.exceptions import ValidationError
 from odoo.addons.connect.models.settings import debug
 from .settings import format_connect_response
 from .texml_response import Connect, VoiceResponse
+from .utils import format_telnyx_debug_payload
 
 logger = logging.getLogger(__name__)
 
@@ -197,7 +197,7 @@ class Number(models.Model):
         debug(
             self,
             'Route number call: %s'
-            % json.dumps(request, indent=2),
+            % format_telnyx_debug_payload(request),
         )
         self.env['connect.call'].on_telnyx_call_status(request)
         return self.sudo().render_inbound(request, params=params)

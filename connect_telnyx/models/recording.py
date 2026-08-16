@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-import json
 import logging
 
 from odoo import models, api
 
 from odoo.addons.connect.models.settings import debug
+
+from .utils import format_telnyx_debug_payload
 
 logger = logging.getLogger(__name__)
 
@@ -21,17 +22,25 @@ class Recording(models.Model):
             media_url = getattr(urls, 'mp3', None) or getattr(urls, 'wav', None) or ''
         data = {
             'sid': rec.id,
-            'call_sid': getattr(rec, 'call_leg_id', None) or '',
             'media_url': media_url,
             'duration': int(getattr(rec, 'duration_millis', 0) or 0) // 1000,
             'source': getattr(rec, 'source', None) or '',
             'status': getattr(rec, 'status', None) or '',
         }
-        channel = self.env['connect.channel'].search(
-            [('sid', '=', data['call_sid'])]
+        call_sid = (
+            getattr(rec, 'call_control_id', None)
+            or getattr(rec, 'call_leg_id', None)
+            or ''
         )
-        data['call'] = channel.call.id
-        data['channel'] = channel.id
+        channel = self.env['connect.channel']
+        if call_sid:
+            channel = channel.search([('sid', '=', call_sid)], limit=1)
+        if channel and channel.call:
+            data.update({
+                'call_sid': call_sid,
+                'call': channel.call.id,
+                'channel': channel.id,
+            })
         return data
 
     @api.model
@@ -39,7 +48,7 @@ class Recording(models.Model):
         self = self.sudo()
         debug(
             self,
-            'On recording status: %s' % json.dumps(params, indent=2),
+            'On recording status: %s' % format_telnyx_debug_payload(params),
         )
         data = {
             'sid': params['RecordingSid'],

@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Telnyx
 - **Technical:** `connect_telnyx`
-- **Version:** 19.0.1.4.0
+- **Version:** 19.0.1.4.1
 - **Depends:** `connect`
 - **Python deps:** `telnyx`, `nacl` (PyNaCl)
 - **Application:** False
@@ -134,7 +134,11 @@ connect_twilio and connect_telnyx leaves the last-loaded module owning
 
 `on_telnyx_recording_status()` (TeXML recording callback + fetch of the
 recording resource), `telnyx_prepare_data()` (maps `download_urls`,
-`duration_millis`, `call_leg_id`).
+`duration_millis`, and a resolvable API leg identifier). The webhook's TeXML
+`CallSid` relation remains authoritative when the recording API returns an
+unmatched UUID `call_leg_id`, so API enrichment cannot orphan the recording.
+Raw Telnyx webhook debug payloads redact `RecordingUrl` before they are stored
+in `connect.debug`; the unmodified URL is still used for recording playback.
 
 ### user.py - `_inherit = 'connect.user'`
 

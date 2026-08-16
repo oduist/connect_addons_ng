@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
 import logging
 
 from markupsafe import escape
@@ -7,6 +6,8 @@ from markupsafe import escape
 from odoo import models, api, release
 
 from odoo.addons.connect.models.settings import debug
+
+from .utils import format_telnyx_debug_payload
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,10 @@ class Channel(models.Model):
     @api.model
     def on_telnyx_call_status(self, params):
         """Telnyx TeXML webhook adapter: map params and delegate to core."""
-        debug(self, 'On channel status: %s' % json.dumps(params, indent=2))
+        debug(
+            self,
+            'On channel status: %s' % format_telnyx_debug_payload(params),
+        )
         generic = self._map_telnyx_params(params)
         return self.process_channel_event(generic)
 
