@@ -57,7 +57,10 @@ Manages Telnyx Voice AI Assistants through the v2 API. Odoo is authoritative:
 account sync pushes local assistants and ignores unknown Telnyx assistants;
 there is no remote Pull/import workflow (ADR-062). Stores the prompt, greeting,
 model/voice/transcription settings, recording/memory switches and the Odoo
-tool allowlist.
+tool allowlist. Voice settings include `voice`, `voice_speed`, optional
+`language_boost`, and opt-in `expressive_mode` (ADR-066). Empty
+`language_boost` is omitted from the Telnyx payload; expressive mode is always
+published as a Boolean.
 
 Language routing fields are `language_mode` (`contact` / `fixed` /
 `automatic`) and `default_lang`. New assistants default to multilingual
@@ -68,7 +71,9 @@ webhook overrides the greeting and conversation-language variables from the
 strictly matched partner's `lang`; ambiguous matches expose neither identity
 nor contact language. Russian and Polish standard receptionist greeting
 translations ship with the module. TTS language coverage remains a property
-of the selected Telnyx voice (ADR-063).
+of the selected Telnyx voice (ADR-063). Supported multilingual voices may use
+`language_boost=auto` or an explicit language hint. Expressive mode must only
+be enabled for voices whose provider supports it, such as Telnyx Ultra.
 
 The always-on `register_call_request` webhook tool stores the qualified title,
 summary and requested action as an internal note on the current `connect.call`.

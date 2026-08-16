@@ -41,7 +41,8 @@ DEFAULT_WARM_TRANSFER_INSTRUCTIONS = (
 
 REMOTE_FIELDS = {
     "name", "description", "instructions", "greeting", "model",
-    "voice", "voice_speed", "transcription_model",
+    "voice", "voice_speed", "language_boost", "expressive_mode",
+    "transcription_model",
     "transcription_language", "time_limit_secs", "record_calls",
     "language_mode", "default_lang",
     "memory_enabled", "enable_contact_tools", "enable_crm_tools",
@@ -75,6 +76,17 @@ class TelnyxAIAssistant(models.Model):
              "Multilingual, MiniMax, or Inworld when one assistant must "
              "speak several languages.")
     voice_speed = fields.Float(default=1.0)
+    language_boost = fields.Char(
+        string="Voice Language Boost",
+        help="Optional Telnyx TTS language hint. Use auto for supported "
+             "multilingual voices, an explicit provider-supported language, "
+             "or leave empty to keep the provider default.",
+    )
+    expressive_mode = fields.Boolean(
+        string="Expressive Mode",
+        help="Allow supported voices such as Telnyx Ultra to add contextual "
+             "expression. Leave disabled for voices that do not support it.",
+    )
     transcription_model = fields.Char(
         default="deepgram/nova-3",
         help="Speech recognition model. Telnyx recommends deepgram/nova-3 "
@@ -482,10 +494,14 @@ class TelnyxAIAssistant(models.Model):
         if self.model:
             payload["model"] = self.model
         if self.voice:
-            payload["voice_settings"] = {
+            voice_settings = {
                 "voice": self.voice,
                 "voice_speed": self.voice_speed,
+                "expressive_mode": self.expressive_mode,
             }
+            if self.language_boost:
+                voice_settings["language_boost"] = self.language_boost
+            payload["voice_settings"] = voice_settings
         transcription = {}
         if self.transcription_model:
             transcription["model"] = self.transcription_model
@@ -519,6 +535,8 @@ class TelnyxAIAssistant(models.Model):
                 voice_settings.get("voice_speed")
                 or voice_settings.get("speed") or 1.0
             ),
+            "language_boost": voice_settings.get("language_boost") or "",
+            "expressive_mode": bool(voice_settings.get("expressive_mode")),
             "transcription_model": transcription.get("model") or "",
             "transcription_language": transcription.get("language") or "",
             "time_limit_secs": telephony.get("time_limit_secs") or 1800,
@@ -563,10 +581,15 @@ class TelnyxAIAssistant(models.Model):
             payload["voice_settings"] = {
                 "voice": DEFAULT_VOICE,
                 "voice_speed": self.voice_speed or 1.0,
+                "expressive_mode": False,
             }
             data = self._unwrap(
                 settings.telnyx_api_request("POST", path, payload=payload))
-            self.with_context(skip_telnyx_ai_sync=True).voice = DEFAULT_VOICE
+            self.with_context(skip_telnyx_ai_sync=True).write({
+                "voice": DEFAULT_VOICE,
+                "language_boost": False,
+                "expressive_mode": False,
+            })
             settings.connect_notify(
                 "Voice of the AI assistant '{}' was not available in Telnyx "
                 "and was replaced with {}.".format(self.name, DEFAULT_VOICE),

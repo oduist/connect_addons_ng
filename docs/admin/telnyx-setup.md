@@ -105,10 +105,19 @@ assistants. Telnyx also supports multilingual alternatives such as
 language coverage and turn-taking behavior.
 
 Speech output is independent. `AWS.Polly.Joanna-Neural` is English-only, so
-select an Azure Multilingual, MiniMax, Inworld, or another voice whose Telnyx
-catalog entry and provider documentation cover every required language. A
-fixed-language transcription setting or single-language voice intentionally
-limits the agent even when its LLM understands several languages.
+select Telnyx Ultra, Azure Multilingual, MiniMax, Inworld, or another voice
+whose Telnyx catalog entry and provider documentation cover every required
+language. A fixed-language transcription setting or single-language voice
+intentionally limits the agent even when its LLM understands several
+languages.
+
+**Voice Language Boost** is an optional TTS hint. Use `auto` with a supported
+multilingual voice, enter an explicit provider-supported language when one
+assistant is intentionally fixed to that language, or leave it empty to keep
+the provider default. **Expressive Mode** lets supported voices such as Telnyx
+Ultra add contextual expression. Keep it disabled for providers or voices
+that do not document expressive support. Both values are stored in Odoo and
+published by automatic sync and **Push to Telnyx**.
 
 - **Enable Contact Tools** allows strict contact lookup and adding internal
   notes.

@@ -70,7 +70,42 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
             'model': 'deepgram/nova-3',
             'language': 'auto',
         })
+        self.assertEqual(payload['voice_settings'], {
+            'voice': self.assistant.voice,
+            'voice_speed': 1.0,
+            'expressive_mode': False,
+        })
         self.assertEqual(payload['dynamic_variables_webhook_timeout_ms'], 5000)
+
+    def test_remote_payload_publishes_voice_controls(self):
+        self.assistant.with_context(skip_telnyx_ai_sync=True).write({
+            'voice': 'Telnyx.Ultra.callie',
+            'language_boost': 'auto',
+            'expressive_mode': True,
+        })
+
+        self.assertEqual(self.assistant._remote_payload()['voice_settings'], {
+            'voice': 'Telnyx.Ultra.callie',
+            'voice_speed': 1.0,
+            'language_boost': 'auto',
+            'expressive_mode': True,
+        })
+
+    def test_remote_values_read_voice_controls(self):
+        values = self.Assistant._remote_values({
+            'id': 'assistant-remote',
+            'name': 'Remote Agent',
+            'instructions': 'Help.',
+            'voice_settings': {
+                'voice': 'Telnyx.Ultra.callie',
+                'voice_speed': 0.9,
+                'language_boost': 'Polish',
+                'expressive_mode': True,
+            },
+        }, imported=True)
+
+        self.assertEqual(values['language_boost'], 'Polish')
+        self.assertTrue(values['expressive_mode'])
 
     def test_unique_contact_supplies_language_and_localized_greeting(self):
         partner = self.env['res.partner'].create({
@@ -124,7 +159,11 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
     def test_push_retries_with_a_known_voice_when_telnyx_rejects_it(self):
         from odoo.addons.connect_telnyx.models.ai_assistant import DEFAULT_VOICE
         self.assistant.with_context(skip_telnyx_ai_sync=True).write(
-            {'voice': 'Telnyx.Ultra.deleted-voice'})
+            {
+                'voice': 'Telnyx.Ultra.deleted-voice',
+                'language_boost': 'auto',
+                'expressive_mode': True,
+            })
         voices = []
 
         def api_response(_settings, method, path, **kwargs):
@@ -144,6 +183,9 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
             self.assistant._update_remote()
         self.assertEqual(
             voices, ['Telnyx.Ultra.deleted-voice', DEFAULT_VOICE])
+        self.assertEqual(self.assistant.voice, DEFAULT_VOICE)
+        self.assertFalse(self.assistant.language_boost)
+        self.assertFalse(self.assistant.expressive_mode)
 
     def test_number_renders_ai_assistant_texml(self):
         number = self.env['connect.telnyx.number'].create({

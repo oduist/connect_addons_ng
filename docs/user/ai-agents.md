@@ -49,7 +49,9 @@ fallback language.
 The contact language is maintained on the Odoo contact. A multilingual agent
 also needs automatic or multilingual speech recognition and a TTS voice that
 can actually speak the required languages; changing only the prompt does not
-make an English-only voice multilingual.
+make an English-only voice multilingual. Administrators may also configure a
+voice language hint and, for supported voices such as Telnyx Ultra, expressive
+delivery.
 
 ## Call History And Recordings
 
