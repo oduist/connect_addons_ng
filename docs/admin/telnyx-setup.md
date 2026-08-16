@@ -44,6 +44,19 @@ assistant form if it may have been exposed.
 | **Public Key** | The Ed25519 public key from Mission Control. Not secret; required to verify webhook signatures. |
 | **Account SID** | The TeXML Account SID (your Telnyx account ID). Required for click-to-call and filled in by the account sync. |
 
+### Outbound destinations
+
+Telnyx only places calls to the countries whitelisted on the account's
+**outbound voice profile**, and a new profile ships allowing `US, CA` only.
+A call to any other country is rejected by Telnyx *before* it reaches Odoo,
+so a perfectly registered phone simply fails to dial.
+
+The **Outbound Destinations** field on the settings form holds that list as
+comma-separated ISO country codes (`PL, DE, US`); saving it writes straight
+onto the profile. An empty value allows every destination. The account sync
+reads the current list back and warns when a country of one of your own
+numbers is missing from it.
+
 ### Options
 
 | Field | Description |

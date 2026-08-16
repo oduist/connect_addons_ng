@@ -137,7 +137,9 @@ class User(models.Model):
         usernames (both hardphone and web client)."""
         if not userinfo:
             return super().get_user_by_uri(userinfo)
-        re_call_uri = re.compile(r'^sip:([^@]+)@')
+        # Telnyx reports the calling party of a SIP call as a bare
+        # user@host URI, without the sip: scheme the web phone sends.
+        re_call_uri = re.compile(r'^(?:sip:)?([^@\s]+)@')
         found_username = re_call_uri.search(userinfo)
         if found_username:
             username = found_username.group(1)

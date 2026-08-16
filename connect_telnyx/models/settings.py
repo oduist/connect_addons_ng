@@ -64,6 +64,13 @@ class Settings(models.Model):
     telnyx_account_sid = fields.Char(string="Telnyx Account SID")
     telnyx_messaging_profile_id = fields.Char(readonly=True)
     telnyx_outbound_voice_profile_id = fields.Char(readonly=True)
+    telnyx_outbound_destinations = fields.Char(
+        string='Outbound Destinations',
+        help="Comma separated ISO country codes Telnyx is allowed to place "
+             "calls to, for example PL, DE, US. Saved straight onto the "
+             "outbound voice profile: a country missing here has its calls "
+             "rejected by Telnyx before Odoo sees them. Leave empty to "
+             "allow every destination.")
     telnyx_ai_summary_insight_id = fields.Char(readonly=True)
     telnyx_ai_summary_group_id = fields.Char(readonly=True)
     telnyx_balance = fields.Char(readonly=True)
@@ -257,7 +264,46 @@ class Settings(models.Model):
             self.sudo().set_param(
                 'telnyx_outbound_voice_profile_id', profile_id)
             debug(self, 'Telnyx outbound voice profile: {}'.format(profile_id))
+            self._read_telnyx_outbound_destinations(profile_id)
         return profile_id
+
+    def _read_telnyx_outbound_destinations(self, profile_id=None):
+        """Mirror the profile whitelist into the settings field."""
+        profile_id = profile_id or self.sudo().get_param(
+            'telnyx_outbound_voice_profile_id')
+        if not profile_id:
+            return False
+        try:
+            profile = (self.telnyx_api_request(
+                'GET', 'outbound_voice_profiles/{}'.format(profile_id)
+            ).get('data') or {})
+        except Exception as e:
+            logger.warning('Cannot read the outbound voice profile: %s', e)
+            return False
+        destinations = ', '.join(profile.get('whitelisted_destinations') or [])
+        self.sudo().set_param('telnyx_outbound_destinations', destinations)
+        return destinations
+
+    def _push_telnyx_outbound_destinations(self, destinations):
+        """Save the destinations an administrator typed onto the profile."""
+        profile_id = self.sudo().get_param('telnyx_outbound_voice_profile_id')
+        if not profile_id:
+            profile_id = self._ensure_telnyx_outbound_voice_profile()
+        if not profile_id:
+            raise ValidationError(
+                'Synchronize the Telnyx account first: no outbound voice '
+                'profile is known yet.')
+        regions = [
+            code.strip().upper()
+            for code in (destinations or '').replace(';', ',').split(',')
+            if code.strip()
+        ]
+        self.telnyx_api_request(
+            'PATCH', 'outbound_voice_profiles/{}'.format(profile_id),
+            payload={'whitelisted_destinations': regions})
+        debug(self, 'Telnyx outbound destinations set to {}'.format(
+            regions or 'all'))
+        return regions
 
     @api.model
     def _telnyx_local_regions(self):
@@ -552,6 +598,10 @@ class Settings(models.Model):
         if self.env.context.get("skip_protected_fields"):
             return super(Settings, self).write(vals)
         res = super(Settings, self).write(vals)
+        if 'telnyx_outbound_destinations' in vals:
+            # Owned by the outbound voice profile in Telnyx, not by Odoo.
+            self._push_telnyx_outbound_destinations(
+                vals['telnyx_outbound_destinations'])
         changed_fields = {}
         for field_name in TELNYX_PROTECTED_FIELDS:
             if vals.get(field_name):

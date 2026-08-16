@@ -365,9 +365,14 @@ class Domain(models.Model):
             res = exten.render(request=request, params=params)
             return res
         elif isinstance(found_num, str) and found_num.startswith("+"):
-            # Only calls placed from our own SIP subdomain may dial out;
-            # an inbound PSTN leg must never re-originate a call.
-            if not (request.get("Caller") or '').startswith("sip:"):
+            # Only our own PBX users may dial out through this app; an
+            # inbound PSTN leg must never re-originate a call. Telnyx
+            # identifies the SIP caller by its credential URI, reported
+            # as `From` for a hardphone and as `Caller` for the web
+            # phone, with or without the sip: scheme.
+            caller_uri = self.env['connect.user']._telnyx_caller(request)
+            if not self.env['connect.user'].get_user_by_telnyx_uri(caller_uri):
+                debug(self, "Refusing to dial out for unknown caller %s" % caller_uri)
                 return "<Response><Say>Extension not found. Goodbye! </Say></Response>"
             return self.originate_external_call(found_num, request, params=params)
         else:

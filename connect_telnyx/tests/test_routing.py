@@ -320,6 +320,42 @@ class TestTelnyxOutboundVoiceProfile(TelnyxTestCommon):
         self.assertTrue(ok)
         notify.assert_not_called()
 
+    def test_destinations_typed_in_settings_reach_telnyx(self):
+        """The administrator edits the allowed regions in Odoo."""
+        settings = self.env['connect.settings'].sudo()
+        settings.set_param('telnyx_outbound_voice_profile_id', 'ovp-1')
+        captured = {}
+
+        def api_response(_self, method, path, **kwargs):
+            captured['method'] = method
+            captured['path'] = path
+            captured['payload'] = kwargs.get('payload')
+            return {'data': {'id': 'ovp-1'}}
+
+        with patch.object(Settings, 'telnyx_api_request', autospec=True,
+                          side_effect=api_response):
+            settings.search([], limit=1).write(
+                {'telnyx_outbound_destinations': 'pl , de,US'})
+        self.assertEqual(captured['method'], 'PATCH')
+        self.assertEqual(captured['path'], 'outbound_voice_profiles/ovp-1')
+        self.assertEqual(
+            captured['payload'], {'whitelisted_destinations': ['PL', 'DE', 'US']})
+
+    def test_empty_destinations_allow_everything(self):
+        settings = self.env['connect.settings'].sudo()
+        settings.set_param('telnyx_outbound_voice_profile_id', 'ovp-1')
+        captured = {}
+
+        def api_response(_self, method, path, **kwargs):
+            captured['payload'] = kwargs.get('payload')
+            return {'data': {'id': 'ovp-1'}}
+
+        with patch.object(Settings, 'telnyx_api_request', autospec=True,
+                          side_effect=api_response):
+            settings.search([], limit=1).write(
+                {'telnyx_outbound_destinations': ''})
+        self.assertEqual(captured['payload'], {'whitelisted_destinations': []})
+
     def test_connection_params_carry_the_profile(self):
         self.env['connect.settings'].sudo().set_param(
             'telnyx_outbound_voice_profile_id', 'ovp-1')

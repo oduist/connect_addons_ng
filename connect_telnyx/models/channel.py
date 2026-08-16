@@ -34,6 +34,13 @@ class Channel(models.Model):
         caller = (params.get('Caller') or params.get('From')
                   or params.get('CallerId'))
         called = params.get('Called') or params.get('To')
+        if caller and '@' in caller:
+            # A SIP credential URI means nothing in the call history;
+            # store the extension of the user it belongs to instead.
+            caller_user = self.env['connect.user'].sudo(
+            ).get_user_by_telnyx_uri(caller)
+            if caller_user and caller_user.telnyx_exten.number:
+                caller = caller_user.telnyx_exten.number
         return {
             'sid': params['CallSid'],
             'caller': caller,

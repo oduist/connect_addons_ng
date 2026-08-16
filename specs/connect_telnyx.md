@@ -80,6 +80,7 @@ idempotent `connect.recording` row with `source = telnyx-ai`.
 | `telnyx_account_sid` | Char | TeXML Account SID — required for click-to-call |
 | `telnyx_messaging_profile_id` | Char | Readonly, set by sync |
 | `telnyx_outbound_voice_profile_id` | Char | Readonly; the profile every connection and TeXML app must carry to dial out |
+| `telnyx_outbound_destinations` | Char | Comma-separated ISO country codes; written straight onto the profile whitelist (empty = all) |
 | `telnyx_balance` | Char | Readonly |
 | `telnyx_auto_sync` | Boolean | Default: True |
 | `telnyx_verify_requests` | Boolean | Default: True |
