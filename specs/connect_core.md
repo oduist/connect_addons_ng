@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect
 - **Technical:** `connect`
-- **Version:** 19.0.4.1.0
+- **Version:** 19.0.4.2.2
 - **Depends:** `base`, `mail`, `contacts`, `sms`, `resource`
 - **Python deps:** `phonenumbers`, `jinja2`, `openai` (for transcription - not Twilio-specific), `PyJWT`
 - **Application:** True
@@ -47,6 +47,7 @@ for easy access from other models.
 | `proxy_recordings` | Boolean | Default: True |
 | `transcript_calls` | Boolean | Enable automatic transcription |
 | `transcript_provider` | Selection | `openai` |
+| `openai_summary_model` | Selection | `gpt-5.4-mini` (default) or `gpt-4o` |
 | `summary_prompt` | Text | GPT prompt for call summaries |
 | `register_summary` | Boolean | Default: True - post summary to chatter |
 | `instance_uid` | Char | Computed UUID |
@@ -278,6 +279,7 @@ Order: `id desc`
 | `partner` | Many2one | `res.partner` |
 | `caller_user` | Many2one | Related via `call.caller_user` |
 | `called_user` | Many2one | `res.users` |
+| `users` | Many2many | Computed union of recording and linked-call Odoo users |
 | `caller_number` | Char | |
 | `called_number` | Char | |
 | `media_url` | Char | |
@@ -302,12 +304,13 @@ Order: `id desc`
 | Method | Description |
 |--------|-------------|
 | `_get_recording_widget()` | HTML audio player with proxy URL |
+| `_compute_users()` | Combine caller, called, and answered Odoo users for list display |
 | `_get_list_view_summary()` | Truncated summary for list views |
 | `_get_duration_human()` | Human-readable duration |
 | `_sync_summary()` | Constrains: sync summary to call record |
 | `get_transcript()` | Trigger transcription workflow |
 | `transcribe_recording()` | Call OpenAI Whisper API for speech-to-text |
-| `make_summary()` | Call OpenAI GPT-4o for call summary generation |
+| `make_summary()` | Call the configured OpenAI model for call summary generation |
 | `update_transcript()` | Async callback handler for transcript updates |
 | `_cron_transcribe_recordings()` | Cron: transcribe `transcription_pending` recordings out of the request path (replaces the old inline transcription + `cr.commit()` in `create()`) |
 
@@ -326,7 +329,8 @@ atomic.
   e.g. connect_infobip — ADR-036) and only falls back to downloading
   `media_url` (which may be proxied) before sending the audio to OpenAI
   Whisper. `get_transcript()` accepts either source.
-- `make_summary()` uses the `summary_prompt` from settings with GPT-4o.
+- `make_summary()` uses the `summary_prompt` and `openai_summary_model` from
+  settings. `OPENAI_COMPLETION_MODEL` remains a deployment-level override.
 
 ---
 
@@ -666,7 +670,7 @@ All models get list (tree) and form views. Key view details:
 | `call_views.xml` | List + form with recording widget, partner button, chatter |
 | `channel_views.xml` | List + form (admin menu entry) |
 | `message_views.xml` | List + form with media widget, direction/status icons (menu entry lives in connect_twilio) |
-| `recording_views.xml` | List + form with audio player, transcript, summary |
+| `recording_views.xml` | List + form with audio player, transcript, summary, and optional Partner and Users list columns |
 | `user_views.xml` | List + form with voicemail, summary prompt, originate provider |
 | `debug_views.xml` | List (read-only) |
 | `settings.xml` | Core settings form (general, registration, transcription/OpenAI). Provider settings forms live in their own modules and open the same singleton via the parametrized `open_settings_form()`. |

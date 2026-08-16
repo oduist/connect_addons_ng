@@ -27,6 +27,7 @@ class Recording(models.Model):
     call_sid = fields.Char(string='Channel SID', readonly=True)
     caller_user = fields.Many2one(related='call.caller_user', store=True, readonly=False)
     called_user = fields.Many2one('res.users', ondelete='set null')
+    users = fields.Many2many('res.users', compute='_compute_users', string='Users')
     caller_number = fields.Char()
     called_number = fields.Char()
     media_url = fields.Char()
@@ -53,6 +54,24 @@ class Recording(models.Model):
     transcription_price = fields.Char()
     summary = fields.Html()
     list_view_summary = fields.Html(compute='_get_list_view_summary')
+
+    @api.depends(
+        'caller_user',
+        'called_user',
+        'call.caller_user',
+        'call.called_users',
+        'call.answered_user',
+    )
+    def _compute_users(self):
+        for rec in self:
+            users = rec.caller_user | rec.called_user
+            if rec.call:
+                users |= (
+                    rec.call.caller_user
+                    | rec.call.called_users
+                    | rec.call.answered_user
+                )
+            rec.users = users
 
     def transcribe_recording(self, openai_api_key, summary_prompt):
         result = {}
@@ -107,9 +126,15 @@ class Recording(models.Model):
     def make_summary(self, client, summary_prompt, transcript):
         logger.info('Make summary!')
         try:
-            response = client.chat.completions.create(
-                model=os.environ.get('OPENAI_COMPLETION_MODEL', 'gpt-4o'),
-                messages=[
+            settings = self.env['connect.settings']
+            model = (
+                os.environ.get('OPENAI_COMPLETION_MODEL')
+                or settings.get_param('openai_summary_model', 'gpt-5.4-mini')
+            )
+            max_tokens = int(os.environ.get('OPENAI_COMPLETION_MAX_TOKENS', 4096))
+            completion_params = {
+                'model': model,
+                'messages': [
                     {
                         'role': 'user',
                         'content': summary_prompt
@@ -119,14 +144,22 @@ class Recording(models.Model):
                         'content': transcript,
                     },
                 ],
-                temperature=float(os.environ.get('OPENAI_COMPLETION_TEMPERATURE', 0.5)),
-                max_tokens=int(os.environ.get('OPENAI_COMPLETION_MAX_TOKENS', 4096)),
-                top_p=float(os.environ.get('OPENAI_COMPLETION_TOP_P', 1.0)),
-                frequency_penalty=float(os.environ.get('OPENAI_COMPLETION_FREQUENCY_PENALTY', 0.0)),
-                presence_penalty=float(os.environ.get(
-                    'OPENAI_COMPLETION_PRESENCE_PENALTY',
-                    os.environ.get('OPENAI_COMPLETION_PRESENSE_PENALTY', 0.0))),
-            )
+            }
+            if model.startswith('gpt-5'):
+                completion_params['max_completion_tokens'] = max_tokens
+            else:
+                completion_params.update({
+                    'temperature': float(os.environ.get(
+                        'OPENAI_COMPLETION_TEMPERATURE', 0.5)),
+                    'max_tokens': max_tokens,
+                    'top_p': float(os.environ.get('OPENAI_COMPLETION_TOP_P', 1.0)),
+                    'frequency_penalty': float(os.environ.get(
+                        'OPENAI_COMPLETION_FREQUENCY_PENALTY', 0.0)),
+                    'presence_penalty': float(os.environ.get(
+                        'OPENAI_COMPLETION_PRESENCE_PENALTY',
+                        os.environ.get('OPENAI_COMPLETION_PRESENSE_PENALTY', 0.0))),
+                })
+            response = client.chat.completions.create(**completion_params)
             logger.info('%s', response.usage)
             return {'summary': response.choices[0].message.content.strip('\n\n')}
         except Exception as e:

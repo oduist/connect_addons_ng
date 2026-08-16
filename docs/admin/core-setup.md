@@ -22,13 +22,14 @@ Connect uses OpenAI for automatic call transcription and summarization.
 | **Enable Call Transcription** | Automatically transcribe recordings when they are created. |
 | **Transcription Provider** | Currently supports OpenAI. |
 | **OpenAI API Key** | Your OpenAI API key. Masked in the UI for non-managers. |
+| **Summary Model** | OpenAI model used for call summaries. Defaults to GPT-5.4 mini; GPT-4o remains available. |
 | **Register Summary** | Automatically post call summaries to the partner's chatter. |
-| **Summary Prompt** | Custom prompt for GPT-4o summarization. Default: "Summarise this phone call". |
+| **Summary Prompt** | Custom prompt for call summarization. Default: "Summarise this phone call". |
 
 !!! info "How transcription works"
     1. A call recording is created (by Twilio or FreeSWITCH)
     2. Audio is sent to OpenAI Whisper API for speech-to-text
-    3. The transcript is sent to GPT-4o with the summary prompt
+    3. The transcript is sent to the selected summary model with the summary prompt
     4. The summary is saved on both the recording and the call record
     5. If enabled, the summary is posted to the partner's chatter
 

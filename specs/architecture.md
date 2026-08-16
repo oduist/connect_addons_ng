@@ -28,7 +28,8 @@
    webhook controllers only — 3CX owns its numbering, routing and devices.
 
 4. **OpenAI transcription is in core (not Twilio-specific).** Recording transcription via
-   OpenAI Whisper and call summarization via GPT-4o are technology-agnostic features.
+   OpenAI Whisper and call summarization via a configurable OpenAI model are
+   technology-agnostic features.
    Any telephony provider can produce a recording; any recording can be transcribed.
    The `openai` Python package is a core dependency, and `openai_api_key` +
    `get_openai_client()` live in `connect.settings`.
@@ -418,7 +419,8 @@ works with any combination of installed providers.
    b. Calls OpenAI Whisper API via settings.get_openai_client()
    c. Stores transcript text
 4. If transcript exists, calls core's make_summary():
-   a. Calls OpenAI GPT-4o with summary_prompt from settings
+   a. Calls the OpenAI summary model selected in settings (GPT-5.4 mini by default)
+      with summary_prompt
    b. Stores summary HTML
 5. Core's _sync_summary() posts summary to call's chatter
 ```

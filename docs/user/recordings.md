@@ -31,7 +31,8 @@ the provider supports it.
 When transcription is enabled, recordings are automatically processed:
 
 1. **Speech-to-text** — Audio is sent to OpenAI Whisper for transcription
-2. **Summarization** — The transcript is sent to GPT-4o for a concise summary
+2. **Summarization** — The transcript is sent to the OpenAI model selected by
+   your administrator (GPT-5.4 mini by default) for a concise summary
 
 ### Viewing Transcripts
 
@@ -56,13 +57,14 @@ When **Register Summary** is enabled in settings, call summaries are automatical
 
 Navigate to **Connect > Calls > Recordings** to see all recordings in a list view.
 
-The list shows:
+The list shows the call, phone numbers, duration, summary, and date. Use the
+column selector to show or hide the optional **Partner** and **Users** columns.
 
 | Field | Description |
 |-------|-------------|
 | **Call** | Link to the associated call record. |
 | **Partner** | Linked contact. |
+| **Users** | Internal Odoo users who participated in the call. |
 | **Duration** | Recording length. |
-| **Status** | Completed, processing, or failed. |
 | **Summary** | Truncated AI summary for quick review. |
-| **Player** | Inline audio playback. |
+| **Date** | Date and time when the recording record was created. |

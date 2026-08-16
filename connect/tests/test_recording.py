@@ -34,6 +34,20 @@ class TestRecording(ConnectTestCommon):
         self.assertTrue(self.recording.id)
         self.assertEqual(self.recording.duration, 60)
 
+    def test_users_include_all_recording_participants(self):
+        """Users combines recording and linked-call Odoo users."""
+        self.call.write({
+            'caller_user': self.admin_user.id,
+            'called_users': [(6, 0, [self.basic_user.id])],
+            'answered_user': self.basic_user.id,
+        })
+        self.recording.called_user = self.portal_user
+
+        self.assertEqual(
+            set(self.recording.users.ids),
+            {self.admin_user.id, self.basic_user.id, self.portal_user.id},
+        )
+
     def test_duration_human(self):
         """Test duration_human computes HH:MM."""
         self.assertEqual(self.recording.duration_human, '01:00')
@@ -126,6 +140,41 @@ class TestRecording(ConnectTestCommon):
 
                 self.recording.transcribe_recording('test-key', 'Summarize this')
                 self.assertEqual(self.recording.summary, '<p>AI Summary</p>')
+
+    def test_make_summary_uses_default_gpt5_model(self):
+        """Test summaries use the configured GPT-5-compatible parameters."""
+        self.env['connect.settings'].set_param(
+            'openai_summary_model', 'gpt-5.4-mini')
+        with patch.dict(
+            'odoo.addons.connect.models.recording.os.environ',
+            {'OPENAI_COMPLETION_MODEL': ''},
+        ):
+            with self.mock_openai_client() as mock_client:
+                self.recording.make_summary(
+                    mock_client, 'Summarize this', 'Test transcript')
+
+        params = mock_client.chat.completions.create.call_args.kwargs
+        self.assertEqual(params['model'], 'gpt-5.4-mini')
+        self.assertEqual(params['max_completion_tokens'], 4096)
+        self.assertNotIn('max_tokens', params)
+        self.assertNotIn('temperature', params)
+
+    def test_make_summary_uses_selected_legacy_model(self):
+        """Test administrators can retain the previous GPT-4o behavior."""
+        self.env['connect.settings'].set_param('openai_summary_model', 'gpt-4o')
+        with patch.dict(
+            'odoo.addons.connect.models.recording.os.environ',
+            {'OPENAI_COMPLETION_MODEL': ''},
+        ):
+            with self.mock_openai_client() as mock_client:
+                self.recording.make_summary(
+                    mock_client, 'Summarize this', 'Test transcript')
+
+        params = mock_client.chat.completions.create.call_args.kwargs
+        self.assertEqual(params['model'], 'gpt-4o')
+        self.assertEqual(params['max_tokens'], 4096)
+        self.assertNotIn('max_completion_tokens', params)
+        self.assertEqual(params['temperature'], 0.5)
 
     def test_update_transcript(self):
         """Test update_transcript writes transcript and summary."""

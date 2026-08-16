@@ -48,6 +48,7 @@
                                 </group>
                                 <group string="OpenAI">
                                     <field name="display_openai_api_key" string="API Key"/>
+                                    <field name="openai_summary_model" string="Summary Model"/>
                                 </group>
                             </group>
                             <group string="Summary Prompt">
