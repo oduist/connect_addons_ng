@@ -733,19 +733,22 @@ class TelnyxAIAssistant(models.Model):
             "language": partner.lang or "",
         }
 
-    def _resolve_partner(self, payload, call_control_id=None):
+    def _resolve_partner_match(self, payload, call_control_id=None):
         self.ensure_one()
         phone = payload.get("phone")
         if phone:
-            return self._strict_partner_match(phone)[0]
+            return self._strict_partner_match(phone)
         if call_control_id:
             channel = self.env["connect.channel"].sudo().search(
                 [("sid", "=", call_control_id)], limit=1
             )
             phone = channel.call.caller or channel.caller
             if phone:
-                return self._strict_partner_match(phone)[0]
-        return self.env["res.partner"]
+                return self._strict_partner_match(phone)
+        return self.env["res.partner"], 0
+
+    def _resolve_partner(self, payload, call_control_id=None):
+        return self._resolve_partner_match(payload, call_control_id)[0]
 
     def execute_tool(self, tool_name, payload, call_control_id=None):
         self.ensure_one()
@@ -758,7 +761,8 @@ class TelnyxAIAssistant(models.Model):
         if (tool_name in ("lookup_contact", "add_contact_note")
                 and not self.enable_contact_tools):
             raise ValidationError("Contact tools are disabled.")
-        partner = self._resolve_partner(payload, call_control_id)
+        partner, match_count = self._resolve_partner_match(
+            payload, call_control_id)
         phone = payload.get("phone") or (
             partner.phone or partner.mobile if partner else ""
         )
@@ -787,7 +791,7 @@ class TelnyxAIAssistant(models.Model):
                 call.sudo().partner = partner
             return {"ok": True, "call_id": call.id}
         if tool_name == "lookup_contact":
-            return self._partner_values(partner)
+            return self._partner_values(partner, match_count=match_count)
         note = (payload.get("note") or "").strip()
         if len(note) > 4000:
             raise ValidationError("Tool note is too long.")
