@@ -332,7 +332,8 @@ class Domain(models.Model):
         self.env["connect.call"].on_telnyx_call_status(request)
         to_val = request.get("To") or ''
         # Extract the dialed number from the SIP URI
-        found = re.search(r"^sip:(.+?)@(.+)\.sip\.telnyx\.com", to_val)
+        found = re.search(
+            r"^(?:sip:)?(.+?)@(.+)\.sip\.telnyx\.com$", to_val)
         if found:
             found_num = found.group(1)
         else:

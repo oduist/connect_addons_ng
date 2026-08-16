@@ -194,6 +194,14 @@ subdomain. `destination` Selection: `user` / `callflow` / `texml` /
 `ai_assistant`. Numbers have no default flag; outbound defaults live on
 `connect.telnyx.outgoing_callerid`.
 
+The domain router accepts routing destinations both as
+`sip:<extension>@<subdomain>.sip.telnyx.com` and as the bare
+`<extension>@<subdomain>.sip.telnyx.com` form emitted by some Telnyx
+callbacks. Real credential usernames routed back into the subdomain remain
+blocked as loops. Call-progress mapping retains the initial channel parties,
+direction, parent, status and duration when a later callback omits them
+(ADR-054).
+
 ### outgoing_callerid.py - `connect.telnyx.outgoing_callerid`
 
 Owned numbers only (no Telnyx validation API): `number` (E.164

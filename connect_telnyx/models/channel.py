@@ -35,9 +35,11 @@ class Channel(models.Model):
         after the first one stored an empty number, leaving calls in the
         history with no caller and no callee.
         """
+        existing = self.sudo().search(
+            [('sid', '=', params['CallSid'])], limit=1)
         caller = (params.get('Caller') or params.get('From')
-                  or params.get('CallerId'))
-        called = params.get('Called') or params.get('To')
+                  or params.get('CallerId') or existing.caller)
+        called = params.get('Called') or params.get('To') or existing.called
         if caller and '@' in caller:
             # A SIP credential URI means nothing in the call history;
             # store the extension of the user it belongs to instead.
@@ -49,12 +51,14 @@ class Channel(models.Model):
             'sid': params['CallSid'],
             'caller': caller,
             'called': called,
-            'to': params.get('To') or called,
-            'technical_direction': params.get('Direction'),
-            'status': params.get('CallStatus'),
-            'duration': int(params.get('CallDuration', 0)),
+            'to': params.get('To') or existing.to or called,
+            'technical_direction': (
+                params.get('Direction') or existing.technical_direction),
+            'status': params.get('CallStatus') or existing.status,
+            'duration': int(
+                params.get('CallDuration') or existing.duration or 0),
             'call_type': 'phone',
-            'parent_sid': params.get('ParentCallSid'),
+            'parent_sid': params.get('ParentCallSid') or existing.parent_sid,
         }
 
     def telnyx_connect_notify(

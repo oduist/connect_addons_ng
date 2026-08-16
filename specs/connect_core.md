@@ -195,7 +195,7 @@ Order: `id desc`
 
 | Method | Description |
 |--------|-------------|
-| `_get_channel_numbers()` | Generic regex-based number parsing. Handles: phone numbers, whatsapp: prefix stripping, SIP/client URI parsing via `connect.user.get_user_by_uri`. |
+| `_get_channel_numbers()` | Generic regex-based number parsing. Handles phone numbers, `whatsapp:` prefix stripping, and SIP/client URIs with or without a URI scheme via `connect.user.get_user_by_uri` (ADR-054). |
 | `_get_duration_human()` | Human-readable duration |
 | `get_softphone_recording_state(payload)` | Provider-dispatched RPC returning runtime recording support/state for the active softphone call. |
 | `start_softphone_recording(payload)` | Provider-dispatched RPC to start recording the active softphone call. |

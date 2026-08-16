@@ -99,7 +99,8 @@ translator):
    answers such a call with `403 Forbidden` while that setting is off.
    The subdomain is the inbound side only — ringing a credential there
    would hand the call back to the routing application instead of the
-   phone.
+   phone. Telnyx may omit the `sip:` prefix from routing callbacks; Odoo
+   accepts both callback forms and still rejects an actual credential loop.
 2. Assign inbound numbers (Connect > Telnyx > Numbers) to a user, a call
    flow, a TeXML app or an AI assistant. Inbound calls to a number are
    dispatched by the dialled number; a number with no destination answers
