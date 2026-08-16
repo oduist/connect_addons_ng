@@ -5,8 +5,8 @@
         <field name="model">connect.channel</field>
         <field name="arch" type="xml">
             <list default_order="id desc">
-                <field name="caller" widget="phone"/>
-                <field name="called" widget="phone"/>
+                <field name="caller"/>
+                <field name="called"/>
                 <field name="technical_direction" string="Direction"/>
                 <field name="status"/>
                 <field name="duration_human" string="Duration"/>

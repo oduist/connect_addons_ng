@@ -217,8 +217,8 @@ both models.
   fields with `widget="phone"` after `partner_id`; adds a "Recorded Calls"
   notebook page listing
   `recorded_calls` (`start_time`, `caller_number`, `called_number`,
-  `recording_widget` rendered with `widget="html"`); caller/called numbers use
-  `widget="phone"`
+  `recording_widget` rendered with `widget="html"`); caller/called numbers in
+  the embedded list are plain fields
 
 ### project_views.xml
 - **Action** `connect_calls_project_action`: window action listing calls
@@ -226,7 +226,7 @@ both models.
 - **Form extension** (`project.edit_project`): same pattern as `task_views.xml` —
   smart button (`connect_calls_project_action`), `partner_phone`/`partner_mobile`
   fields with `widget="phone"`, and a "Recorded Calls" notebook page listing
-  `recorded_calls` with caller/called numbers rendered by `widget="phone"`
+  `recorded_calls` with caller/called numbers rendered as plain fields
 
 ---
 

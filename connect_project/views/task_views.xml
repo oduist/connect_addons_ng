@@ -28,8 +28,8 @@
                     <field name="recorded_calls">
                         <list>
                             <field name="start_time"/>
-                            <field name="caller_number" widget="phone"/>
-                            <field name="called_number" widget="phone"/>
+                            <field name="caller_number"/>
+                            <field name="called_number"/>
                             <field name="recording_widget" widget="html"/>
                         </list>
                     </field>

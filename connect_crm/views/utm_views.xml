@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="utm.utm_source_view_tree"/>
         <field name="arch" type="xml">
             <field name="name" position="after">
-                <field name="phone" widget="phone"/>
+                <field name="phone"/>
             </field>
         </field>
     </record>

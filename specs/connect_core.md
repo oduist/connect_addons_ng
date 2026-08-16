@@ -213,8 +213,8 @@ Order: `create_date DESC`
 | Field | Type | Notes |
 |-------|------|-------|
 | `name` | Char | Computed |
-| `from_number` | Char | Required; `phone` widget in message list/form views |
-| `to_number` | Char | Required; `phone` widget in message list/form views |
+| `from_number` | Char | Required; `phone` widget in the message form |
+| `to_number` | Char | Required; `phone` widget in the message form |
 | `body` | Text | |
 | `num_media` | Integer | |
 | `message_type` | Char | sms/WhatsApp/mms |
@@ -663,10 +663,10 @@ All models get list (tree) and form views. Key view details:
 
 | View | Notes |
 |------|-------|
-| `call_views.xml` | List + form with phone widgets for caller/called values, recording widget, partner button, chatter |
-| `channel_views.xml` | List + form with phone widgets for caller/called and computed numbers (admin menu entry) |
-| `message_views.xml` | List + form with phone widgets for from/to values, media widget, direction/status icons (menu entry lives in connect_twilio) |
-| `recording_views.xml` | List + form with phone widgets for caller/called numbers, audio player, transcript, summary |
+| `call_views.xml` | Plain caller/called values in lists; form phone widgets, recording widget, partner button, chatter |
+| `channel_views.xml` | Plain caller/called values in the list; form phone widgets for caller/called and computed numbers (admin menu entry) |
+| `message_views.xml` | Plain from/to values in the list; form phone widgets, media widget, direction/status icons (menu entry lives in connect_twilio) |
+| `recording_views.xml` | Plain caller/called values in the list; form phone widgets, audio player, transcript, summary |
 | `user_views.xml` | List + form with voicemail, summary prompt, originate provider |
 | `debug_views.xml` | List (read-only) |
 | `settings.xml` | Core settings form (general, registration, transcription/OpenAI). Provider settings forms live in their own modules and open the same singleton via the parametrized `open_settings_form()`. |

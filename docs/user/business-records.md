@@ -38,9 +38,9 @@ by hand from the call form.
 **On the business record** — a **Calls** button in the button box opens the
 full call history for that record. On projects and tasks there is also a
 **Recorded Calls** tab listing the recordings made during those calls.
-Related customer phone/mobile values and the caller/called numbers in those
-recording lists use Odoo's standard phone control. The UTM source phone field
-uses the same control in its list and form views.
+Related customer phone/mobile fields on project and task forms use Odoo's
+standard phone control. The embedded recording lists and the UTM source list
+show phone numbers as plain text; the UTM source form uses the phone control.
 
 **On the call** — the linked record appears in its own field on the call form
 (**Employee**, **Sale Order**, **Invoice**, **Task**, **Project**) and as a

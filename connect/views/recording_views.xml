@@ -6,8 +6,8 @@
         <field name="arch" type="xml">
             <list default_order="id desc">
                 <field name="call"/>
-                <field name="caller_number" widget="phone"/>
-                <field name="called_number" widget="phone"/>
+                <field name="caller_number"/>
+                <field name="called_number"/>
                 <field name="duration_human" string="Duration"/>
                 <field name="list_view_summary" string="Summary"/>
                 <field name="create_date" string="Date"/>

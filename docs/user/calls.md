@@ -19,8 +19,9 @@
 ### Click-to-Call
 
 Click any phone number field on a partner form, lead, call, channel, or other
-record to dial it directly. Caller and called numbers in Connect lists and
-forms use the same standard phone control.
+record to dial it directly. Caller and called numbers on individual Connect
+forms use the same standard phone control. Connect list rows keep phone numbers
+as plain text.
 
 ### Extension Dialing
 

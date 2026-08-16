@@ -7,8 +7,8 @@
             <list default_order="create_date desc">
                 <field name="direction_display" string=" " width="30px"/>
                 <field name="status_display" string=" " width="30px"/>
-                <field name="from_number" widget="phone"/>
-                <field name="to_number" widget="phone"/>
+                <field name="from_number"/>
+                <field name="to_number"/>
                 <field name="body"/>
                 <field name="message_type"/>
                 <field name="partner"/>
