@@ -274,6 +274,10 @@
     .active {
       background: radial-gradient(transparent, $color-gray-medium);
     }
+
+    .o_phone_recording_btn.active {
+      color: $color-red;
+    }
   }
 
   .mt-auto {

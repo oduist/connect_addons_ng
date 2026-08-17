@@ -205,7 +205,7 @@ export class PhoneDialpad extends Component {
         if (this.state.recordingBusy) {
             return "fa fa-spinner fa-spin";
         }
-        return this.isRecordingOn() ? "fa fa-stop-circle" : "fa fa-circle";
+        return this.isRecordingOn() ? "fa fa-stop-circle" : "fa fa-dot-circle-o";
     }
 
     async onToggleRecording() {

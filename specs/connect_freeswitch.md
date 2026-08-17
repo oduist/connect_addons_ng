@@ -289,6 +289,11 @@ itself, because Odoo-originated click-to-call legs do not start
 `record_session`. Failed start/stop attempts reset the live state out of
 `starting` / `stopping` so the softphone can retry.
 
+The phone renders `off` as a neutral `fa-dot-circle-o` start action and `on` as
+a red `fa-stop-circle` active action; transitions use a spinner. The button
+exposes a dynamic accessible label and `aria-pressed`; disabling automatic
+recording does not remove the manual start action.
+
 ---
 
 ## Crons (`data/ir_cron.xml`)

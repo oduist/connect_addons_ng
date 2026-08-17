@@ -30,6 +30,12 @@ recording for that call. If your administrator enabled automatic recording, the
 button shows the active recording state and can stop the current recording when
 the provider supports it.
 
+A neutral target-style icon means recording is off and the button will **start**
+a manual recording. A red stop icon appears only while recording is active and
+will **stop** it. The manual button remains available when **Record Calls** is
+disabled for the user; that setting controls automatic recording, not whether a
+specific call may be recorded manually.
+
 ## AI Transcription
 
 When transcription is enabled, recordings are automatically processed:

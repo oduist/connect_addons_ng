@@ -186,6 +186,12 @@ recording. Runtime state is stored on the shared channel control fields
 completed artifacts continue to enter `connect.recording` through the Twilio
 recording status webhook.
 
+The phone renders `off` as a neutral `fa-dot-circle-o` start action and `on` as
+a red `fa-stop-circle` active action; transitions use a spinner. The button
+exposes a dynamic accessible label and `aria-pressed`.
+`connect.user.record_calls=False` keeps automatic recording off but does not
+hide the manual start action.
+
 ---
 
 ### 6. user.py - `_inherit = 'connect.user'`

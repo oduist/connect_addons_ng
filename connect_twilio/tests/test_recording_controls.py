@@ -20,6 +20,8 @@ class TestTwilioRecordingControls(TransactionCase):
         cls.connect_user = cls.env['connect.user'].with_context(
             no_clear_cache=True, no_twilio_create=True).create({
                 'user': cls.owner_user.id,
+                'sip_enabled': False,
+                'client_enabled': False,
             })
         cls.Settings = cls.env['connect.settings']
         cls.Settings.set_param('api_url', 'https://odoo.example.com/')
@@ -121,6 +123,15 @@ class TestTwilioRecordingControls(TransactionCase):
         self.assertEqual(state['state'], 'off')
         self.assertEqual(channel.sudo().recording_control_ref, 'manual-off')
         recordings.assert_called_with('Twilio.CURRENT')
+
+    def test_default_recording_state_stays_off_when_automatic_is_disabled(self):
+        channel = self._channel('CARECNOAUTO')
+        state = self.env['connect.channel'].with_user(
+            self.owner_user).get_softphone_recording_state({
+                'provider': 'twilio',
+                'channel_sid': channel.sid,
+            })
+        self.assertEqual(state['state'], 'off')
 
     def test_other_user_cannot_control_recording(self):
         channel = self._channel('CAREC4')

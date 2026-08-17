@@ -43,7 +43,7 @@ Telnyx account to restore calling.
 | **Mute/Unmute** | Toggle your microphone. |
 | **Keypad** | Open DTMF keypad to send tones during a call (e.g., for IVR menus). |
 | **Transfer** | Transfer the active call to another number or extension. |
-| **Recording** | Start or stop recording for the active call when the provider supports runtime recording control. |
+| **Recording** | A neutral record icon starts recording; a red stop icon means recording is active and stops it. |
 | **Hang Up** | End the call. |
 
 ## Call Transfer
