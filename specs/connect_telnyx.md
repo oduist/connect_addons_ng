@@ -122,6 +122,13 @@ not connect and to fall back to registering the request instead of waiting in
 silence — a rejected transfer leg (for example SIP 486 from a busy device)
 otherwise leaves the caller with dead air.
 
+A "How to speak" section caps each answer at two short sentences, forbids
+echoing the caller, narrating the call or the connection, and repeating a
+sentence already said, and requires the assistant to end the call with the
+hangup tool after two unanswered prompts. Without it the model restates
+context on every turn and answers each Telnyx `[long silence]` event with the
+same goodbye indefinitely.
+
 Completed AI conversations are linked to `connect.call` by conversation and
 Call Control IDs. Transcript, Telnyx Insight summary, and the downloaded MP3
 are stored on one idempotent `connect.recording` row with

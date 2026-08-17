@@ -56,6 +56,12 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
         self.assertIn('register a request', payload['instructions'])
         self.assertIn(
             'If a transfer does not connect', payload['instructions'])
+        self.assertIn('How to speak', payload['instructions'])
+        self.assertIn(
+            'at most two short sentences', payload['instructions'])
+        self.assertIn(
+            'Never repeat a sentence you already said',
+            payload['instructions'])
         for variable in (
             'conversation_language_name',
             'conversation_language',

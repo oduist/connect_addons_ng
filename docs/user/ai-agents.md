@@ -19,6 +19,11 @@ Speak normally after the greeting. You do not need to wait for a long reply to
 finish: start speaking and the agent will stop its playback and listen to the
 new turn.
 
+The agent answers in one or two short sentences and asks one question at a
+time. It does not repeat your words back to you, does not comment on the
+connection, and ends the call after two unanswered prompts instead of
+repeating itself.
+
 ## Transfers
 
 If a human transfer is configured, ask to speak with a person. The agent will
