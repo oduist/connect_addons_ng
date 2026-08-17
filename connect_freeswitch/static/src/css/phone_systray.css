@@ -177,6 +177,12 @@
     border-color: transparent;
 }
 
+.o_phone_recording_btn.o_phone_recording_btn_active {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--o-brand-odoo, #714b67);
+}
+
 .o_phone_recording_idle {
     align-items: center;
     background-color: var(--o-brand-odoo, #714b67);

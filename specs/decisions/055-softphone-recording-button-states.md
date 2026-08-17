@@ -21,7 +21,7 @@ Use the same explicit state language in both web phones:
 
 - idle/off: a purple circular badge with a white dot and `REC` label meaning
   **Start Recording**;
-- active/on: `fa-stop-circle` with red active styling meaning
+- active/on: a purple `fa-stop-circle` meaning
   **Stop Recording**;
 - transitions and errors keep their spinner and warning icons;
 - expose the current state through a dynamic accessible label and
@@ -30,7 +30,7 @@ Use the same explicit state language in both web phones:
 The control remains visible when **Record Calls** is disabled. Its neutral idle
 state means that no recording is active; clicking it starts a manual recording.
 Once a manual or automatic recording is actually active, the control switches
-to the red stop state.
+to the purple stop state.
 
 ## Consequences
 
