@@ -20,6 +20,7 @@ class TestTwilioRecordingControls(TransactionCase):
         cls.connect_user = cls.env['connect.user'].with_context(
             no_clear_cache=True, no_twilio_create=True).create({
                 'user': cls.owner_user.id,
+                'record_calls': False,
                 'sip_enabled': False,
                 'client_enabled': False,
             })
