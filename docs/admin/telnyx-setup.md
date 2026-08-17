@@ -143,6 +143,23 @@ published by automatic sync and **Push to Telnyx**.
 Recording and memory are off by default. CRM and Helpdesk tools are published
 only when the matching Odoo models are installed.
 
+The **Turn Taking** group controls when the assistant decides the caller has
+finished and starts answering. **Wait Before Speaking** (default 0.4 s) is the
+silence it sits through before replying. The three endpointing values are the
+silence that ends the caller's turn: **Pause Without Punctuation** (default
+1.0 s) applies while the transcript has no sentence end and is the one that
+keeps the agent out of a pause taken mid-thought, **Pause After Punctuation**
+(0.3 s) applies to a finished sentence, and **Pause After Numbers** (0.6 s)
+applies while digits are being dictated. Raise the values if the agent talks
+over callers, lower them if it feels sluggish. **Caller Can Interrupt** lets
+the caller cut the agent off; **Protect Greeting** ignores speech until the
+greeting has played.
+
+These settings matter because the configured transcription model decides
+nothing about turn taking: with `deepgram/nova-3` the endpointing plan is the
+only thing separating a pause from the end of a sentence. Telnyx ships a
+0.1-second plan, which is what makes an agent finish your sentences for you.
+
 **Caller Silence Timeout** stops the assistant after that much silence from
 the caller, and defaults to 60 seconds. Telnyx accepts 10 to 14,400 seconds.
 Keep it set: Telnyx never ends a conversation on its own, it only keeps

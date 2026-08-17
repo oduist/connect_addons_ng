@@ -55,15 +55,15 @@ WhatsApp and RCS **messaging** are integrated (ADR-033).
 
 Manages Telnyx Voice AI Assistants through the v2 API. Odoo is authoritative:
 account sync pushes local assistants and ignores unknown Telnyx assistants;
-there is no remote Pull/import workflow (ADR-062). Stores the prompt, greeting,
+there is no remote Pull/import workflow (ADR-054). Stores the prompt, greeting,
 model/voice/transcription settings, recording/memory switches and the Odoo
 tool allowlist. Voice settings include `voice`, `voice_speed`, optional
-`language_boost`, and opt-in `expressive_mode` (ADR-066). Empty
+`language_boost`, and opt-in `expressive_mode` (ADR-057). Empty
 `language_boost` is omitted from the Telnyx payload; expressive mode is always
 published as a Boolean. `voice_speed` is constrained to `[0.5, 1.5]` and a
 remote value is clamped into that range on read, because a speed the selected
 voice cannot honor makes Telnyx fail greeting synthesis and end the call after
-one second with `Reason=greeting_error` (ADR-066).
+one second with `Reason=greeting_error` (ADR-057).
 
 `telephony_settings` publishes `time_limit_secs` and `user_idle_timeout_secs`.
 The latter defaults to 60 seconds and is constrained to 0 or the Telnyx range
@@ -72,6 +72,16 @@ stopping. It is the only hard stop for an abandoned call: Telnyx keeps feeding
 the assistant `[long silence]` events instead of ending the conversation, so
 without a timeout a caller who drops out leaves the call running until the
 time limit expires.
+
+`interruption_settings` publishes turn taking: `allow_interruptions`,
+`protect_greeting`, `start_speaking_wait_secs` and the endpointing plan
+(`endpointing_punctuation_secs`, `endpointing_no_punctuation_secs`,
+`endpointing_number_secs`), each constrained to `[0, 10]` seconds. With a non
+turn-taking transcription model such as `deepgram/nova-3` these values, not
+`transcription.settings`, decide when the caller's turn ended; the Telnyx
+0.1-second endpointing plan treats a pause inside one thought as the end of
+the turn, so the defaults wait 0.4 s before speaking and 1.0 s on a transcript
+with no sentence end.
 
 Language routing fields are `language_mode` (`contact` / `fixed` /
 `automatic`) and `default_lang`. New assistants default to multilingual
@@ -82,7 +92,7 @@ webhook overrides the greeting and conversation-language variables from the
 strictly matched partner's `lang`; ambiguous matches expose neither identity
 nor contact language. Russian and Polish standard receptionist greeting
 translations ship with the module. TTS language coverage remains a property
-of the selected Telnyx voice (ADR-063). Supported multilingual voices may use
+of the selected Telnyx voice (ADR-055). Supported multilingual voices may use
 `language_boost=auto` or an explicit language hint. Expressive mode must only
 be enabled for voices whose provider supports it, such as Telnyx Ultra.
 
@@ -112,7 +122,7 @@ fall back to the configured credential as an advisory unknown state.
 The built-in Telnyx Transfer tool provides caller-side transfer progress and
 does not expose hold music. Music on hold requires a separate custom Call
 Control or conference transfer flow that owns playback, recipient dialing and
-leg bridging (ADR-065).
+leg bridging (ADR-054).
 
 Phone numbers and `connect.telnyx.exten` records route to assistants through
 the existing TeXML applications using `<Connect><AIAssistant>`. An assistant
@@ -140,7 +150,7 @@ same goodbye indefinitely.
 Completed AI conversations are linked to `connect.call` by conversation and
 Call Control IDs. Transcript, Telnyx Insight summary, and the downloaded MP3
 are stored on one idempotent `connect.recording` row with
-`source = telnyx-ai` (ADR-064). The documented insight event is resolved by
+`source = telnyx-ai` (ADR-056). The documented insight event is resolved by
 `data.payload.call_control_id`; `data.payload.results` supplies the summary.
 The conversation batch is a repair path for delayed or missed webhooks.
 Because Telnyx has already transcribed these calls, every create/update uses
@@ -161,7 +171,7 @@ by `_ensure_summary_group(instructions=None)` and stored as
 `connect.settings.telnyx_ai_summary_instructions`; writing it calls
 `_refresh_telnyx_ai_summary_insight()`, which deletes the remote insight
 best-effort, clears the stored ID and lets `_ensure_summary_group()` recreate
-and re-assign it inside the surviving insight group (ADR-067). Speech
+and re-assign it inside the surviving insight group (ADR-058). Speech
 recognition language stays per assistant (`transcription_language`,
 `transcription_model`).
 
@@ -171,7 +181,7 @@ recognition language stays per assistant (`transcription_language`,
 `pretty_xml()`, `apply_say_voice()` — an ElementTree-based mini-clone of
 `twilio.twiml.voice_response` covering the verbs the module renders.
 The finalizer adds the configured System Voice to every `<Say>` that does not
-already have an explicit voice (ADR-055).
+already have an explicit voice (ADR-052).
 
 ### settings.py - `_inherit = 'connect.settings'`
 
@@ -194,7 +204,7 @@ already have an explicit voice (ADR-055).
 | `telnyx_tts_voices` | Text | Readonly JSON cache from `GET /v2/text-to-speech/voices` |
 | `telnyx_ai_summary_insight_id` | Char | Readonly; the conversation insight Odoo owns |
 | `telnyx_ai_summary_group_id` | Char | Readonly; the insight group carrying the Odoo webhook |
-| `telnyx_ai_summary_instructions` | Text | Required prompt of that insight; a write deletes and recreates the insight (ADR-067) |
+| `telnyx_ai_summary_instructions` | Text | Required prompt of that insight; a write deletes and recreates the insight (ADR-058) |
 
 Methods: `get_telnyx_client()` (SDK client), `telnyx_sync()` (apps →
 domains → numbers → caller IDs + messaging profile),
@@ -290,12 +300,12 @@ changes too; `connect.group_admin` only); `telnyx_render()` +
 `telnyx_render_sip/client/voicemail` (user_callflow chain, TeXML
 `<Dial><Sip>`; user greeting/voicemail `<Say>` carries
 `connect.user.language`/`voice`, with `en-US` / System Voice fallbacks —
-ADR-037/ADR-055); `get_telnyx_client_token()` (JWT via
+ADR-037/ADR-052); `get_telnyx_client_token()` (JWT via
 `telephony_credentials.create_token` + `sip_domain` for the web phone);
 `get_user_by_telnyx_uri()`; `_telnyx_registration_status()` (`GET
 /v2/sip_registration_status` with `credential_type=telephony_credential`) /
 `_telnyx_transfer_target()` (priority-ordered registered SIP/WebRTC target,
-advisory API-error fallback); `telnyx_on_call_action()` (ADR-057: the child
+advisory API-error fallback); `telnyx_on_call_action()` (ADR-051: the child
 `DialCallStatus` takes precedence over the parent `CallStatus`; completed
 destinations hang up, explicit failure statuses advance the user callflow,
 and unknown statuses fail closed); callflow-managing constraints
@@ -327,7 +337,7 @@ The domain router accepts routing destinations both as
 callbacks. Real credential usernames routed back into the subdomain remain
 blocked as loops. Call-progress mapping retains the initial channel parties,
 direction, parent, status and duration when a later callback omits them
-(ADR-054).
+(ADR-051).
 
 ### outgoing_callerid.py - `connect.telnyx.outgoing_callerid`
 
@@ -434,7 +444,7 @@ validation: Ed25519 over the raw body
 are cached in `ir.http._pre_dispatch` before Odoo parses TeXML form data;
 reconstructed or canonicalized form bodies are never accepted. Invalid Dial
 action callbacks fail closed with a silent `<Hangup/>` response so no security
-error is played into a remaining live leg (ADR-056).
+error is played into a remaining live leg (ADR-053).
 
 | Route | Description |
 |-------|-------------|
@@ -537,7 +547,7 @@ bundle `lib/telnyx-webrtc.js`, global `TelnyxWebRTC.TelnyxRTC`):
   Odoo's error-handler registry consumes only the SDK's expected
   `StaleRequestError` cancellation when a background tab resumes and the
   signaling socket generation changes; other client and media errors keep
-  their normal handling (ADR-053).
+  their normal handling.
 - Mail integration: `telnyx-sms-reply` / `telnyx-whatsapp-reply` /
   `telnyx-rcs-reply` chatter actions, the Notification icon patch for
   the `WhatsApp`/`RCS` types, and a WhatsApp *Message* button on the

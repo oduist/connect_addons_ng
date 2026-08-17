@@ -92,7 +92,7 @@ such as a caller hanging up, are deliberately not errors, and the reason list
 is not documented — unknown failure reasons are reported verbatim.
 
 Voice speed is constrained to `[0.5, 1.5]` because Telnyx rejects speeds the
-selected voice does not support (ADR-066); Telnyx Ultra additionally needs at
+selected voice does not support (ADR-057); Telnyx Ultra additionally needs at
 least 0.8.
 
 ## Live testing

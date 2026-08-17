@@ -257,6 +257,47 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
             xml = self.domain.route_call(request)
         self.assertIn('<AIAssistant id="assistant-test"', xml)
 
+    def test_turn_taking_settings_are_published(self):
+        payload = self.assistant._remote_payload()
+        interruption = payload['interruption_settings']
+        self.assertTrue(interruption['enable'])
+        self.assertFalse(interruption['disable_greeting_interruption'])
+        speaking = interruption['start_speaking_plan']
+        self.assertEqual(speaking['wait_seconds'], 0.4)
+        self.assertEqual(speaking['transcription_endpointing_plan'], {
+            'on_punctuation_seconds': 0.3,
+            'on_no_punctuation_seconds': 1.0,
+            'on_number_seconds': 0.6,
+        })
+
+        with self.assertRaises(ValidationError):
+            self.assistant.with_context(skip_telnyx_ai_sync=True).write(
+                {'endpointing_no_punctuation_secs': -1})
+
+    def test_remote_values_read_turn_taking_settings(self):
+        values = self.Assistant._remote_values({
+            'id': 'assistant-remote',
+            'name': 'Remote Agent',
+            'instructions': 'Help.',
+            'interruption_settings': {
+                'enable': False,
+                'disable_greeting_interruption': True,
+                'start_speaking_plan': {
+                    'wait_seconds': 0.1,
+                    'transcription_endpointing_plan': {
+                        'on_punctuation_seconds': 0.1,
+                        'on_no_punctuation_seconds': 0.1,
+                        'on_number_seconds': 0.1,
+                    },
+                },
+            },
+        })
+
+        self.assertFalse(values['allow_interruptions'])
+        self.assertTrue(values['protect_greeting'])
+        self.assertEqual(values['start_speaking_wait_secs'], 0.1)
+        self.assertEqual(values['endpointing_no_punctuation_secs'], 0.1)
+
     def test_caller_silence_timeout_is_published(self):
         payload = self.assistant._remote_payload()
         self.assertEqual(

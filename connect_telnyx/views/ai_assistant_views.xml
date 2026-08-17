@@ -99,6 +99,14 @@
                                 <field name="record_calls"/>
                                 <field name="memory_enabled"/>
                             </group>
+                            <group string="Turn Taking">
+                                <field name="allow_interruptions"/>
+                                <field name="protect_greeting"/>
+                                <field name="start_speaking_wait_secs"/>
+                                <field name="endpointing_no_punctuation_secs"/>
+                                <field name="endpointing_punctuation_secs"/>
+                                <field name="endpointing_number_secs"/>
+                            </group>
                         </page>
                         <page string="Odoo Tools" name="odoo_tools">
                             <group>

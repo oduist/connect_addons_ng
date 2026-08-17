@@ -26,7 +26,7 @@ DEFAULT_VOICE = "AWS.Polly.Joanna-Neural"
 # one second with Reason=greeting_error. Telnyx Ultra answers 400 (code
 # 90103) on the text-to-speech endpoint at 0.5 and at 1.8 or more, so the
 # guarded range stays inside the values a supported voice can honor and
-# administrators still verify their own voice (ADR-066).
+# administrators still verify their own voice (ADR-057).
 MIN_VOICE_SPEED = 0.5
 MAX_VOICE_SPEED = 1.5
 
@@ -37,6 +37,19 @@ MAX_VOICE_SPEED = 1.5
 DEFAULT_USER_IDLE_TIMEOUT_SECS = 60
 MIN_USER_IDLE_TIMEOUT_SECS = 10
 MAX_USER_IDLE_TIMEOUT_SECS = 14400
+
+# Turn taking for a non turn-taking transcription model such as
+# deepgram/nova-3 is decided by interruption_settings, not by the
+# transcription settings. Telnyx accounts were observed with a
+# 0.1 second endpointing plan, which treats a pause inside one thought as
+# the end of the turn: on a live call the assistant started answering
+# 0.4 seconds into the caller's next words. These defaults wait long
+# enough for a mid-sentence pause and stay well below a felt delay.
+DEFAULT_START_SPEAKING_WAIT_SECS = 0.4
+DEFAULT_ENDPOINTING_PUNCTUATION_SECS = 0.3
+DEFAULT_ENDPOINTING_NO_PUNCTUATION_SECS = 1.0
+DEFAULT_ENDPOINTING_NUMBER_SECS = 0.6
+MAX_TURN_TAKING_SECS = 10.0
 
 DEFAULT_INSTRUCTIONS = (
     "You are a professional voice receptionist. Be concise, transparent, "
@@ -63,6 +76,9 @@ REMOTE_FIELDS = {
     "voice", "voice_speed", "language_boost", "expressive_mode",
     "transcription_model",
     "transcription_language", "time_limit_secs", "user_idle_timeout_secs",
+    "allow_interruptions", "protect_greeting", "start_speaking_wait_secs",
+    "endpointing_punctuation_secs", "endpointing_no_punctuation_secs",
+    "endpointing_number_secs",
     "record_calls",
     "language_mode", "default_lang",
     "memory_enabled", "enable_contact_tools", "enable_crm_tools",
@@ -152,6 +168,37 @@ class TelnyxAIAssistant(models.Model):
              "accepts 10 to 14,400 seconds. Set to 0 to let the assistant "
              "keep answering silence for the whole call time limit, which "
              "leaves an abandoned call running until the time limit expires.")
+    allow_interruptions = fields.Boolean(
+        string="Caller Can Interrupt",
+        default=True,
+        help="Let the caller cut the assistant off mid-sentence. Disable "
+             "only for scripted announcements.")
+    protect_greeting = fields.Boolean(
+        string="Protect Greeting",
+        default=False,
+        help="Ignore the caller until the greeting has finished playing.")
+    start_speaking_wait_secs = fields.Float(
+        string="Wait Before Speaking (s)",
+        default=DEFAULT_START_SPEAKING_WAIT_SECS,
+        help="Silence the assistant waits through before it starts its "
+             "answer. Lower values make it jump into the caller's pauses.")
+    endpointing_punctuation_secs = fields.Float(
+        string="Pause After Punctuation (s)",
+        default=DEFAULT_ENDPOINTING_PUNCTUATION_SECS,
+        help="Silence that ends the caller's turn when the transcript "
+             "already looks like a finished sentence.")
+    endpointing_no_punctuation_secs = fields.Float(
+        string="Pause Without Punctuation (s)",
+        default=DEFAULT_ENDPOINTING_NO_PUNCTUATION_SECS,
+        help="Silence that ends the caller's turn when the transcript has "
+             "no sentence end yet. This is the value that stops the "
+             "assistant from answering a pause taken in the middle of a "
+             "thought, so keep it the longest of the three.")
+    endpointing_number_secs = fields.Float(
+        string="Pause After Numbers (s)",
+        default=DEFAULT_ENDPOINTING_NUMBER_SECS,
+        help="Silence that ends the caller's turn while they are dictating "
+             "digits, such as a phone number or an order reference.")
     record_calls = fields.Boolean(default=False)
     memory_enabled = fields.Boolean(
         default=False,
@@ -276,6 +323,22 @@ class TelnyxAIAssistant(models.Model):
                         MIN_USER_IDLE_TIMEOUT_SECS,
                         MAX_USER_IDLE_TIMEOUT_SECS)
                 )
+
+    @api.constrains(
+        "start_speaking_wait_secs", "endpointing_punctuation_secs",
+        "endpointing_no_punctuation_secs", "endpointing_number_secs")
+    def _check_turn_taking_delays(self):
+        fields_to_check = (
+            "start_speaking_wait_secs", "endpointing_punctuation_secs",
+            "endpointing_no_punctuation_secs", "endpointing_number_secs",
+        )
+        for rec in self:
+            for name in fields_to_check:
+                if not (0 <= rec[name] <= MAX_TURN_TAKING_SECS):
+                    raise ValidationError(
+                        "'{}' must be between 0 and {} seconds.".format(
+                            rec._fields[name].string, MAX_TURN_TAKING_SECS)
+                    )
 
     @api.constrains("warm_transfer_message_delay_ms")
     def _check_warm_transfer_message_delay(self):
@@ -572,6 +635,20 @@ class TelnyxAIAssistant(models.Model):
                     "stop_on_conversation_end": True,
                 },
             },
+            "interruption_settings": {
+                "enable": self.allow_interruptions,
+                "disable_greeting_interruption": self.protect_greeting,
+                "start_speaking_plan": {
+                    "wait_seconds": self.start_speaking_wait_secs,
+                    "transcription_endpointing_plan": {
+                        "on_punctuation_seconds": (
+                            self.endpointing_punctuation_secs),
+                        "on_no_punctuation_seconds": (
+                            self.endpointing_no_punctuation_secs),
+                        "on_number_seconds": self.endpointing_number_secs,
+                    },
+                },
+            },
             "privacy_settings": {"data_retention": True},
         }
         if self.model:
@@ -618,6 +695,9 @@ class TelnyxAIAssistant(models.Model):
         transcription = data.get("transcription") or {}
         telephony = data.get("telephony_settings") or {}
         recording = telephony.get("recording_settings") or {}
+        interruption = data.get("interruption_settings") or {}
+        speaking = interruption.get("start_speaking_plan") or {}
+        endpointing = speaking.get("transcription_endpointing_plan") or {}
         vals = {
             "sid": data.get("id"),
             "version_id": data.get("version_id"),
@@ -638,6 +718,19 @@ class TelnyxAIAssistant(models.Model):
             "time_limit_secs": telephony.get("time_limit_secs") or 1800,
             "user_idle_timeout_secs": (
                 telephony.get("user_idle_timeout_secs") or 0),
+            "allow_interruptions": interruption.get("enable", True),
+            "protect_greeting": bool(
+                interruption.get("disable_greeting_interruption")),
+            "start_speaking_wait_secs": (
+                speaking.get("wait_seconds")
+                if speaking.get("wait_seconds") is not None
+                else DEFAULT_START_SPEAKING_WAIT_SECS),
+            "endpointing_punctuation_secs": (
+                endpointing.get("on_punctuation_seconds") or 0.0),
+            "endpointing_no_punctuation_secs": (
+                endpointing.get("on_no_punctuation_seconds") or 0.0),
+            "endpointing_number_secs": (
+                endpointing.get("on_number_seconds") or 0.0),
             "record_calls": bool(recording.get("enabled")),
             "imported": imported,
             "last_sync_at": fields.Datetime.now(),
