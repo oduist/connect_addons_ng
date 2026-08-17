@@ -62,3 +62,23 @@ Odoo stores or publishes that credential reference.
 - The fallback voice retry remains valid even when the rejected voice used
   expressive or multilingual settings.
 - Third-party LLM secret management remains outside the scope of this change.
+
+## Amendment 2026-08-17: guarded voice speed range
+
+A live assistant configured with `voice_speed = 2.0` on a `Telnyx.Ultra.*`
+voice answered every call and hung up after one second:
+`CallStatus=conversation_ended`, `Reason=greeting_error`, zero messages, and
+`GET /ai/conversations/<id>` reporting "The assistant could not generate the
+greeting audio." Probing `POST /v2/text-to-speech/speech` with that voice
+returned `400` code `90103` at 0.5 and at 1.8 or more, and audio between 0.8
+and 1.5; the documented `[0.25, 2.0]` range covers Telnyx Natural voices only.
+
+Odoo therefore constrains `voice_speed` to `[0.5, 1.5]` and clamps a remote
+value into the same range, so an unsupported speed is refused in the form
+instead of producing an assistant that is silently unusable on every call.
+The bounds are an administrative guard, not a per-voice capability table:
+Telnyx publishes no machine-readable range per voice, so the field help
+carries the remaining warning that Telnyx Ultra needs at least 0.8.
+
+Surfacing a Telnyx `greeting_error` in the Odoo call ledger — today such a
+call is only a short `completed` entry — remains open.

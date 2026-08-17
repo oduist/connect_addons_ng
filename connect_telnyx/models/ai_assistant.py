@@ -26,7 +26,7 @@ DEFAULT_VOICE = "AWS.Polly.Joanna-Neural"
 # one second with Reason=greeting_error. Telnyx Ultra answers 400 (code
 # 90103) on the text-to-speech endpoint at 0.5 and at 1.8 or more, so the
 # guarded range stays inside the values a supported voice can honor and
-# administrators still verify their own voice (ADR-068).
+# administrators still verify their own voice (ADR-066).
 MIN_VOICE_SPEED = 0.5
 MAX_VOICE_SPEED = 1.5
 
