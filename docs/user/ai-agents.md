@@ -62,7 +62,9 @@ recording is enabled, the conversation is recorded and shows up under
 For a Telnyx AI agent, the same recording contains the downloaded audio, the
 Telnyx conversation transcript, and the Telnyx insight summary. Since the
 transcript is already complete, Odoo does not send that audio to OpenAI for a
-second transcription.
+second transcription. What the summary focuses on, and the language it is
+written in, follow the summary instructions your administrator configured in
+the Telnyx settings.
 
 Dograh agents may also expose the full workflow-level transcript in the Dograh
 dashboard. Ask your administrator for access.

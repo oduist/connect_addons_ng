@@ -11,6 +11,7 @@ from odoo.addons.connect.models.res_partner import format_number
 if release.version_info[0] >= 19:
     from odoo.models import Constraint
 
+from .settings import DEFAULT_AI_SUMMARY_INSTRUCTIONS
 from .texml_response import Connect, VoiceResponse
 
 logger = logging.getLogger(__name__)
@@ -652,7 +653,7 @@ class TelnyxAIAssistant(models.Model):
         return super().unlink()
 
     @api.model
-    def _ensure_summary_group(self):
+    def _ensure_summary_group(self, instructions=None):
         settings = self.env["connect.settings"].sudo()
         insight_id = settings.get_param("telnyx_ai_summary_insight_id")
         group_id = settings.get_param("telnyx_ai_summary_group_id")
@@ -661,12 +662,16 @@ class TelnyxAIAssistant(models.Model):
         api_url = settings.get_param("api_url")
         webhook = urljoin(api_url, "telnyx/webhook/assistant/insights")
         if not insight_id:
+            # The caller passes the text when it was just edited: get_param
+            # still serves the cached value inside that write.
+            if instructions is None:
+                instructions = settings.get_param(
+                    "telnyx_ai_summary_instructions")
             insight = self._unwrap(settings.telnyx_api_request(
                 "POST", "ai/conversations/insights", payload={
                     "name": "Odoo Connect Summary",
                     "instructions": (
-                        "Summarize this conversation in 2-3 factual sentences. "
-                        "Include the request, outcome, and follow-up actions."
+                        instructions or DEFAULT_AI_SUMMARY_INSTRUCTIONS
                     ),
                 }
             ))

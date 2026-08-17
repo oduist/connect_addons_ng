@@ -30,6 +30,12 @@ TELNYX_PROTECTED_FIELDS = [
 
 TELNYX_API_BASE = "https://api.telnyx.com/v2/"
 TELNYX_SYSTEM_VOICE_DEFAULT = "Polly.Joanna"
+# Instructions of the Telnyx conversation insight that produces the AI call
+# summary written back into the ledger.
+DEFAULT_AI_SUMMARY_INSTRUCTIONS = (
+    "Summarize this conversation in 2-3 factual sentences. "
+    "Include the request, outcome, and follow-up actions."
+)
 TELNYX_BASIC_VOICES = [
     {
         "id": "man", "name": "Man", "provider": "basic",
@@ -108,6 +114,15 @@ class Settings(models.Model):
              "allow every destination.")
     telnyx_ai_summary_insight_id = fields.Char(readonly=True)
     telnyx_ai_summary_group_id = fields.Char(readonly=True)
+    telnyx_ai_summary_instructions = fields.Text(
+        string="AI Summary Instructions",
+        required=True,
+        default=DEFAULT_AI_SUMMARY_INSTRUCTIONS,
+        help="Prompt of the Telnyx conversation insight that summarizes AI "
+             "assistant calls. Saving a new text drops the current insight in "
+             "Telnyx and recreates it, so past summaries keep the wording "
+             "they were generated with.",
+    )
     telnyx_balance = fields.Char(readonly=True)
     telnyx_auto_sync = fields.Boolean(default=True)
     telnyx_verify_requests = fields.Boolean(
@@ -544,6 +559,36 @@ class Settings(models.Model):
             regions or 'all'))
         return regions
 
+    def _refresh_telnyx_ai_summary_insight(self, instructions):
+        """Rebuild the summary insight after an administrator edited it.
+
+        Telnyx owns the insight text, so the stored insight is dropped and
+        recreated with the new instructions; the insight group survives and
+        keeps the webhook Odoo listens on.  Old conversations keep the
+        summaries they were generated with.
+        """
+        settings = self.sudo()
+        insight_id = settings.get_param('telnyx_ai_summary_insight_id')
+        if not insight_id:
+            # Nothing is published yet: the next account sync creates the
+            # insight straight from the stored instructions.
+            return False
+        if not settings.get_param('telnyx_api_key'):
+            return False
+        try:
+            settings.telnyx_api_request(
+                'DELETE', 'ai/conversations/insights/{}'.format(insight_id))
+        except Exception as e:
+            # An orphaned insight is harmless; refusing the save is not.
+            logger.warning(
+                'Cannot delete the Telnyx summary insight %s: %s',
+                insight_id, e)
+        settings.set_param('telnyx_ai_summary_insight_id', False)
+        self.env['connect.telnyx.ai_assistant']._ensure_summary_group(
+            instructions=instructions)
+        debug(self, 'Telnyx AI summary insight recreated')
+        return settings.get_param('telnyx_ai_summary_insight_id')
+
     @api.model
     def _telnyx_local_regions(self):
         """Country codes Odoo is expected to place calls to.
@@ -839,6 +884,11 @@ class Settings(models.Model):
             # Owned by the outbound voice profile in Telnyx, not by Odoo.
             self._push_telnyx_outbound_destinations(
                 vals['telnyx_outbound_destinations'])
+        if 'telnyx_ai_summary_instructions' in vals:
+            # get_param is cached and the registry cache is only cleared at
+            # the end of this write, so pass the new text explicitly.
+            self._refresh_telnyx_ai_summary_insight(
+                vals['telnyx_ai_summary_instructions'])
         changed_fields = {}
         for field_name in TELNYX_PROTECTED_FIELDS:
             if vals.get(field_name):

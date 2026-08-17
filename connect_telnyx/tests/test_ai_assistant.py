@@ -235,6 +235,87 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
         self.assertTrue(update_mock.called)
         request_mock.assert_not_called()
 
+    def test_summary_instructions_edit_recreates_insight(self):
+        settings = self.env['connect.settings'].sudo()
+        settings.set_param('telnyx_ai_summary_insight_id', 'insight-old')
+        settings.set_param('telnyx_ai_summary_group_id', 'group-test')
+        calls = []
+
+        def api_response(_settings, method, path, **kwargs):
+            calls.append((method, path, kwargs.get('payload')))
+            if method == 'POST' and path == 'ai/conversations/insights':
+                return {'data': {'id': 'insight-new'}}
+            return {}
+
+        with patch.object(
+                Settings, 'telnyx_api_request', autospec=True,
+                side_effect=api_response):
+            settings.set_param(
+                'telnyx_ai_summary_instructions', 'Summarize in Polish.')
+
+        self.assertIn(
+            ('DELETE', 'ai/conversations/insights/insight-old', None), calls)
+        create_call = next(
+            call for call in calls
+            if call[0] == 'POST' and call[1] == 'ai/conversations/insights')
+        self.assertEqual(
+            create_call[2]['instructions'], 'Summarize in Polish.')
+        self.assertIn(
+            ('POST',
+             'ai/conversations/insight-groups/group-test/insights/'
+             'insight-new/assign',
+             None),
+            calls)
+        # The group is reused, only the insight is rebuilt.
+        self.assertFalse([
+            call for call in calls
+            if call[1] == 'ai/conversations/insight-groups'])
+        self.assertEqual(
+            settings.get_param('telnyx_ai_summary_insight_id'), 'insight-new')
+
+    def test_summary_instructions_edit_without_insight_skips_api(self):
+        settings = self.env['connect.settings'].sudo()
+        settings.set_param('telnyx_ai_summary_insight_id', False)
+
+        with patch.object(
+                Settings, 'telnyx_api_request', autospec=True
+        ) as request_mock:
+            settings.set_param(
+                'telnyx_ai_summary_instructions', 'Summarize in German.')
+
+        request_mock.assert_not_called()
+        self.assertEqual(
+            settings.get_param('telnyx_ai_summary_instructions'),
+            'Summarize in German.')
+
+    def test_ensure_summary_group_uses_configured_instructions(self):
+        settings = self.env['connect.settings'].sudo()
+        settings.set_param('telnyx_ai_summary_insight_id', False)
+        settings.set_param('telnyx_ai_summary_group_id', 'group-test')
+        # No insight is published, so this write does not call Telnyx.
+        settings.set_param(
+            'telnyx_ai_summary_instructions', 'Report the agreed next step.')
+        payloads = []
+
+        def api_response(_settings, method, path, **kwargs):
+            payloads.append((method, path, kwargs.get('payload')))
+            if method == 'POST' and path == 'ai/conversations/insights':
+                return {'data': {'id': 'insight-fresh'}}
+            return {}
+
+        with patch.object(
+                Settings, 'telnyx_api_request', autospec=True,
+                side_effect=api_response):
+            group_id = self.env[
+                'connect.telnyx.ai_assistant']._ensure_summary_group()
+
+        self.assertEqual(group_id, 'group-test')
+        create_call = next(
+            call for call in payloads
+            if call[0] == 'POST' and call[1] == 'ai/conversations/insights')
+        self.assertEqual(
+            create_call[2]['instructions'], 'Report the agreed next step.')
+
     def test_sync_push_failure_notification_is_sticky(self):
         settings = self.env['connect.settings'].sudo()
         settings.set_param('telnyx_ai_summary_insight_id', 'insight-test')

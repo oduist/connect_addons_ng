@@ -125,6 +125,16 @@ The conversation batch is a repair path for delayed or missed webhooks.
 Because Telnyx has already transcribed these calls, every create/update uses
 `skip_transcription` and never queues OpenAI transcription.
 
+The summary wording is the `instructions` of the conversation insight created
+by `_ensure_summary_group(instructions=None)` and stored as
+`telnyx_ai_summary_insight_id`. It is editable as
+`connect.settings.telnyx_ai_summary_instructions`; writing it calls
+`_refresh_telnyx_ai_summary_insight()`, which deletes the remote insight
+best-effort, clears the stored ID and lets `_ensure_summary_group()` recreate
+and re-assign it inside the surviving insight group (ADR-067). Speech
+recognition language stays per assistant (`transcription_language`,
+`transcription_model`).
+
 ### texml_response.py — TeXML builder (no Odoo model)
 
 `VoiceResponse`, `Gather`, `Dial` (+`sip()`/`number()`/`conference()`),
@@ -152,6 +162,9 @@ already have an explicit voice (ADR-055).
 | `telnyx_system_voice_provider` | Selection | Dynamic provider filter built from the cached catalog; default `aws` |
 | `telnyx_system_voice` | Char | Telnyx voice ID chosen through a filtered server-backed autocomplete; default `Polly.Joanna` |
 | `telnyx_tts_voices` | Text | Readonly JSON cache from `GET /v2/text-to-speech/voices` |
+| `telnyx_ai_summary_insight_id` | Char | Readonly; the conversation insight Odoo owns |
+| `telnyx_ai_summary_group_id` | Char | Readonly; the insight group carrying the Odoo webhook |
+| `telnyx_ai_summary_instructions` | Text | Required prompt of that insight; a write deletes and recreates the insight (ADR-067) |
 
 Methods: `get_telnyx_client()` (SDK client), `telnyx_sync()` (apps →
 domains → numbers → caller IDs + messaging profile),

@@ -142,6 +142,14 @@ transcription provider for this path, so the recording is never sent to
 OpenAI for a second transcription, even when global call transcription is
 enabled.
 
+The summary wording is configured in **Telnyx -> Configuration -> Settings**,
+field **AI Summary Instructions**. It is the prompt of the Telnyx conversation
+insight Odoo owns. Saving a new text deletes the current insight in Telnyx and
+recreates it with the new wording inside the same insight group, so the webhook
+address does not change and summaries generated earlier keep their original
+wording. When no insight exists yet, the text is simply used by the next
+account sync.
+
 The signed insight webhook normally performs this synchronization immediately.
 **Sync Telnyx AI Conversations** runs every five minutes as an idempotent repair
 for delayed or missed callbacks. Sanitized development databases commonly have

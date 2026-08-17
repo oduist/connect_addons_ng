@@ -54,8 +54,20 @@
                                 </group>
                                 <group string="Messaging" colspan="2">
                                     <field name="telnyx_messaging_profile_id" readonly="1"/>
-                                    <field name="telnyx_ai_summary_insight_id" readonly="1"/>
-                                    <field name="telnyx_ai_summary_group_id" readonly="1"/>
+                                </group>
+                                <group string="AI Assistants" colspan="2">
+                                    <label for="telnyx_ai_summary_instructions"/>
+                                    <div colspan="2">
+                                        <field name="telnyx_ai_summary_instructions" nolabel="1"/>
+                                        <small class="text-muted">
+                                            Saving a new text recreates the Telnyx insight; summaries
+                                            of past conversations are left untouched.
+                                        </small>
+                                    </div>
+                                    <field name="telnyx_ai_summary_insight_id" readonly="1"
+                                           groups="base.group_no_one"/>
+                                    <field name="telnyx_ai_summary_group_id" readonly="1"
+                                           groups="base.group_no_one"/>
                                 </group>
                             </group>
                         </page>
