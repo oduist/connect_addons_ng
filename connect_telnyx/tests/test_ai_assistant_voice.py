@@ -31,6 +31,13 @@ CATALOG = [
         'language': 'en-US',
         'gender': 'Female',
     },
+    {
+        'id': 'AWS.Polly.Ola-Neural',
+        'name': 'Ola',
+        'provider': 'aws',
+        'language': 'pl-PL',
+        'gender': 'Female',
+    },
 ]
 
 
@@ -198,6 +205,58 @@ class TestTelnyxAssistantVoice(TelnyxTestCommon):
         with self.assertRaises(AccessError):
             self.Assistant.with_user(user).telnyx_preview_voice(
                 CATALOG[0]['id'])
+
+    def test_settings_voice_preview_is_restricted_too(self):
+        """call_kw checks no ACL, so the settings entry point guards itself."""
+        user = new_test_user(
+            self.env, login='telnyx-voice-rpc', groups='base.group_user')
+
+        with self.assertRaises(AccessError):
+            self.env['connect.settings'].with_user(user).telnyx_preview_voice(
+                CATALOG[0]['id'])
+
+    def test_expressive_mode_of_a_non_ultra_voice_is_not_published(self):
+        assistant = self._create_assistant(
+            voice='AWS.Polly.Joanna-Neural', expressive_mode=True)
+
+        payload = assistant._remote_payload()
+
+        self.assertFalse(payload['voice_settings']['expressive_mode'])
+
+    def test_imported_expressive_mode_needs_an_ultra_voice(self):
+        vals = self.Assistant._remote_values({
+            'id': 'assistant-1',
+            'voice_settings': {
+                'voice': 'AWS.Polly.Joanna-Neural',
+                'expressive_mode': True,
+            },
+        })
+
+        self.assertFalse(vals['expressive_mode'])
+
+    def test_stale_language_boost_is_not_published(self):
+        assistant = self._create_assistant(voice='AWS.Polly.Joanna-Neural')
+        # A value stored before the field became a Selection.
+        self.env.cr.execute(
+            "UPDATE connect_telnyx_ai_assistant SET language_boost = %s "
+            "WHERE id = %s", ('polish', assistant.id))
+        assistant.invalidate_recordset(['language_boost'])
+
+        payload = assistant._remote_payload()
+
+        self.assertNotIn('language_boost', payload['voice_settings'])
+
+    def test_filters_fall_back_when_the_catalog_drops_a_language(self):
+        assistant = self._create_assistant(voice='AWS.Polly.Ola-Neural')
+        self.assertEqual(assistant.voice_language, 'pl-PL')
+
+        # Telnyx no longer reports a Polish voice; the stored filter would
+        # otherwise be reassigned to a value the Selection no longer offers.
+        self.env['connect.settings'].sudo().set_param(
+            'telnyx_tts_voices', json.dumps(CATALOG[:3]))
+        assistant.voice = CATALOG[1]['id']
+
+        self.assertEqual(assistant.voice_language, 'en-US')
 
     def test_voice_catalog_lookups_work_without_settings_access(self):
         user = new_test_user(

@@ -9,7 +9,7 @@ import requests
 from babel.core import Locale, UnknownLocaleError
 
 from odoo import fields, models, api, release
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 from telnyx import Telnyx
 
 from odoo.addons.connect.models.license import ODUIST_MODULES
@@ -344,7 +344,17 @@ class Settings(models.Model):
 
     @api.model
     def telnyx_preview_voice(self, voice, voice_speed=1.0, text=None):
-        """Play a sample of the system voice from the settings form."""
+        """Play a sample of the system voice from the settings form.
+
+        The model ACL does not protect a method call: `call_kw` only refuses
+        private names, so any authenticated session could otherwise spend
+        Telnyx text-to-speech credit here. The group is therefore checked in
+        the method itself, and only server-side `sudo()` code is exempt.
+        """
+        if not self.env.su and not self.env.user.has_group(
+                "connect.group_admin"):
+            raise AccessError(
+                "Only Connect administrators can preview a voice.")
         return self._telnyx_voice_sample(voice, text, voice_speed)
 
     @api.onchange(

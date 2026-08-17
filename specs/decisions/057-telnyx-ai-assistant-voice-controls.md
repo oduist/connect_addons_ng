@@ -108,6 +108,11 @@ why the assistant now reuses them instead of growing a second mechanism:
    unknown remote value is dropped on read rather than failing the sync.
 4. Expressive mode is only offered while a `Telnyx.Ultra.*` voice is
    selected, and clears itself when the voice moves to another provider.
+   Because the switch is then invisible, the payload publishes it as `false`
+   for a voice without expressive support and an imported `true` on such a
+   voice is dropped on read: a hidden field must not keep sending a value
+   the administrator can no longer see. The same reasoning drops a stored
+   `language_boost` that is not part of the published language list.
 5. A speaker button synthesizes a sample through
    `POST /v2/text-to-speech/speech` (`output_type=base64_output`) with the
    configured voice and speed and plays it in the browser. This is the same
@@ -124,7 +129,11 @@ call the admin-only `connect.settings` with `sudo()`. Read-only lookups stay
 open to any Connect user because they expose nothing but voice names, while
 `telnyx_preview_voice` requires `connect.group_admin`: each call spends
 Telnyx text-to-speech credit. Widening access to `connect.settings` itself
-was rejected — it holds the API key and every provider credential.
+was rejected — it holds the API key and every provider credential. The same
+group check guards the `connect.settings` entry point: `call_kw` refuses
+private method names only and runs no access check of its own, so an
+admin-only model ACL does not stop an authenticated session from calling a
+public method that works through `sudo()`.
 
 Voice previews are not cached in Odoo and are not stored as attachments; the
 audio is returned to the browser and discarded.

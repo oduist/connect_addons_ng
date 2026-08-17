@@ -77,8 +77,11 @@ Model methods `telnyx_get_voice_options(language, provider, search, limit)`,
 `telnyx_get_voice_label(voice_id)` and
 `telnyx_preview_voice(voice, voice_speed, text)` proxy the admin-only
 `connect.settings` catalog with `sudo()`, since assistants are readable by
-`connect.group_user`; the preview additionally requires
-`connect.group_admin` because it spends Telnyx TTS credit (ADR-057).
+`connect.group_user`; both preview entry points (assistant and settings)
+check `connect.group_admin` in the method, because `call_kw` runs no access
+check and the sample spends Telnyx TTS credit (ADR-057). A voice without
+expressive support publishes `expressive_mode: false` and a stored
+`language_boost` outside the published list is omitted.
 
 `telephony_settings` publishes `time_limit_secs` and `user_idle_timeout_secs`.
 The latter defaults to 60 seconds and is constrained to 0 or the Telnyx range

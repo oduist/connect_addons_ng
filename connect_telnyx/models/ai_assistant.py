@@ -477,21 +477,30 @@ class TelnyxAIAssistant(models.Model):
         of fields as soon as one of them is written explicitly.
         """
         catalog = {voice["id"]: voice for voice in self._voice_catalog()}
+        # A refreshed catalog can drop a language, and assigning a value the
+        # Selection no longer offers raises on the Odoo series that validate
+        # a dynamic selection on write.
+        allowed = {key for key, _label in self._get_voice_language_selection()}
         for rec in self:
             entry = catalog.get(rec.voice) or {}
-            rec.voice_language = (
+            language = (
                 entry.get("language") or rec.voice_language
                 or DEFAULT_VOICE_LANGUAGE)
+            rec.voice_language = (
+                language if language in allowed else DEFAULT_VOICE_LANGUAGE)
 
     @api.depends("voice")
     def _compute_voice_provider(self):
         catalog = {voice["id"]: voice for voice in self._voice_catalog()}
+        allowed = {key for key, _label in self._get_voice_provider_selection()}
         for rec in self:
             entry = catalog.get(rec.voice) or {}
-            rec.voice_provider = (
+            provider = (
                 entry.get("provider") or rec.voice_provider
                 or self._voice_provider_from_id(rec.voice)
                 or DEFAULT_VOICE_PROVIDER)
+            rec.voice_provider = (
+                provider if provider in allowed else DEFAULT_VOICE_PROVIDER)
 
     @api.model
     def _voice_provider_from_id(self, voice_id):
@@ -874,10 +883,15 @@ class TelnyxAIAssistant(models.Model):
             voice_settings = {
                 "voice": self.voice,
                 "voice_speed": self.voice_speed,
-                "expressive_mode": self.expressive_mode,
+                # The form hides the switch for a voice without expressive
+                # support, so a value left over from an import or a voice
+                # change must not keep travelling to Telnyx unseen.
+                "expressive_mode": bool(
+                    self.expressive_mode and self.voice_is_expressive),
             }
-            if self.language_boost:
-                voice_settings["language_boost"] = self.language_boost
+            language_boost = self._clean_language_boost(self.language_boost)
+            if language_boost:
+                voice_settings["language_boost"] = language_boost
             payload["voice_settings"] = voice_settings
         transcription = {}
         if self.transcription_model:
@@ -936,7 +950,10 @@ class TelnyxAIAssistant(models.Model):
             ),
             "language_boost": self._clean_language_boost(
                 voice_settings.get("language_boost")),
-            "expressive_mode": bool(voice_settings.get("expressive_mode")),
+            "expressive_mode": bool(
+                voice_settings.get("expressive_mode")
+                and (voice_settings.get("voice") or "").startswith(
+                    EXPRESSIVE_VOICE_PREFIX)),
             "transcription_model": transcription.get("model") or "",
             "transcription_language": transcription.get("language") or "",
             "time_limit_secs": telephony.get("time_limit_secs") or 1800,
