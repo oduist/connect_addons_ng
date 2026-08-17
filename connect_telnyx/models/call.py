@@ -13,6 +13,17 @@ from .utils import format_telnyx_debug_payload
 
 logger = logging.getLogger(__name__)
 
+# Telnyx ends an AI conversation with a reason instead of an error code, and
+# a failed conversation still reports the call itself as completed. Without
+# this mapping such a call is only a suspiciously short entry in the history.
+AI_CONVERSATION_ERROR_MESSAGES = {
+    'greeting_error': (
+        'The AI assistant could not generate its greeting audio, so the call '
+        'ended immediately. Telnyx usually rejects the configured voice or a '
+        'speaking speed the voice does not support.'
+    ),
+}
+
 
 class Call(models.Model):
     _inherit = 'connect.call'
@@ -69,6 +80,8 @@ class Call(models.Model):
                 'error_code': params.get('ErrorCode'),
                 'error_message': params.get('ErrorMessage'),
             }
+        else:
+            error_data = self._telnyx_ai_conversation_error(params)
 
         # Core call processing
         call_id = self.process_call_event(channel, error_data)
@@ -101,11 +114,44 @@ class Call(models.Model):
                 self.env['connect.settings'].connect_notify(
                     notify_uid=user.id,
                     title="Call Error",
-                    message=params.get('ErrorMessage', ''),
+                    message=error_data.get('error_message') or '',
                     warning=True,
                 )
 
         return call_id
+
+    @api.model
+    def _telnyx_ai_conversation_error(self, params):
+        """Turn a failed AI conversation into call error data.
+
+        Telnyx reports the outcome of an assistant conversation as
+        `CallStatus=conversation_ended` with a `Reason`, and reports the
+        call leg itself as a normal `completed` afterwards. Only failure
+        reasons become call errors; a caller who simply hung up is not an
+        error. The reason list is not documented, so unknown failures are
+        recognized by their name and reported verbatim rather than
+        silently dropped.
+        """
+        if params.get('CallStatus') != 'conversation_ended':
+            return None
+        reason = (params.get('Reason') or '').strip()
+        if not reason:
+            return None
+        if not (reason.endswith('_error') or reason.startswith('error')
+                or 'fail' in reason):
+            return None
+        message = AI_CONVERSATION_ERROR_MESSAGES.get(
+            reason,
+            "The AI conversation ended with '{}'.".format(reason),
+        )
+        voice = ' '.join(part for part in (
+            params.get('TtsProvider'),
+            params.get('TtsModelId'),
+            params.get('TtsVoiceId'),
+        ) if part)
+        if voice:
+            message = '{} Voice: {}.'.format(message, voice)
+        return {'error_code': reason, 'error_message': message}
 
     @api.model
     def on_telnyx_vm_recording_status(self, params):

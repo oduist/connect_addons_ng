@@ -249,6 +249,74 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
             xml = self.domain.route_call(request)
         self.assertIn('<AIAssistant id="assistant-test"', xml)
 
+    def _conversation_ended_params(self, reason):
+        return {
+            'CallSid': 'v3:ai-conversation-call',
+            'From': '+15550008888',
+            'To': '+15550009999',
+            'CallStatus': 'conversation_ended',
+            'Reason': reason,
+            'ConversationId': 'conversation-test',
+            'DurationSec': '1',
+            'TtsProvider': 'telnyx',
+            'TtsModelId': 'Ultra',
+            'TtsVoiceId': 'voice-test',
+        }
+
+    def test_failed_ai_conversation_marks_the_call_with_an_error(self):
+        call = self.env['connect.call'].create({
+            'caller': '+15550008888',
+            'called': '+15550009999',
+            'direction': 'incoming',
+            'status': 'answered',
+        })
+        channel = self.env['connect.channel'].create({
+            'sid': 'v3:ai-conversation-call',
+            'call': call.id,
+            'status': 'answered',
+        })
+
+        with patch.object(
+                type(self.env['connect.channel']), 'process_channel_event',
+                autospec=True, return_value=channel):
+            self.env['connect.call'].on_telnyx_call_status(
+                self._conversation_ended_params('greeting_error'))
+
+        self.assertTrue(call.has_error)
+        self.assertEqual(call.error_code, 'greeting_error')
+        self.assertIn('greeting audio', call.error_message)
+        self.assertIn('telnyx Ultra voice-test', call.error_message)
+        self.assertEqual(call.telnyx_ai_conversation_id, 'conversation-test')
+
+    def test_normal_ai_conversation_end_is_not_an_error(self):
+        call = self.env['connect.call'].create({
+            'caller': '+15550008888',
+            'called': '+15550009999',
+            'direction': 'incoming',
+            'status': 'answered',
+        })
+        channel = self.env['connect.channel'].create({
+            'sid': 'v3:ai-conversation-call',
+            'call': call.id,
+            'status': 'answered',
+        })
+
+        with patch.object(
+                type(self.env['connect.channel']), 'process_channel_event',
+                autospec=True, return_value=channel):
+            self.env['connect.call'].on_telnyx_call_status(
+                self._conversation_ended_params('user_hangup'))
+
+        self.assertFalse(call.has_error)
+        self.assertFalse(call.error_code)
+
+    def test_unknown_ai_failure_reason_is_reported_verbatim(self):
+        error = self.env['connect.call']._telnyx_ai_conversation_error(
+            self._conversation_ended_params('llm_failure'))
+
+        self.assertEqual(error['error_code'], 'llm_failure')
+        self.assertIn('llm_failure', error['error_message'])
+
     def test_sync_pushes_local_assistants_without_remote_import(self):
         assistant_model = type(self.env['connect.telnyx.ai_assistant'])
         with patch.object(

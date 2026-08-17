@@ -128,6 +128,15 @@ The conversation batch is a repair path for delayed or missed webhooks.
 Because Telnyx has already transcribed these calls, every create/update uses
 `skip_transcription` and never queues OpenAI transcription.
 
+A conversation that failed is reported as `CallStatus=conversation_ended` with
+a `Reason`, while the call leg itself still ends as `completed`.
+`_telnyx_ai_conversation_error` turns a failure reason into
+`has_error` / `error_code` / `error_message` on `connect.call`, so the call
+form shows why the assistant stopped instead of a short successful call.
+Reasons that are not failures, such as a caller hanging up, are ignored; the
+reason list is undocumented, so an unrecognized failure is reported verbatim
+with the reported TTS provider, model and voice.
+
 The summary wording is the `instructions` of the conversation insight created
 by `_ensure_summary_group(instructions=None)` and stored as
 `telnyx_ai_summary_insight_id`. It is editable as

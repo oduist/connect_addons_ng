@@ -61,6 +61,11 @@ Calls to AI agents appear in **Connect -> Calls** like any other call. When
 recording is enabled, the conversation is recorded and shows up under
 **Recordings** on the call form.
 
+When the agent itself fails — for example it cannot speak its greeting and the
+call ends after a second — the call form shows an **Error** tab with the
+reason reported by the provider. Without it such a call looks like a normal,
+very short conversation.
+
 For a Telnyx AI agent, the same recording contains the downloaded audio, the
 Telnyx conversation transcript, and the Telnyx insight summary. Since the
 transcript is already complete, Odoo does not send that audio to OpenAI for a
