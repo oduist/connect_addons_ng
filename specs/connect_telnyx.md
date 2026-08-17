@@ -60,7 +60,10 @@ model/voice/transcription settings, recording/memory switches and the Odoo
 tool allowlist. Voice settings include `voice`, `voice_speed`, optional
 `language_boost`, and opt-in `expressive_mode` (ADR-066). Empty
 `language_boost` is omitted from the Telnyx payload; expressive mode is always
-published as a Boolean.
+published as a Boolean. `voice_speed` is constrained to `[0.5, 1.5]` and a
+remote value is clamped into that range on read, because a speed the selected
+voice cannot honor makes Telnyx fail greeting synthesis and end the call after
+one second with `Reason=greeting_error` (ADR-068).
 
 Language routing fields are `language_mode` (`contact` / `fixed` /
 `automatic`) and `default_lang`. New assistants default to multilingual

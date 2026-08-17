@@ -106,6 +106,31 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
 
         self.assertEqual(values['language_boost'], 'Polish')
         self.assertTrue(values['expressive_mode'])
+        self.assertEqual(values['voice_speed'], 0.9)
+
+    def test_voice_speed_outside_supported_range_is_rejected(self):
+        for speed in (2.0, 0.25):
+            with self.assertRaises(ValidationError):
+                self.assistant.with_context(skip_telnyx_ai_sync=True).write(
+                    {'voice_speed': speed})
+
+        for speed in (0.5, 1.5):
+            self.assistant.with_context(skip_telnyx_ai_sync=True).write(
+                {'voice_speed': speed})
+            self.assertEqual(self.assistant.voice_speed, speed)
+
+    def test_remote_voice_speed_is_clamped(self):
+        values = self.Assistant._remote_values({
+            'id': 'assistant-remote',
+            'name': 'Remote Agent',
+            'instructions': 'Help.',
+            'voice_settings': {
+                'voice': 'Telnyx.Ultra.callie',
+                'voice_speed': 2.0,
+            },
+        })
+
+        self.assertEqual(values['voice_speed'], 1.5)
 
     def test_unique_contact_supplies_language_and_localized_greeting(self):
         partner = self.env['res.partner'].create({

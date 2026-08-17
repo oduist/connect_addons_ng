@@ -51,7 +51,9 @@ also needs automatic or multilingual speech recognition and a TTS voice that
 can actually speak the required languages; changing only the prompt does not
 make an English-only voice multilingual. Administrators may also configure a
 voice language hint and, for supported voices such as Telnyx Ultra, expressive
-delivery.
+delivery. Speaking speed is limited to the 0.5-1.5 range; a faster or slower
+setting than the chosen voice supports leaves the agent unable to speak its
+greeting, and such calls end right after being answered.
 
 ## Call History And Recordings
 

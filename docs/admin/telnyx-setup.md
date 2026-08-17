@@ -111,6 +111,15 @@ language. A fixed-language transcription setting or single-language voice
 intentionally limits the agent even when its LLM understands several
 languages.
 
+**Voice Speed** must be between 0.5 and 1.5, and 1.0 is the safe default.
+Telnyx documents a wider range for its Natural voices only; another voice
+rejects a speed it does not support, and that failure is invisible until a
+call arrives — the assistant answers, cannot synthesize its greeting and hangs
+up after about one second. Telnyx Ultra, for example, needs at least 0.8. If
+calls end immediately after being answered, check the assistant conversation
+in the Telnyx portal for "could not generate the greeting audio" and return
+the speed to 1.0.
+
 **Voice Language Boost** is an optional TTS hint. Use `auto` with a supported
 multilingual voice, enter an explicit provider-supported language when one
 assistant is intentionally fixed to that language, or leave it empty to keep

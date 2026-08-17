@@ -20,6 +20,16 @@ logger = logging.getLogger(__name__)
 # every account and is used when the configured voice is unavailable.
 DEFAULT_VOICE = "AWS.Polly.Joanna-Neural"
 
+# Telnyx documents [0.25, 2.0] for Natural voices only. Other voices reject
+# a speed they do not support, and the failure is invisible until a call
+# arrives: the assistant cannot synthesize its greeting and hangs up after
+# one second with Reason=greeting_error. Telnyx Ultra answers 400 (code
+# 90103) on the text-to-speech endpoint at 0.5 and at 1.8 or more, so the
+# guarded range stays inside the values a supported voice can honor and
+# administrators still verify their own voice (ADR-068).
+MIN_VOICE_SPEED = 0.5
+MAX_VOICE_SPEED = 1.5
+
 DEFAULT_INSTRUCTIONS = (
     "You are a professional voice receptionist. Be concise, transparent, "
     "and use the available Odoo tools only when they are needed."
@@ -76,7 +86,12 @@ class TelnyxAIAssistant(models.Model):
              "voices endpoint. Choose a multilingual voice such as Azure "
              "Multilingual, MiniMax, or Inworld when one assistant must "
              "speak several languages.")
-    voice_speed = fields.Float(default=1.0)
+    voice_speed = fields.Float(
+        default=1.0,
+        help="Speech rate multiplier between 0.5 and 1.5. Telnyx rejects a "
+             "speed the selected voice does not support, and such a call "
+             "ends after one second without a greeting. Telnyx Ultra needs "
+             "at least 0.8; keep 1.0 when unsure.")
     language_boost = fields.Char(
         string="Voice Language Boost",
         help="Optional Telnyx TTS language hint. Use auto for supported "
@@ -218,6 +233,17 @@ class TelnyxAIAssistant(models.Model):
                 raise ValidationError(
                     "The AI assistant call limit must be between 30 and "
                     "14,400 seconds."
+                )
+
+    @api.constrains("voice_speed")
+    def _check_voice_speed(self):
+        for rec in self:
+            if not (MIN_VOICE_SPEED <= rec.voice_speed <= MAX_VOICE_SPEED):
+                raise ValidationError(
+                    "The AI assistant voice speed must be between {} and "
+                    "{}. Telnyx rejects a speed the selected voice does not "
+                    "support and the assistant then hangs up without a "
+                    "greeting.".format(MIN_VOICE_SPEED, MAX_VOICE_SPEED)
                 )
 
     @api.constrains("warm_transfer_message_delay_ms")
@@ -518,6 +544,19 @@ class TelnyxAIAssistant(models.Model):
         return payload
 
     @api.model
+    def _clamp_voice_speed(self, speed):
+        """Keep a remote speed inside the range Odoo accepts.
+
+        A speed set outside Odoo would otherwise fail the local constraint
+        and break the whole synchronization for one unusable value.
+        """
+        try:
+            speed = float(speed)
+        except (TypeError, ValueError):
+            return 1.0
+        return min(max(speed, MIN_VOICE_SPEED), MAX_VOICE_SPEED)
+
+    @api.model
     def _remote_values(self, data, imported=False):
         voice_settings = data.get("voice_settings") or {}
         transcription = data.get("transcription") or {}
@@ -532,7 +571,7 @@ class TelnyxAIAssistant(models.Model):
             "greeting": data.get("greeting") or "",
             "model": data.get("model") or "",
             "voice": voice_settings.get("voice") or "",
-            "voice_speed": (
+            "voice_speed": self._clamp_voice_speed(
                 voice_settings.get("voice_speed")
                 or voice_settings.get("speed") or 1.0
             ),
