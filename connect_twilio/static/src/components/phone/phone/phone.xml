@@ -134,7 +134,13 @@
                             t-att-title="getRecordingTitle()"
                             t-att-disabled="isRecordingButtonDisabled()"
                             t-on-click="_onClickRecordingToggle">
-                        <i t-att-class="getRecordingIconClass()"/>
+                        <span t-if="state.recordingState === 'off'"
+                              class="o_phone_recording_idle"
+                              aria-hidden="true">
+                            <span class="o_phone_recording_idle_dot"/>
+                            <span class="o_phone_recording_idle_label">REC</span>
+                        </span>
+                        <i t-else="" t-att-class="getRecordingIconClass()"/>
                     </button>
                 </div>
 

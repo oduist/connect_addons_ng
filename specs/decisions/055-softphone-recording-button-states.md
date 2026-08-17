@@ -19,7 +19,8 @@ manual recording when automatic recording is disabled.
 
 Use the same explicit state language in both web phones:
 
-- idle/off: a neutral `fa-dot-circle-o` icon meaning **Start Recording**;
+- idle/off: a purple circular badge with a white dot and `REC` label meaning
+  **Start Recording**;
 - active/on: `fa-stop-circle` with red active styling meaning
   **Stop Recording**;
 - transitions and errors keep their spinner and warning icons;

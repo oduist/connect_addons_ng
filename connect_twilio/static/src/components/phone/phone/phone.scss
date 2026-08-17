@@ -278,6 +278,34 @@
     .o_phone_recording_btn.active {
       color: $color-red;
     }
+
+    .o_phone_recording_idle {
+      align-items: center;
+      background-color: $o-brand-odoo;
+      border-radius: 50%;
+      color: $color-white;
+      display: inline-flex;
+      gap: 2px;
+      height: 30px;
+      justify-content: center;
+      vertical-align: middle;
+      width: 30px;
+    }
+
+    .o_phone_recording_idle_dot {
+      background-color: currentColor;
+      border-radius: 50%;
+      flex: 0 0 5px;
+      height: 5px;
+      width: 5px;
+    }
+
+    .o_phone_recording_idle_label {
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.15px;
+      line-height: 1;
+    }
   }
 
   .mt-auto {
