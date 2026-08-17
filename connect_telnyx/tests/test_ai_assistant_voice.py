@@ -43,6 +43,9 @@ class TestTelnyxAssistantVoice(TelnyxTestCommon):
         cls.env['connect.settings'].sudo().set_param(
             'telnyx_tts_voices', json.dumps(CATALOG))
         cls.Assistant = cls.env['connect.telnyx.ai_assistant']
+        cls.connect_admin = new_test_user(
+            cls.env, login='telnyx-voice-admin',
+            groups='base.group_user,connect.group_admin')
 
     def _create_assistant(self, **vals):
         values = {'name': 'Voice Assistant'}
@@ -156,12 +159,13 @@ class TestTelnyxAssistantVoice(TelnyxTestCommon):
             calls.append((method, path, payload))
             return {'base64_audio': 'QUJD'}
 
+        Assistant = self.Assistant.with_user(self.connect_admin)
         with patch.object(
                 Settings, 'telnyx_api_request', autospec=True,
                 side_effect=fake_request):
-            telnyx_sample = self.Assistant.telnyx_preview_voice(
+            telnyx_sample = Assistant.telnyx_preview_voice(
                 CATALOG[0]['id'], 1.2, 'Hello there')
-            self.Assistant.telnyx_preview_voice(
+            Assistant.telnyx_preview_voice(
                 'AWS.Polly.Joanna-Neural', 1.2, 'Hello there')
 
         self.assertEqual(telnyx_sample['audio'], 'QUJD')
@@ -182,7 +186,7 @@ class TestTelnyxAssistantVoice(TelnyxTestCommon):
         with patch.object(
                 Settings, 'telnyx_api_request', autospec=True,
                 side_effect=fake_request):
-            self.Assistant.telnyx_preview_voice(
+            self.Assistant.with_user(self.connect_admin).telnyx_preview_voice(
                 CATALOG[0]['id'], 1.0, 'Hello, {{customer_name}}!')
 
         self.assertNotIn('{{', calls[0]['text'])
@@ -204,5 +208,6 @@ class TestTelnyxAssistantVoice(TelnyxTestCommon):
         options = Assistant.telnyx_get_voice_options('en-US', 'telnyx')
 
         self.assertEqual(label['label'], 'Callie')
+        # The language-less clone matches every language filter.
         self.assertEqual([option['value'] for option in options],
-                         [CATALOG[0]['id']])
+                         [CATALOG[0]['id'], CATALOG[1]['id']])

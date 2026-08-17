@@ -165,13 +165,13 @@ class TelnyxAIAssistant(models.Model):
     model = fields.Char(help="Leave empty to use the Telnyx default model.")
     voice_language = fields.Selection(
         selection="_get_voice_language_selection",
-        compute="_compute_voice_filters", store=True, readonly=False,
+        compute="_compute_voice_language", store=True, readonly=False,
         string="Voice Language",
         help="Language filter for the voice catalog. It narrows the voice "
              "list only and is never published to Telnyx.")
     voice_provider = fields.Selection(
         selection="_get_voice_provider_selection",
-        compute="_compute_voice_filters", store=True, readonly=False,
+        compute="_compute_voice_provider", store=True, readonly=False,
         string="Voice Provider",
         help="Provider filter for the voice catalog. It narrows the voice "
              "list only and is never published to Telnyx.")
@@ -467,12 +467,14 @@ class TelnyxAIAssistant(models.Model):
         )
 
     @api.depends("voice")
-    def _compute_voice_filters(self):
+    def _compute_voice_language(self):
         """Follow the selected voice, but never wipe a manual filter.
 
         Telnyx reports no language for some account-scoped voices, and the
         filters are also what the selector searches with, so an unknown or
-        cleared voice keeps whatever the administrator picked.
+        cleared voice keeps whatever the administrator picked. The two
+        filters compute separately: Odoo skips the whole compute of a group
+        of fields as soon as one of them is written explicitly.
         """
         catalog = {voice["id"]: voice for voice in self._voice_catalog()}
         for rec in self:
@@ -480,6 +482,12 @@ class TelnyxAIAssistant(models.Model):
             rec.voice_language = (
                 entry.get("language") or rec.voice_language
                 or DEFAULT_VOICE_LANGUAGE)
+
+    @api.depends("voice")
+    def _compute_voice_provider(self):
+        catalog = {voice["id"]: voice for voice in self._voice_catalog()}
+        for rec in self:
+            entry = catalog.get(rec.voice) or {}
             rec.voice_provider = (
                 entry.get("provider") or rec.voice_provider
                 or self._voice_provider_from_id(rec.voice)
