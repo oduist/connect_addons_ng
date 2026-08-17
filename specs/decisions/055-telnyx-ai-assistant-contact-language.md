@@ -1,4 +1,4 @@
-# ADR-063: Telnyx AI assistant contact-language greeting
+# ADR-055: Telnyx AI assistant contact-language greeting
 
 ## Status
 
@@ -28,7 +28,7 @@ Odoo already stores the preferred language on `res.partner.lang`, and the
 Telnyx assistant variables webhook performs a strict phone lookup that only
 returns a partner when exactly one record matches. That lookup is the right
 place to select a caller language without weakening the duplicate-number
-safety introduced by ADR-062.
+safety introduced by ADR-054.
 
 Official references:
 

@@ -1,4 +1,4 @@
-# ADR-067 — Editable Telnyx AI summary instructions
+# ADR-058: Editable Telnyx AI summary instructions
 
 ## Problem
 

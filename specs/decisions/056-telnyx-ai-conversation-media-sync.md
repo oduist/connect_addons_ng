@@ -1,4 +1,4 @@
-# ADR-064: Telnyx AI conversation transcript and media sync
+# ADR-056: Telnyx AI conversation transcript and media sync
 
 ## Status
 

@@ -1,4 +1,4 @@
-# ADR-066: Manage Telnyx AI assistant voice controls in Odoo
+# ADR-057: Manage Telnyx AI assistant voice controls in Odoo
 
 ## Status
 

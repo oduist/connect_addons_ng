@@ -1,4 +1,4 @@
-# 055 - Telnyx system voice for TeXML Say
+# ADR-052: Telnyx system voice for TeXML Say
 
 ## Status
 

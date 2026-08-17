@@ -1,4 +1,4 @@
-# 062: Telnyx AI receptionists use Odoo-owned extensions and transfer tools
+# ADR-054: Telnyx AI receptionists use Odoo-owned extensions and transfer tools
 
 ## Context
 
@@ -83,3 +83,28 @@ transfer instructions. The built-in `telnyx_agent_target` variable is a valid
 - Existing imported assistant rows remain usable for compatibility, but no new
   rows are imported and their Odoo configuration becomes authoritative on the
   next push.
+
+## Amendment 2026-08-16: warm-transfer briefing delay
+
+Warm transfers could ring and connect a registered WebRTC recipient while the
+recipient heard no private briefing, on an otherwise healthy leg: SIP answered,
+RTP flowed, and Telnyx reported a normal recipient hangup rather than a
+signaling or registration error. The Transfer tool's `warm_message_delay_ms`
+starts the generated warm audio after a delay instead of attaching the audio URL
+directly to the dial command, which gives a new WebRTC media path time to become
+ready.
+
+`connect.telnyx.ai_assistant.warm_transfer_message_delay_ms` is published as that
+setting and defaults to 2000 ms. The experiment stays reversible without a
+deployment: setting the Odoo field to `0` publishes `null` and restores the
+previous immediate behavior. Administrators disable it when a test call still has
+silent briefing audio, or when the pause is noticeable without improving media
+delivery. PSTN and SIP recipients receive the same delay.
+
+Caller-side hold music is deliberately **not** part of this. The Transfer tool
+exposes no hold audio, so during the private briefing the caller hears Telnyx's
+transfer progress/ringback. Adding music would mean replacing the built-in
+transfer with custom Call Control or conference orchestration that parks the
+caller, starts playback, calls and briefs the recipient, stops playback and
+bridges the legs — a separate feature with its own failure recovery, recording,
+webhook and bridge-state design.
