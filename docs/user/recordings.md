@@ -46,9 +46,11 @@ recording record, you'll also see:
 |-------|-------------|
 | **Transcript** | Full text of the conversation. |
 | **Summary** | AI-generated summary of the call. |
+| **Transcription Price** | Estimated Whisper speech-to-text cost in USD, based on OpenAI's processed duration. |
 
-Both fields remain available on the linked call even if the recording is later
-deleted. Administrators can configure Connect to delete successfully processed
+The transcript and summary remain available on the linked call even if the
+recording is later deleted. The price remains on retained recording records.
+Administrators can configure Connect to delete successfully processed
 recordings automatically when audio must not be retained.
 
 ### Manual Transcription

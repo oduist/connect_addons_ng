@@ -1,10 +1,12 @@
 import base64
 import logging
 import os
-import requests
-from urllib.parse import quote
-from markupsafe import escape
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from tempfile import NamedTemporaryFile
+from urllib.parse import quote
+
+import requests
+from markupsafe import escape
 from odoo import fields, models, api, release, SUPERUSER_ID
 from odoo.exceptions import ValidationError
 
@@ -17,6 +19,10 @@ class Recording(models.Model):
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _rec_name = 'id'
     _order = 'id desc'
+
+    _TRANSCRIPTION_MODEL = 'whisper-1'
+    _TRANSCRIPTION_PRICE_PER_MINUTE = Decimal('0.006')
+    _TRANSCRIPTION_PRICE_QUANTUM = Decimal('0.000001')
 
     call = fields.Many2one('connect.call', ondelete='set null')
     channel = fields.Many2one('connect.channel', ondelete='set null')
@@ -98,8 +104,9 @@ class Recording(models.Model):
                 temp_file_path = temp_file.name
             with open(temp_file_path, 'rb') as audio_file:
                 transcript = client.audio.transcriptions.create(
-                    model="whisper-1", file=audio_file,
+                    model=self._TRANSCRIPTION_MODEL, file=audio_file,
                     response_format='verbose_json', timestamp_granularities=["segment"])
+            result['transcription_price'] = self._get_transcription_price(transcript)
             segments = ''
             for s in transcript.segments:
                 seconds = int(s.start)
@@ -122,6 +129,36 @@ class Recording(models.Model):
             result['transcription_pending'] = False
             self.write(result)
             self._delete_after_successful_transcription()
+
+    @api.model
+    def _format_transcription_price(self, price):
+        if price is None or price is False:
+            return False
+        try:
+            value = Decimal(str(price)).quantize(
+                self._TRANSCRIPTION_PRICE_QUANTUM,
+                rounding=ROUND_HALF_UP,
+            )
+        except (InvalidOperation, TypeError, ValueError):
+            logger.warning('Invalid transcription price: %r', price)
+            return False
+        return format(value, 'f').rstrip('0').rstrip('.') or '0'
+
+    @api.model
+    def _get_transcription_price(self, transcript):
+        usage = getattr(transcript, 'usage', None)
+        duration = getattr(usage, 'seconds', None)
+        if not isinstance(duration, (int, float, Decimal)):
+            duration = getattr(transcript, 'duration', None)
+        if not isinstance(duration, (int, float, Decimal)):
+            logger.warning('OpenAI transcription response has no duration')
+            return False
+        price = (
+            Decimal(str(duration))
+            * self._TRANSCRIPTION_PRICE_PER_MINUTE
+            / Decimal('60')
+        )
+        return self._format_transcription_price(price)
 
     def make_summary(self, client, summary_prompt, transcript):
         logger.info('Make summary!')
@@ -183,12 +220,11 @@ class Recording(models.Model):
     def update_transcript(self, data):
         self.ensure_one()
         call = self.call
-        transcription_price = data.get('transcription_price')
-        if transcription_price:
-            transcription_price = round(transcription_price, 2)
         vals = {
             'transcript': data.get('transcript'),
-            'transcription_price': str(transcription_price),
+            'transcription_price': self._format_transcription_price(
+                data.get('transcription_price')
+            ),
             'summary': data.get('summary'),
             'transcription_token': False,
             'transcription_error': data.get('transcription_error'),

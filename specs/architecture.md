@@ -418,7 +418,8 @@ works with any combination of installed providers.
 4. The cron calls core's transcribe_recording():
    a. Downloads audio from media_url (may be proxied)
    b. Calls OpenAI Whisper API via settings.get_openai_client()
-   c. Stores transcript text on the recording and linked call
+   c. Calculates the estimated Whisper price from OpenAI usage seconds
+   d. Stores transcript text and price on the recording, and transcript on the linked call
 5. If transcript exists, calls core's make_summary():
    a. Calls the OpenAI summary model selected in settings (GPT-5.4 mini by default)
       with summary_prompt

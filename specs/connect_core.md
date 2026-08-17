@@ -196,7 +196,7 @@ Order: `id desc`
 
 | Method | Description |
 |--------|-------------|
-| `_get_channel_numbers()` | Generic regex-based number parsing. Handles phone numbers, `whatsapp:` prefix stripping, and SIP/client URIs with or without a URI scheme via `connect.user.get_user_by_uri` (ADR-054). |
+| `_get_channel_numbers()` | Generic regex-based number parsing. Handles phone numbers, `whatsapp:` prefix stripping, and SIP/client URIs with or without a URI scheme via `connect.user.get_user_by_uri` (ADR-051). |
 | `_get_duration_human()` | Human-readable duration |
 | `get_softphone_recording_state(payload)` | Provider-dispatched RPC returning runtime recording support/state for the active softphone call. |
 | `start_softphone_recording(payload)` | Provider-dispatched RPC to start recording the active softphone call. |
@@ -295,7 +295,7 @@ Order: `id desc`
 | `transcript` | Text | Provider-compatible copy synchronized to `call.transcript` |
 | `transcription_token` | Char | |
 | `transcription_error` | Char | |
-| `transcription_price` | Char | |
+| `transcription_price` | Char | Estimated Whisper cost in USD, stored with up to six decimal places |
 | `transcription_pending` | Boolean | Work-queue flag; set on create when `transcript_calls` is on, cleared after manual, callback, or cron processing |
 | `summary` | Html | Provider-compatible copy synchronized to `call.summary` |
 | `list_view_summary` | Html | Computed truncated version |
@@ -311,6 +311,8 @@ Order: `id desc`
 | `_sync_analysis_to_call()` | Constrains: sync transcript and summary to the call ledger |
 | `unlink()` | Preserve the latest recording analysis on its call before deletion |
 | `_delete_after_successful_transcription()` | Delete a successfully processed linked recording when automatic deletion is enabled |
+| `_format_transcription_price()` | Normalize estimated or callback-provided prices without losing sub-cent values |
+| `_get_transcription_price()` | Calculate the Whisper estimate from OpenAI usage seconds or response duration |
 | `get_transcript()` | Trigger transcription workflow |
 | `transcribe_recording()` | Call OpenAI Whisper API for speech-to-text |
 | `make_summary()` | Call the configured OpenAI model for call summary generation |
@@ -323,10 +325,10 @@ only flags the recording (`transcription_pending`) so the provider webhook
 that created it returns immediately and the request transaction stays
 atomic. A completed manual or callback-driven transcription clears the same
 flag. The cron also clears stale pending flags on recordings that already have
-a transcript without sending the audio to OpenAI again (ADR-059). When
+a transcript without sending the audio to OpenAI again (ADR-050). When
 `delete_recording_after_transcription` is enabled, successful processing stores
 the transcript and summary on the linked call before deleting the recording
-row. Failed and unlinked recordings are retained (ADR-060).
+row. Failed and unlinked recordings are retained (ADR-050).
 
 **Notes:**
 - Transcription and summary methods use OpenAI directly (not Twilio), so they belong
@@ -346,6 +348,10 @@ row. Failed and unlinked recordings are retained (ADR-060).
   e.g. connect_infobip — ADR-036) and only falls back to downloading
   `media_url` (which may be proxied) before sending the audio to OpenAI
   Whisper. `get_transcript()` accepts either source.
+- Direct Whisper transcription stores an estimated USD price from OpenAI usage
+  seconds (or response duration) at the published USD 0.006/minute rate
+  (ADR-050). Callback-provided prices use the same six-decimal precision
+  instead of cent rounding.
 - `make_summary()` uses the `summary_prompt` and `openai_summary_model` from
   settings. `OPENAI_COMPLETION_MODEL` remains a deployment-level override.
 

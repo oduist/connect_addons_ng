@@ -31,10 +31,11 @@ Connect uses OpenAI for automatic call transcription and summarization.
     1. A call recording is created and added to the transcription queue
     2. The **Connect: transcribe pending recordings** scheduled action runs every two minutes
     3. Audio is sent to OpenAI Whisper API for speech-to-text
-    4. The transcript is sent to the selected summary model with the summary prompt
-    5. The transcript and summary are saved permanently on the call record
-    6. If **Delete Recording After Transcription** is enabled, the successfully processed Odoo recording is deleted
-    7. If enabled, the summary is posted to the partner's chatter
+    4. The estimated Whisper cost is stored from OpenAI's processed duration
+    5. The transcript is sent to the selected summary model with the summary prompt
+    6. The transcript and summary are saved permanently on the call record
+    7. If **Delete Recording After Transcription** is enabled, the successfully processed Odoo recording is deleted
+    8. If enabled, the summary is posted to the partner's chatter
 
     The scheduled action must be active for automatic processing. Sanitized
     development or staging databases may have scheduled actions disabled. A

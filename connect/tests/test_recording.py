@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 
 from odoo.tests import tagged
@@ -155,7 +156,10 @@ class TestRecording(ConnectTestCommon):
     def test_transcribe_recording_mock(self):
         """Test transcribe_recording with mocked OpenAI."""
         self.recording.transcription_pending = True
-        with self.mock_openai_client(summary_text='<p>AI Summary</p>'):
+        with self.mock_openai_client(
+            summary_text='<p>AI Summary</p>',
+            transcript_duration=30,
+        ):
             with patch('odoo.addons.connect.models.recording.requests.get') as mock_get:
                 mock_response = MagicMock()
                 mock_response.raise_for_status = MagicMock()
@@ -164,7 +168,20 @@ class TestRecording(ConnectTestCommon):
 
                 self.recording.transcribe_recording('test-key', 'Summarize this')
                 self.assertEqual(self.recording.summary, '<p>AI Summary</p>')
+                self.assertEqual(self.recording.transcription_price, '0.003')
                 self.assertFalse(self.recording.transcription_pending)
+
+    def test_transcription_price_uses_openai_usage_seconds(self):
+        """Billable usage takes precedence over raw audio duration."""
+        transcript = SimpleNamespace(
+            duration=90,
+            usage=SimpleNamespace(seconds=30),
+        )
+
+        self.assertEqual(
+            self.recording._get_transcription_price(transcript),
+            '0.003',
+        )
 
     def test_successful_transcription_can_delete_recording(self):
         """Opt-in retention deletes audio after persisting call analysis."""
@@ -298,11 +315,11 @@ class TestRecording(ConnectTestCommon):
             self.recording.update_transcript({
                 'transcript': 'Hello world',
                 'summary': '<p>Summary</p>',
-                'transcription_price': 0.05,
+                'transcription_price': 0.003,
             })
         self.assertEqual(self.recording.transcript, 'Hello world')
         self.assertEqual(self.recording.summary, '<p>Summary</p>')
-        self.assertEqual(self.recording.transcription_price, '0.05')
+        self.assertEqual(self.recording.transcription_price, '0.003')
         self.assertFalse(self.recording.transcription_pending)
 
     def test_update_transcript_syncs_to_call(self):
@@ -314,6 +331,7 @@ class TestRecording(ConnectTestCommon):
             })
         self.assertEqual(self.call.summary, '<p>Call Summary</p>')
         self.assertEqual(self.call.transcript, 'Test')
+        self.assertFalse(self.recording.transcription_price)
 
     def test_create_with_transcription_enabled(self):
         """Test create triggers transcription when enabled."""
