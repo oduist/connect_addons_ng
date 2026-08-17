@@ -65,6 +65,14 @@ remote value is clamped into that range on read, because a speed the selected
 voice cannot honor makes Telnyx fail greeting synthesis and end the call after
 one second with `Reason=greeting_error` (ADR-066).
 
+`telephony_settings` publishes `time_limit_secs` and `user_idle_timeout_secs`.
+The latter defaults to 60 seconds and is constrained to 0 or the Telnyx range
+`[10, 14400]`; 0 publishes `null` and restores the provider behavior of never
+stopping. It is the only hard stop for an abandoned call: Telnyx keeps feeding
+the assistant `[long silence]` events instead of ending the conversation, so
+without a timeout a caller who drops out leaves the call running until the
+time limit expires.
+
 Language routing fields are `language_mode` (`contact` / `fixed` /
 `automatic`) and `default_lang`. New assistants default to multilingual
 `deepgram/nova-3` transcription with `language=auto`. The payload templates

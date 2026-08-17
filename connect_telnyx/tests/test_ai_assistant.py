@@ -257,6 +257,21 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
             xml = self.domain.route_call(request)
         self.assertIn('<AIAssistant id="assistant-test"', xml)
 
+    def test_caller_silence_timeout_is_published(self):
+        payload = self.assistant._remote_payload()
+        self.assertEqual(
+            payload['telephony_settings']['user_idle_timeout_secs'], 60)
+
+        self.assistant.with_context(skip_telnyx_ai_sync=True).write(
+            {'user_idle_timeout_secs': 0})
+        payload = self.assistant._remote_payload()
+        self.assertIsNone(
+            payload['telephony_settings']['user_idle_timeout_secs'])
+
+        with self.assertRaises(ValidationError):
+            self.assistant.with_context(skip_telnyx_ai_sync=True).write(
+                {'user_idle_timeout_secs': 5})
+
     def _conversation_ended_params(self, reason):
         return {
             'CallSid': 'v3:ai-conversation-call',

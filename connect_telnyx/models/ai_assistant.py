@@ -30,6 +30,14 @@ DEFAULT_VOICE = "AWS.Polly.Joanna-Neural"
 MIN_VOICE_SPEED = 0.5
 MAX_VOICE_SPEED = 1.5
 
+# Telnyx keeps prompting the model with a silence event and never ends the
+# conversation on its own: an abandoned call was observed answering 45 such
+# events over 17 minutes. A caller-silence timeout is the only hard stop, so
+# assistants get one by default. Telnyx accepts 10 to 14,400 seconds.
+DEFAULT_USER_IDLE_TIMEOUT_SECS = 60
+MIN_USER_IDLE_TIMEOUT_SECS = 10
+MAX_USER_IDLE_TIMEOUT_SECS = 14400
+
 DEFAULT_INSTRUCTIONS = (
     "You are a professional voice receptionist. Be concise, transparent, "
     "and use the available Odoo tools only when they are needed."
@@ -54,7 +62,8 @@ REMOTE_FIELDS = {
     "name", "description", "instructions", "greeting", "model",
     "voice", "voice_speed", "language_boost", "expressive_mode",
     "transcription_model",
-    "transcription_language", "time_limit_secs", "record_calls",
+    "transcription_language", "time_limit_secs", "user_idle_timeout_secs",
+    "record_calls",
     "language_mode", "default_lang",
     "memory_enabled", "enable_contact_tools", "enable_crm_tools",
     "enable_helpdesk_tools", "active", "receptionist_mode",
@@ -136,6 +145,13 @@ class TelnyxAIAssistant(models.Model):
              "languages before assigning them to contacts."
     )
     time_limit_secs = fields.Integer(default=1800, required=True)
+    user_idle_timeout_secs = fields.Integer(
+        string="Caller Silence Timeout (s)",
+        default=DEFAULT_USER_IDLE_TIMEOUT_SECS,
+        help="Stop the assistant after this much caller silence. Telnyx "
+             "accepts 10 to 14,400 seconds. Set to 0 to let the assistant "
+             "keep answering silence for the whole call time limit, which "
+             "leaves an abandoned call running until the time limit expires.")
     record_calls = fields.Boolean(default=False)
     memory_enabled = fields.Boolean(
         default=False,
@@ -244,6 +260,21 @@ class TelnyxAIAssistant(models.Model):
                     "{}. Telnyx rejects a speed the selected voice does not "
                     "support and the assistant then hangs up without a "
                     "greeting.".format(MIN_VOICE_SPEED, MAX_VOICE_SPEED)
+                )
+
+    @api.constrains("user_idle_timeout_secs")
+    def _check_user_idle_timeout(self):
+        for rec in self:
+            value = rec.user_idle_timeout_secs
+            if value and not (
+                MIN_USER_IDLE_TIMEOUT_SECS <= value
+                <= MAX_USER_IDLE_TIMEOUT_SECS
+            ):
+                raise ValidationError(
+                    "The caller silence timeout must be 0 or between {} and "
+                    "{} seconds.".format(
+                        MIN_USER_IDLE_TIMEOUT_SECS,
+                        MAX_USER_IDLE_TIMEOUT_SECS)
                 )
 
     @api.constrains("warm_transfer_message_delay_ms")
@@ -530,6 +561,10 @@ class TelnyxAIAssistant(models.Model):
             ),
             "telephony_settings": {
                 "time_limit_secs": self.time_limit_secs,
+                # Telnyx treats null as "never stop", which is what let an
+                # abandoned call answer silence events for 17 minutes.
+                "user_idle_timeout_secs": (
+                    self.user_idle_timeout_secs or None),
                 "recording_settings": {
                     "enabled": self.record_calls,
                     "channels": "dual",
@@ -601,6 +636,8 @@ class TelnyxAIAssistant(models.Model):
             "transcription_model": transcription.get("model") or "",
             "transcription_language": transcription.get("language") or "",
             "time_limit_secs": telephony.get("time_limit_secs") or 1800,
+            "user_idle_timeout_secs": (
+                telephony.get("user_idle_timeout_secs") or 0),
             "record_calls": bool(recording.get("enabled")),
             "imported": imported,
             "last_sync_at": fields.Datetime.now(),

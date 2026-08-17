@@ -143,6 +143,16 @@ published by automatic sync and **Push to Telnyx**.
 Recording and memory are off by default. CRM and Helpdesk tools are published
 only when the matching Odoo models are installed.
 
+**Caller Silence Timeout** stops the assistant after that much silence from
+the caller, and defaults to 60 seconds. Telnyx accepts 10 to 14,400 seconds.
+Keep it set: Telnyx never ends a conversation on its own, it only keeps
+notifying the assistant about the silence, so a caller who walks away or loses
+audio leaves the call running until **Call Time Limit** expires — one abandoned
+call was observed answering 45 silence events over 17 minutes. Setting the
+field to 0 restores that unlimited behavior. Existing assistants receive the
+60-second default on module upgrade and publish it at the next sync or **Push
+to Telnyx**.
+
 When assistant recording is enabled, Telnyx produces the audio, conversation
 messages, and configured insight summary. Odoo stores all three on one
 **Recordings** row after the call. The audio is downloaded into an Odoo

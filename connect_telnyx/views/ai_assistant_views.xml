@@ -95,6 +95,7 @@
                             </group>
                             <group string="Call Settings">
                                 <field name="time_limit_secs"/>
+                                <field name="user_idle_timeout_secs"/>
                                 <field name="record_calls"/>
                                 <field name="memory_enabled"/>
                             </group>
