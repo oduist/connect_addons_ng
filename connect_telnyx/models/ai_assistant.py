@@ -553,7 +553,8 @@ class TelnyxAIAssistant(models.Model):
         Every Connect user may read an assistant, but this call spends
         Telnyx text-to-speech credit, so only administrators can trigger it.
         """
-        if not self.env.user.has_group("connect.group_admin"):
+        if not self.env.su and not self.env.user.has_group(
+                "connect.group_admin"):
             raise AccessError(
                 "Only Connect administrators can preview a voice.")
         sample = (text or "").strip()
