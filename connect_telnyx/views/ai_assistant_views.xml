@@ -9,7 +9,7 @@
                 <field name="receptionist_mode"/>
                 <field name="exten_number" string="Extension"/>
                 <field name="model"/>
-                <field name="voice"/>
+                <field name="voice_label" string="Voice"/>
                 <field name="record_calls"/>
                 <field name="memory_enabled"/>
                 <field name="sid"/>
@@ -47,11 +47,18 @@
                         </group>
                         <group string="Model and Voice">
                             <field name="model"/>
-                            <field name="voice"/>
+                            <field name="voice_is_expressive" invisible="1"/>
+                            <field name="voice_language"/>
+                            <field name="voice_provider"/>
+                            <field name="voice" widget="telnyx_voice"
+                                   options="{'language_field': 'voice_language',
+                                             'provider_field': 'voice_provider',
+                                             'speed_field': 'voice_speed',
+                                             'text_field': 'greeting'}"/>
                             <field name="voice_speed"/>
-                            <field name="language_boost"
-                                   placeholder="auto, Polish, Russian..."/>
-                            <field name="expressive_mode"/>
+                            <field name="language_boost"/>
+                            <field name="expressive_mode"
+                                   invisible="not voice_is_expressive"/>
                             <field name="language_mode"/>
                             <field name="default_lang" required="1"/>
                             <field name="transcription_model"/>

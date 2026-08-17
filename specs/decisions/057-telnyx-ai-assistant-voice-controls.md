@@ -82,3 +82,49 @@ carries the remaining warning that Telnyx Ultra needs at least 0.8.
 
 Surfacing a Telnyx `greeting_error` in the Odoo call ledger — today such a
 call is only a short `completed` entry — remains open.
+
+## Amendment 2026-08-18: catalog-backed voice selection and sample playback
+
+`voice` was a free-form Char, so the assistant form showed the raw identifier
+an administrator had to copy from the Telnyx portal — for a cloned voice a
+bare UUID such as `Telnyx.Ultra.00a77add-…`. The account catalog and its
+filtered autocomplete already existed for System Voice (ADR-052), which is
+why the assistant now reuses them instead of growing a second mechanism:
+
+1. The `telnyx_voice` widget takes the names of its filter fields as options,
+   defaulting to the System Voice ones. The assistant adds `voice_language`
+   and `voice_provider`: computed from the selected voice, `store=True` and
+   `readonly=False`, so they follow a voice change but keep a filter the
+   administrator picked for a voice Odoo cannot resolve. Neither field is
+   published to Telnyx.
+2. The assistant reads the catalog without the basic TeXML voices (`man`,
+   `woman`, `alice`): they are part of the `<Say>` contract and cannot drive
+   an assistant. A voice whose language or provider Telnyx leaves empty now
+   matches every filter — a cloned voice is otherwise unreachable in both
+   selectors.
+3. `language_boost` becomes a Selection over the language list Telnyx
+   documents for `voice_settings`. That list is a closed enum, unlike the
+   voice catalog whose drift is what ADR-052 rejected a Selection for. An
+   unknown remote value is dropped on read rather than failing the sync.
+4. Expressive mode is only offered while a `Telnyx.Ultra.*` voice is
+   selected, and clears itself when the voice moves to another provider.
+5. A speaker button synthesizes a sample through
+   `POST /v2/text-to-speech/speech` (`output_type=base64_output`) with the
+   configured voice and speed and plays it in the browser. This is the same
+   validation path that fails an assistant greeting, so the pair that ends
+   every call after one second is now refused while the form is open. Speed
+   is sent only inside the provider object that documents it
+   (`telnyx`/`rime` `voice_speed`, `minimax` `speed`); other providers reject
+   an unknown key. A greeting containing dynamic variables is replaced by a
+   standard sentence so the sample does not read out `{{...}}`.
+
+Access decision: the catalog lookups and the sample live on
+`connect.telnyx.ai_assistant`, which `connect.group_user` may read, and they
+call the admin-only `connect.settings` with `sudo()`. Read-only lookups stay
+open to any Connect user because they expose nothing but voice names, while
+`telnyx_preview_voice` requires `connect.group_admin`: each call spends
+Telnyx text-to-speech credit. Widening access to `connect.settings` itself
+was rejected — it holds the API key and every provider credential.
+
+Voice previews are not cached in Odoo and are not stored as attachments; the
+audio is returned to the browser and discarded.

@@ -59,11 +59,15 @@ fallback language.
 The contact language is maintained on the Odoo contact. A multilingual agent
 also needs automatic or multilingual speech recognition and a TTS voice that
 can actually speak the required languages; changing only the prompt does not
-make an English-only voice multilingual. Administrators may also configure a
-voice language hint and, for supported voices such as Telnyx Ultra, expressive
-delivery. Speaking speed is limited to the 0.5-1.5 range; a faster or slower
-setting than the chosen voice supports leaves the agent unable to speak its
-greeting, and such calls end right after being answered.
+make an English-only voice multilingual. Administrators pick the voice from
+the list of voices available to the account — searchable by name, gender or
+identifier, with cloned voices listed under their own name — and can play a
+sample before saving. They may also configure a voice language hint and, for
+Telnyx Ultra voices, expressive delivery. Speaking speed is limited to the
+0.5-1.5 range; a faster or slower setting than the chosen voice supports
+leaves the agent unable to speak its greeting, and such calls end right after
+being answered. Playing the sample is the quickest way to catch that before
+the first caller does.
 
 ## Call History And Recordings
 

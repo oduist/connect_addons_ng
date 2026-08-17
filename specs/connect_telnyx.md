@@ -65,6 +65,21 @@ remote value is clamped into that range on read, because a speed the selected
 voice cannot honor makes Telnyx fail greeting synthesis and end the call after
 one second with `Reason=greeting_error` (ADR-057).
 
+`voice` is chosen through the same catalog-backed `telnyx_voice` widget as
+System Voice, filtered by the non-published `voice_language` /
+`voice_provider` Selections (computed from the selected voice, `store=True`,
+`readonly=False`, so a manual filter survives a voice Odoo cannot resolve).
+`voice_label` is the readable catalog name shown in the list view,
+`voice_is_expressive` gates the Expressive Mode switch on a
+`Telnyx.Ultra.*` voice, and `language_boost` is a Selection over the Telnyx
+language list, with an unknown remote hint dropped instead of failing sync.
+Model methods `telnyx_get_voice_options(language, provider, search, limit)`,
+`telnyx_get_voice_label(voice_id)` and
+`telnyx_preview_voice(voice, voice_speed, text)` proxy the admin-only
+`connect.settings` catalog with `sudo()`, since assistants are readable by
+`connect.group_user`; the preview additionally requires
+`connect.group_admin` because it spends Telnyx TTS credit (ADR-057).
+
 `telephony_settings` publishes `time_limit_secs` and `user_idle_timeout_secs`.
 The latter defaults to 60 seconds and is constrained to 0 or the Telnyx range
 `[10, 14400]`; 0 publishes `null` and restores the provider behavior of never
@@ -217,9 +232,15 @@ dispatcher override for the `'telnyx'` key; originates via
 `POST /texml/Accounts/{sid}/Calls` with the mandatory `ApplicationSid`
 of the number application), `_sync_telnyx_tts_voices()` /
 `telnyx_sync_tts_voices()` (cache/refresh the account voice catalog),
-`telnyx_get_voice_options(language, provider, search, limit)` (bounded
-autocomplete query over the cache), `telnyx_get_voice_label(voice_id)`
-(readable current-value label),
+`telnyx_get_voice_options(language, provider, search, limit, include_basic)`
+(bounded autocomplete query over the cache; a voice whose language or
+provider Telnyx leaves empty matches every filter, and `include_basic=False`
+hides the TeXML-only basic voices from the AI assistant selector),
+`telnyx_get_voice_label(voice_id)` (readable current-value label),
+`_telnyx_voice_sample(voice, text, voice_speed)` /
+`telnyx_preview_voice(...)` (`POST /v2/text-to-speech/speech` with
+`output_type=base64_output`, speed sent only inside the provider object that
+supports it — `telnyx`/`rime` `voice_speed`, `minimax` `speed`),
 `telnyx_apply_system_voice()` (finalize all missing Say voices),
 `get_telnyx_balance()`,
 `telnyx_check_call_failure(cause, sip_code)` (ADR-040: web-phone RPC

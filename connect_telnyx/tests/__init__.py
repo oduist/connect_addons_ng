@@ -1,4 +1,5 @@
 from . import test_ai_assistant
+from . import test_ai_assistant_voice
 from . import test_call_failure
 from . import test_messaging
 from . import test_originate

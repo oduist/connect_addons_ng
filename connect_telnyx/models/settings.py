@@ -54,6 +54,20 @@ TELNYX_BASIC_VOICES = [
         "provider": "aws", "language": "en-US", "gender": "Female",
     },
 ]
+# Speed is not a shared Telnyx TTS parameter: every provider that supports
+# it names the key inside its own object and the others reject an unknown
+# field, so a sample is generated with the speed only where it exists.
+TELNYX_VOICE_SPEED_PARAMS = {
+    "telnyx": ("telnyx", "voice_speed"),
+    "rime": ("rime", "voice_speed"),
+    "minimax": ("minimax", "speed"),
+}
+TELNYX_VOICE_SAMPLE_TEXT = (
+    "Hello! This is how the selected Telnyx voice sounds."
+)
+# The sample is synthesized while the administrator waits for the form, so
+# it stays short enough to answer inside the normal API timeout.
+MAX_VOICE_SAMPLE_CHARS = 200
 TELNYX_PROVIDER_LABELS = {
     "aws": "Amazon Web Services",
     "azure": "Microsoft Azure",
@@ -157,8 +171,13 @@ class Settings(models.Model):
     telnyx_tts_voices = fields.Text(readonly=True)
 
     @api.model
-    def _get_cached_telnyx_voices(self):
-        """Return a normalized, de-duplicated catalog without a live call."""
+    def _get_cached_telnyx_voices(self, include_basic=True):
+        """Return a normalized, de-duplicated catalog without a live call.
+
+        The basic TeXML voices belong to the `<Say>` contract only; an AI
+        assistant cannot speak with them, so its selector asks for the
+        catalog without them.
+        """
         settings = self.sudo().search([], limit=1)
         try:
             voices = json.loads(settings.telnyx_tts_voices or "[]")
@@ -167,7 +186,8 @@ class Settings(models.Model):
         if not isinstance(voices, list):
             voices = []
         catalog = {}
-        for voice in TELNYX_BASIC_VOICES + voices:
+        basic = TELNYX_BASIC_VOICES if include_basic else []
+        for voice in basic + voices:
             if not isinstance(voice, dict):
                 continue
             voice_id = voice.get("id") or voice.get("voice_id")
@@ -240,16 +260,23 @@ class Settings(models.Model):
 
     @api.model
     def telnyx_get_voice_options(self, language, provider, search="",
-                                 limit=80):
-        """Return a small readable subset for the voice autocomplete."""
+                                 limit=80, include_basic=True):
+        """Return a small readable subset for the voice autocomplete.
+
+        Telnyx reports no language for some account-scoped voices, such as
+        a cloned one. Those match every filter instead of disappearing from
+        the catalog, which is the only way they stay selectable at all.
+        """
         if not language or not provider:
             return []
         search = (search or "").strip().lower()
         limit = min(max(int(limit or 80), 1), 100)
         matches = []
-        for voice in self._get_cached_telnyx_voices():
-            if (voice["language"] != language
-                    or voice["provider"] != provider):
+        for voice in self._get_cached_telnyx_voices(
+                include_basic=include_basic):
+            if voice["language"] and voice["language"] != language:
+                continue
+            if voice["provider"] and voice["provider"] != provider:
                 continue
             haystack = "{} {} {}".format(
                 voice.get("name", ""), voice["id"], voice.get("gender", "")
@@ -275,6 +302,51 @@ class Settings(models.Model):
             "details": voice_id or "",
         }
 
+    @api.model
+    def _telnyx_voice_provider(self, voice_id):
+        """Provider key of a catalog voice, or the one implied by its id."""
+        for voice in self._get_cached_telnyx_voices():
+            if voice["id"] == voice_id:
+                if voice["provider"]:
+                    return voice["provider"]
+                break
+        prefix = (voice_id or "").split(".")[0].lower()
+        return prefix if prefix in TELNYX_PROVIDER_LABELS else ""
+
+    @api.model
+    def _telnyx_voice_sample(self, voice, text=None, voice_speed=1.0):
+        """Return base64 audio of a short sample spoken by ``voice``.
+
+        Telnyx validates the voice, the speed and the provider combination
+        on this endpoint exactly as it does when an AI assistant synthesizes
+        its greeting, so an unusable pair is reported while the form is open
+        instead of ending every call with a greeting error.
+        """
+        if not voice:
+            raise ValidationError("Select a voice first.")
+        payload = {
+            "voice": voice,
+            "text": (text or TELNYX_VOICE_SAMPLE_TEXT)[
+                :MAX_VOICE_SAMPLE_CHARS],
+            "output_type": "base64_output",
+        }
+        speed_param = TELNYX_VOICE_SPEED_PARAMS.get(
+            self._telnyx_voice_provider(voice))
+        if speed_param and voice_speed:
+            payload[speed_param[0]] = {speed_param[1]: voice_speed}
+        response = self.telnyx_api_request(
+            "POST", "text-to-speech/speech", payload=payload, timeout=30)
+        audio = (response or {}).get("base64_audio")
+        if not audio:
+            raise ValidationError(
+                "Telnyx returned no audio for voice {}.".format(voice))
+        return {"audio": audio, "voice": voice}
+
+    @api.model
+    def telnyx_preview_voice(self, voice, voice_speed=1.0, text=None):
+        """Play a sample of the system voice from the settings form."""
+        return self._telnyx_voice_sample(voice, text, voice_speed)
+
     @api.onchange(
         "telnyx_system_voice_language", "telnyx_system_voice_provider")
     def _onchange_telnyx_system_voice_filters(self):
@@ -285,8 +357,11 @@ class Settings(models.Model):
             if item["id"] == self.telnyx_system_voice
         ), None)
         if (not voice
-                or voice["language"] != self.telnyx_system_voice_language
-                or voice["provider"] != self.telnyx_system_voice_provider):
+                or (voice["language"]
+                    and voice["language"] != self.telnyx_system_voice_language)
+                or (voice["provider"]
+                    and voice["provider"]
+                    != self.telnyx_system_voice_provider)):
             self.telnyx_system_voice = False
 
     @api.model

@@ -111,6 +111,28 @@ language. A fixed-language transcription setting or single-language voice
 intentionally limits the agent even when its LLM understands several
 languages.
 
+**Voice** is picked from the voices available to your Telnyx account, not
+typed as an identifier. Choose **Voice Language** and **Voice Provider**
+first — they only filter the catalog and are never sent to Telnyx — then
+search the **Voice** field by name, gender, or Telnyx ID. Cloned and designed
+voices appear under their own name, so an assistant shows *Callie* rather than
+`Telnyx.Ultra.00a77add-…`. Both filters follow the voice you select, and
+changing a filter clears a voice that no longer matches it. Voices that Telnyx
+reports without a language stay visible under every language filter.
+
+The speaker button next to the field plays a sample of the selected voice at
+the configured speed, spoken by Telnyx itself. Use it before saving: the same
+endpoint validates the voice and speed combination that the assistant uses for
+its greeting, so an unusable pair is reported in the form instead of ending
+every call after one second. The sample reads the assistant greeting, or a
+standard sentence when that greeting contains dynamic variables. Only Connect
+administrators can play it, since each sample spends Telnyx text-to-speech
+credit.
+
+The catalog behind the selector is the cached account catalog shared with
+**System Voice**. Refresh it with **REFRESH VOICES** in the Telnyx settings
+after adding or cloning a voice in the Telnyx portal.
+
 **Voice Speed** must be between 0.5 and 1.5, and 1.0 is the safe default.
 Telnyx documents a wider range for its Natural voices only; another voice
 rejects a speed it does not support, and that failure is invisible until a
@@ -120,13 +142,13 @@ calls end immediately after being answered, check the assistant conversation
 in the Telnyx portal for "could not generate the greeting audio" and return
 the speed to 1.0.
 
-**Voice Language Boost** is an optional TTS hint. Use `auto` with a supported
-multilingual voice, enter an explicit provider-supported language when one
-assistant is intentionally fixed to that language, or leave it empty to keep
-the provider default. **Expressive Mode** lets supported voices such as Telnyx
-Ultra add contextual expression. Keep it disabled for providers or voices
-that do not document expressive support. Both values are stored in Odoo and
-published by automatic sync and **Push to Telnyx**.
+**Voice Language Boost** is an optional TTS hint chosen from the languages
+Telnyx supports. Use **Automatic** with a supported multilingual voice, select
+an explicit language when one assistant is intentionally fixed to it, or leave
+it empty to keep the provider default. **Expressive Mode** lets Telnyx Ultra
+voices add contextual expression; the switch appears only while such a voice
+is selected and clears itself when you move to another provider. Both values
+are stored in Odoo and published by automatic sync and **Push to Telnyx**.
 
 - **Enable Contact Tools** allows strict contact lookup and adding internal
   notes.
@@ -232,10 +254,14 @@ The voice catalog comes from Telnyx `GET /v2/text-to-speech/voices`, so it can
 include Telnyx voices, supported third-party providers, and cloned voices
 available to the account. Select a language and provider first; **System
 Voice** then searches only that matching subset and displays readable voice
-names with gender and the underlying Telnyx ID. Click **REFRESH VOICES** after
+names with gender and the underlying Telnyx ID. The speaker button next to the
+field plays a sample of the selected voice. Click **REFRESH VOICES** after
 adding a voice in Voice Design Lab. The normal **SYNC TELNYX ACCOUNT** action
 refreshes the same catalog. If the catalog cannot be fetched, the current
 selection and the basic TeXML voices remain available.
+
+AI assistants use the same catalog without the basic TeXML voices (`man`,
+`woman`, `alice`), which only exist for `<Say>` and cannot drive an assistant.
 
 ### Sync
 

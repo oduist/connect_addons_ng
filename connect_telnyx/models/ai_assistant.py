@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 import logging
+import re
 import secrets
 from urllib.parse import urljoin
 
 from markupsafe import escape
 
 from odoo import api, fields, models, release
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 from odoo.addons.connect.models.res_partner import format_number
 if release.version_info[0] >= 19:
     from odoo.models import Constraint
 
-from .settings import DEFAULT_AI_SUMMARY_INSTRUCTIONS
+from .settings import (
+    DEFAULT_AI_SUMMARY_INSTRUCTIONS, TELNYX_PROVIDER_LABELS)
 from .texml_response import Connect, VoiceResponse
 
 logger = logging.getLogger(__name__)
@@ -19,6 +21,63 @@ logger = logging.getLogger(__name__)
 # Telnyx validates the voice id against the account; this one ships with
 # every account and is used when the configured voice is unavailable.
 DEFAULT_VOICE = "AWS.Polly.Joanna-Neural"
+# Catalog filters the voice selector starts from. They match DEFAULT_VOICE so
+# a new assistant already lists a usable set before the catalog is refreshed.
+DEFAULT_VOICE_LANGUAGE = "en-US"
+DEFAULT_VOICE_PROVIDER = "aws"
+
+# Expressive speech is a Telnyx Ultra feature: other providers have no SSML
+# emotion tags, so the switch is only offered for those voices.
+EXPRESSIVE_VOICE_PREFIX = "Telnyx.Ultra."
+
+# Dynamic variables of a greeting, which a voice sample must not read out.
+VOICE_SAMPLE_PLACEHOLDER_RE = re.compile(r"{{.*?}}|%\(\w+\)s")
+
+# Telnyx publishes a closed list of language hints for voice synthesis.
+# https://developers.telnyx.com/api-reference/assistants/create-an-assistant
+LANGUAGE_BOOST_SELECTION = [
+    ("auto", "Automatic"),
+    ("Afrikaans", "Afrikaans"),
+    ("Arabic", "Arabic"),
+    ("Bulgarian", "Bulgarian"),
+    ("Catalan", "Catalan"),
+    ("Chinese", "Chinese"),
+    ("Chinese,Yue", "Chinese (Cantonese)"),
+    ("Croatian", "Croatian"),
+    ("Czech", "Czech"),
+    ("Danish", "Danish"),
+    ("Dutch", "Dutch"),
+    ("English", "English"),
+    ("Filipino", "Filipino"),
+    ("Finnish", "Finnish"),
+    ("French", "French"),
+    ("German", "German"),
+    ("Greek", "Greek"),
+    ("Hebrew", "Hebrew"),
+    ("Hindi", "Hindi"),
+    ("Hungarian", "Hungarian"),
+    ("Indonesian", "Indonesian"),
+    ("Italian", "Italian"),
+    ("Japanese", "Japanese"),
+    ("Korean", "Korean"),
+    ("Malay", "Malay"),
+    ("Norwegian", "Norwegian"),
+    ("Nynorsk", "Norwegian Nynorsk"),
+    ("Persian", "Persian"),
+    ("Polish", "Polish"),
+    ("Portuguese", "Portuguese"),
+    ("Romanian", "Romanian"),
+    ("Russian", "Russian"),
+    ("Slovak", "Slovak"),
+    ("Slovenian", "Slovenian"),
+    ("Spanish", "Spanish"),
+    ("Swedish", "Swedish"),
+    ("Tamil", "Tamil"),
+    ("Thai", "Thai"),
+    ("Turkish", "Turkish"),
+    ("Ukrainian", "Ukrainian"),
+    ("Vietnamese", "Vietnamese"),
+]
 
 # Telnyx documents [0.25, 2.0] for Natural voices only. Other voices reject
 # a speed they do not support, and the failure is invisible until a call
@@ -104,22 +163,41 @@ class TelnyxAIAssistant(models.Model):
     )
     greeting = fields.Text(default=DEFAULT_GREETING)
     model = fields.Char(help="Leave empty to use the Telnyx default model.")
+    voice_language = fields.Selection(
+        selection="_get_voice_language_selection",
+        compute="_compute_voice_filters", store=True, readonly=False,
+        string="Voice Language",
+        help="Language filter for the voice catalog. It narrows the voice "
+             "list only and is never published to Telnyx.")
+    voice_provider = fields.Selection(
+        selection="_get_voice_provider_selection",
+        compute="_compute_voice_filters", store=True, readonly=False,
+        string="Voice Provider",
+        help="Provider filter for the voice catalog. It narrows the voice "
+             "list only and is never published to Telnyx.")
     voice = fields.Char(
         default=DEFAULT_VOICE,
-        help="Telnyx voice identifier, for example AWS.Polly.Joanna-Neural. "
-             "The available ids are listed by the Telnyx text-to-speech "
-             "voices endpoint. Choose a multilingual voice such as Azure "
-             "Multilingual, MiniMax, or Inworld when one assistant must "
-             "speak several languages.")
+        help="Telnyx voice used by the assistant, selected from the voices "
+             "available to the account. Choose a multilingual voice such as "
+             "Telnyx Ultra, Azure Multilingual, MiniMax, or Inworld when one "
+             "assistant must speak several languages.")
+    voice_label = fields.Char(
+        compute="_compute_voice_label", string="Voice Name",
+        help="Catalog name of the selected voice.")
+    voice_is_expressive = fields.Boolean(
+        compute="_compute_voice_is_expressive",
+        string="Voice Supports Expression",
+        help="Technical flag driving the visibility of Expressive Mode.")
     voice_speed = fields.Float(
         default=1.0,
         help="Speech rate multiplier between 0.5 and 1.5. Telnyx rejects a "
              "speed the selected voice does not support, and such a call "
              "ends after one second without a greeting. Telnyx Ultra needs "
              "at least 0.8; keep 1.0 when unsure.")
-    language_boost = fields.Char(
+    language_boost = fields.Selection(
+        LANGUAGE_BOOST_SELECTION,
         string="Voice Language Boost",
-        help="Optional Telnyx TTS language hint. Use auto for supported "
+        help="Optional Telnyx TTS language hint. Use Automatic for supported "
              "multilingual voices, an explicit provider-supported language, "
              "or leave empty to keep the provider default.",
     )
@@ -347,6 +425,136 @@ class TelnyxAIAssistant(models.Model):
                 raise ValidationError(
                     "The warm transfer message delay cannot be negative."
                 )
+
+    @api.model
+    def _voice_catalog(self):
+        """Account voice catalog usable by an AI assistant.
+
+        The cache belongs to the admin-only settings model while assistants
+        are readable by every Connect user, so the catalog is read with
+        sudo(); nothing but voice names reaches the caller.
+        """
+        return self.env["connect.settings"].sudo()._get_cached_telnyx_voices(
+            include_basic=False)
+
+    @api.model
+    def _get_voice_language_selection(self):
+        settings = self.env["connect.settings"].sudo()
+        languages = {
+            voice["language"] for voice in self._voice_catalog()
+            if voice["language"]
+        }
+        # Keep the default reachable when the catalog was never fetched.
+        languages.add(DEFAULT_VOICE_LANGUAGE)
+        return sorted(
+            ((language, settings._get_telnyx_language_label(language))
+             for language in languages),
+            key=lambda item: item[1],
+        )
+
+    @api.model
+    def _get_voice_provider_selection(self):
+        settings = self.env["connect.settings"].sudo()
+        providers = {
+            voice["provider"] for voice in self._voice_catalog()
+            if voice["provider"]
+        }
+        providers.add(DEFAULT_VOICE_PROVIDER)
+        return sorted(
+            ((provider, settings._get_telnyx_provider_label(provider))
+             for provider in providers),
+            key=lambda item: item[1],
+        )
+
+    @api.depends("voice")
+    def _compute_voice_filters(self):
+        """Follow the selected voice, but never wipe a manual filter.
+
+        Telnyx reports no language for some account-scoped voices, and the
+        filters are also what the selector searches with, so an unknown or
+        cleared voice keeps whatever the administrator picked.
+        """
+        catalog = {voice["id"]: voice for voice in self._voice_catalog()}
+        for rec in self:
+            entry = catalog.get(rec.voice) or {}
+            rec.voice_language = (
+                entry.get("language") or rec.voice_language
+                or DEFAULT_VOICE_LANGUAGE)
+            rec.voice_provider = (
+                entry.get("provider") or rec.voice_provider
+                or self._voice_provider_from_id(rec.voice)
+                or DEFAULT_VOICE_PROVIDER)
+
+    @api.model
+    def _voice_provider_from_id(self, voice_id):
+        prefix = (voice_id or "").split(".")[0].lower()
+        return prefix if prefix in TELNYX_PROVIDER_LABELS else ""
+
+    @api.depends("voice")
+    def _compute_voice_label(self):
+        catalog = {voice["id"]: voice for voice in self._voice_catalog()}
+        for rec in self:
+            entry = catalog.get(rec.voice) or {}
+            rec.voice_label = entry.get("name") or rec.voice or ""
+
+    @api.depends("voice")
+    def _compute_voice_is_expressive(self):
+        for rec in self:
+            rec.voice_is_expressive = (rec.voice or "").startswith(
+                EXPRESSIVE_VOICE_PREFIX)
+
+    @api.onchange("voice_language", "voice_provider")
+    def _onchange_voice_filters(self):
+        if not self.voice:
+            return
+        entry = next((
+            item for item in self._voice_catalog()
+            if item["id"] == self.voice
+        ), None)
+        if (not entry
+                or (entry["language"]
+                    and entry["language"] != self.voice_language)
+                or (entry["provider"]
+                    and entry["provider"] != self.voice_provider)):
+            self.voice = False
+
+    @api.onchange("voice")
+    def _onchange_voice_expression(self):
+        if self.expressive_mode and not (self.voice or "").startswith(
+                EXPRESSIVE_VOICE_PREFIX):
+            self.expressive_mode = False
+
+    @api.model
+    def telnyx_get_voice_options(self, language, provider, search="",
+                                 limit=80):
+        """Autocomplete source of the assistant voice selector."""
+        return self.env["connect.settings"].sudo().telnyx_get_voice_options(
+            language, provider, search=search, limit=limit,
+            include_basic=False)
+
+    @api.model
+    def telnyx_get_voice_label(self, voice_id):
+        """Readable name of one voice id, for the selector and the list."""
+        return self.env["connect.settings"].sudo().telnyx_get_voice_label(
+            voice_id)
+
+    @api.model
+    def telnyx_preview_voice(self, voice, voice_speed=1.0, text=None):
+        """Synthesize a sample of the selected voice through Telnyx.
+
+        Every Connect user may read an assistant, but this call spends
+        Telnyx text-to-speech credit, so only administrators can trigger it.
+        """
+        if not self.env.user.has_group("connect.group_admin"):
+            raise AccessError(
+                "Only Connect administrators can preview a voice.")
+        sample = (text or "").strip()
+        # A greeting carrying dynamic variables would be read out with its
+        # placeholder syntax, so such a text is replaced by the default one.
+        if not sample or VOICE_SAMPLE_PLACEHOLDER_RE.search(sample):
+            sample = None
+        return self.env["connect.settings"].sudo()._telnyx_voice_sample(
+            voice, sample, voice_speed)
 
     @api.depends("exten.number", "domain.domain_name")
     def _compute_sip_uri(self):
@@ -690,6 +898,12 @@ class TelnyxAIAssistant(models.Model):
         return min(max(speed, MIN_VOICE_SPEED), MAX_VOICE_SPEED)
 
     @api.model
+    def _clean_language_boost(self, value):
+        """Drop a remote hint Odoo does not offer instead of failing sync."""
+        allowed = {key for key, _label in LANGUAGE_BOOST_SELECTION}
+        return value if value in allowed else False
+
+    @api.model
     def _remote_values(self, data, imported=False):
         voice_settings = data.get("voice_settings") or {}
         transcription = data.get("transcription") or {}
@@ -711,7 +925,8 @@ class TelnyxAIAssistant(models.Model):
                 voice_settings.get("voice_speed")
                 or voice_settings.get("speed") or 1.0
             ),
-            "language_boost": voice_settings.get("language_boost") or "",
+            "language_boost": self._clean_language_boost(
+                voice_settings.get("language_boost")),
             "expressive_mode": bool(voice_settings.get("expressive_mode")),
             "transcription_model": transcription.get("model") or "",
             "transcription_language": transcription.get("language") or "",
