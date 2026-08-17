@@ -28,6 +28,11 @@ the caller hears transfer progress or ringback. If the employee's SIP/WebRTC
 phone is not registered or transfer is otherwise unavailable, the agent offers
 to register the request rather than disconnecting you.
 
+If the transfer is attempted but does not connect — the employee is busy,
+declines, or does not pick up — the agent says so and returns to the
+conversation, offering to register your request. It does not leave you waiting
+in silence.
+
 A personal receptionist transfers to its manager. A company receptionist may
 replace an IVR and route to configured departments such as Sales, Quality, or
 the Director.

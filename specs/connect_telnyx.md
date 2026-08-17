@@ -117,7 +117,10 @@ to ambiguous and expose no identity. The receptionist policy requires verbal
 confirmation of a single candidate before treating the identity as verified,
 requires qualification of the call before any transfer, and begins in the
 selected contact/fallback language before following an allowed caller language
-change.
+change. It also requires the assistant to tell the caller when a transfer did
+not connect and to fall back to registering the request instead of waiting in
+silence — a rejected transfer leg (for example SIP 486 from a busy device)
+otherwise leaves the caller with dead air.
 
 Completed AI conversations are linked to `connect.call` by conversation and
 Call Control IDs. Transcript, Telnyx Insight summary, and the downloaded MP3

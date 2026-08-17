@@ -415,7 +415,11 @@ class TelnyxAIAssistant(models.Model):
             "- Use register_call_request after the caller agrees that the "
             "qualified request should be saved.\n"
             "- During a warm transfer, brief the recipient before bridging the "
-            "caller."
+            "caller.\n"
+            "- If a transfer does not connect, for any reason, say so to the "
+            "caller, never wait in silence, and continue the conversation by "
+            "offering to register the request instead. Retry a transfer only "
+            "if the caller asks for one."
         ).format(mode_text)
         return "{}\n\n{}".format((self.instructions or "").strip(), policy)
 

@@ -54,6 +54,8 @@ class TestTelnyxAIAssistant(TelnyxTestCommon):
             webhook['headers'][0]['value'], self.assistant.tool_token)
         self.assertIn('Odoo receptionist policy', payload['instructions'])
         self.assertIn('register a request', payload['instructions'])
+        self.assertIn(
+            'If a transfer does not connect', payload['instructions'])
         for variable in (
             'conversation_language_name',
             'conversation_language',
