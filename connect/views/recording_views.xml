@@ -8,6 +8,8 @@
                 <field name="call"/>
                 <field name="caller_number"/>
                 <field name="called_number"/>
+                <field name="partner" optional="show"/>
+                <field name="users" widget="many2many_tags" optional="show"/>
                 <field name="duration_human" string="Duration"/>
                 <field name="list_view_summary" string="Summary"/>
                 <field name="create_date" string="Date"/>

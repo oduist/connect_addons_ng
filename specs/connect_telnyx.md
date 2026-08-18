@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Telnyx
 - **Technical:** `connect_telnyx`
-- **Version:** 19.0.1.4.0
+- **Version:** 19.0.1.4.3
 - **Depends:** `connect`
 - **Python deps:** `telnyx`, `nacl` (PyNaCl)
 - **Application:** False
@@ -53,22 +53,153 @@ WhatsApp and RCS **messaging** are integrated (ADR-033).
 
 ### ai_assistant.py — `connect.telnyx.ai_assistant`
 
-Manages Telnyx Voice AI Assistants through the v2 API. Stores the prompt,
-greeting, model/voice/transcription settings, recording/memory switches and
-the Odoo tool allowlist. Unknown remote assistants are imported by account
-sync; once imported, Odoo configures its signed dynamic-variables webhook and
-per-assistant tool endpoints. Phone numbers route to assistants through the
-existing TeXML application using `<Connect><AIAssistant>` (ADR-034).
+Manages Telnyx Voice AI Assistants through the v2 API. Odoo is authoritative:
+account sync pushes local assistants and ignores unknown Telnyx assistants;
+there is no remote Pull/import workflow (ADR-054). Stores the prompt, greeting,
+model/voice/transcription settings, recording/memory switches and the Odoo
+tool allowlist. Voice settings include `voice`, `voice_speed`, optional
+`language_boost`, and opt-in `expressive_mode` (ADR-057). Empty
+`language_boost` is omitted from the Telnyx payload; expressive mode is always
+published as a Boolean. `voice_speed` is constrained to `[0.5, 1.5]` and a
+remote value is clamped into that range on read, because a speed the selected
+voice cannot honor makes Telnyx fail greeting synthesis and end the call after
+one second with `Reason=greeting_error` (ADR-057).
+
+`voice` is chosen through the same catalog-backed `telnyx_voice` widget as
+System Voice, filtered by the non-published `voice_language` /
+`voice_provider` Selections (computed from the selected voice, `store=True`,
+`readonly=False`, so a manual filter survives a voice Odoo cannot resolve).
+`voice_label` is the readable catalog name shown in the list view,
+`voice_is_expressive` gates the Expressive Mode switch on a
+`Telnyx.Ultra.*` voice, and `language_boost` is a Selection over the Telnyx
+language list, with an unknown remote hint dropped instead of failing sync.
+Model methods `telnyx_get_voice_options(language, provider, search, limit)`,
+`telnyx_get_voice_label(voice_id)` and
+`telnyx_preview_voice(voice, voice_speed, text)` proxy the admin-only
+`connect.settings` catalog with `sudo()`, since assistants are readable by
+`connect.group_user`; both preview entry points (assistant and settings)
+check `connect.group_admin` in the method, because `call_kw` runs no access
+check and the sample spends Telnyx TTS credit (ADR-057). A voice without
+expressive support publishes `expressive_mode: false` and a stored
+`language_boost` outside the published list is omitted.
+
+`telephony_settings` publishes `time_limit_secs` and `user_idle_timeout_secs`.
+The latter defaults to 60 seconds and is constrained to 0 or the Telnyx range
+`[10, 14400]`; 0 publishes `null` and restores the provider behavior of never
+stopping. It is the only hard stop for an abandoned call: Telnyx keeps feeding
+the assistant `[long silence]` events instead of ending the conversation, so
+without a timeout a caller who drops out leaves the call running until the
+time limit expires.
+
+`interruption_settings` publishes turn taking: `allow_interruptions`,
+`protect_greeting`, `start_speaking_wait_secs` and the endpointing plan
+(`endpointing_punctuation_secs`, `endpointing_no_punctuation_secs`,
+`endpointing_number_secs`), each constrained to `[0, 10]` seconds. With a non
+turn-taking transcription model such as `deepgram/nova-3` these values, not
+`transcription.settings`, decide when the caller's turn ended; the Telnyx
+0.1-second endpointing plan treats a pause inside one thought as the end of
+the turn, so the defaults wait 0.4 s before speaking and 1.0 s on a transcript
+with no sentence end.
+
+Language routing fields are `language_mode` (`contact` / `fixed` /
+`automatic`) and `default_lang`. New assistants default to multilingual
+`deepgram/nova-3` transcription with `language=auto`. The payload templates
+the first greeting as `{{odoo_initial_greeting}}` and supplies a safe
+assistant-level fallback through `dynamic_variables`. The signed variables
+webhook overrides the greeting and conversation-language variables from the
+strictly matched partner's `lang`; ambiguous matches expose neither identity
+nor contact language. Russian and Polish standard receptionist greeting
+translations ship with the module. TTS language coverage remains a property
+of the selected Telnyx voice (ADR-055). Supported multilingual voices may use
+`language_boost=auto` or an explicit language hint. Expressive mode must only
+be enabled for voices whose provider supports it, such as Telnyx Ultra.
+
+The always-on `register_call_request` webhook tool stores the qualified title,
+summary and requested action as an internal note on the current `connect.call`.
+Contact/CRM/Helpdesk tools remain individually gated by their assistant flags.
+
+Receptionist routing fields: `receptionist_mode` (`personal` / `company`),
+`transfer_enabled`, personal `manager`, company `transfer_callflows`,
+`check_registration_before_transfer`, `warm_transfer_instructions`,
+`warm_transfer_message_delay_ms`, `transfer_tool_sid`, `domain`, `exten` /
+`exten_number`, and computed `sip_uri`. Personal assistants target one manager;
+company assistants flatten the configured callflows' `ring_users` into
+department-labelled human targets.
+
+Odoo creates one Telnyx shared Transfer tool per configured assistant. The tool
+uses dynamic `{{transfer_targets}}`, `{{telnyx_agent_target}}` as its caller,
+premium voicemail detection with stop-transfer behavior, and a warm briefing
+that includes confirmed identity, reason, context and next step. The default
+`warm_transfer_message_delay_ms = 2000` delays that private audio after answer
+so a WebRTC media path can settle. Setting it to `0` publishes `null` and
+restores immediate playback as the documented rollback for the experiment.
+The variables webhook checks each candidate's live telephony-credential
+registration status; definitely offline devices are omitted, while API errors
+fall back to the configured credential as an advisory unknown state.
+
+The built-in Telnyx Transfer tool provides caller-side transfer progress and
+does not expose hold music. Music on hold requires a separate custom Call
+Control or conference transfer flow that owns playback, recipient dialing and
+leg bridging (ADR-054).
+
+Phone numbers and `connect.telnyx.exten` records route to assistants through
+the existing TeXML applications using `<Connect><AIAssistant>`. An assistant
+with a domain and extension is directly reachable from registered SIP/WebRTC
+phones at `sip:<extension>@<subdomain>.sip.telnyx.com`.
+
+Caller personalization performs a strict raw/E.164 lookup. A name is exposed
+only when exactly one partner matches; multiple matches set the dynamic result
+to ambiguous and expose no identity. The receptionist policy requires verbal
+confirmation of a single candidate before treating the identity as verified,
+requires qualification of the call before any transfer, and begins in the
+selected contact/fallback language before following an allowed caller language
+change. It also requires the assistant to tell the caller when a transfer did
+not connect and to fall back to registering the request instead of waiting in
+silence — a rejected transfer leg (for example SIP 486 from a busy device)
+otherwise leaves the caller with dead air.
+
+A "How to speak" section caps each answer at two short sentences, forbids
+echoing the caller, narrating the call or the connection, and repeating a
+sentence already said, and requires the assistant to end the call with the
+hangup tool after two unanswered prompts. Without it the model restates
+context on every turn and answers each Telnyx `[long silence]` event with the
+same goodbye indefinitely.
 
 Completed AI conversations are linked to `connect.call` by conversation and
-Call Control IDs. Transcript and Telnyx Insight summary are stored on an
-idempotent `connect.recording` row with `source = telnyx-ai`.
+Call Control IDs. Transcript, Telnyx Insight summary, and the downloaded MP3
+are stored on one idempotent `connect.recording` row with
+`source = telnyx-ai` (ADR-056). The documented insight event is resolved by
+`data.payload.call_control_id`; `data.payload.results` supplies the summary.
+The conversation batch is a repair path for delayed or missed webhooks.
+Because Telnyx has already transcribed these calls, every create/update uses
+`skip_transcription` and never queues OpenAI transcription.
+
+A conversation that failed is reported as `CallStatus=conversation_ended` with
+a `Reason`, while the call leg itself still ends as `completed`.
+`_telnyx_ai_conversation_error` turns a failure reason into
+`has_error` / `error_code` / `error_message` on `connect.call`, so the call
+form shows why the assistant stopped instead of a short successful call.
+Reasons that are not failures, such as a caller hanging up, are ignored; the
+reason list is undocumented, so an unrecognized failure is reported verbatim
+with the reported TTS provider, model and voice.
+
+The summary wording is the `instructions` of the conversation insight created
+by `_ensure_summary_group(instructions=None)` and stored as
+`telnyx_ai_summary_insight_id`. It is editable as
+`connect.settings.telnyx_ai_summary_instructions`; writing it calls
+`_refresh_telnyx_ai_summary_insight()`, which deletes the remote insight
+best-effort, clears the stored ID and lets `_ensure_summary_group()` recreate
+and re-assign it inside the surviving insight group (ADR-058). Speech
+recognition language stays per assistant (`transcription_language`,
+`transcription_model`).
 
 ### texml_response.py — TeXML builder (no Odoo model)
 
 `VoiceResponse`, `Gather`, `Dial` (+`sip()`/`number()`/`conference()`),
-`pretty_xml()` — an ElementTree-based mini-clone of
+`pretty_xml()`, `apply_say_voice()` — an ElementTree-based mini-clone of
 `twilio.twiml.voice_response` covering the verbs the module renders.
+The finalizer adds the configured System Voice to every `<Say>` that does not
+already have an explicit voice (ADR-052).
 
 ### settings.py - `_inherit = 'connect.settings'`
 
@@ -85,6 +216,13 @@ idempotent `connect.recording` row with `source = telnyx-ai`.
 | `telnyx_auto_sync` | Boolean | Default: True |
 | `telnyx_verify_requests` | Boolean | Default: True |
 | `telnyx_fetch_call_prices` | Boolean | |
+| `telnyx_system_voice_language` | Selection | Dynamic language filter built from the cached catalog; default `en-US` |
+| `telnyx_system_voice_provider` | Selection | Dynamic provider filter built from the cached catalog; default `aws` |
+| `telnyx_system_voice` | Char | Telnyx voice ID chosen through a filtered server-backed autocomplete; default `Polly.Joanna` |
+| `telnyx_tts_voices` | Text | Readonly JSON cache from `GET /v2/text-to-speech/voices` |
+| `telnyx_ai_summary_insight_id` | Char | Readonly; the conversation insight Odoo owns |
+| `telnyx_ai_summary_group_id` | Char | Readonly; the insight group carrying the Odoo webhook |
+| `telnyx_ai_summary_instructions` | Text | Required prompt of that insight; a write deletes and recreates the insight (ADR-058) |
 
 Methods: `get_telnyx_client()` (SDK client), `telnyx_sync()` (apps →
 domains → numbers → caller IDs + messaging profile),
@@ -95,7 +233,19 @@ AI-assistant synchronization failures,
 `_ensure_telnyx_messaging_profile()`, `originate_call()` (core
 dispatcher override for the `'telnyx'` key; originates via
 `POST /texml/Accounts/{sid}/Calls` with the mandatory `ApplicationSid`
-of the number application), `get_telnyx_balance()`,
+of the number application), `_sync_telnyx_tts_voices()` /
+`telnyx_sync_tts_voices()` (cache/refresh the account voice catalog),
+`telnyx_get_voice_options(language, provider, search, limit, include_basic)`
+(bounded autocomplete query over the cache; a voice whose language or
+provider Telnyx leaves empty matches every filter, and `include_basic=False`
+hides the TeXML-only basic voices from the AI assistant selector),
+`telnyx_get_voice_label(voice_id)` (readable current-value label),
+`_telnyx_voice_sample(voice, text, voice_speed)` /
+`telnyx_preview_voice(...)` (`POST /v2/text-to-speech/speech` with
+`output_type=base64_output`, speed sent only inside the provider object that
+supports it — `telnyx`/`rime` `voice_speed`, `minimax` `speed`),
+`telnyx_apply_system_voice()` (finalize all missing Say voices),
+`get_telnyx_balance()`,
 `telnyx_check_call_failure(cause, sip_code)` (ADR-040: web-phone RPC
 for unanswered outbound failures; verifies `GET /v2/balance` with
 `sudo` and returns `{balance_blocked, message}` — Connect groups only,
@@ -134,7 +284,16 @@ connect_twilio and connect_telnyx leaves the last-loaded module owning
 
 `on_telnyx_recording_status()` (TeXML recording callback + fetch of the
 recording resource), `telnyx_prepare_data()` (maps `download_urls`,
-`duration_millis`, `call_leg_id`).
+`duration_millis`, and a resolvable API leg identifier), and
+`telnyx_attach_ai_audio()` (Call Recordings API lookup by `call_control_id`
+plus bounded MP3/WAV download). `telnyx_recording_id` stores the physical
+recording resource separately from the AI conversation SID. AI audio is saved
+in `recording_attachment` because provider download URLs expire, and the write
+is explicitly excluded from the OpenAI transcription queue. The webhook's
+TeXML `CallSid` relation remains authoritative when the recording API returns
+an unmatched UUID `call_leg_id`, so API enrichment cannot orphan the recording.
+Raw Telnyx webhook debug payloads redact `RecordingUrl` before they are stored
+in `connect.debug`; the unmodified URL is still used for recording playback.
 
 ### user.py - `_inherit = 'connect.user'`
 
@@ -164,11 +323,17 @@ rotation deletes the credential and creates a new one — the username
 changes too; `connect.group_admin` only); `telnyx_render()` +
 `telnyx_render_sip/client/voicemail` (user_callflow chain, TeXML
 `<Dial><Sip>`; user greeting/voicemail `<Say>` carries
-`connect.user.language`/`voice`, fallbacks `en-US` / `Polly.Joanna` —
-ADR-037); `get_telnyx_client_token()` (JWT via
+`connect.user.language`/`voice`, with `en-US` / System Voice fallbacks —
+ADR-037/ADR-052); `get_telnyx_client_token()` (JWT via
 `telephony_credentials.create_token` + `sip_domain` for the web phone);
-`get_user_by_telnyx_uri()`; `telnyx_on_call_action()`; callflow-managing
-constraints (`_manage_telnyx_*`).
+`get_user_by_telnyx_uri()`; `_telnyx_registration_status()` (`GET
+/v2/sip_registration_status` with `credential_type=telephony_credential`) /
+`_telnyx_transfer_target()` (priority-ordered registered SIP/WebRTC target,
+advisory API-error fallback); `telnyx_on_call_action()` (ADR-051: the child
+`DialCallStatus` takes precedence over the parent `CallStatus`; completed
+destinations hang up, explicit failure statuses advance the user callflow,
+and unknown statuses fail closed); callflow-managing constraints
+(`_manage_telnyx_*`).
 
 ### number.py - `connect.telnyx.number`
 
@@ -190,6 +355,14 @@ subdomain. `destination` Selection: `user` / `callflow` / `texml` /
 `ai_assistant`. Numbers have no default flag; outbound defaults live on
 `connect.telnyx.outgoing_callerid`.
 
+The domain router accepts routing destinations both as
+`sip:<extension>@<subdomain>.sip.telnyx.com` and as the bare
+`<extension>@<subdomain>.sip.telnyx.com` form emitted by some Telnyx
+callbacks. Real credential usernames routed back into the subdomain remain
+blocked as loops. Call-progress mapping retains the initial channel parties,
+direction, parent, status and duration when a later callback omits them
+(ADR-051).
+
 ### outgoing_callerid.py - `connect.telnyx.outgoing_callerid`
 
 Owned numbers only (no Telnyx validation API): `number` (E.164
@@ -200,13 +373,15 @@ constraint — copy of Twilio/FS, fix all three), `friendly_name`,
 ### callflow.py - `connect.telnyx.callflow` + `_choice`
 
 Full copy of the Twilio callflow (Gather/Say/Dial/Record rendering via
-the TeXML builder); `voice` default `Polly.Joanna`; language list is the
-shared BCP-47 copy. Ring users dial the users' credential SIP URIs.
+the TeXML builder); optional `voice` overrides System Voice, otherwise the
+callflow follows the global setting; language list is the shared BCP-47 copy.
+Ring users dial the users' credential SIP URIs.
 
 ### exten.py - `connect.telnyx.exten`
 
 dst-Reference mechanics (copy of Twilio/FS); `dst` selection:
-`connect.user` / `connect.telnyx.callflow` / `connect.telnyx.texml`;
+`connect.user` / `connect.telnyx.callflow` / `connect.telnyx.texml` /
+`connect.telnyx.ai_assistant`;
 renders `connect.user` destinations via `telnyx_render()`.
 
 ### user_callflow.py, message_configuration.py
@@ -275,8 +450,10 @@ handed to the routing application, so credentials are rung at
 
 `route_call()` routes web-phone calls: exten match → render; a dialled
 `+E164` from a known PBX user → `originate_external_call()` (TeXML
-`<Dial><Number>` with the user's caller ID), and an unknown caller is
-refused. A PSTN leg for one of our numbers is delegated to
+`<Dial><Number>` with the user's caller ID and `record_calls` policy), and an
+unknown caller is refused. The originating user is resolved consistently from
+`Caller`, `From`, or `CallerId`, because Telnyx may omit `Caller` for the
+web-phone SIP leg. A PSTN leg for one of our numbers is delegated to
 `connect.telnyx.number.render_inbound()`. `sync()` follows the Twilio
 rules (never import Telnyx-only, create Odoo-only, update common).
 
@@ -287,7 +464,11 @@ rules (never import Telnyx-only, create Odoo-only, update common).
 All routes under `/telnyx/webhook/`, `auth='public'`, POST. Signature
 validation: Ed25519 over the raw body
 (`telnyx.lib.webhook_verification`), toggled by
-`telnyx_verify_requests`, key = `telnyx_public_key`.
+`telnyx_verify_requests`, key = `telnyx_public_key`. The exact request bytes
+are cached in `ir.http._pre_dispatch` before Odoo parses TeXML form data;
+reconstructed or canonicalized form bodies are never accepted. Invalid Dial
+action callbacks fail closed with a silent `<Hangup/>` response so no security
+error is played into a remaining live leg (ADR-053).
 
 | Route | Description |
 |-------|-------------|
@@ -387,6 +568,10 @@ bundle `lib/telnyx-webrtc.js`, global `TelnyxWebRTC.TelnyxRTC`):
   404/`UNALLOCATED_NUMBER` case additionally calls
   `connect.settings.telnyx_check_call_failure()` and shows a sticky
   danger notification when the account balance is exhausted (ADR-040).
+  Odoo's error-handler registry consumes only the SDK's expected
+  `StaleRequestError` cancellation when a background tab resumes and the
+  signaling socket generation changes; other client and media errors keep
+  their normal handling.
 - Mail integration: `telnyx-sms-reply` / `telnyx-whatsapp-reply` /
   `telnyx-rcs-reply` chatter actions, the Notification icon patch for
   the `WhatsApp`/`RCS` types, and a WhatsApp *Message* button on the

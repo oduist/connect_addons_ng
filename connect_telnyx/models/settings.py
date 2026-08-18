@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
+import json
 import logging
 import re
 from urllib.parse import urljoin
 
 import phonenumbers
 import requests
+from babel.core import Locale, UnknownLocaleError
 
 from odoo import fields, models, api, release
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 from telnyx import Telnyx
 
 from odoo.addons.connect.models.license import ODUIST_MODULES
@@ -27,6 +29,59 @@ TELNYX_PROTECTED_FIELDS = [
 ]
 
 TELNYX_API_BASE = "https://api.telnyx.com/v2/"
+TELNYX_SYSTEM_VOICE_DEFAULT = "Polly.Joanna"
+# Instructions of the Telnyx conversation insight that produces the AI call
+# summary written back into the ledger.
+DEFAULT_AI_SUMMARY_INSTRUCTIONS = (
+    "Summarize this conversation in 2-3 factual sentences. "
+    "Include the request, outcome, and follow-up actions."
+)
+TELNYX_BASIC_VOICES = [
+    {
+        "id": "man", "name": "Man", "provider": "basic",
+        "language": "en-US", "gender": "Male",
+    },
+    {
+        "id": "woman", "name": "Woman", "provider": "basic",
+        "language": "en-US", "gender": "Female",
+    },
+    {
+        "id": "alice", "name": "Alice", "provider": "basic",
+        "language": "en-US", "gender": "Female",
+    },
+    {
+        "id": TELNYX_SYSTEM_VOICE_DEFAULT, "name": "Joanna",
+        "provider": "aws", "language": "en-US", "gender": "Female",
+    },
+]
+# Speed is not a shared Telnyx TTS parameter: every provider that supports
+# it names the key inside its own object and the others reject an unknown
+# field, so a sample is generated with the speed only where it exists.
+TELNYX_VOICE_SPEED_PARAMS = {
+    "telnyx": ("telnyx", "voice_speed"),
+    "rime": ("rime", "voice_speed"),
+    "minimax": ("minimax", "speed"),
+}
+TELNYX_VOICE_SAMPLE_TEXT = (
+    "Hello! This is how the selected Telnyx voice sounds."
+)
+# The sample is synthesized while the administrator waits for the form, so
+# it stays short enough to answer inside the normal API timeout.
+MAX_VOICE_SAMPLE_CHARS = 200
+TELNYX_PROVIDER_LABELS = {
+    "aws": "Amazon Web Services",
+    "azure": "Microsoft Azure",
+    "basic": "Telnyx Basic",
+    "elevenlabs": "ElevenLabs",
+    "fishaudio": "Fish Audio",
+    "humain": "Humain",
+    "inworld": "Inworld",
+    "minimax": "MiniMax",
+    "resemble": "Resemble AI",
+    "rime": "Rime",
+    "telnyx": "Telnyx",
+    "xai": "xAI",
+}
 
 
 def format_connect_response(text):
@@ -73,6 +128,15 @@ class Settings(models.Model):
              "allow every destination.")
     telnyx_ai_summary_insight_id = fields.Char(readonly=True)
     telnyx_ai_summary_group_id = fields.Char(readonly=True)
+    telnyx_ai_summary_instructions = fields.Text(
+        string="AI Summary Instructions",
+        required=True,
+        default=DEFAULT_AI_SUMMARY_INSTRUCTIONS,
+        help="Prompt of the Telnyx conversation insight that summarizes AI "
+             "assistant calls. Saving a new text drops the current insight in "
+             "Telnyx and recreates it, so past summaries keep the wording "
+             "they were generated with.",
+    )
     telnyx_balance = fields.Char(readonly=True)
     telnyx_auto_sync = fields.Boolean(default=True)
     telnyx_verify_requests = fields.Boolean(
@@ -83,6 +147,276 @@ class Settings(models.Model):
         string="Fetch Call Prices",
         help="Enable fetching call costs from Telnyx detail records after call completion."
     )
+    telnyx_system_voice_language = fields.Selection(
+        selection="_get_telnyx_voice_language_selection",
+        default="en-US",
+        required=True,
+        string="System Voice Language",
+        help="Language used to filter the Telnyx system voice catalog.",
+    )
+    telnyx_system_voice_provider = fields.Selection(
+        selection="_get_telnyx_voice_provider_selection",
+        default="aws",
+        required=True,
+        string="System Voice Provider",
+        help="Provider used to filter the Telnyx system voice catalog.",
+    )
+    telnyx_system_voice = fields.Char(
+        default=TELNYX_SYSTEM_VOICE_DEFAULT,
+        required=True,
+        string="System Voice",
+        help="Voice added to every Telnyx TeXML Say without its own voice. "
+             "Refresh the catalog after adding voices in Telnyx.",
+    )
+    telnyx_tts_voices = fields.Text(readonly=True)
+
+    @api.model
+    def _get_cached_telnyx_voices(self, include_basic=True):
+        """Return a normalized, de-duplicated catalog without a live call.
+
+        The basic TeXML voices belong to the `<Say>` contract only; an AI
+        assistant cannot speak with them, so its selector asks for the
+        catalog without them.
+        """
+        settings = self.sudo().search([], limit=1)
+        try:
+            voices = json.loads(settings.telnyx_tts_voices or "[]")
+        except (TypeError, ValueError):
+            voices = []
+        if not isinstance(voices, list):
+            voices = []
+        catalog = {}
+        basic = TELNYX_BASIC_VOICES if include_basic else []
+        for voice in basic + voices:
+            if not isinstance(voice, dict):
+                continue
+            voice_id = voice.get("id") or voice.get("voice_id")
+            if not voice_id:
+                continue
+            catalog[voice_id] = {
+                "id": voice_id,
+                "name": voice.get("name") or voice_id,
+                "provider": (voice.get("provider") or "").lower(),
+                "language": voice.get("language") or "",
+                "gender": voice.get("gender") or "",
+            }
+        return list(catalog.values())
+
+    @api.model
+    def _get_telnyx_voice_language_selection(self):
+        languages = {
+            voice["language"] for voice in self._get_cached_telnyx_voices()
+            if voice["language"]
+        }
+        settings = self.sudo().search([], limit=1)
+        current = settings.telnyx_system_voice_language if settings else False
+        if current:
+            languages.add(current)
+        return sorted(
+            ((language, self._get_telnyx_language_label(language))
+             for language in languages),
+            key=lambda item: item[1],
+        )
+
+    @api.model
+    def _get_telnyx_voice_provider_selection(self):
+        providers = {
+            voice["provider"] for voice in self._get_cached_telnyx_voices()
+            if voice["provider"]
+        }
+        settings = self.sudo().search([], limit=1)
+        current = settings.telnyx_system_voice_provider if settings else False
+        if current:
+            providers.add(current)
+        return sorted(
+            ((provider, self._get_telnyx_provider_label(provider))
+             for provider in providers),
+            key=lambda item: item[1],
+        )
+
+    @api.model
+    def _get_telnyx_language_label(self, language):
+        try:
+            name = Locale.parse(language, sep="-").get_display_name("en")
+        except (UnknownLocaleError, ValueError):
+            name = language
+        if name == language:
+            return language
+        return "{} ({})".format(name.title(), language)
+
+    @api.model
+    def _get_telnyx_provider_label(self, provider):
+        return TELNYX_PROVIDER_LABELS.get(
+            provider, provider.replace("_", " ").title())
+
+    @api.model
+    def _format_telnyx_voice_option(self, voice):
+        details = [voice.get("gender"), voice["id"]]
+        return {
+            "value": voice["id"],
+            "label": voice.get("name") or voice["id"],
+            "details": " - ".join(value for value in details if value),
+        }
+
+    @api.model
+    def telnyx_get_voice_options(self, language, provider, search="",
+                                 limit=80, include_basic=True):
+        """Return a small readable subset for the voice autocomplete.
+
+        Telnyx reports no language for some account-scoped voices, such as
+        a cloned one. Those match every filter instead of disappearing from
+        the catalog, which is the only way they stay selectable at all.
+        """
+        if not language or not provider:
+            return []
+        search = (search or "").strip().lower()
+        limit = min(max(int(limit or 80), 1), 100)
+        matches = []
+        for voice in self._get_cached_telnyx_voices(
+                include_basic=include_basic):
+            if voice["language"] and voice["language"] != language:
+                continue
+            if voice["provider"] and voice["provider"] != provider:
+                continue
+            haystack = "{} {} {}".format(
+                voice.get("name", ""), voice["id"], voice.get("gender", "")
+            ).lower()
+            if search and search not in haystack:
+                continue
+            matches.append(voice)
+        matches.sort(key=lambda voice: (
+            (voice.get("name") or "").lower(), voice["id"].lower()))
+        return [
+            self._format_telnyx_voice_option(voice)
+            for voice in matches[:limit]
+        ]
+
+    @api.model
+    def telnyx_get_voice_label(self, voice_id):
+        for voice in self._get_cached_telnyx_voices():
+            if voice["id"] == voice_id:
+                return self._format_telnyx_voice_option(voice)
+        return {
+            "value": voice_id or "",
+            "label": voice_id or "",
+            "details": voice_id or "",
+        }
+
+    @api.model
+    def _telnyx_voice_provider(self, voice_id):
+        """Provider key of a catalog voice, or the one implied by its id."""
+        for voice in self._get_cached_telnyx_voices():
+            if voice["id"] == voice_id:
+                if voice["provider"]:
+                    return voice["provider"]
+                break
+        prefix = (voice_id or "").split(".")[0].lower()
+        return prefix if prefix in TELNYX_PROVIDER_LABELS else ""
+
+    @api.model
+    def _telnyx_voice_sample(self, voice, text=None, voice_speed=1.0):
+        """Return base64 audio of a short sample spoken by ``voice``.
+
+        Telnyx validates the voice, the speed and the provider combination
+        on this endpoint exactly as it does when an AI assistant synthesizes
+        its greeting, so an unusable pair is reported while the form is open
+        instead of ending every call with a greeting error.
+        """
+        if not voice:
+            raise ValidationError("Select a voice first.")
+        payload = {
+            "voice": voice,
+            "text": (text or TELNYX_VOICE_SAMPLE_TEXT)[
+                :MAX_VOICE_SAMPLE_CHARS],
+            "output_type": "base64_output",
+        }
+        speed_param = TELNYX_VOICE_SPEED_PARAMS.get(
+            self._telnyx_voice_provider(voice))
+        if speed_param and voice_speed:
+            payload[speed_param[0]] = {speed_param[1]: voice_speed}
+        response = self.telnyx_api_request(
+            "POST", "text-to-speech/speech", payload=payload, timeout=30)
+        audio = (response or {}).get("base64_audio")
+        if not audio:
+            raise ValidationError(
+                "Telnyx returned no audio for voice {}.".format(voice))
+        return {"audio": audio, "voice": voice}
+
+    @api.model
+    def telnyx_preview_voice(self, voice, voice_speed=1.0, text=None):
+        """Play a sample of the system voice from the settings form.
+
+        The model ACL does not protect a method call: `call_kw` only refuses
+        private names, so any authenticated session could otherwise spend
+        Telnyx text-to-speech credit here. The group is therefore checked in
+        the method itself, and only server-side `sudo()` code is exempt.
+        """
+        if not self.env.su and not self.env.user.has_group(
+                "connect.group_admin"):
+            raise AccessError(
+                "Only Connect administrators can preview a voice.")
+        return self._telnyx_voice_sample(voice, text, voice_speed)
+
+    @api.onchange(
+        "telnyx_system_voice_language", "telnyx_system_voice_provider")
+    def _onchange_telnyx_system_voice_filters(self):
+        if not self.telnyx_system_voice:
+            return
+        voice = next((
+            item for item in self._get_cached_telnyx_voices()
+            if item["id"] == self.telnyx_system_voice
+        ), None)
+        if (not voice
+                or (voice["language"]
+                    and voice["language"] != self.telnyx_system_voice_language)
+                or (voice["provider"]
+                    and voice["provider"]
+                    != self.telnyx_system_voice_provider)):
+            self.telnyx_system_voice = False
+
+    @api.model
+    def _sync_telnyx_tts_voices(self):
+        """Cache the current account catalog used by System Voice."""
+        response = self.telnyx_api_request("GET", "text-to-speech/voices")
+        voices = response.get("voices") or response.get("data") or []
+        if not isinstance(voices, list):
+            voices = []
+        normalized = []
+        for voice in voices:
+            if not isinstance(voice, dict):
+                continue
+            voice_id = voice.get("id") or voice.get("voice_id")
+            if not voice_id:
+                continue
+            normalized.append({
+                "id": voice_id,
+                "name": voice.get("name"),
+                "provider": (voice.get("provider") or "").lower(),
+                "language": voice.get("language"),
+                "gender": voice.get("gender"),
+            })
+        self.sudo().set_param(
+            "telnyx_tts_voices", json.dumps(normalized, sort_keys=True))
+        return normalized
+
+    def telnyx_sync_tts_voices(self):
+        self._sync_telnyx_tts_voices()
+        action = self.env.ref("connect_telnyx.telnyx_settings_action")
+        cache_key = fields.Datetime.now().strftime("%Y%m%d%H%M%S%f")
+        return {
+            "type": "ir.actions.act_url",
+            "url": "/web?telnyx_voices={}#action={}".format(
+                cache_key, action.id),
+            "target": "self",
+        }
+
+    @api.model
+    def telnyx_apply_system_voice(self, content):
+        from .texml_response import apply_say_voice
+
+        voice = self.sudo().get_param(
+            "telnyx_system_voice", TELNYX_SYSTEM_VOICE_DEFAULT)
+        return apply_say_voice(content, voice)
 
     @api.model
     def get_telnyx_client(self):
@@ -161,6 +495,11 @@ class Settings(models.Model):
                 logger.warning('Cannot resolve the Telnyx account SID: %s', e)
             self._ensure_telnyx_outbound_voice_profile()
             self._ensure_telnyx_messaging_profile()
+            try:
+                self._sync_telnyx_tts_voices()
+            except Exception as e:
+                logger.warning(
+                    "Cannot refresh the Telnyx TTS voice catalog: %s", e)
             # Checked after the numbers are known, at the end of the sync.
             self.env["connect.telnyx.texml"].sync()
             self.env["connect.telnyx.ai_assistant"].sync()
@@ -304,6 +643,36 @@ class Settings(models.Model):
         debug(self, 'Telnyx outbound destinations set to {}'.format(
             regions or 'all'))
         return regions
+
+    def _refresh_telnyx_ai_summary_insight(self, instructions):
+        """Rebuild the summary insight after an administrator edited it.
+
+        Telnyx owns the insight text, so the stored insight is dropped and
+        recreated with the new instructions; the insight group survives and
+        keeps the webhook Odoo listens on.  Old conversations keep the
+        summaries they were generated with.
+        """
+        settings = self.sudo()
+        insight_id = settings.get_param('telnyx_ai_summary_insight_id')
+        if not insight_id:
+            # Nothing is published yet: the next account sync creates the
+            # insight straight from the stored instructions.
+            return False
+        if not settings.get_param('telnyx_api_key'):
+            return False
+        try:
+            settings.telnyx_api_request(
+                'DELETE', 'ai/conversations/insights/{}'.format(insight_id))
+        except Exception as e:
+            # An orphaned insight is harmless; refusing the save is not.
+            logger.warning(
+                'Cannot delete the Telnyx summary insight %s: %s',
+                insight_id, e)
+        settings.set_param('telnyx_ai_summary_insight_id', False)
+        self.env['connect.telnyx.ai_assistant']._ensure_summary_group(
+            instructions=instructions)
+        debug(self, 'Telnyx AI summary insight recreated')
+        return settings.get_param('telnyx_ai_summary_insight_id')
 
     @api.model
     def _telnyx_local_regions(self):
@@ -600,6 +969,11 @@ class Settings(models.Model):
             # Owned by the outbound voice profile in Telnyx, not by Odoo.
             self._push_telnyx_outbound_destinations(
                 vals['telnyx_outbound_destinations'])
+        if 'telnyx_ai_summary_instructions' in vals:
+            # get_param is cached and the registry cache is only cleared at
+            # the end of this write, so pass the new text explicitly.
+            self._refresh_telnyx_ai_summary_insight(
+                vals['telnyx_ai_summary_instructions'])
         changed_fields = {}
         for field_name in TELNYX_PROTECTED_FIELDS:
             if vals.get(field_name):

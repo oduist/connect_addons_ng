@@ -114,6 +114,45 @@ class TestTelnyxRouting(TelnyxTestCommon):
             result = str(self.env['connect.telnyx.domain'].route_call(request))
         self.assertIn('<Number', result)
 
+    def test_domain_records_outbound_call_when_caller_is_in_from(self):
+        self.env['connect.telnyx.outgoing_callerid'].create({
+            'number': '+15550003333',
+            'friendly_name': 'Default',
+            'is_default': True,
+        })
+        request = self._request(
+            To='+15550009999', Called=False, Caller=False,
+            From='{}@sip.telnyx.eu'.format(
+                self.user.telnyx_client_username),
+            CallerId=self.user.telnyx_client_username,
+        )
+        with patch.object(type(self.env['connect.call']),
+                          'on_telnyx_call_status', autospec=True):
+            result = str(self.env['connect.telnyx.domain'].route_call(request))
+        self.assertIn('record="record-from-answer"', result)
+        self.assertIn('recordingStatusCallback=', result)
+
+    def test_domain_routes_bare_sip_uri_to_extension(self):
+        """Telnyx may omit sip: from the routing webhook destination."""
+        self.env['connect.telnyx.exten'].create({
+            'number': '9876',
+            'dst': 'connect.user,{}'.format(self.user.id),
+        })
+        request = self._request(
+            To='9876@{}'.format(self.domain.domain_name),
+            Called='9876@{}'.format(self.domain.domain_name),
+            From='{}@sip.telnyx.com'.format(
+                self.user.telnyx_client_username),
+            Caller='{}@sip.telnyx.com'.format(
+                self.user.telnyx_client_username),
+            Direction='inbound',
+        )
+        with patch.object(type(self.env['connect.call']),
+                          'on_telnyx_call_status', autospec=True):
+            result = str(self.env['connect.telnyx.domain'].route_call(request))
+        self.assertIn('<Dial', result)
+        self.assertNotIn('loop', result.lower())
+
     def test_messaging_failure_does_not_abort_the_number_update(self):
         class Messaging:
             @staticmethod
@@ -184,6 +223,30 @@ class TestTelnyxChannelMapping(TelnyxTestCommon):
         self.assertEqual(mapped['caller'], '+15550001111')
         self.assertEqual(mapped['called'], '+15550002222')
         self.assertEqual(mapped['duration'], 9)
+
+    def test_call_progress_params_keep_initial_channel_values(self):
+        """A partial final callback must not clear the initial metadata."""
+        channel = self.env['connect.channel'].process_channel_event({
+            'sid': 'call-3',
+            'caller': '+15550001111',
+            'called': '200@test-connect.sip.telnyx.com',
+            'to': '200@test-connect.sip.telnyx.com',
+            'technical_direction': 'inbound',
+            'status': 'in-progress',
+            'duration': 0,
+        })
+        mapped = channel._map_telnyx_params({
+            'CallSid': 'call-3',
+            'CallStatus': 'completed',
+            'CallDuration': '5',
+        })
+        self.assertEqual(mapped['caller'], '+15550001111')
+        self.assertEqual(mapped['called'], '200@test-connect.sip.telnyx.com')
+        self.assertEqual(mapped['technical_direction'], 'inbound')
+        self.assertEqual(mapped['duration'], 5)
+        updated = self.env['connect.channel'].process_channel_event(mapped)
+        self.assertEqual(updated.technical_direction, 'inbound')
+        self.assertEqual(updated.called_number, '200')
 
     def test_inbound_dialplan_carries_the_caller_id(self):
         """The web phone shows who is calling only if the Dial verb has

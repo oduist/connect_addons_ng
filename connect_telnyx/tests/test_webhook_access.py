@@ -46,10 +46,87 @@ class TestTelnyxWebhookAccess(TelnyxTestCommon):
             self.callflow.id, {'Digits': '9'}))
         self.assertIn('<Gather', result)
 
-    def test_user_call_action_renders_the_next_step(self):
-        result = str(self._as_webhook('connect.user').telnyx_on_call_action(
-            self.user.id, {'DialCallStatus': 'no-answer'}))
-        self.assertIn('<Response', result)
+    def test_user_call_action_completed_dial_wins_over_parent_status(self):
+        with patch.object(
+                type(self.env['connect.user']), 'telnyx_render',
+                autospec=True) as render:
+            result = str(
+                self._as_webhook('connect.user').telnyx_on_call_action(
+                    self.user.id,
+                    {
+                        'CallStatus': 'in-progress',
+                        'DialCallStatus': 'completed',
+                    },
+                )
+            )
+
+        render.assert_not_called()
+        self.assertIn('<Hangup', result)
+        self.assertNotIn('<Dial', result)
+        self.assertNotIn('<Say', result)
+        self.assertNotIn('<Record', result)
+
+    def test_user_call_action_explicit_failure_advances(self):
+        for status in ('busy', 'no-answer', 'failed', 'canceled'):
+            with self.subTest(status=status), patch.object(
+                    type(self.env['connect.user']), 'telnyx_render',
+                    autospec=True, return_value='next-step') as render:
+                result = self._as_webhook(
+                    'connect.user'
+                ).telnyx_on_call_action(
+                    self.user.id,
+                    {
+                        'CallStatus': 'completed',
+                        'DialCallStatus': status,
+                    },
+                )
+
+            self.assertEqual(result, 'next-step')
+            render.assert_called_once()
+
+    def test_user_call_action_unknown_or_missing_status_hangs_up(self):
+        requests = (
+            {},
+            {'DialCallStatus': ''},
+            {'DialCallStatus': 'unexpected'},
+        )
+        for request in requests:
+            with self.subTest(request=request), patch.object(
+                    type(self.env['connect.user']), 'telnyx_render',
+                    autospec=True) as render:
+                result = str(
+                    self._as_webhook(
+                        'connect.user'
+                    ).telnyx_on_call_action(self.user.id, request)
+                )
+
+            render.assert_not_called()
+            self.assertIn('<Hangup', result)
+
+    def test_user_call_action_uses_legacy_parent_status_fallback(self):
+        with patch.object(
+                type(self.env['connect.user']), 'telnyx_render',
+                autospec=True, return_value='next-step') as render:
+            result = self._as_webhook(
+                'connect.user'
+            ).telnyx_on_call_action(
+                self.user.id, {'CallStatus': 'no-answer'}
+            )
+
+        self.assertEqual(result, 'next-step')
+        render.assert_called_once()
+
+        with patch.object(
+                type(self.env['connect.user']), 'telnyx_render',
+                autospec=True) as render:
+            result = str(
+                self._as_webhook('connect.user').telnyx_on_call_action(
+                    self.user.id, {'CallStatus': 'completed'}
+                )
+            )
+
+        render.assert_not_called()
+        self.assertIn('<Hangup', result)
 
     def test_callflow_call_action_renders_the_next_step(self):
         result = str(self._as_webhook('connect.telnyx.callflow').on_call_action(

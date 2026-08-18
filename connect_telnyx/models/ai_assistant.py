@@ -1,27 +1,150 @@
 # -*- coding: utf-8 -*-
 import logging
+import re
 import secrets
 from urllib.parse import urljoin
 
 from markupsafe import escape
 
 from odoo import api, fields, models, release
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
+from odoo.addons.connect.models.res_partner import format_number
 if release.version_info[0] >= 19:
     from odoo.models import Constraint
+
+from .settings import (
+    DEFAULT_AI_SUMMARY_INSTRUCTIONS, TELNYX_PROVIDER_LABELS)
+from .texml_response import Connect, VoiceResponse
 
 logger = logging.getLogger(__name__)
 
 # Telnyx validates the voice id against the account; this one ships with
 # every account and is used when the configured voice is unavailable.
 DEFAULT_VOICE = "AWS.Polly.Joanna-Neural"
+# Catalog filters the voice selector starts from. They match DEFAULT_VOICE so
+# a new assistant already lists a usable set before the catalog is refreshed.
+DEFAULT_VOICE_LANGUAGE = "en-US"
+DEFAULT_VOICE_PROVIDER = "aws"
+
+# Expressive speech is a Telnyx Ultra feature: other providers have no SSML
+# emotion tags, so the switch is only offered for those voices.
+EXPRESSIVE_VOICE_PREFIX = "Telnyx.Ultra."
+
+# Dynamic variables of a greeting, which a voice sample must not read out.
+VOICE_SAMPLE_PLACEHOLDER_RE = re.compile(r"{{.*?}}|%\(\w+\)s")
+
+# Telnyx publishes a closed list of language hints for voice synthesis.
+# https://developers.telnyx.com/api-reference/assistants/create-an-assistant
+LANGUAGE_BOOST_SELECTION = [
+    ("auto", "Automatic"),
+    ("Afrikaans", "Afrikaans"),
+    ("Arabic", "Arabic"),
+    ("Bulgarian", "Bulgarian"),
+    ("Catalan", "Catalan"),
+    ("Chinese", "Chinese"),
+    ("Chinese,Yue", "Chinese (Cantonese)"),
+    ("Croatian", "Croatian"),
+    ("Czech", "Czech"),
+    ("Danish", "Danish"),
+    ("Dutch", "Dutch"),
+    ("English", "English"),
+    ("Filipino", "Filipino"),
+    ("Finnish", "Finnish"),
+    ("French", "French"),
+    ("German", "German"),
+    ("Greek", "Greek"),
+    ("Hebrew", "Hebrew"),
+    ("Hindi", "Hindi"),
+    ("Hungarian", "Hungarian"),
+    ("Indonesian", "Indonesian"),
+    ("Italian", "Italian"),
+    ("Japanese", "Japanese"),
+    ("Korean", "Korean"),
+    ("Malay", "Malay"),
+    ("Norwegian", "Norwegian"),
+    ("Nynorsk", "Norwegian Nynorsk"),
+    ("Persian", "Persian"),
+    ("Polish", "Polish"),
+    ("Portuguese", "Portuguese"),
+    ("Romanian", "Romanian"),
+    ("Russian", "Russian"),
+    ("Slovak", "Slovak"),
+    ("Slovenian", "Slovenian"),
+    ("Spanish", "Spanish"),
+    ("Swedish", "Swedish"),
+    ("Tamil", "Tamil"),
+    ("Thai", "Thai"),
+    ("Turkish", "Turkish"),
+    ("Ukrainian", "Ukrainian"),
+    ("Vietnamese", "Vietnamese"),
+]
+
+# Telnyx documents [0.25, 2.0] for Natural voices only. Other voices reject
+# a speed they do not support, and the failure is invisible until a call
+# arrives: the assistant cannot synthesize its greeting and hangs up after
+# one second with Reason=greeting_error. Telnyx Ultra answers 400 (code
+# 90103) on the text-to-speech endpoint at 0.5 and at 1.8 or more, so the
+# guarded range stays inside the values a supported voice can honor and
+# administrators still verify their own voice (ADR-057).
+MIN_VOICE_SPEED = 0.5
+MAX_VOICE_SPEED = 1.5
+
+# Telnyx keeps prompting the model with a silence event and never ends the
+# conversation on its own: an abandoned call was observed answering 45 such
+# events over 17 minutes. A caller-silence timeout is the only hard stop, so
+# assistants get one by default. Telnyx accepts 10 to 14,400 seconds.
+DEFAULT_USER_IDLE_TIMEOUT_SECS = 60
+MIN_USER_IDLE_TIMEOUT_SECS = 10
+MAX_USER_IDLE_TIMEOUT_SECS = 14400
+
+# Turn taking for a non turn-taking transcription model such as
+# deepgram/nova-3 is decided by interruption_settings, not by the
+# transcription settings. Telnyx accounts were observed with a
+# 0.1 second endpointing plan, which treats a pause inside one thought as
+# the end of the turn: on a live call the assistant started answering
+# 0.4 seconds into the caller's next words. These defaults wait long
+# enough for a mid-sentence pause and stay well below a felt delay.
+DEFAULT_START_SPEAKING_WAIT_SECS = 0.4
+DEFAULT_ENDPOINTING_PUNCTUATION_SECS = 0.3
+DEFAULT_ENDPOINTING_NO_PUNCTUATION_SECS = 1.0
+DEFAULT_ENDPOINTING_NUMBER_SECS = 0.6
+MAX_TURN_TAKING_SECS = 10.0
+
+DEFAULT_INSTRUCTIONS = (
+    "You are a professional voice receptionist. Be concise, transparent, "
+    "and use the available Odoo tools only when they are needed."
+)
+DEFAULT_GREETING = (
+    "Hello! I can register your request or connect you with a colleague. "
+    "Before I do, could you briefly tell me what you are calling about?"
+)
+CONTACT_GREETING = (
+    "Hello, %(customer_name)s. Am I speaking with %(customer_name)s? "
+    "I can register your request or connect you with a colleague. Before I "
+    "do, could you briefly tell me what you are calling about?"
+)
+DEFAULT_WARM_TRANSFER_INSTRUCTIONS = (
+    "Greet the recipient and briefly explain the caller's confirmed identity, "
+    "the reason for the call, the relevant context, and the agreed next step. "
+    "Ask whether the recipient is ready, then bridge the caller. Never present "
+    "an unconfirmed identity as fact."
+)
 
 REMOTE_FIELDS = {
     "name", "description", "instructions", "greeting", "model",
-    "voice", "voice_speed", "transcription_model",
-    "transcription_language", "time_limit_secs", "record_calls",
+    "voice", "voice_speed", "language_boost", "expressive_mode",
+    "transcription_model",
+    "transcription_language", "time_limit_secs", "user_idle_timeout_secs",
+    "allow_interruptions", "protect_greeting", "start_speaking_wait_secs",
+    "endpointing_punctuation_secs", "endpointing_no_punctuation_secs",
+    "endpointing_number_secs",
+    "record_calls",
+    "language_mode", "default_lang",
     "memory_enabled", "enable_contact_tools", "enable_crm_tools",
-    "enable_helpdesk_tools", "active",
+    "enable_helpdesk_tools", "active", "receptionist_mode",
+    "transfer_enabled", "manager", "transfer_callflows",
+    "check_registration_before_transfer", "warm_transfer_instructions",
+    "warm_transfer_message_delay_ms",
 }
 
 
@@ -36,29 +159,193 @@ class TelnyxAIAssistant(models.Model):
     description = fields.Text()
     instructions = fields.Text(
         required=True,
-        default=(
-            "You are a helpful voice assistant. Be concise, transparent, "
-            "and use the available Odoo tools only when they are needed."
-        ),
+        default=DEFAULT_INSTRUCTIONS,
     )
-    greeting = fields.Text(default="Hello! How can I help you today?")
+    greeting = fields.Text(default=DEFAULT_GREETING)
     model = fields.Char(help="Leave empty to use the Telnyx default model.")
+    voice_language = fields.Selection(
+        selection="_get_voice_language_selection",
+        compute="_compute_voice_language", store=True, readonly=False,
+        string="Voice Language",
+        help="Language filter for the voice catalog. It narrows the voice "
+             "list only and is never published to Telnyx.")
+    voice_provider = fields.Selection(
+        selection="_get_voice_provider_selection",
+        compute="_compute_voice_provider", store=True, readonly=False,
+        string="Voice Provider",
+        help="Provider filter for the voice catalog. It narrows the voice "
+             "list only and is never published to Telnyx.")
     voice = fields.Char(
         default=DEFAULT_VOICE,
-        help="Telnyx voice identifier, for example AWS.Polly.Joanna-Neural. "
-             "The available ids are listed by the Telnyx text-to-speech "
-             "voices endpoint.")
-    voice_speed = fields.Float(default=1.0)
-    transcription_model = fields.Char(
-        help="For example deepgram/nova-3. Leave empty for Telnyx default."
+        help="Telnyx voice used by the assistant, selected from the voices "
+             "available to the account. Choose a multilingual voice such as "
+             "Telnyx Ultra, Azure Multilingual, MiniMax, or Inworld when one "
+             "assistant must speak several languages.")
+    voice_label = fields.Char(
+        compute="_compute_voice_label", string="Voice Name",
+        help="Catalog name of the selected voice.")
+    voice_is_expressive = fields.Boolean(
+        compute="_compute_voice_is_expressive",
+        string="Voice Supports Expression",
+        help="Technical flag driving the visibility of Expressive Mode.")
+    voice_speed = fields.Float(
+        default=1.0,
+        help="Speech rate multiplier between 0.5 and 1.5. Telnyx rejects a "
+             "speed the selected voice does not support, and such a call "
+             "ends after one second without a greeting. Telnyx Ultra needs "
+             "at least 0.8; keep 1.0 when unsure.")
+    language_boost = fields.Selection(
+        LANGUAGE_BOOST_SELECTION,
+        string="Voice Language Boost",
+        help="Optional Telnyx TTS language hint. Use Automatic for supported "
+             "multilingual voices, an explicit provider-supported language, "
+             "or leave empty to keep the provider default.",
     )
-    transcription_language = fields.Char()
+    expressive_mode = fields.Boolean(
+        string="Expressive Mode",
+        help="Allow supported voices such as Telnyx Ultra to add contextual "
+             "expression. Leave disabled for voices that do not support it.",
+    )
+    transcription_model = fields.Char(
+        default="deepgram/nova-3",
+        help="Speech recognition model. Telnyx recommends deepgram/nova-3 "
+             "for multilingual assistants."
+    )
+    transcription_language = fields.Char(
+        default="auto",
+        help="Speech recognition language. Use auto for multilingual "
+             "detection, or a supported language code to constrain it."
+    )
+    language_mode = fields.Selection(
+        [
+            ("contact", "Contact Language, Then Auto-Detect"),
+            ("fixed", "Fixed Agent Language"),
+            ("automatic", "Automatic Detection"),
+        ],
+        default="contact", required=True,
+        help="Contact mode uses the language of the single contact matched "
+             "by phone, then follows an explicit caller language change. "
+             "Fixed mode always uses the agent language. Automatic mode "
+             "starts with the agent language and detects the caller's "
+             "language from speech.",
+    )
+    default_lang = fields.Many2one(
+        "res.lang", string="Agent Language", ondelete="restrict",
+        default=lambda self: self.env["res.lang"].search([
+            ("code", "=", self.env.user.lang or "en_US")
+        ], limit=1),
+        help="Greeting and fallback conversation language when no unique "
+             "contact language is available. Activate additional Odoo "
+             "languages before assigning them to contacts."
+    )
     time_limit_secs = fields.Integer(default=1800, required=True)
+    user_idle_timeout_secs = fields.Integer(
+        string="Caller Silence Timeout (s)",
+        default=DEFAULT_USER_IDLE_TIMEOUT_SECS,
+        help="Stop the assistant after this much caller silence. Telnyx "
+             "accepts 10 to 14,400 seconds. Set to 0 to let the assistant "
+             "keep answering silence for the whole call time limit, which "
+             "leaves an abandoned call running until the time limit expires.")
+    allow_interruptions = fields.Boolean(
+        string="Caller Can Interrupt",
+        default=True,
+        help="Let the caller cut the assistant off mid-sentence. Disable "
+             "only for scripted announcements.")
+    protect_greeting = fields.Boolean(
+        string="Protect Greeting",
+        default=False,
+        help="Ignore the caller until the greeting has finished playing.")
+    start_speaking_wait_secs = fields.Float(
+        string="Wait Before Speaking (s)",
+        default=DEFAULT_START_SPEAKING_WAIT_SECS,
+        help="Silence the assistant waits through before it starts its "
+             "answer. Lower values make it jump into the caller's pauses.")
+    endpointing_punctuation_secs = fields.Float(
+        string="Pause After Punctuation (s)",
+        default=DEFAULT_ENDPOINTING_PUNCTUATION_SECS,
+        help="Silence that ends the caller's turn when the transcript "
+             "already looks like a finished sentence.")
+    endpointing_no_punctuation_secs = fields.Float(
+        string="Pause Without Punctuation (s)",
+        default=DEFAULT_ENDPOINTING_NO_PUNCTUATION_SECS,
+        help="Silence that ends the caller's turn when the transcript has "
+             "no sentence end yet. This is the value that stops the "
+             "assistant from answering a pause taken in the middle of a "
+             "thought, so keep it the longest of the three.")
+    endpointing_number_secs = fields.Float(
+        string="Pause After Numbers (s)",
+        default=DEFAULT_ENDPOINTING_NUMBER_SECS,
+        help="Silence that ends the caller's turn while they are dictating "
+             "digits, such as a phone number or an order reference.")
     record_calls = fields.Boolean(default=False)
-    memory_enabled = fields.Boolean(default=False)
-    enable_contact_tools = fields.Boolean(default=True)
-    enable_crm_tools = fields.Boolean(default=False)
-    enable_helpdesk_tools = fields.Boolean(default=False)
+    memory_enabled = fields.Boolean(
+        default=False,
+        help="Let Telnyx retrieve recent conversations for the same caller. "
+             "This is Telnyx conversation memory, not Odoo Connect Memory.",
+    )
+    enable_contact_tools = fields.Boolean(
+        default=True,
+        help="Allow the assistant to find one unambiguous Odoo contact and "
+             "add internal notes to it.",
+    )
+    enable_crm_tools = fields.Boolean(
+        default=False,
+        help="Allow the assistant to create or update an Odoo CRM lead.",
+    )
+    enable_helpdesk_tools = fields.Boolean(
+        default=False,
+        help="Allow the assistant to create or update an Odoo Helpdesk ticket.",
+    )
+    receptionist_mode = fields.Selection(
+        [("personal", "Personal Receptionist"),
+         ("company", "Company Receptionist")],
+        required=True, default="personal",
+    )
+    transfer_enabled = fields.Boolean(default=True)
+    manager = fields.Many2one(
+        "connect.user", ondelete="set null",
+        help="The manager represented by a personal receptionist.",
+    )
+    transfer_callflows = fields.Many2many(
+        "connect.telnyx.callflow",
+        "connect_telnyx_ai_assistant_callflow_rel",
+        "assistant_id", "callflow_id",
+        string="Department Call Flows",
+        help="Company departments the assistant may transfer to. Their ring "
+             "users become the available human recipients.",
+    )
+    check_registration_before_transfer = fields.Boolean(
+        default=True,
+        help="Use Telnyx live SIP registration status to omit definitely "
+             "offline SIP and WebRTC devices. API errors remain advisory.",
+    )
+    warm_transfer_instructions = fields.Text(
+        required=True, default=DEFAULT_WARM_TRANSFER_INSTRUCTIONS,
+    )
+    warm_transfer_message_delay_ms = fields.Integer(
+        string="Warm Transfer Message Delay (ms)",
+        default=2000,
+        help="Wait after the recipient answers before playing the private "
+             "briefing. Set to 0 to restore immediate playback if the delay "
+             "does not improve WebRTC audio.",
+    )
+    domain = fields.Many2one(
+        "connect.telnyx.domain", ondelete="set null",
+        default=lambda self: self.env["connect.telnyx.domain"].search(
+            [], limit=1),
+        help="SIP domain used to call this assistant by extension.",
+    )
+    exten = fields.Many2one(
+        "connect.telnyx.exten", ondelete="set null", readonly=True,
+        string="Telnyx Extension",
+    )
+    exten_number = fields.Char(
+        related="exten.number", store=True, string="Extension Number",
+    )
+    sip_uri = fields.Char(compute="_compute_sip_uri", string="SIP URI")
+    transfer_tool_sid = fields.Char(
+        string="Telnyx Transfer Tool ID", readonly=True, copy=False,
+    )
     active = fields.Boolean(default=True)
     imported = fields.Boolean(readonly=True, copy=False)
     last_sync_at = fields.Datetime(readonly=True, copy=False)
@@ -88,6 +375,213 @@ class TelnyxAIAssistant(models.Model):
                     "The AI assistant call limit must be between 30 and "
                     "14,400 seconds."
                 )
+
+    @api.constrains("voice_speed")
+    def _check_voice_speed(self):
+        for rec in self:
+            if not (MIN_VOICE_SPEED <= rec.voice_speed <= MAX_VOICE_SPEED):
+                raise ValidationError(
+                    "The AI assistant voice speed must be between {} and "
+                    "{}. Telnyx rejects a speed the selected voice does not "
+                    "support and the assistant then hangs up without a "
+                    "greeting.".format(MIN_VOICE_SPEED, MAX_VOICE_SPEED)
+                )
+
+    @api.constrains("user_idle_timeout_secs")
+    def _check_user_idle_timeout(self):
+        for rec in self:
+            value = rec.user_idle_timeout_secs
+            if value and not (
+                MIN_USER_IDLE_TIMEOUT_SECS <= value
+                <= MAX_USER_IDLE_TIMEOUT_SECS
+            ):
+                raise ValidationError(
+                    "The caller silence timeout must be 0 or between {} and "
+                    "{} seconds.".format(
+                        MIN_USER_IDLE_TIMEOUT_SECS,
+                        MAX_USER_IDLE_TIMEOUT_SECS)
+                )
+
+    @api.constrains(
+        "start_speaking_wait_secs", "endpointing_punctuation_secs",
+        "endpointing_no_punctuation_secs", "endpointing_number_secs")
+    def _check_turn_taking_delays(self):
+        fields_to_check = (
+            "start_speaking_wait_secs", "endpointing_punctuation_secs",
+            "endpointing_no_punctuation_secs", "endpointing_number_secs",
+        )
+        for rec in self:
+            for name in fields_to_check:
+                if not (0 <= rec[name] <= MAX_TURN_TAKING_SECS):
+                    raise ValidationError(
+                        "'{}' must be between 0 and {} seconds.".format(
+                            rec._fields[name].string, MAX_TURN_TAKING_SECS)
+                    )
+
+    @api.constrains("warm_transfer_message_delay_ms")
+    def _check_warm_transfer_message_delay(self):
+        for rec in self:
+            if rec.warm_transfer_message_delay_ms < 0:
+                raise ValidationError(
+                    "The warm transfer message delay cannot be negative."
+                )
+
+    @api.model
+    def _voice_catalog(self):
+        """Account voice catalog usable by an AI assistant.
+
+        The cache belongs to the admin-only settings model while assistants
+        are readable by every Connect user, so the catalog is read with
+        sudo(); nothing but voice names reaches the caller.
+        """
+        return self.env["connect.settings"].sudo()._get_cached_telnyx_voices(
+            include_basic=False)
+
+    @api.model
+    def _get_voice_language_selection(self):
+        settings = self.env["connect.settings"].sudo()
+        languages = {
+            voice["language"] for voice in self._voice_catalog()
+            if voice["language"]
+        }
+        # Keep the default reachable when the catalog was never fetched.
+        languages.add(DEFAULT_VOICE_LANGUAGE)
+        return sorted(
+            ((language, settings._get_telnyx_language_label(language))
+             for language in languages),
+            key=lambda item: item[1],
+        )
+
+    @api.model
+    def _get_voice_provider_selection(self):
+        settings = self.env["connect.settings"].sudo()
+        providers = {
+            voice["provider"] for voice in self._voice_catalog()
+            if voice["provider"]
+        }
+        providers.add(DEFAULT_VOICE_PROVIDER)
+        return sorted(
+            ((provider, settings._get_telnyx_provider_label(provider))
+             for provider in providers),
+            key=lambda item: item[1],
+        )
+
+    @api.depends("voice")
+    def _compute_voice_language(self):
+        """Follow the selected voice, but never wipe a manual filter.
+
+        Telnyx reports no language for some account-scoped voices, and the
+        filters are also what the selector searches with, so an unknown or
+        cleared voice keeps whatever the administrator picked. The two
+        filters compute separately: Odoo skips the whole compute of a group
+        of fields as soon as one of them is written explicitly.
+        """
+        catalog = {voice["id"]: voice for voice in self._voice_catalog()}
+        # A refreshed catalog can drop a language, and assigning a value the
+        # Selection no longer offers raises on the Odoo series that validate
+        # a dynamic selection on write.
+        allowed = {key for key, _label in self._get_voice_language_selection()}
+        for rec in self:
+            entry = catalog.get(rec.voice) or {}
+            language = (
+                entry.get("language") or rec.voice_language
+                or DEFAULT_VOICE_LANGUAGE)
+            rec.voice_language = (
+                language if language in allowed else DEFAULT_VOICE_LANGUAGE)
+
+    @api.depends("voice")
+    def _compute_voice_provider(self):
+        catalog = {voice["id"]: voice for voice in self._voice_catalog()}
+        allowed = {key for key, _label in self._get_voice_provider_selection()}
+        for rec in self:
+            entry = catalog.get(rec.voice) or {}
+            provider = (
+                entry.get("provider") or rec.voice_provider
+                or self._voice_provider_from_id(rec.voice)
+                or DEFAULT_VOICE_PROVIDER)
+            rec.voice_provider = (
+                provider if provider in allowed else DEFAULT_VOICE_PROVIDER)
+
+    @api.model
+    def _voice_provider_from_id(self, voice_id):
+        prefix = (voice_id or "").split(".")[0].lower()
+        return prefix if prefix in TELNYX_PROVIDER_LABELS else ""
+
+    @api.depends("voice")
+    def _compute_voice_label(self):
+        catalog = {voice["id"]: voice for voice in self._voice_catalog()}
+        for rec in self:
+            entry = catalog.get(rec.voice) or {}
+            rec.voice_label = entry.get("name") or rec.voice or ""
+
+    @api.depends("voice")
+    def _compute_voice_is_expressive(self):
+        for rec in self:
+            rec.voice_is_expressive = (rec.voice or "").startswith(
+                EXPRESSIVE_VOICE_PREFIX)
+
+    @api.onchange("voice_language", "voice_provider")
+    def _onchange_voice_filters(self):
+        if not self.voice:
+            return
+        entry = next((
+            item for item in self._voice_catalog()
+            if item["id"] == self.voice
+        ), None)
+        if (not entry
+                or (entry["language"]
+                    and entry["language"] != self.voice_language)
+                or (entry["provider"]
+                    and entry["provider"] != self.voice_provider)):
+            self.voice = False
+
+    @api.onchange("voice")
+    def _onchange_voice_expression(self):
+        if self.expressive_mode and not (self.voice or "").startswith(
+                EXPRESSIVE_VOICE_PREFIX):
+            self.expressive_mode = False
+
+    @api.model
+    def telnyx_get_voice_options(self, language, provider, search="",
+                                 limit=80):
+        """Autocomplete source of the assistant voice selector."""
+        return self.env["connect.settings"].sudo().telnyx_get_voice_options(
+            language, provider, search=search, limit=limit,
+            include_basic=False)
+
+    @api.model
+    def telnyx_get_voice_label(self, voice_id):
+        """Readable name of one voice id, for the selector and the list."""
+        return self.env["connect.settings"].sudo().telnyx_get_voice_label(
+            voice_id)
+
+    @api.model
+    def telnyx_preview_voice(self, voice, voice_speed=1.0, text=None):
+        """Synthesize a sample of the selected voice through Telnyx.
+
+        Every Connect user may read an assistant, but this call spends
+        Telnyx text-to-speech credit, so only administrators can trigger it.
+        """
+        if not self.env.su and not self.env.user.has_group(
+                "connect.group_admin"):
+            raise AccessError(
+                "Only Connect administrators can preview a voice.")
+        sample = (text or "").strip()
+        # A greeting carrying dynamic variables would be read out with its
+        # placeholder syntax, so such a text is replaced by the default one.
+        if not sample or VOICE_SAMPLE_PLACEHOLDER_RE.search(sample):
+            sample = None
+        return self.env["connect.settings"].sudo()._telnyx_voice_sample(
+            voice, sample, voice_speed)
+
+    @api.depends("exten.number", "domain.domain_name")
+    def _compute_sip_uri(self):
+        for rec in self:
+            if rec.exten and rec.domain and rec.domain.domain_name:
+                rec.sip_uri = "sip:{}@{}".format(
+                    rec.exten.number, rec.domain.domain_name)
+            else:
+                rec.sip_uri = ""
 
     @api.model
     def _unwrap(self, response):
@@ -142,6 +636,27 @@ class TelnyxAIAssistant(models.Model):
         # rejects the update ("Only one tool of type 'hangup'").
         tools = [] if (self.imported and self.sid) else [
             {"type": "hangup", "hangup": {}}]
+        tools.append(self._webhook_tool(
+            "register_call_request",
+            "Register the caller's qualified request on the current Odoo call.",
+            {
+                "title": {
+                    "type": "string",
+                    "description": "Short request title.",
+                },
+                "summary": {
+                    "type": "string",
+                    "description": (
+                        "Factual summary of the reason, context, and outcome."
+                    ),
+                },
+                "requested_action": {
+                    "type": "string",
+                    "description": "Agreed next step or requested follow-up.",
+                },
+            },
+            ["title", "summary"],
+        ))
         if self.enable_contact_tools:
             tools.extend([
                 self._webhook_tool(
@@ -191,19 +706,154 @@ class TelnyxAIAssistant(models.Model):
             ))
         return tools
 
+    def _effective_instructions(self):
+        self.ensure_one()
+        mode_text = (
+            "You represent the configured manager."
+            if self.receptionist_mode == "personal"
+            else "You replace the company IVR and choose the appropriate "
+                 "configured department."
+        )
+        policy = (
+            "Odoo receptionist policy:\n"
+            "- {}\n"
+            "- Explain that you can register a request or connect the caller.\n"
+            "- Begin in {{{{conversation_language_name}}}} "
+            "({{{{conversation_language}}}}). The selected language source is "
+            "{{{{conversation_language_source}}}}.\n"
+            "- If {{{{language_switch_allowed}}}} is true and the caller clearly "
+            "uses another language, switch to it and continue in that "
+            "language. Otherwise keep using the selected language.\n"
+            "- Before any transfer, determine why the caller is calling, the "
+            "relevant context, and the requested outcome.\n"
+            "- If customer_name is present, ask whether you are speaking with "
+            "that person. Do not treat the identity as confirmed until the "
+            "caller explicitly confirms it.\n"
+            "- Never guess an identity when the contact match is ambiguous.\n"
+            "- Use the Transfer tool only for a target it currently offers. "
+            "If no target is available, offer to register the request instead.\n"
+            "- Use register_call_request after the caller agrees that the "
+            "qualified request should be saved.\n"
+            "- During a warm transfer, brief the recipient before bridging the "
+            "caller.\n"
+            "- If a transfer does not connect, for any reason, say so to the "
+            "caller, never wait in silence, and continue the conversation by "
+            "offering to register the request instead. Retry a transfer only "
+            "if the caller asks for one.\n"
+            "\n"
+            "How to speak:\n"
+            "- Answer in at most two short sentences. Say the one thing that "
+            "moves the call forward and stop.\n"
+            "- Ask one question at a time and ask it directly, without "
+            "explaining why you need the answer.\n"
+            "- Do not repeat back what the caller just said and do not "
+            "summarize your own previous sentence. Confirm an understanding "
+            "only once, in a few words.\n"
+            "- Never narrate the call or the connection. No 'I hear you', no "
+            "'the connection is back', no 'briefly', no 'regarding your "
+            "question', no announcing what you are about to do.\n"
+            "- Never repeat a sentence you already said in this call. If the "
+            "caller did not react, say something shorter instead.\n"
+            "- If the caller does not answer after two attempts, say goodbye "
+            "once and end the call with the hangup tool instead of waiting or "
+            "repeating yourself."
+        ).format(mode_text)
+        return "{}\n\n{}".format((self.instructions or "").strip(), policy)
+
+    def _has_transfer_configuration(self):
+        self.ensure_one()
+        if not self.transfer_enabled:
+            return False
+        if self.receptionist_mode == "personal":
+            return bool(self.manager)
+        return bool(self.transfer_callflows)
+
+    def _transfer_tool_payload(self):
+        self.ensure_one()
+        return {
+            "type": "transfer",
+            "display_name": "Odoo warm transfer - {}".format(self.name),
+            "transfer": {
+                "targets": "{{transfer_targets}}",
+                "from": "{{telnyx_agent_target}}",
+                "warm_transfer_instructions": (
+                    self.warm_transfer_instructions
+                    or DEFAULT_WARM_TRANSFER_INSTRUCTIONS
+                ),
+                "warm_message_delay_ms": (
+                    self.warm_transfer_message_delay_ms or None
+                ),
+                "voicemail_detection": {
+                    "detection_mode": "premium",
+                    "on_voicemail_detected": {"action": "stop_transfer"},
+                },
+            },
+            "timeout_ms": 5000,
+        }
+
+    def _delete_transfer_tool(self):
+        self.ensure_one()
+        if not self.transfer_tool_sid:
+            return
+        try:
+            self.env["connect.settings"].telnyx_api_request(
+                "DELETE", "ai/tools/{}".format(self.transfer_tool_sid))
+        except ValidationError as exc:
+            if "HTTP 404" not in str(exc):
+                raise
+        self.with_context(skip_telnyx_ai_sync=True).transfer_tool_sid = False
+
+    def _sync_transfer_tool(self):
+        self.ensure_one()
+        if not self._has_transfer_configuration():
+            self._delete_transfer_tool()
+            return False
+        settings = self.env["connect.settings"]
+        payload = self._transfer_tool_payload()
+        if self.transfer_tool_sid:
+            try:
+                settings.telnyx_api_request(
+                    "PATCH", "ai/tools/{}".format(self.transfer_tool_sid),
+                    payload=payload,
+                )
+            except ValidationError as exc:
+                if "HTTP 404" not in str(exc):
+                    raise
+                self.with_context(
+                    skip_telnyx_ai_sync=True).transfer_tool_sid = False
+                return self._sync_transfer_tool()
+            return self.transfer_tool_sid
+        data = self._unwrap(settings.telnyx_api_request(
+            "POST", "ai/tools", payload=payload)) or {}
+        tool_sid = data.get("id")
+        if not tool_sid:
+            raise ValidationError("Telnyx did not return a Transfer tool ID.")
+        self.with_context(skip_telnyx_ai_sync=True).transfer_tool_sid = tool_sid
+        return tool_sid
+
     def _remote_payload(self):
         self.ensure_one()
         payload = {
             "name": self.name,
             "description": self.description or "",
-            "instructions": self.instructions,
-            "greeting": self.greeting or "",
+            "instructions": self._effective_instructions(),
+            "greeting": "{{odoo_initial_greeting}}",
+            "dynamic_variables": self._partner_values(
+                self.env["res.partner"], match_count=0
+            ),
             "enabled_features": ["telephony"],
             "dynamic_variables_webhook_url": self._variables_url(),
-            "dynamic_variables_webhook_timeout_ms": 1500,
+            "dynamic_variables_webhook_timeout_ms": 5000,
             "tools": self._tool_payload(),
+            "tool_ids": (
+                [self.transfer_tool_sid] if self.transfer_tool_sid else []
+            ),
             "telephony_settings": {
                 "time_limit_secs": self.time_limit_secs,
+                # Telnyx treats null as "never stop", which is what let an
+                # abandoned call answer silence events for 17 minutes.
+                "user_idle_timeout_secs": (
+                    self.user_idle_timeout_secs or None),
                 "recording_settings": {
                     "enabled": self.record_calls,
                     "channels": "dual",
@@ -211,15 +861,38 @@ class TelnyxAIAssistant(models.Model):
                     "stop_on_conversation_end": True,
                 },
             },
+            "interruption_settings": {
+                "enable": self.allow_interruptions,
+                "disable_greeting_interruption": self.protect_greeting,
+                "start_speaking_plan": {
+                    "wait_seconds": self.start_speaking_wait_secs,
+                    "transcription_endpointing_plan": {
+                        "on_punctuation_seconds": (
+                            self.endpointing_punctuation_secs),
+                        "on_no_punctuation_seconds": (
+                            self.endpointing_no_punctuation_secs),
+                        "on_number_seconds": self.endpointing_number_secs,
+                    },
+                },
+            },
             "privacy_settings": {"data_retention": True},
         }
         if self.model:
             payload["model"] = self.model
         if self.voice:
-            payload["voice_settings"] = {
+            voice_settings = {
                 "voice": self.voice,
                 "voice_speed": self.voice_speed,
+                # The form hides the switch for a voice without expressive
+                # support, so a value left over from an import or a voice
+                # change must not keep travelling to Telnyx unseen.
+                "expressive_mode": bool(
+                    self.expressive_mode and self.voice_is_expressive),
             }
+            language_boost = self._clean_language_boost(self.language_boost)
+            if language_boost:
+                voice_settings["language_boost"] = language_boost
+            payload["voice_settings"] = voice_settings
         transcription = {}
         if self.transcription_model:
             transcription["model"] = self.transcription_model
@@ -235,11 +908,33 @@ class TelnyxAIAssistant(models.Model):
         return payload
 
     @api.model
+    def _clamp_voice_speed(self, speed):
+        """Keep a remote speed inside the range Odoo accepts.
+
+        A speed set outside Odoo would otherwise fail the local constraint
+        and break the whole synchronization for one unusable value.
+        """
+        try:
+            speed = float(speed)
+        except (TypeError, ValueError):
+            return 1.0
+        return min(max(speed, MIN_VOICE_SPEED), MAX_VOICE_SPEED)
+
+    @api.model
+    def _clean_language_boost(self, value):
+        """Drop a remote hint Odoo does not offer instead of failing sync."""
+        allowed = {key for key, _label in LANGUAGE_BOOST_SELECTION}
+        return value if value in allowed else False
+
+    @api.model
     def _remote_values(self, data, imported=False):
         voice_settings = data.get("voice_settings") or {}
         transcription = data.get("transcription") or {}
         telephony = data.get("telephony_settings") or {}
         recording = telephony.get("recording_settings") or {}
+        interruption = data.get("interruption_settings") or {}
+        speaking = interruption.get("start_speaking_plan") or {}
+        endpointing = speaking.get("transcription_endpointing_plan") or {}
         vals = {
             "sid": data.get("id"),
             "version_id": data.get("version_id"),
@@ -249,13 +944,34 @@ class TelnyxAIAssistant(models.Model):
             "greeting": data.get("greeting") or "",
             "model": data.get("model") or "",
             "voice": voice_settings.get("voice") or "",
-            "voice_speed": (
+            "voice_speed": self._clamp_voice_speed(
                 voice_settings.get("voice_speed")
                 or voice_settings.get("speed") or 1.0
             ),
+            "language_boost": self._clean_language_boost(
+                voice_settings.get("language_boost")),
+            "expressive_mode": bool(
+                voice_settings.get("expressive_mode")
+                and (voice_settings.get("voice") or "").startswith(
+                    EXPRESSIVE_VOICE_PREFIX)),
             "transcription_model": transcription.get("model") or "",
             "transcription_language": transcription.get("language") or "",
             "time_limit_secs": telephony.get("time_limit_secs") or 1800,
+            "user_idle_timeout_secs": (
+                telephony.get("user_idle_timeout_secs") or 0),
+            "allow_interruptions": interruption.get("enable", True),
+            "protect_greeting": bool(
+                interruption.get("disable_greeting_interruption")),
+            "start_speaking_wait_secs": (
+                speaking.get("wait_seconds")
+                if speaking.get("wait_seconds") is not None
+                else DEFAULT_START_SPEAKING_WAIT_SECS),
+            "endpointing_punctuation_secs": (
+                endpointing.get("on_punctuation_seconds") or 0.0),
+            "endpointing_no_punctuation_secs": (
+                endpointing.get("on_no_punctuation_seconds") or 0.0),
+            "endpointing_number_secs": (
+                endpointing.get("on_number_seconds") or 0.0),
             "record_calls": bool(recording.get("enabled")),
             "imported": imported,
             "last_sync_at": fields.Datetime.now(),
@@ -264,9 +980,11 @@ class TelnyxAIAssistant(models.Model):
 
     def _apply_remote_data(self, data):
         self.ensure_one()
-        self.with_context(skip_telnyx_ai_sync=True).write(
-            self._remote_values(data, imported=self.imported)
-        )
+        self.with_context(skip_telnyx_ai_sync=True).write({
+            "sid": data.get("id") or self.sid,
+            "version_id": data.get("version_id") or self.version_id,
+            "last_sync_at": fields.Datetime.now(),
+        })
 
     def _push_remote(self, path):
         """POST the assistant payload, recovering from an unusable voice.
@@ -295,9 +1013,15 @@ class TelnyxAIAssistant(models.Model):
             payload["voice_settings"] = {
                 "voice": DEFAULT_VOICE,
                 "voice_speed": self.voice_speed or 1.0,
+                "expressive_mode": False,
             }
             data = self._unwrap(
                 settings.telnyx_api_request("POST", path, payload=payload))
+            self.with_context(skip_telnyx_ai_sync=True).write({
+                "voice": DEFAULT_VOICE,
+                "language_boost": False,
+                "expressive_mode": False,
+            })
             settings.connect_notify(
                 "Voice of the AI assistant '{}' was not available in Telnyx "
                 "and was replaced with {}.".format(self.name, DEFAULT_VOICE),
@@ -307,12 +1031,14 @@ class TelnyxAIAssistant(models.Model):
     def _create_remote(self):
         self.ensure_one()
         self._ensure_summary_group()
+        self._sync_transfer_tool()
         self._apply_remote_data(self._push_remote("ai/assistants"))
 
     def _update_remote(self):
         self.ensure_one()
         if not self.sid:
             return self._create_remote()
+        self._sync_transfer_tool()
         self._apply_remote_data(
             self._push_remote("ai/assistants/{}".format(self.sid)))
 
@@ -349,14 +1075,16 @@ class TelnyxAIAssistant(models.Model):
                 and self.env["connect.settings"].sudo().get_param(
                     "telnyx_auto_sync"
                 )):
-            for rec in self.filtered("sid"):
-                self.env["connect.settings"].telnyx_api_request(
-                    "DELETE", "ai/assistants/{}".format(rec.sid)
-                )
+            for rec in self:
+                if rec.sid:
+                    self.env["connect.settings"].telnyx_api_request(
+                        "DELETE", "ai/assistants/{}".format(rec.sid)
+                    )
+                rec._delete_transfer_tool()
         return super().unlink()
 
     @api.model
-    def _ensure_summary_group(self):
+    def _ensure_summary_group(self, instructions=None):
         settings = self.env["connect.settings"].sudo()
         insight_id = settings.get_param("telnyx_ai_summary_insight_id")
         group_id = settings.get_param("telnyx_ai_summary_group_id")
@@ -365,12 +1093,16 @@ class TelnyxAIAssistant(models.Model):
         api_url = settings.get_param("api_url")
         webhook = urljoin(api_url, "telnyx/webhook/assistant/insights")
         if not insight_id:
+            # The caller passes the text when it was just edited: get_param
+            # still serves the cached value inside that write.
+            if instructions is None:
+                instructions = settings.get_param(
+                    "telnyx_ai_summary_instructions")
             insight = self._unwrap(settings.telnyx_api_request(
                 "POST", "ai/conversations/insights", payload={
                     "name": "Odoo Connect Summary",
                     "instructions": (
-                        "Summarize this conversation in 2-3 factual sentences. "
-                        "Include the request, outcome, and follow-up actions."
+                        instructions or DEFAULT_AI_SUMMARY_INSTRUCTIONS
                     ),
                 }
             ))
@@ -397,53 +1129,19 @@ class TelnyxAIAssistant(models.Model):
     @api.model
     def sync(self):
         self._ensure_summary_group()
-        response = self.env["connect.settings"].telnyx_api_request(
-            "GET", "ai/assistants"
-        )
-        data = self._unwrap(response) or []
-        if isinstance(data, dict):
-            data = data.get("assistants") or data.get("items") or []
-        for item in data:
-            sid = item.get("id")
-            if not sid:
-                continue
-            rec = self.search([("sid", "=", sid)], limit=1)
-            vals = self._remote_values(
-                item, imported=rec.imported if rec else True)
-            if rec:
-                rec.with_context(skip_telnyx_ai_sync=True).write(vals)
-            else:
-                vals["tool_token"] = secrets.token_urlsafe(32)
-                rec = self.with_context(skip_telnyx_ai_sync=True).create(vals)
-                # Once imported, Odoo becomes the source of truth and adds
-                # its signed variables webhook plus the allowlisted tools.
-                # A single assistant with an invalid remote config (e.g. a
-                # decommissioned model) must not abort the whole account sync.
-                try:
-                    rec._update_remote()
-                except Exception as e:
-                    logger.warning(
-                        "AI assistant '%s' (model %s) push failed: %s",
-                        rec.name, rec.model or "default", e)
-                    self.env["connect.settings"].connect_notify(
-                        "AI assistant '{}' could not be synchronized "
-                        "(model '{}'): {}".format(
-                            rec.name, rec.model or "default", e),
-                        title="AI Assistant Sync Warning", warning=True,
-                        sticky=True)
-        return True
-
-    def action_pull_from_telnyx(self):
-        for rec in self:
-            if not rec.sid:
-                rec._create_remote()
-                continue
-            data = self._unwrap(
-                self.env["connect.settings"].telnyx_api_request(
-                    "GET", "ai/assistants/{}".format(rec.sid)
-                )
-            )
-            rec._apply_remote_data(data)
+        for rec in self.search([]):
+            try:
+                rec._update_remote()
+            except Exception as e:
+                logger.warning(
+                    "AI assistant '%s' (model %s) push failed: %s",
+                    rec.name, rec.model or "default", e)
+                self.env["connect.settings"].connect_notify(
+                    "AI assistant '{}' could not be synchronized "
+                    "(model '{}'): {}".format(
+                        rec.name, rec.model or "default", e),
+                    title="AI Assistant Sync Warning", warning=True,
+                    sticky=True)
         return True
 
     def action_push_to_telnyx(self):
@@ -470,12 +1168,152 @@ class TelnyxAIAssistant(models.Model):
             "context": {"default_assistant": self.id},
         }
 
+    def create_extension(self):
+        self.ensure_one()
+        return self.env["connect.telnyx.exten"].create_extension(
+            self, self._name)
+
+    def render(self, request=None, params=None):
+        self.ensure_one()
+        if not self.sid:
+            return "<Response><Say>AI assistant is not synchronized.</Say></Response>"
+        response = VoiceResponse()
+        connect = Connect()
+        connect.ai_assistant(self.sid)
+        response.append(connect)
+        return response.to_xml()
+
+    def _transfer_users(self):
+        self.ensure_one()
+        if self.receptionist_mode == "personal":
+            return [(self.manager.name, self.manager)] if self.manager else []
+        values = []
+        for callflow in self.transfer_callflows:
+            users = callflow.ring_users
+            for user in users:
+                label = callflow.name
+                if len(users) > 1:
+                    label = "{} - {}".format(callflow.name, user.name)
+                values.append((label, user))
+        return values
+
+    def _transfer_targets(self):
+        self.ensure_one()
+        if not self._has_transfer_configuration():
+            return [], []
+        targets = []
+        unavailable = []
+        seen = set()
+        for label, user in self._transfer_users():
+            target = user._telnyx_transfer_target(
+                check_registration=self.check_registration_before_transfer)
+            if not target:
+                unavailable.append(label)
+                continue
+            key = (label, target["to"])
+            if key in seen:
+                continue
+            seen.add(key)
+            targets.append({"name": label, "to": target["to"]})
+        return targets, unavailable
+
     @api.model
-    def _partner_values(self, partner):
-        if not partner:
-            return {"found": False}
+    def _strict_partner_match(self, phone):
+        Partner = self.env["res.partner"].sudo()
+        if not phone:
+            return Partner, 0
+        found = Partner.search([("phone_mobile_search", "=", phone)])
+        country = self.env.company.country_id.code
+        normalized = format_number(Partner, phone, country)
+        if normalized and normalized != phone:
+            found |= Partner.search([
+                ("phone_mobile_search", "=", normalized)])
+        if normalized and "phone_sanitized" in Partner._fields:
+            found |= Partner.search([("phone_sanitized", "=", normalized)])
+        return (found if len(found) == 1 else Partner), len(found)
+
+    def _language_values(self, partner=None):
+        self.ensure_one()
+        fallback = self.default_lang
+        if not fallback:
+            fallback = self.env["res.lang"].sudo().search([
+                ("code", "=", self.env.user.lang or "en_US")
+            ], limit=1)
+        language_code = fallback.code or self.env.user.lang or "en_US"
+        source = "agent"
+        switch_allowed = self.language_mode != "fixed"
+        if (self.language_mode == "contact" and partner
+                and partner.lang):
+            language_code = partner.lang
+            source = "contact"
+        elif self.language_mode == "automatic":
+            source = "automatic"
+        language = self.env["res.lang"].sudo().search([
+            ("code", "=", language_code)
+        ], limit=1)
+        bcp47 = language_code.replace("_", "-")
         return {
+            "conversation_language": bcp47,
+            "conversation_language_code": bcp47.split("-", 1)[0].lower(),
+            "conversation_language_name": language.name or bcp47,
+            "conversation_language_source": source,
+            "language_switch_allowed": switch_allowed,
+        }
+
+    def _initial_greeting(self, partner=None, language_code=None):
+        self.ensure_one()
+        language_code = language_code or self.env.user.lang or "en_US"
+        localized_env = self.with_context(lang=language_code).env
+        language_base = language_code.replace("-", "_").split("_", 1)[0]
+        if partner:
+            # Keep translatable strings literal so Odoo's extractor catalogs them.
+            localized = localized_env._(
+                "Hello, %(customer_name)s. Am I speaking with "
+                "%(customer_name)s? I can register your request or connect "
+                "you with a colleague. Before I do, could you briefly tell "
+                "me what you are calling about?",
+                customer_name=partner.display_name,
+            )
+            source = CONTACT_GREETING % {
+                "customer_name": partner.display_name,
+            }
+            if language_base != "en" and localized == source:
+                return self.greeting or DEFAULT_GREETING
+            return localized
+        localized = localized_env._(
+            "Hello! I can register your request or connect you with a "
+            "colleague. Before I do, could you briefly tell me what you are "
+            "calling about?"
+        )
+        if language_base != "en" and localized != DEFAULT_GREETING:
+            return localized
+        return self.greeting or localized
+
+    def _partner_values(self, partner, match_count=None):
+        self.ensure_one()
+        language_values = self._language_values(partner)
+        language_code = language_values["conversation_language"].replace(
+            "-", "_"
+        )
+        if not partner:
+            count = match_count or 0
+            values = {
+                "found": False,
+                "ambiguous": count > 1,
+                "match_count": count,
+                "customer_name": "",
+                "customer_email": "",
+                "customer_language": "",
+            }
+            values.update(language_values)
+            values["odoo_initial_greeting"] = self._initial_greeting(
+                language_code=language_code)
+            return values
+        values = {
             "found": True,
+            "ambiguous": False,
+            "match_count": 1,
+            "identity_confirmation_required": True,
             "partner_id": partner.id,
             "customer_name": partner.display_name,
             "company_name": partner.parent_id.display_name or (
@@ -483,38 +1321,73 @@ class TelnyxAIAssistant(models.Model):
             ),
             "email": partner.email or "",
             "language": partner.lang or "",
+            "customer_email": partner.email or "",
+            "customer_language": partner.lang or "",
         }
+        values.update(language_values)
+        values["odoo_initial_greeting"] = self._initial_greeting(
+            partner=partner, language_code=language_code)
+        return values
 
-    def _resolve_partner(self, payload, call_control_id=None):
+    def _resolve_partner_match(self, payload, call_control_id=None):
         self.ensure_one()
         phone = payload.get("phone")
         if phone:
-            return self.env["res.partner"].sudo().get_partner_by_number(phone)
+            return self._strict_partner_match(phone)
         if call_control_id:
             channel = self.env["connect.channel"].sudo().search(
                 [("sid", "=", call_control_id)], limit=1
             )
-            if channel.call.partner:
-                return channel.call.partner
-        return self.env["res.partner"]
+            phone = channel.call.caller or channel.caller
+            if phone:
+                return self._strict_partner_match(phone)
+        return self.env["res.partner"], 0
+
+    def _resolve_partner(self, payload, call_control_id=None):
+        return self._resolve_partner_match(payload, call_control_id)[0]
 
     def execute_tool(self, tool_name, payload, call_control_id=None):
         self.ensure_one()
         allowed = {
-            "lookup_contact", "add_contact_note", "upsert_crm_lead",
-            "upsert_helpdesk_ticket",
+            "register_call_request", "lookup_contact", "add_contact_note",
+            "upsert_crm_lead", "upsert_helpdesk_ticket",
         }
         if tool_name not in allowed:
             raise ValidationError("Unknown AI assistant tool.")
         if (tool_name in ("lookup_contact", "add_contact_note")
                 and not self.enable_contact_tools):
             raise ValidationError("Contact tools are disabled.")
-        partner = self._resolve_partner(payload, call_control_id)
+        partner, match_count = self._resolve_partner_match(
+            payload, call_control_id)
         phone = payload.get("phone") or (
             partner.phone or partner.mobile if partner else ""
         )
+        if tool_name == "register_call_request":
+            channel = self.env["connect.channel"].sudo().search(
+                [("sid", "=", call_control_id)], limit=1
+            ) if call_control_id else self.env["connect.channel"]
+            call = channel.call
+            if not call:
+                return {"ok": False, "error": "call_not_found"}
+            title = (payload.get("title") or "").strip()[:255]
+            summary = (payload.get("summary") or "").strip()
+            requested_action = (
+                payload.get("requested_action") or "").strip()
+            if not title or not summary:
+                raise ValidationError("A request title and summary are required.")
+            if len(summary) + len(requested_action) > 8000:
+                raise ValidationError("The registered request is too long.")
+            body = "<strong>{}</strong><br/>{}".format(
+                escape(title), escape(summary))
+            if requested_action:
+                body += "<br/><strong>Requested action:</strong> {}".format(
+                    escape(requested_action))
+            call.sudo().message_post(body=body, subtype_xmlid="mail.mt_note")
+            if partner and not call.partner:
+                call.sudo().partner = partner
+            return {"ok": True, "call_id": call.id}
         if tool_name == "lookup_contact":
-            return self._partner_values(partner)
+            return self._partner_values(partner, match_count=match_count)
         note = (payload.get("note") or "").strip()
         if len(note) > 4000:
             raise ValidationError("Tool note is too long.")

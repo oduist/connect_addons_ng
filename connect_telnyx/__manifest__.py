@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Telnyx',
-    'version': '18.0.1.4.0',
+    'version': '18.0.1.4.4',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Telnyx integration for Oduist Connect',
@@ -42,6 +42,7 @@
             'connect_telnyx/static/src/widgets/phone_field/*',
             'connect_telnyx/static/src/services/actions/*',
             'connect_telnyx/static/src/services/mail/*',
+            'connect_telnyx/static/src/widgets/voice_field/*',
         ],
     },
     'post_init_hook': 'post_init_hook',
