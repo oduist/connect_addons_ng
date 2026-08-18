@@ -204,7 +204,11 @@ class Settings(models.Model):
         )
         if exten:
             callerId = user.connect_user.twilio_exten.number
-            twiml = exten.render()
+            # Rendering the destination dialplan is system work: it reads the
+            # callee's connect.user, which the record rules keep private to
+            # its owner. Without sudo, calling a colleague's extension fails
+            # with an AccessError on connect.user.
+            twiml = exten.sudo().render()
         else:
             if whatsapp_call:
                 pbx_user = user.connect_user

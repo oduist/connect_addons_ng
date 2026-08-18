@@ -9,6 +9,7 @@ from odoo import models, api, release
 from odoo.exceptions import UserError
 
 from odoo.addons.connect.models.settings import debug
+from .settings import MAX_EXTEN_LEN
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,24 @@ class Channel(models.Model):
         debug(self, 'On channel status: %s' % json.dumps(params, indent=2))
         generic = self._map_twilio_params(params)
         return self.process_channel_event(generic)
+
+    def _strip_exten_plus(self, number):
+        """Undo the E.164 prefix Twilio puts on an extension used as caller ID.
+
+        Internal calls hand Twilio a bare extension (``100``) as the caller
+        ID, and Twilio echoes it back in its webhooks as ``+100``. Map it back
+        to the extension so the ledger shows ``100`` instead of a bogus
+        phone number.
+        """
+        if not isinstance(number, str) or not number.startswith('+'):
+            return number
+        candidate = number[1:]
+        if not candidate.isdigit() or len(candidate) > MAX_EXTEN_LEN:
+            return number
+        exten = self.env['connect.twilio.exten'].sudo().search(
+            [('number', '=', candidate)], limit=1
+        )
+        return candidate if exten else number
 
     def _map_twilio_params(self, params):
         """Map Twilio webhook params to generic channel event dict."""
@@ -46,8 +65,8 @@ class Channel(models.Model):
 
         return {
             'sid': params['CallSid'],
-            'caller': strip_whatsapp(caller_raw),
-            'called': strip_whatsapp(called_raw),
+            'caller': self._strip_exten_plus(strip_whatsapp(caller_raw)),
+            'called': self._strip_exten_plus(strip_whatsapp(called_raw)),
             'to': strip_whatsapp(to_raw),
             'technical_direction': params['Direction'],
             'status': params['CallStatus'],

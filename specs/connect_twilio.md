@@ -122,6 +122,8 @@ Extends core channel with Twilio SID and webhook-based channel management.
 | Method | Description |
 |--------|-------------|
 | `on_call_status()` | Twilio webhook: create/update channel records from Twilio params |
+| `_map_twilio_params()` | Map Twilio webhook params to the generic channel event dict |
+| `_strip_exten_plus()` | Twilio E.164-prefixes a bare extension used as caller ID (`100` comes back as `+100`); map it back when a `connect.twilio.exten` matches |
 | `connect_notify()` | Desktop notification for incoming SIP/Client calls |
 | `transfer()` | Channel-level transfer via Twilio API |
 
@@ -232,7 +234,7 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `_update_sip_password()` | Update SIP password on Twilio |
 | `delete_sip_account()` | Delete SIP credential from Twilio |
 | `generate_twilio_password()` | Generate strong random password |
-| `render()` | Main TwiML rendering: dispatches to client/sip/voicemail |
+| `render()` | Main TwiML rendering: dispatches to client/sip/voicemail. With a ledger call it walks the callflows through `connect.twilio.user_callflow_call`; without one (click-to-call, rendered before the channel exists) it emits a single `<Dial>` and carries the already-dialed ids in the action URL |
 | `render_client()` | Generate TwiML `<Dial><Client>` |
 | `render_sip()` | Generate TwiML `<Dial><Sip>` |
 | `render_voicemail()` | Generate TwiML `<Record>` for voicemail |
@@ -245,6 +247,9 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `create()` | Override: auto-create SIP account and extension |
 | `write()` | Override: handle SIP credential updates |
 | `unlink()` | Override: cleanup SIP account on Twilio |
+| `on_call_action()` | `<Dial>` action webhook: records the dialed callflows, stops on a leg that was answered/canceled (`DialCallStatus`), otherwise renders the next device |
+| `_get_dial_action_url()` / `_parse_done_callflows()` | Build/read the `done_callflows=` marker the action URL carries |
+| `_record_done_callflows()` / `_clear_done_callflows()` | Fold the marker into `connect.twilio.user_callflow_call` and drop the bookkeeping when the walk ends |
 
 ---
 
@@ -368,6 +373,14 @@ Per-user call delivery steps (SIP/client legs), formerly
 `connect.user_callflow`/`connect.user_callflow_call`. Same shape: `user`
 (`connect.user`), `prio`, `callflow_type`, `method`; the `_call` model links a
 `connect.call` to the step.
+
+The walk is stateful only once the ledger call exists. `connect.settings.
+originate_call()` (click-to-call) renders the dialplan *before* the channel
+is created, so `connect.user.render()` cannot log the step it used there.
+It instead appends `?done_callflows=<ids>` to the `<Dial>` action URL, and
+`on_call_action()` folds those ids into `user_callflow_call` as soon as the
+call record is available. A `<Dial>` with an action URL makes every later
+verb unreachable, so exactly one step is rendered per request.
 
 ---
 
