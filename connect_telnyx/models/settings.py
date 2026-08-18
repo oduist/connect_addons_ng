@@ -167,14 +167,33 @@ class Settings(models.Model):
                         title="Sync Warning", warning=True)
             self.connect_notify(
                 "Telnyx account synced successfully", title="Sync Complete")
+        except ValidationError:
+            raise
         except Exception as e:
-            if 'Authentication failed' in str(e) or '401' in str(e):
+            status = getattr(e, 'status_code', None)
+            text = str(e)
+            if status == 401 or 'Authentication failed' in text or '401' in text:
                 raise ValidationError(
                     'Error authenticating requests to the Telnyx API! '
                     'Check your API key!'
                 )
-            else:
-                raise
+            if (status == 403 or '10006' in text
+                    or 'not authorized' in text.lower()):
+                # Telnyx API keys are account-wide (no per-resource scopes),
+                # so a 403 here is an account-level restriction — typically
+                # the Voice / TeXML product is not enabled or the account is
+                # not verified — not a key permission the user can toggle.
+                raise ValidationError(
+                    'Telnyx denied access to a required resource (HTTP 403). '
+                    'Your Telnyx account is not authorized to use this '
+                    'product — most often Voice / TeXML applications. Telnyx '
+                    'API keys grant full account access and cannot be scoped '
+                    'per resource, so this is an account-level restriction, '
+                    'not an API key permission. Verify your account and '
+                    'enable Voice in the Telnyx Mission Control portal '
+                    '(https://portal.telnyx.com), then run Sync again.'
+                )
+            raise
 
     def _ensure_telnyx_messaging_profile(self):
         """Get or create the messaging profile used for Odoo messaging."""
@@ -185,7 +204,8 @@ class Settings(models.Model):
         if profile_id:
             try:
                 client.messaging_profiles.update(
-                    profile_id, webhook_url=webhook_url)
+                    profile_id, webhook_url=webhook_url,
+                    whitelisted_destinations=['*'])
                 return profile_id
             except Exception as e:
                 if 'not found' not in str(e).lower() and '404' not in str(e):
@@ -197,7 +217,8 @@ class Settings(models.Model):
                 self.sudo().set_param(
                     'telnyx_messaging_profile_id', profile.id)
                 client.messaging_profiles.update(
-                    profile.id, webhook_url=webhook_url)
+                    profile.id, webhook_url=webhook_url,
+                    whitelisted_destinations=['*'])
                 return profile.id
         profile = client.messaging_profiles.create(
             name='Odoo Connect',
@@ -331,6 +352,46 @@ class Settings(models.Model):
                 'will create the channel record.',
                 level='warning',
             )
+
+    @api.model
+    def telnyx_check_call_failure(self, cause=None, sip_code=None):
+        """Confirm whether a failed web-phone call was caused by an
+        exhausted Telnyx balance (ADR-040).
+
+        Telnyx rejects every origination on a billing-blocked account with
+        404 UNALLOCATED_NUMBER ("Not found D19"), which is indistinguishable
+        from a wrong number on the client. The web phone calls this method
+        for such failures; it verifies the balance against the API and
+        returns a trustworthy message. Only members of the Connect groups
+        get an answer, and only admins see the actual amount.
+        """
+        has_admin_group = self.env.user.has_group('connect.group_admin')
+        if not (has_admin_group or self.env.user.has_group('connect.group_user')):
+            return {'balance_blocked': False}
+        try:
+            client = self.sudo().get_telnyx_client()
+            data = client.balance.retrieve().data
+            available = float(getattr(data, 'available_credit', 0) or 0)
+            if available > 0:
+                return {'balance_blocked': False}
+            debug(self, 'Call failure (cause: {}, SIP {}) matches blocked '
+                  'balance: {}'.format(cause, sip_code, available))
+            if has_admin_group:
+                message = (
+                    'The Telnyx account balance is exhausted (available '
+                    'credit: {} {}). Calls are blocked until the account '
+                    'is topped up.'.format(
+                        getattr(data, 'available_credit', available),
+                        getattr(data, 'currency', 'USD')))
+            else:
+                message = (
+                    'The telephony provider account is out of balance and '
+                    'calls are blocked. Please contact your administrator.')
+            return {'balance_blocked': True, 'message': message}
+        except Exception as e:
+            debug(self, 'telnyx_check_call_failure: {}'.format(e),
+                  level='error')
+            return {'balance_blocked': False}
 
     def get_telnyx_balance(self):
         """Fetch current Telnyx account balance"""

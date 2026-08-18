@@ -50,9 +50,33 @@ class TeXMLApp(models.Model):
             'status_callback_method': 'post',
         }
 
+    def _find_telnyx_app_by_name(self, client):
+        """Return the remote TeXML app matching this record's friendly_name."""
+        self.ensure_one()
+        for app in client.texml_applications.list():
+            if getattr(app, 'friendly_name', None) == self.name:
+                return app
+        return None
+
     def create_telnyx_app(self, client):
         self.ensure_one()
-        application = client.texml_applications.create(**self._texml_app_params())
+        try:
+            application = client.texml_applications.create(
+                **self._texml_app_params())
+        except Exception as e:
+            # A TeXML app with this friendly_name may already exist on the
+            # account (e.g. created by a previous database syncing the same
+            # Telnyx account). Adopt it and update it to point at this env
+            # instead of aborting the whole sync.
+            if 'already in use' not in str(e) and '10015' not in str(e):
+                raise
+            existing = self._find_telnyx_app_by_name(client)
+            if not existing:
+                raise
+            self.write({'sid': existing.id})
+            debug(self, 'Adopted existing TeXML app {} ({}).'.format(
+                self.name, existing.id))
+            return self.update_telnyx_app(client)
         self.write({'sid': application.data.id})
         debug(self, 'Created TeXML app {} in Telnyx.'.format(self.name))
         return application.data
