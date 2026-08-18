@@ -75,14 +75,62 @@ class Channel(models.Model):
             'parent_sid': params.get('ParentCallSid'),
         }
 
+    def _twilio_recording_call_sids(self):
+        """Call SIDs that may carry a recording for this channel.
+
+        A callflow records on the leg that runs ``<Dial record=...>`` — the
+        parent — while manual softphone recording is created on this leg, so
+        both have to be considered before reporting a state.
+        """
+        self.ensure_one()
+        sids = []
+        channel = self
+        while channel:
+            if channel.sid and channel.sid not in sids:
+                sids.append(channel.sid)
+            parent = channel.parent_channel
+            if not parent and channel.parent_sid:
+                parent = self.sudo().search(
+                    [('sid', '=', channel.parent_sid)], limit=1)
+            if not parent or parent.sid in sids:
+                break
+            channel = parent
+        return sids
+
+    def _twilio_active_recording(self):
+        """Return ``(call_sid, recording_sid)`` of a recording running now.
+
+        Twilio is the only authority on this: recording may have been started
+        by a callflow, by the per-user Record Calls option or manually from
+        the softphone, and only the API knows which of them is live.
+        """
+        self.ensure_one()
+        try:
+            client = self.env['connect.settings'].sudo().get_client()
+        except Exception:
+            logger.exception('Twilio client unavailable for %s', self.sid)
+            return '', ''
+        for call_sid in self._twilio_recording_call_sids():
+            try:
+                recordings = client.calls(call_sid).recordings.list(
+                    status='in-progress')
+            except Exception:
+                logger.exception(
+                    'Twilio recording lookup failed for %s', call_sid)
+                continue
+            if recordings:
+                return call_sid, getattr(recordings[0], 'sid', '') or ''
+        return '', ''
+
     @api.model
     def _softphone_recording_state_twilio(self, payload):
         channel = self._softphone_recording_channel(payload)
         result = channel._softphone_recording_payload()
-        if result['state'] == 'off' and not result['recording_ref']:
-            pbx_user = channel.caller_pbx_user or channel.called_pbx_user
-            if pbx_user and pbx_user.record_calls:
+        if result['state'] in ('off', '') and not result['recording_ref']:
+            call_sid, recording_sid = channel._twilio_active_recording()
+            if call_sid:
                 result['state'] = 'on'
+                result['recording_ref'] = recording_sid
         return result
 
     @api.model
@@ -133,10 +181,13 @@ class Channel(models.Model):
             'recording_state': 'stopping',
             'recording_control_error': False,
         })
-        recording_ref = channel.recording_control_ref or 'Twilio.CURRENT'
+        call_sid, recording_ref = channel._twilio_active_recording()
+        if not call_sid:
+            call_sid = channel.sid
+            recording_ref = channel.recording_control_ref or 'Twilio.CURRENT'
         try:
             self.env['connect.settings'].sudo().get_client().calls(
-                channel.sid).recordings(recording_ref).update(
+                call_sid).recordings(recording_ref).update(
                     status='stopped')
             channel.sudo().write({
                 'recording_state': 'off',
