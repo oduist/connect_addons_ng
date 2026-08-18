@@ -49,16 +49,46 @@ class TestTwilioRecordingControls(TransactionCase):
                 'call': call.id,
             })
 
-    def _mock_client(self, recording_sid='RE123'):
-        recording = MagicMock()
-        recording.sid = recording_sid
+    def _mock_client(self, recording_sid='RE123', active_calls=None):
+        """Build a Twilio client mock.
+
+        ``active_calls`` maps a call SID to the SID of a recording that is
+        already running on that leg; every other leg reports no active
+        recording.
+        """
+        active_calls = active_calls or {}
+        created = MagicMock()
+        created.sid = recording_sid
         recordings = MagicMock()
-        recordings.create.return_value = recording
+        recordings.create.return_value = created
         call_context = MagicMock()
         call_context.recordings = recordings
         client = MagicMock()
-        client.calls.return_value = call_context
+        requested = {'sid': None}
+
+        def _calls(call_sid):
+            requested['sid'] = call_sid
+            return call_context
+
+        def _list(**kwargs):
+            running = active_calls.get(requested['sid'])
+            if not running:
+                return []
+            active = MagicMock()
+            active.sid = running
+            return [active]
+
+        client.calls.side_effect = _calls
+        recordings.list.side_effect = _list
         return client, recordings
+
+    def _link_parent(self, child, parent):
+        """Attach ``child`` to ``parent`` the way a callflow dial does."""
+        child.sudo().write({
+            'parent_sid': parent.sid,
+            'parent_channel': parent.id,
+        })
+        return child
 
     def test_start_recording_creates_twilio_recording(self):
         channel = self._channel()
@@ -103,35 +133,83 @@ class TestTwilioRecordingControls(TransactionCase):
                 })
         recordings.assert_called_with('REABC')
 
-    def test_default_recording_state_infers_on_until_stopped(self):
+    def test_recording_state_follows_twilio_not_user_preference(self):
+        """The per-user Record Calls flag must not drive the live state."""
         self.connect_user.record_calls = True
         channel = self._channel('CARECDEFAULT')
-        state = self.env['connect.channel'].with_user(
-            self.owner_user).get_softphone_recording_state({
-                'provider': 'twilio',
-                'channel_sid': channel.sid,
-            })
-        self.assertEqual(state['state'], 'on')
-
         client, recordings = self._mock_client()
+        with patch.object(type(self.Settings), 'get_client',
+                          return_value=client):
+            state = self.env['connect.channel'].with_user(
+                self.owner_user).get_softphone_recording_state({
+                    'provider': 'twilio',
+                    'channel_sid': channel.sid,
+                })
+        self.assertEqual(state['state'], 'off')
+        recordings.list.assert_called_with(status='in-progress')
+
+    def test_recording_state_reports_on_for_this_leg(self):
+        channel = self._channel('CARECLIVE')
+        client, recordings = self._mock_client(
+            active_calls={'CARECLIVE': 'RELIVE'})
+        with patch.object(type(self.Settings), 'get_client',
+                          return_value=client):
+            state = self.env['connect.channel'].with_user(
+                self.owner_user).get_softphone_recording_state({
+                    'provider': 'twilio',
+                    'channel_sid': channel.sid,
+                })
+        self.assertEqual(state['state'], 'on')
+        self.assertEqual(state['recording_ref'], 'RELIVE')
+
+    def test_callflow_recording_on_parent_leg_reports_on(self):
+        """A callflow records on the leg running <Dial record=...>.
+
+        That is the parent leg, while the softphone holds the client child
+        leg, so the child must look up the chain before reporting 'off'.
+        """
+        parent = self._channel('CAFLOWPARENT')
+        child = self._link_parent(self._channel('CAFLOWCHILD'), parent)
+        client, recordings = self._mock_client(
+            active_calls={'CAFLOWPARENT': 'REFLOW'})
+        with patch.object(type(self.Settings), 'get_client',
+                          return_value=client):
+            state = self.env['connect.channel'].with_user(
+                self.owner_user).get_softphone_recording_state({
+                    'provider': 'twilio',
+                    'channel_sid': child.sid,
+                })
+        self.assertEqual(state['state'], 'on')
+        self.assertEqual(state['recording_ref'], 'REFLOW')
+
+    def test_stop_targets_the_leg_that_carries_the_recording(self):
+        parent = self._channel('CASTOPPARENT')
+        child = self._link_parent(self._channel('CASTOPCHILD'), parent)
+        client, recordings = self._mock_client(
+            active_calls={'CASTOPPARENT': 'RESTOPFLOW'})
         with patch.object(type(self.Settings), 'get_client',
                           return_value=client):
             state = self.env['connect.channel'].with_user(
                 self.owner_user).stop_softphone_recording({
                     'provider': 'twilio',
-                    'channel_sid': channel.sid,
+                    'channel_sid': child.sid,
                 })
         self.assertEqual(state['state'], 'off')
-        self.assertEqual(channel.sudo().recording_control_ref, 'manual-off')
-        recordings.assert_called_with('Twilio.CURRENT')
+        client.calls.assert_called_with('CASTOPPARENT')
+        recordings.assert_called_with('RESTOPFLOW')
+        recordings.return_value.update.assert_called_with(status='stopped')
 
-    def test_default_recording_state_stays_off_when_automatic_is_disabled(self):
+    def test_recording_state_stays_off_when_twilio_is_unreachable(self):
         channel = self._channel('CARECNOAUTO')
-        state = self.env['connect.channel'].with_user(
-            self.owner_user).get_softphone_recording_state({
-                'provider': 'twilio',
-                'channel_sid': channel.sid,
-            })
+        client = MagicMock()
+        client.calls.side_effect = Exception('boom')
+        with patch.object(type(self.Settings), 'get_client',
+                          return_value=client):
+            state = self.env['connect.channel'].with_user(
+                self.owner_user).get_softphone_recording_state({
+                    'provider': 'twilio',
+                    'channel_sid': channel.sid,
+                })
         self.assertEqual(state['state'], 'off')
 
     def test_other_user_cannot_control_recording(self):
