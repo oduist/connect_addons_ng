@@ -1422,7 +1422,7 @@
 </ul>
 <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/Users/poligon/conductor/workspaces/connect_addons_ng/islamabad
 cp<span class="w"> </span>-R<span class="w"> </span>/Users/poligon/Workspace/odoo19/connect_addons/connect_memory<span class="w"> </span>./connect_memory
-find<span class="w"> </span>connect_memory<span class="w"> </span>-name<span class="w"> </span><span class="s1">&#39;__pycache__&#39;</span><span class="w"> </span>-type<span class="w"> </span>d<span class="w"> </span>-prune<span class="w"> </span>-exec<span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="o">{}</span><span class="w"> </span>+
+find<span class="w"> </span>connect_memory<span class="w"> </span>-name<span class="w"> </span><span class="s1">'__pycache__'</span><span class="w"> </span>-type<span class="w"> </span>d<span class="w"> </span>-prune<span class="w"> </span>-exec<span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="o">{}</span><span class="w"> </span>+
 rm<span class="w"> </span>-f<span class="w"> </span>connect_memory/deploy/.env
 </code></pre></div>
 <ul>
@@ -1457,9 +1457,9 @@ access_memory_backfill_wizard_admin,connect.memory.backfill.wizard.admin,model_c
 <p>In <code>connect_memory/views/memory_menus.xml</code>:
 - replace <code>parent="connect.connect_top_menu"</code> with <code>parent="connect.menu_connect_root"</code>.
 - add <code>groups="connect.group_user"</code> to the <code>menu_memory_root</code> menuitem, so its final form is:</p>
-<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">&lt;menuitem</span><span class="w"> </span><span class="na">id=</span><span class="s">&quot;menu_memory_root&quot;</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;Memory&quot;</span>
-<span class="w">              </span><span class="na">parent=</span><span class="s">&quot;connect.menu_connect_root&quot;</span><span class="w"> </span><span class="na">sequence=</span><span class="s">&quot;160&quot;</span>
-<span class="w">              </span><span class="na">groups=</span><span class="s">&quot;connect.group_user&quot;</span><span class="nt">/&gt;</span>
+<div class="highlight"><pre><span></span><code><span class="w">    </span><span class="nt">&lt;menuitem</span><span class="w"> </span><span class="na">id=</span><span class="s">"menu_memory_root"</span><span class="w"> </span><span class="na">name=</span><span class="s">"Memory"</span>
+<span class="w">              </span><span class="na">parent=</span><span class="s">"connect.menu_connect_root"</span><span class="w"> </span><span class="na">sequence=</span><span class="s">"160"</span>
+<span class="w">              </span><span class="na">groups=</span><span class="s">"connect.group_user"</span><span class="nt">/&gt;</span>
 </code></pre></div>
 <ul>
 <li>[ ] <strong>Step 6: Fix the settings menu parent + admin group ref</strong></li>
@@ -1471,21 +1471,21 @@ access_memory_backfill_wizard_admin,connect.memory.backfill.wizard.admin,model_c
 <li>[ ] <strong>Step 7: Sanity-check no stale legacy xmlids remain</strong></li>
 </ul>
 <p>Run:
-<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">&quot;connect_top_menu\|connect_settings_menu\|group_connect_admin\|base.group_system\|base.group_user&quot;</span><span class="w"> </span>connect_memory/
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">"connect_top_menu\|connect_settings_menu\|group_connect_admin\|base.group_system\|base.group_user"</span><span class="w"> </span>connect_memory/
 </code></pre></div>
 Expected: no matches (empty output).</p>
 <ul>
 <li>[ ] <strong>Step 8: Commit</strong></li>
 </ul>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>connect_memory
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;[connect_memory] port external AI memory module to 19.0&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"[connect_memory] port external AI memory module to 19.0"</span>
 </code></pre></div>
 <ul>
 <li>[ ] <strong>Step 9: Verify install + tests in the branch environment</strong></li>
 </ul>
 <p>Push the branch, then (oduflow MCP) <code>pull_and_apply</code>, install <code>connect_memory</code>, and run its test suite. Per the stale-template memory: on <code>create_environment</code> override <code>repo_url</code> to this repo and upgrade <code>connect</code> before installing. Env name = the branch name.
 <div class="highlight"><pre><span></span><code>oduflow: pull_and_apply
-oduflow: install_odoo_modules [&quot;connect_memory&quot;]
+oduflow: install_odoo_modules ["connect_memory"]
 oduflow: run_odoo_tests connect_memory
 </code></pre></div>
 Expected: module installs without ParseError/access errors; all ported tests (<code>test_capture</code>, <code>test_outbox</code>, <code>test_inbox</code>, <code>test_backfill</code>, <code>test_controllers</code>) pass.</p>
@@ -1503,7 +1503,7 @@ Expected: module installs without ParseError/access errors; all ported tests (<c
 </ul>
 <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/Users/poligon/conductor/workspaces/connect_addons_ng/islamabad
 cp<span class="w"> </span>-R<span class="w"> </span>/Users/poligon/Workspace/odoo19/connect_addons/connect_memory_sale<span class="w"> </span>./connect_memory_sale
-find<span class="w"> </span>connect_memory_sale<span class="w"> </span>-name<span class="w"> </span><span class="s1">&#39;__pycache__&#39;</span><span class="w"> </span>-type<span class="w"> </span>d<span class="w"> </span>-prune<span class="w"> </span>-exec<span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="o">{}</span><span class="w"> </span>+
+find<span class="w"> </span>connect_memory_sale<span class="w"> </span>-name<span class="w"> </span><span class="s1">'__pycache__'</span><span class="w"> </span>-type<span class="w"> </span>d<span class="w"> </span>-prune<span class="w"> </span>-exec<span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span><span class="o">{}</span><span class="w"> </span>+
 </code></pre></div>
 <ul>
 <li>[ ] <strong>Step 2: Bump the manifest version and add the icon reference</strong></li>
@@ -1515,21 +1515,21 @@ find<span class="w"> </span>connect_memory_sale<span class="w"> </span>-name<spa
 <li>[ ] <strong>Step 3: Sanity-check no legacy refs</strong></li>
 </ul>
 <p>Run:
-<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">&quot;connect_top_menu\|connect_settings_menu\|group_connect_admin\|base.group_system&quot;</span><span class="w"> </span>connect_memory_sale/
+<div class="highlight"><pre><span></span><code>grep<span class="w"> </span>-rn<span class="w"> </span><span class="s2">"connect_top_menu\|connect_settings_menu\|group_connect_admin\|base.group_system"</span><span class="w"> </span>connect_memory_sale/
 </code></pre></div>
 Expected: no matches.</p>
 <ul>
 <li>[ ] <strong>Step 4: Commit</strong></li>
 </ul>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>connect_memory_sale
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;[connect_memory_sale] port sale/payment memory events to 19.0&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"[connect_memory_sale] port sale/payment memory events to 19.0"</span>
 </code></pre></div>
 <ul>
 <li>[ ] <strong>Step 5: Verify install + tests</strong></li>
 </ul>
 <p>(oduflow MCP) <code>pull_and_apply</code>, install <code>connect_memory_sale</code> (pulls <code>sale</code>, <code>account</code>), run its tests.
 <div class="highlight"><pre><span></span><code>oduflow: pull_and_apply
-oduflow: install_odoo_modules [&quot;connect_memory_sale&quot;]
+oduflow: install_odoo_modules ["connect_memory_sale"]
 oduflow: run_odoo_tests connect_memory_sale
 </code></pre></div>
 Expected: installs; <code>test_sale_capture</code>, <code>test_invoice_capture</code>, <code>test_payment_capture</code>, <code>test_payment_digest</code> pass.</p>
@@ -1558,7 +1558,7 @@ Expected: both files exist (manifests already reference them).</p>
 <li>[ ] <strong>Step 4: Commit</strong></li>
 </ul>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>connect_memory/static<span class="w"> </span>connect_memory_sale/static
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;[misc] add Apps Store descriptions and icons for connect_memory modules&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"[misc] add Apps Store descriptions and icons for connect_memory modules"</span>
 </code></pre></div>
 <hr />
 <h3 id="task-4-write-specs-and-the-adr">Task 4: Write specs and the ADR</h3>
@@ -1590,7 +1590,7 @@ git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </sp
 <li>[ ] <strong>Step 4: Commit</strong></li>
 </ul>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>specs/connect_memory.md<span class="w"> </span>specs/connect_memory_sale.md<span class="w"> </span>specs/decisions/043-connect-memory-outbox-inbox.md
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;[misc] add connect_memory specs and ADR-043&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"[misc] add connect_memory specs and ADR-043"</span>
 </code></pre></div>
 <hr />
 <h3 id="task-5-documentation-and-agentsmd">Task 5: Documentation and <code>AGENTS.md</code></h3>
@@ -1634,7 +1634,7 @@ Add under User Guide (after Recordings):
 </li>
 </ul>
 <div class="highlight"><pre><span></span><code>git<span class="w"> </span>add<span class="w"> </span>docs/admin/memory-setup.md<span class="w"> </span>docs/user/memory.md<span class="w"> </span>mkdocs.yml<span class="w"> </span>AGENTS.md
-git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;[misc] document connect_memory modules and register in AGENTS.md&quot;</span>
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">"[misc] document connect_memory modules and register in AGENTS.md"</span>
 </code></pre></div>
 <hr />
 <h3 id="task-6-full-verification-and-pr">Task 6: Full verification and PR</h3>
@@ -1657,7 +1657,7 @@ Expected: all green. Paste failing output verbatim if any; do not claim success 
 <ul>
 <li>[ ] <strong>Step 4: Open the PR</strong></li>
 </ul>
-<p><div class="highlight"><pre><span></span><code>gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span>--base<span class="w"> </span><span class="m">19</span>.0<span class="w"> </span>--title<span class="w"> </span><span class="s2">&quot;Port connect_memory + connect_memory_sale&quot;</span><span class="w"> </span>--body<span class="w"> </span><span class="s2">&quot;&lt;summary + test evidence&gt;&quot;</span>
+<p><div class="highlight"><pre><span></span><code>gh<span class="w"> </span>pr<span class="w"> </span>create<span class="w"> </span>--base<span class="w"> </span><span class="m">19</span>.0<span class="w"> </span>--title<span class="w"> </span><span class="s2">"Port connect_memory + connect_memory_sale"</span><span class="w"> </span>--body<span class="w"> </span><span class="s2">"&lt;summary + test evidence&gt;"</span>
 </code></pre></div>
 End the PR body with the Claude Code footer. Do NOT push to <code>19.0</code> directly (branch-protected).</p>
 <hr />

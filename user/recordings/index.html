@@ -1549,6 +1549,8 @@
 <li><strong>Per user</strong> — Enable/disable recording for a specific PBX user</li>
 <li><strong>Per call flow</strong> — Enable/disable recording for calls through a specific callflow</li>
 </ul>
+<p>The per-user setting also applies to outgoing calls placed from that user's
+Telnyx web phone or SIP phone.</p>
 <h3 id="in-call-recording-control">In-Call Recording Control</h3>
 <p>When runtime recording control is available for your phone provider, the phone
 widget shows a recording button during an active call. Use it to start or stop
@@ -1559,10 +1561,12 @@ the provider supports it.</p>
 <p>When transcription is enabled, recordings are automatically processed:</p>
 <ol>
 <li><strong>Speech-to-text</strong> — Audio is sent to OpenAI Whisper for transcription</li>
-<li><strong>Summarization</strong> — The transcript is sent to GPT-4o for a concise summary</li>
+<li><strong>Summarization</strong> — The transcript is sent to the OpenAI model selected by
+   your administrator (GPT-5.4 mini by default) for a concise summary</li>
 </ol>
 <h3 id="viewing-transcripts">Viewing Transcripts</h3>
-<p>On a recording record, you'll see:</p>
+<p>The linked call keeps the transcript and summary permanently. On a retained
+recording record, you'll also see:</p>
 <table>
 <thead>
 <tr>
@@ -1579,16 +1583,28 @@ the provider supports it.</p>
 <td><strong>Summary</strong></td>
 <td>AI-generated summary of the call.</td>
 </tr>
+<tr>
+<td><strong>Transcription Price</strong></td>
+<td>Estimated Whisper speech-to-text cost in USD, based on OpenAI's processed duration.</td>
+</tr>
 </tbody>
 </table>
-<p>The summary also appears on the linked call record.</p>
+<p>The transcript and summary remain available on the linked call even if the
+recording is later deleted. The price remains on retained recording records.
+Administrators can configure Connect to delete successfully processed
+recordings automatically when audio must not be retained.</p>
 <h3 id="manual-transcription">Manual Transcription</h3>
-<p>If automatic transcription is disabled, you can manually trigger it by clicking the <strong>Transcribe</strong> button on a recording record.</p>
+<p>You can manually trigger transcription by clicking the <strong>Transcribe</strong> button
+on a recording record. Once the manual attempt finishes, the recording is
+removed from the automatic queue so it is not sent to OpenAI twice.</p>
 <h3 id="partner-chatter-integration">Partner Chatter Integration</h3>
 <p>When <strong>Register Summary</strong> is enabled in settings, call summaries are automatically posted to the partner's chatter feed. This provides a timeline of all call interactions visible on the contact record.</p>
 <h2 id="browsing-recordings">Browsing Recordings</h2>
 <p>Navigate to <strong>Connect &gt; Calls &gt; Recordings</strong> to see all recordings in a list view.</p>
-<p>The list shows:</p>
+<p>The list shows retained recordings with their call, phone numbers, duration,
+summary, and date. Successfully transcribed rows may be absent when automatic
+recording deletion is enabled. Use the column selector to show or hide the
+optional <strong>Partner</strong> and <strong>Users</strong> columns.</p>
 <table>
 <thead>
 <tr>
@@ -1606,20 +1622,20 @@ the provider supports it.</p>
 <td>Linked contact.</td>
 </tr>
 <tr>
-<td><strong>Duration</strong></td>
-<td>Recording length.</td>
+<td><strong>Users</strong></td>
+<td>Internal Odoo users who participated in the call.</td>
 </tr>
 <tr>
-<td><strong>Status</strong></td>
-<td>Completed, processing, or failed.</td>
+<td><strong>Duration</strong></td>
+<td>Recording length.</td>
 </tr>
 <tr>
 <td><strong>Summary</strong></td>
 <td>Truncated AI summary for quick review.</td>
 </tr>
 <tr>
-<td><strong>Player</strong></td>
-<td>Inline audio playback.</td>
+<td><strong>Date</strong></td>
+<td>Date and time when the recording record was created.</td>
 </tr>
 </tbody>
 </table>

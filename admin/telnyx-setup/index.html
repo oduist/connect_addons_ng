@@ -667,6 +667,39 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#receptionist-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Receptionist routing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caller-identity-and-odoo-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caller identity and Odoo tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#languages-and-multilingual-assistants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Languages and multilingual assistants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#credentials" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1496,6 +1529,39 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#receptionist-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Receptionist routing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#caller-identity-and-odoo-tools" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caller identity and Odoo tools
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#languages-and-multilingual-assistants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Languages and multilingual assistants
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#credentials" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1660,17 +1726,176 @@
 <h2 id="ai-voice-assistants">AI Voice Assistants</h2>
 <p>After the credentials and public HTTPS API URL are configured, open
 <strong>Connect &gt; Telnyx &gt; AI Assistants</strong>. Creating a record creates the Telnyx AI
-Assistant and configures its dynamic-variable and tool webhooks. <strong>Pull from
-Telnyx</strong> refreshes a record; the main <strong>SYNC TELNYX ACCOUNT</strong> action also
-imports assistants created in Mission Control.</p>
+Assistant and configures its dynamic-variable and tool webhooks. Odoo is the
+source of truth: edit assistants in Odoo and use <strong>Push to Telnyx</strong> or account
+sync. Assistants created only in Mission Control are not imported or changed.</p>
 <p>To answer an existing Telnyx number with an assistant, open the number and set
 <strong>Destination</strong> to <strong>AI Assistant</strong>. The number remains attached to the Odoo
 TeXML routing application; do not assign it directly to the assistant in
 Mission Control.</p>
 <p>The <strong>Call with Assistant</strong> button starts an outbound call using an existing
-owned caller ID. It never buys or assigns a number. Recording and memory are
-off by default and must be enabled on each assistant. CRM and Helpdesk tools
-are published only when the matching Connect modules are installed.</p>
+owned caller ID. It never buys or assigns a number.</p>
+<h3 id="receptionist-routing">Receptionist routing</h3>
+<p>Choose one receptionist mode on the assistant:</p>
+<ul>
+<li><strong>Personal Receptionist</strong> answers for one manager. It qualifies the caller
+  and can warm-transfer to that manager.</li>
+<li><strong>Company Receptionist</strong> replaces an IVR. Select department callflows such
+  as Sales, Quality, or Director; their configured ring users become the human
+  transfer candidates.</li>
+</ul>
+<p>Enable the manager's SIP phone and/or Web Phone and ensure Telnyx credentials
+exist. With <strong>Check Registration Before Transfer</strong>, Odoo calls
+<code>GET /v2/sip_registration_status</code> for each telephony credential. This endpoint
+covers both SIP hardphones and Telnyx WebRTC SDK registrations. A registered
+device is eligible for transfer, but registration does not guarantee that the
+person will answer; busy, rejection, and no-answer remain possible. If the
+status API itself fails, Odoo keeps a configured target as an advisory fallback.</p>
+<p>The Telnyx shared Transfer tool dials the selected credential directly and
+performs a warm transfer. Before bridging the caller, the assistant briefs the
+recipient with the confirmed caller name, reason, relevant context, and agreed
+next step. If no recipient is registered, the assistant offers to register the
+request instead.</p>
+<p><strong>Warm Transfer Message Delay</strong> defaults to <code>2000</code> ms. It gives a newly
+answered WebRTC call time to establish its media path before Telnyx plays the
+private briefing. Treat this as a reversible compatibility setting: if a test
+call still has silent briefing audio, or the delay only adds an unnecessary
+pause, set it to <code>0</code> and use <strong>Push to Telnyx</strong>. Zero clears the delay and
+restores the previous immediate-playback behavior.</p>
+<p>While Telnyx privately briefs the recipient, the caller hears transfer
+progress/ringback. The built-in Transfer tool does not provide caller-side
+hold music. Adding music requires a separate custom Call Control or conference
+transfer flow; it is not enabled by the delay setting.</p>
+<p>To make the assistant callable without a public number, select a SIP domain
+and click <strong>Create Extension</strong>. Registered SIP and WebRTC phones can then call
+<code>sip:&lt;extension&gt;@&lt;subdomain&gt;.sip.telnyx.com</code> (or dial the extension through the
+configured web phone).</p>
+<h3 id="caller-identity-and-odoo-tools">Caller identity and Odoo tools</h3>
+<p>At conversation start Odoo searches both phone and mobile numbers. The
+assistant receives a caller name only when exactly one contact matches and
+must ask the caller to confirm it. Duplicate matches are marked ambiguous and
+no name is guessed.</p>
+<h3 id="languages-and-multilingual-assistants">Languages and multilingual assistants</h3>
+<p>The assistant form separates the caller-language policy from speech
+recognition:</p>
+<ul>
+<li><strong>Contact Language, Then Auto-Detect</strong> starts with the language of the one
+  contact matched by phone. If no unique contact language exists, it uses
+  <strong>Agent Language</strong>. The assistant may follow a caller who clearly changes
+  language.</li>
+<li><strong>Fixed Agent Language</strong> ignores the contact language and does not switch.</li>
+<li><strong>Automatic Detection</strong> greets in <strong>Agent Language</strong>, then follows the
+  language detected from speech.</li>
+</ul>
+<p>Activate the required languages in Odoo and set <strong>Language</strong> on each contact.
+Odoo returns the normalized BCP-47 code, language name, and localized initial
+greeting through the signed dynamic-variable webhook. Russian and Polish
+translations of the standard receptionist greeting ship with the module;
+other languages use the configured fallback greeting until their Odoo
+translation is installed.</p>
+<p>For multilingual speech recognition, use <code>deepgram/nova-3</code> with
+<strong>Transcription Language</strong> set to <code>auto</code>; these are the defaults for new
+assistants. Telnyx also supports multilingual alternatives such as
+<code>deepgram/flux</code>, Azure, AssemblyAI, xAI, Soniox, and NVIDIA, with different
+language coverage and turn-taking behavior.</p>
+<p>Speech output is independent. <code>AWS.Polly.Joanna-Neural</code> is English-only, so
+select Telnyx Ultra, Azure Multilingual, MiniMax, Inworld, or another voice
+whose Telnyx catalog entry and provider documentation cover every required
+language. A fixed-language transcription setting or single-language voice
+intentionally limits the agent even when its LLM understands several
+languages.</p>
+<p><strong>Voice</strong> is picked from the voices available to your Telnyx account, not
+typed as an identifier. Choose <strong>Voice Language</strong> and <strong>Voice Provider</strong>
+first — they only filter the catalog and are never sent to Telnyx — then
+search the <strong>Voice</strong> field by name, gender, or Telnyx ID. Cloned and designed
+voices appear under their own name, so an assistant shows <em>Callie</em> rather than
+<code>Telnyx.Ultra.00a77add-…</code>. Both filters follow the voice you select, and
+changing a filter clears a voice that no longer matches it. Voices that Telnyx
+reports without a language stay visible under every language filter.</p>
+<p>The speaker button next to the field plays a sample of the selected voice at
+the configured speed, spoken by Telnyx itself. Use it before saving: the same
+endpoint validates the voice and speed combination that the assistant uses for
+its greeting, so an unusable pair is reported in the form instead of ending
+every call after one second. The sample reads the assistant greeting, or a
+standard sentence when that greeting contains dynamic variables. Only Connect
+administrators can play it, since each sample spends Telnyx text-to-speech
+credit.</p>
+<p>The catalog behind the selector is the cached account catalog shared with
+<strong>System Voice</strong>. Refresh it with <strong>REFRESH VOICES</strong> in the Telnyx settings
+after adding or cloning a voice in the Telnyx portal.</p>
+<p><strong>Voice Speed</strong> must be between 0.5 and 1.5, and 1.0 is the safe default.
+Telnyx documents a wider range for its Natural voices only; another voice
+rejects a speed it does not support, and that failure is invisible until a
+call arrives — the assistant answers, cannot synthesize its greeting and hangs
+up after about one second. Telnyx Ultra, for example, needs at least 0.8. If
+calls end immediately after being answered, check the assistant conversation
+in the Telnyx portal for "could not generate the greeting audio" and return
+the speed to 1.0.</p>
+<p><strong>Voice Language Boost</strong> is an optional TTS hint chosen from the languages
+Telnyx supports. Use <strong>Automatic</strong> with a supported multilingual voice, select
+an explicit language when one assistant is intentionally fixed to it, or leave
+it empty to keep the provider default. <strong>Expressive Mode</strong> lets Telnyx Ultra
+voices add contextual expression; the switch appears only while such a voice
+is selected and clears itself when you move to another provider. Both values
+are stored in Odoo and published by automatic sync and <strong>Push to Telnyx</strong>.</p>
+<ul>
+<li><strong>Enable Contact Tools</strong> allows strict contact lookup and adding internal
+  notes.</li>
+<li><strong>Register Call Request</strong> is always available to save the qualified reason,
+  context, and agreed next step as an internal note on the current call.</li>
+<li><strong>Enable CRM Tools</strong> allows creation/update of an open CRM lead when CRM is
+  installed.</li>
+<li><strong>Enable Helpdesk Tools</strong> allows creation/update of a ticket when Helpdesk is
+  installed.</li>
+<li><strong>Memory Enabled</strong> asks Telnyx to retrieve recent conversations for the same
+  caller. It is Telnyx conversation memory and is independent of the Odoo
+  <code>connect_memory</code> module.</li>
+</ul>
+<p>Recording and memory are off by default. CRM and Helpdesk tools are published
+only when the matching Odoo models are installed.</p>
+<p>The <strong>Turn Taking</strong> group controls when the assistant decides the caller has
+finished and starts answering. <strong>Wait Before Speaking</strong> (default 0.4 s) is the
+silence it sits through before replying. The three endpointing values are the
+silence that ends the caller's turn: <strong>Pause Without Punctuation</strong> (default
+1.0 s) applies while the transcript has no sentence end and is the one that
+keeps the agent out of a pause taken mid-thought, <strong>Pause After Punctuation</strong>
+(0.3 s) applies to a finished sentence, and <strong>Pause After Numbers</strong> (0.6 s)
+applies while digits are being dictated. Raise the values if the agent talks
+over callers, lower them if it feels sluggish. <strong>Caller Can Interrupt</strong> lets
+the caller cut the agent off; <strong>Protect Greeting</strong> ignores speech until the
+greeting has played.</p>
+<p>These settings matter because the configured transcription model decides
+nothing about turn taking: with <code>deepgram/nova-3</code> the endpointing plan is the
+only thing separating a pause from the end of a sentence. Telnyx ships a
+0.1-second plan, which is what makes an agent finish your sentences for you.</p>
+<p><strong>Caller Silence Timeout</strong> stops the assistant after that much silence from
+the caller, and defaults to 60 seconds. Telnyx accepts 10 to 14,400 seconds.
+Keep it set: Telnyx never ends a conversation on its own, it only keeps
+notifying the assistant about the silence, so a caller who walks away or loses
+audio leaves the call running until <strong>Call Time Limit</strong> expires — one abandoned
+call was observed answering 45 silence events over 17 minutes. Setting the
+field to 0 restores that unlimited behavior. Existing assistants receive the
+60-second default on module upgrade and publish it at the next sync or <strong>Push
+to Telnyx</strong>.</p>
+<p>When assistant recording is enabled, Telnyx produces the audio, conversation
+messages, and configured insight summary. Odoo stores all three on one
+<strong>Recordings</strong> row after the call. The audio is downloaded into an Odoo
+attachment because Telnyx's signed download URL expires. Telnyx is already the
+transcription provider for this path, so the recording is never sent to
+OpenAI for a second transcription, even when global call transcription is
+enabled.</p>
+<p>The summary wording is configured in <strong>Telnyx -&gt; Configuration -&gt; Settings</strong>,
+field <strong>AI Summary Instructions</strong>. It is the prompt of the Telnyx conversation
+insight Odoo owns. Saving a new text deletes the current insight in Telnyx and
+recreates it with the new wording inside the same insight group, so the webhook
+address does not change and summaries generated earlier keep their original
+wording. When no insight exists yet, the text is simply used by the next
+account sync.</p>
+<p>The signed insight webhook normally performs this synchronization immediately.
+<strong>Sync Telnyx AI Conversations</strong> runs every five minutes as an idempotent repair
+for delayed or missed callbacks. Sanitized development databases commonly have
+scheduled actions disabled; run that action manually when testing historical
+calls in such an environment.</p>
 <p>Telnyx signs context and insight callbacks with the account Ed25519 public
 key. Odoo tools use a separate random token per assistant; rotate it from the
 assistant form if it may have been exposed.</p>
@@ -1717,6 +1942,18 @@ numbers is missing from it.</p>
 </thead>
 <tbody>
 <tr>
+<td><strong>System Voice Language</strong></td>
+<td>Language filter for the system voice catalog. Default: English (United States).</td>
+</tr>
+<tr>
+<td><strong>System Voice Provider</strong></td>
+<td>Provider filter for the system voice catalog. Default: Amazon Web Services.</td>
+</tr>
+<tr>
+<td><strong>System Voice</strong></td>
+<td>Default TeXML <code>&lt;Say&gt;</code> voice, selected from voices matching the language and provider. Search by voice name, gender, or Telnyx ID. User and callflow voice overrides still win. Default: Joanna (<code>Polly.Joanna</code>).</td>
+</tr>
+<tr>
 <td><strong>Auto Sync</strong></td>
 <td>Automatically push changes to Telnyx when creating/updating records in Odoo.</td>
 </tr>
@@ -1730,6 +1967,17 @@ numbers is missing from it.</p>
 </tr>
 </tbody>
 </table>
+<p>The voice catalog comes from Telnyx <code>GET /v2/text-to-speech/voices</code>, so it can
+include Telnyx voices, supported third-party providers, and cloned voices
+available to the account. Select a language and provider first; <strong>System
+Voice</strong> then searches only that matching subset and displays readable voice
+names with gender and the underlying Telnyx ID. The speaker button next to the
+field plays a sample of the selected voice. Click <strong>REFRESH VOICES</strong> after
+adding a voice in Voice Design Lab. The normal <strong>SYNC TELNYX ACCOUNT</strong> action
+refreshes the same catalog. If the catalog cannot be fetched, the current
+selection and the basic TeXML voices remain available.</p>
+<p>AI assistants use the same catalog without the basic TeXML voices (<code>man</code>,
+<code>woman</code>, <code>alice</code>), which only exist for <code>&lt;Say&gt;</code> and cannot drive an assistant.</p>
 <h3 id="sync">Sync</h3>
 <p>Click <strong>SYNC TELNYX ACCOUNT</strong> to import and wire up Telnyx resources:</p>
 <ul>
@@ -1743,12 +1991,16 @@ numbers is missing from it.</p>
 logs that and continues, since the number still works for voice.</p>
 <p>The sync also creates the <strong>Odoo Connect</strong> messaging profile with the
 webhook URL pointing at your Odoo instance.</p>
-<p>If an optional WhatsApp/RCS resource or an imported AI Assistant cannot be
+<p>If an optional WhatsApp/RCS resource or an Odoo AI Assistant cannot be
 synchronized, Odoo shows a persistent warning. The warning remains visible
 until it is dismissed so the API error can be reviewed and corrected.</p>
 <h2 id="voice-routing">Voice Routing</h2>
 <p>Telnyx voice is integrated through <strong>TeXML</strong> (the Twilio-compatible XML
 translator):</p>
+<p>Before returning TeXML, Odoo adds <strong>System Voice</strong> to every <code>&lt;Say&gt;</code> that does
+not already carry <code>voice</code>. This also covers routing/service notices, custom
+TeXML, TeXPy, and nested <code>&lt;Say&gt;</code> nodes inside <code>&lt;Gather&gt;</code>. An explicit voice on
+a user prompt, callflow prompt, or custom <code>&lt;Say&gt;</code> is preserved.</p>
 <ol>
 <li>Create a <strong>SIP Domain</strong> (Connect &gt; Telnyx &gt; SIP Domains). This creates
    a Telnyx <em>credential connection</em> (hosting per-user SIP credentials)
@@ -1759,7 +2011,8 @@ translator):</p>
    answers such a call with <code>403 Forbidden</code> while that setting is off.
    The subdomain is the inbound side only — ringing a credential there
    would hand the call back to the routing application instead of the
-   phone.</li>
+   phone. Telnyx may omit the <code>sip:</code> prefix from routing callbacks; Odoo
+   accepts both callback forms and still rejects an actual credential loop.</li>
 <li>Assign inbound numbers (Connect &gt; Telnyx &gt; Numbers) to a user, a call
    flow, a TeXML app or an AI assistant. Inbound calls to a number are
    dispatched by the dialled number; a number with no destination answers
@@ -1770,6 +2023,11 @@ translator):</p>
    short-lived token automatically.</p>
 </blockquote>
 </li>
+<li>User destinations are tried in their configured priority order. Odoo
+   advances to the next destination or voicemail only when Telnyx reports an
+   explicit unsuccessful Dial result, such as busy or no answer. Once a SIP or
+   web-phone destination was answered, ending that leg terminates the inbound
+   call instead of starting voicemail.</li>
 </ol>
 <h3 id="sip-username-and-password">SIP username and password</h3>
 <p>Both are issued by Telnyx when the credential is created, and the API
@@ -1794,7 +2052,19 @@ TeXML application voice URLs are derived from it and pushed to Telnyx by
 the sync.</p>
 <p>Webhook authenticity is verified with the account's Ed25519 <strong>Public
 Key</strong> (<code>telnyx-signature-ed25519</code> / <code>telnyx-timestamp</code> headers). Keep
-<strong>Verify Telnyx Requests</strong> enabled in production.</p>
+<strong>Verify Telnyx Requests</strong> enabled in production. Telnyx signs the POST body
+byte for byte, so a reverse proxy must forward the form body without decoding
+and re-encoding it. If a Dial action signature is invalid, Odoo rejects it and
+silently hangs up the remaining leg instead of playing an error message.</p>
+<p>Recording callbacks may contain short-lived signed download URLs. Odoo keeps
+the URL on the recording record for playback, but redacts it from Telnyx debug
+payloads so temporary download credentials are not persisted in
+<code>connect.debug</code>.</p>
+<p>For outbound calls placed from the Telnyx web phone or a SIP credential, Odoo
+applies the originating PBX user's <strong>Record Calls</strong> setting to the generated
+TeXML <code>&lt;Dial&gt;</code>. Telnyx may identify that user in different webhook fields;
+Odoo normalizes those variants before selecting the caller ID and recording
+policy.</p>
 <h2 id="messaging">Messaging</h2>
 <p>SMS/MMS use the <strong>Odoo Connect</strong> messaging profile created by the sync.
 Numbers synced from Telnyx are attached to it automatically. Incoming
@@ -1836,9 +2106,9 @@ configurable sender number. Incoming RCS messages arrive as
 <li>Attended transfer from the web phone is not available yet.</li>
 <li>Call cost fetching relies on Telnyx detail records and may lag behind
   call completion.</li>
-<li>Outbound calls from SIP hardphones go directly through the credential
-  connection (Telnyx handles them); internal extension dialing from
-  hardphones is not routed by Odoo yet.</li>
+<li>Outbound PSTN calls from SIP hardphones go directly through the credential
+  connection. Internal assistant extensions use the configured Odoo SIP
+  subdomain and TeXML router.</li>
 </ul>
 
 

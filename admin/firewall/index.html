@@ -1871,18 +1871,18 @@ curl<span class="w"> </span>-sk<span class="w"> </span>https://&lt;host&gt;/heal
 
 <span class="c1"># 1b. Dependency-aware readiness check (no auth, the URL to point external</span>
 <span class="c1">#     monitoring at — Uptime Kuma, Prometheus blackbox exporter, etc.).</span>
-<span class="c1">#     Returns 200 + {&quot;status&quot;:&quot;ok&quot;,&quot;odoo&quot;:true,&quot;esl&quot;:true} when both Odoo</span>
-<span class="c1">#     and FreeSWITCH ESL are reachable; 503 + {&quot;status&quot;:&quot;error&quot;,&quot;odoo&quot;:...,</span>
-<span class="c1">#     &quot;esl&quot;:...} otherwise.</span>
+<span class="c1">#     Returns 200 + {"status":"ok","odoo":true,"esl":true} when both Odoo</span>
+<span class="c1">#     and FreeSWITCH ESL are reachable; 503 + {"status":"error","odoo":...,</span>
+<span class="c1">#     "esl":...} otherwise.</span>
 curl<span class="w"> </span>-sk<span class="w"> </span>-i<span class="w"> </span>https://&lt;host&gt;/firewall/healthz
 
 <span class="c1"># 1c. Rich JSON for the dashboard (auth required — Bearer token or basic).</span>
 curl<span class="w"> </span>-sk<span class="w"> </span>-u<span class="w"> </span>admin:&lt;pw&gt;<span class="w"> </span>https://&lt;host&gt;/firewall/api/heartbeat<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq
 
 <span class="c1"># 2. Is ESL really connected?</span>
-docker<span class="w"> </span>logs<span class="w"> </span>&lt;firewall-container&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;ESL connected|Reconciler|AUTO-BAN&quot;</span>
+docker<span class="w"> </span>logs<span class="w"> </span>&lt;firewall-container&gt;<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-E<span class="w"> </span><span class="s2">"ESL connected|Reconciler|AUTO-BAN"</span>
 
-<span class="c1"># 3. Look at the actual kernel state (the &quot;6&quot;-suffixed sets and</span>
+<span class="c1"># 3. Look at the actual kernel state (the "6"-suffixed sets and</span>
 <span class="c1">#    ip6tables are the IPv6 side).</span>
 ipset<span class="w"> </span>list<span class="w"> </span>connect_fw_banned
 ipset<span class="w"> </span>list<span class="w"> </span>connect_fw_banned6

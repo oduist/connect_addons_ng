@@ -1761,6 +1761,10 @@ Telnyx account to restore calling.</p>
 <td>Inline audio player, if the call was recorded.</td>
 </tr>
 <tr>
+<td><strong>Transcript</strong></td>
+<td>Full AI-generated transcript, retained even when the audio recording is deleted.</td>
+</tr>
+<tr>
 <td><strong>Summary</strong></td>
 <td>AI-generated call summary, if transcription is enabled.</td>
 </tr>
@@ -1802,7 +1806,10 @@ Telnyx account to restore calling.</p>
 </tbody>
 </table>
 <h2 id="voicemail">Voicemail</h2>
-<p>If voicemail is enabled for your account and you miss a call, the caller can leave a voice message. Voicemail recordings appear on the call record with an inline audio player.</p>
+<p>If voicemail is enabled for your account and no configured phone answers, the
+caller can leave a voice message. Voicemail does not start after an answered
+phone call ends. Recordings appear on the call record with an inline audio
+player.</p>
 <h2 id="availability-calendar">Availability Calendar</h2>
 <p>If your administrator configured working schedules for inbound numbers,
 <strong>Connect → Availability</strong> shows when each schedule is open or closed as a

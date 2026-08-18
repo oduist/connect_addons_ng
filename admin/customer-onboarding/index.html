@@ -1686,7 +1686,7 @@ volumes.</p>
 <li>
 <p>Edit <code>/opt/freeswitch/.env</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="nv">COMPOSE_PROJECT_NAME</span><span class="o">=</span>fs
-<span class="c1"># Customer&#39;s Odoo, used by FreeSWITCH for xml_curl/CDR/recording callbacks</span>
+<span class="c1"># Customer's Odoo, used by FreeSWITCH for xml_curl/CDR/recording callbacks</span>
 <span class="nv">ODOO_URL</span><span class="o">=</span>https://odoo.customer.example.com
 <span class="nv">FS_DOMAIN</span><span class="o">=</span>fs.customer.example.com
 <span class="nv">ACME_EMAIL</span><span class="o">=</span>ops@example.com
@@ -1725,7 +1725,7 @@ generates <code>FS_WEBHOOK_TOKEN</code> and <code>FIREWALL_AGENT_TOKEN</code> wh
 <code>connect_freeswitch</code> is installed; retrieve them in step 5 instead of creating
 parallel values:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># ESL password (fs and firewall containers must match)</span>
-openssl<span class="w"> </span>rand<span class="w"> </span>-base64<span class="w"> </span><span class="m">24</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">&#39;+/&#39;</span><span class="w"> </span><span class="s1">&#39;-_&#39;</span>
+openssl<span class="w"> </span>rand<span class="w"> </span>-base64<span class="w"> </span><span class="m">24</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tr<span class="w"> </span><span class="s1">'+/'</span><span class="w"> </span><span class="s1">'-_'</span>
 </code></pre></div>
 <p>Append them to <code>/opt/freeswitch/.env</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="nv">FS_ESL_PASSWORD</span><span class="o">=</span>&lt;esl<span class="w"> </span>password&gt;
@@ -1776,9 +1776,9 @@ host rotates that password.</p>
 <p>Retrieve the automatically generated protected settings with Oduflow's
    <code>run_odoo_shell</code> (or an equivalent administrative Odoo shell for a manual
    deployment):</p>
-<div class="highlight"><pre><span></span><code><span class="n">settings</span> <span class="o">=</span> <span class="n">env</span><span class="p">[</span><span class="s2">&quot;connect.settings&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;FS_WEBHOOK_TOKEN=&quot;</span> <span class="o">+</span> <span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s2">&quot;freeswitch_webhook_token&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;FIREWALL_AGENT_TOKEN=&quot;</span> <span class="o">+</span> <span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s2">&quot;firewall_service_token&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+<div class="highlight"><pre><span></span><code><span class="n">settings</span> <span class="o">=</span> <span class="n">env</span><span class="p">[</span><span class="s2">"connect.settings"</span><span class="p">]</span><span class="o">.</span><span class="n">sudo</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"FS_WEBHOOK_TOKEN="</span> <span class="o">+</span> <span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s2">"freeswitch_webhook_token"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"FIREWALL_AGENT_TOKEN="</span> <span class="o">+</span> <span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">get_param</span><span class="p">(</span><span class="s2">"firewall_service_token"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">))</span>
 </code></pre></div>
 <p>Append those two values to <code>/opt/freeswitch/.env</code>. Do not commit them or
 repeat them in tickets and deployment summaries. Oduflow service updates
@@ -1787,7 +1787,7 @@ full replacement.
 4. Start the stack and verify ESL:</p>
 <div class="highlight"><pre><span></span><code><span class="nb">cd</span><span class="w"> </span>/opt/freeswitch
 docker<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>-d
-docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>freeswitch<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">&#39;fs_cli -p &quot;$FS_ESL_PASSWORD&quot; -x status&#39;</span>
+docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>freeswitch<span class="w"> </span>sh<span class="w"> </span>-c<span class="w"> </span><span class="s1">'fs_cli -p "$FS_ESL_PASSWORD" -x status'</span>
 </code></pre></div>
 </li>
 <li>
@@ -1842,7 +1842,7 @@ the sofia <code>external</code> profile automatically — no manual reload step.
    provider's credentials (fields:
    <a href="../freeswitch-setup/#sip-gateways">SIP Gateways</a>). For IP-auth trunks
    fill <strong>Inbound IPs</strong>. Verify registration:</p>
-<div class="highlight"><pre><span></span><code>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>freeswitch<span class="w"> </span>fs_cli<span class="w"> </span>-x<span class="w"> </span><span class="s2">&quot;sofia status gateway &lt;name&gt;&quot;</span>
+<div class="highlight"><pre><span></span><code>docker<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>-it<span class="w"> </span>freeswitch<span class="w"> </span>fs_cli<span class="w"> </span>-x<span class="w"> </span><span class="s2">"sofia status gateway &lt;name&gt;"</span>
 <span class="c1"># State must be REGED (for register=true trunks)</span>
 </code></pre></div>
 </li>

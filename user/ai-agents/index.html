@@ -1274,6 +1274,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#caller-recognition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caller Recognition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conversation-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conversation Language
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#call-history-and-recordings" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1360,6 +1382,28 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#caller-recognition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Caller Recognition
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conversation-language" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conversation Language
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#call-history-and-recordings" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1407,18 +1451,66 @@ person.</p>
 <p>Every AI agent has its own extension number. Dial the extension from any phone
 registered on the PBX, or call a public number that an administrator has routed
 to the agent.</p>
+<p>For Telnyx, the internal address is
+<code>sip:&lt;extension&gt;@&lt;company-subdomain&gt;.sip.telnyx.com</code>. No external phone number
+is required for that SIP/WebRTC call.</p>
 <p>Speak normally after the greeting. You do not need to wait for a long reply to
 finish: start speaking and the agent will stop its playback and listen to the
 new turn.</p>
+<p>The agent answers in one or two short sentences and asks one question at a
+time. It does not repeat your words back to you, does not comment on the
+connection, and ends the call after two unanswered prompts instead of
+repeating itself.</p>
 <h2 id="transfers">Transfers</h2>
 <p>If a human transfer is configured, ask to speak with a person. The agent will
-transfer the same call to the configured extension. If transfer is unavailable,
-the agent should say so rather than disconnecting you.</p>
+first ask why you are calling and collect the relevant context. It then briefs
+the employee privately and bridges the same call. During that private briefing,
+the caller hears transfer progress or ringback. If the employee's SIP/WebRTC
+phone is not registered or transfer is otherwise unavailable, the agent offers
+to register the request rather than disconnecting you.</p>
+<p>If the transfer is attempted but does not connect — the employee is busy,
+declines, or does not pick up — the agent says so and returns to the
+conversation, offering to register your request. It does not leave you waiting
+in silence.</p>
+<p>A personal receptionist transfers to its manager. A company receptionist may
+replace an IVR and route to configured departments such as Sales, Quality, or
+the Director.</p>
+<h2 id="caller-recognition">Caller Recognition</h2>
+<p>When exactly one Odoo contact has the caller's phone number, the agent may use
+that contact's name but must ask the caller to confirm it. If several contacts
+share the number, the agent does not guess a name.</p>
+<h2 id="conversation-language">Conversation Language</h2>
+<p>An administrator can configure the agent to use the language of the single
+contact matched by phone. The first greeting is then prepared in that Odoo
+contact language, and the agent may follow the caller if they clearly switch
+to another language. Unknown or ambiguous callers start in the agent's
+fallback language.</p>
+<p>The contact language is maintained on the Odoo contact. A multilingual agent
+also needs automatic or multilingual speech recognition and a TTS voice that
+can actually speak the required languages; changing only the prompt does not
+make an English-only voice multilingual. Administrators pick the voice from
+the list of voices available to the account — searchable by name, gender or
+identifier, with cloned voices listed under their own name — and can play a
+sample before saving. They may also configure a voice language hint and, for
+Telnyx Ultra voices, expressive delivery. Speaking speed is limited to the
+0.5-1.5 range; a faster or slower setting than the chosen voice supports
+leaves the agent unable to speak its greeting, and such calls end right after
+being answered. Playing the sample is the quickest way to catch that before
+the first caller does.</p>
 <h2 id="call-history-and-recordings">Call History And Recordings</h2>
 <p>Calls to AI agents appear in <strong>Connect -&gt; Calls</strong> like any other call. When
 recording is enabled, the conversation is recorded and shows up under
-<strong>Recordings</strong> on the call form, where the standard transcription and
-summarization tools apply.</p>
+<strong>Recordings</strong> on the call form.</p>
+<p>When the agent itself fails — for example it cannot speak its greeting and the
+call ends after a second — the call form shows an <strong>Error</strong> tab with the
+reason reported by the provider. Without it such a call looks like a normal,
+very short conversation.</p>
+<p>For a Telnyx AI agent, the same recording contains the downloaded audio, the
+Telnyx conversation transcript, and the Telnyx insight summary. Since the
+transcript is already complete, Odoo does not send that audio to OpenAI for a
+second transcription. What the summary focuses on, and the language it is
+written in, follow the summary instructions your administrator configured in
+the Telnyx settings.</p>
 <p>Dograh agents may also expose the full workflow-level transcript in the Dograh
 dashboard. Ask your administrator for access.</p>
 <h2 id="what-the-agent-can-do">What The Agent Can Do</h2>

@@ -1499,9 +1499,9 @@ externally reachable Odoo URL — the same constraint that already
 applies to call recording (ADR-005).</p>
 <h2 id="verifying-the-installation">Verifying the installation</h2>
 <p>Inside the FreeSWITCH container:</p>
-<div class="highlight"><pre><span></span><code>fs_cli<span class="w"> </span>-x<span class="w"> </span><span class="s2">&quot;module_exists mod_valet_parking&quot;</span><span class="w">      </span><span class="c1"># → true</span>
-fs_cli<span class="w"> </span>-x<span class="w"> </span><span class="s2">&quot;sofia status profile internal&quot;</span><span class="w">        </span><span class="c1"># PRESENCE-HOSTS present?</span>
-fs_cli<span class="w"> </span>-x<span class="w"> </span><span class="s2">&quot;valet_info default&quot;</span><span class="w">                   </span><span class="c1"># list occupied slots</span>
+<div class="highlight"><pre><span></span><code>fs_cli<span class="w"> </span>-x<span class="w"> </span><span class="s2">"module_exists mod_valet_parking"</span><span class="w">      </span><span class="c1"># → true</span>
+fs_cli<span class="w"> </span>-x<span class="w"> </span><span class="s2">"sofia status profile internal"</span><span class="w">        </span><span class="c1"># PRESENCE-HOSTS present?</span>
+fs_cli<span class="w"> </span>-x<span class="w"> </span><span class="s2">"valet_info default"</span><span class="w">                   </span><span class="c1"># list occupied slots</span>
 </code></pre></div>
 <p>End-to-end test:</p>
 <ol>
