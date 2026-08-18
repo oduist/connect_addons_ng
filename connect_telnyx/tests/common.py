@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from odoo import release
 from odoo.tests import TransactionCase, new_test_user
 
 
@@ -12,7 +13,11 @@ class TelnyxTestCommon(TransactionCase):
         # no test is allowed to reach the network, so its value is fake.
         settings.set_param('telnyx_api_key', 'test-api-key')
         settings.set_param('telnyx_auto_sync', False)
-        settings.set_param('api_url', 'https://odoo.example.test/')
+        # api_url is a non-stored compute: a set_param only lands in the
+        # compute cache, so write the backing config parameter instead to
+        # survive cache invalidation within a test.
+        cls.env['ir.config_parameter'].sudo().set_param(
+            'connect.api_url', 'https://odoo.example.test/')
         cls.domain = cls.env['connect.telnyx.domain'].with_context(
             no_telnyx_create=True).create({
                 'friendly_name': 'Test Domain',
@@ -27,6 +32,12 @@ class TelnyxTestCommon(TransactionCase):
         vals.update(kwargs)
         return cls.env['connect.user'].with_context(
             no_clear_cache=True, no_telnyx_create=True).create(vals)
+
+    @classmethod
+    def _grant_group(cls, user, xmlid):
+        # res.users.groups_id was renamed to group_ids in Odoo 19.
+        field = 'group_ids' if release.version_info[0] >= 19 else 'groups_id'
+        user.write({field: [(4, cls.env.ref(xmlid).id)]})
 
     @classmethod
     def _create_web_phone_user(cls, login, **kwargs):
