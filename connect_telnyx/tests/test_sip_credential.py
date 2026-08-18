@@ -26,7 +26,7 @@ class TestTelnyxSipCredential(TelnyxTestCommon):
             telnyx_sip_username='old-username',
             telnyx_sip_password='old-password',
         )
-        cls.user.user.group_ids |= cls.env.ref('connect.group_admin')
+        cls._grant_group(cls.user.user, 'connect.group_admin')
 
     def _client(self, deleted):
         class Credentials:
@@ -62,7 +62,7 @@ class TestTelnyxSipCredential(TelnyxTestCommon):
 
     def test_regenerate_requires_an_administrator(self):
         plain = self._create_connect_user('telnyx_sip_plain')
-        plain.user.group_ids |= self.env.ref('connect.group_user')
+        self._grant_group(plain.user, 'connect.group_user')
         with self.assertRaises(ValidationError):
             self.user.with_user(
                 plain.user).action_regenerate_telnyx_sip_credential()
@@ -85,7 +85,7 @@ class TestTelnyxSipCredential(TelnyxTestCommon):
             telnyx_sip_username='reader-username',
             telnyx_sip_password='reader-password',
         )
-        reader.user.group_ids |= self.env.ref('connect.group_user')
+        self._grant_group(reader.user, 'connect.group_user')
         data = reader.with_user(reader.user).read(
             ['telnyx_sip_username', 'telnyx_sip_password'])[0]
         self.assertEqual(data['telnyx_sip_password'], 'reader-password')
