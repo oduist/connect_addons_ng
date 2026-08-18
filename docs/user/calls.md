@@ -58,6 +58,7 @@ Each call record shows:
 | **Duration** | Call length in human-readable format (e.g., "2m 30s"). |
 | **Partner** | Linked contact, if recognized. |
 | **Recording** | Inline audio player, if the call was recorded. |
+| **Transcript** | Full AI-generated transcript, retained even when the audio recording is deleted. |
 | **Summary** | AI-generated call summary, if transcription is enabled. |
 
 ### Partner Linking
@@ -80,7 +81,10 @@ Click the **Redial** button on any call record to call that number again.
 
 ## Voicemail
 
-If voicemail is enabled for your account and you miss a call, the caller can leave a voice message. Voicemail recordings appear on the call record with an inline audio player.
+If voicemail is enabled for your account and no configured phone answers, the
+caller can leave a voice message. Voicemail does not start after an answered
+phone call ends. Recordings appear on the call record with an inline audio
+player.
 
 ## Availability Calendar
 

@@ -22,6 +22,12 @@ The phone widget is a browser-based phone embedded in Odoo. Click the phone icon
 
     The widget automatically reconnects if the connection drops.
 
+=== "Telnyx"
+
+    The phone widget uses the Telnyx WebRTC SDK and connects automatically
+    when you open Odoo. If the browser suspends a background tab, the phone
+    reconnects when you return without interrupting Odoo with an error dialog.
+
 ### Widget Tabs
 
 | Tab | Description |

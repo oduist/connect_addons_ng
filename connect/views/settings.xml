@@ -43,11 +43,13 @@
                             <group>
                                 <group string="Transcription Settings">
                                     <field name="transcript_calls"/>
+                                    <field name="delete_recording_after_transcription"/>
                                     <field name="transcript_provider"/>
                                     <field name="register_summary"/>
                                 </group>
                                 <group string="OpenAI">
                                     <field name="display_openai_api_key" string="API Key"/>
+                                    <field name="openai_summary_model" string="Summary Model"/>
                                 </group>
                             </group>
                             <group string="Summary Prompt">

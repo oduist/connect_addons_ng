@@ -190,7 +190,7 @@ class Recording(models.Model):
             result['transcript'] = segments
             result.update(
                 self.make_summary(client, summary_prompt, result['transcript']))
-            result['transcription_error'] = False
+            result.setdefault('transcription_error', False)
         except Exception as e:
             logger.exception(f'Transcribe error: {e}')
             result['transcription_error'] = str(e)
@@ -201,4 +201,6 @@ class Recording(models.Model):
                 except OSError:
                     logger.warning(
                         'Could not remove temp file %s', temp_file_path)
+            result['transcription_pending'] = False
             self.write(result)
+            self._delete_after_successful_transcription()
