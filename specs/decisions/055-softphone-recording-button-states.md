@@ -32,6 +32,12 @@ state means that no recording is active; clicking it starts a manual recording.
 Once a manual or automatic recording is actually active, the control switches
 to the purple stop state.
 
+> **Superseded in part by [ADR-056](056-recording-state-from-provider.md).**
+> The state language below stands; the way the runtime state is determined
+> does not. ADR-055 was implemented by inferring `on` from
+> `connect.user.record_calls`, which misreports callflow calls. The live
+> state now comes from the provider.
+
 ## Consequences
 
 - An available recording action is no longer confused with an active

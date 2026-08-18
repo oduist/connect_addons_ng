@@ -188,11 +188,23 @@ recording. Runtime state is stored on the shared channel control fields
 completed artifacts continue to enter `connect.recording` through the Twilio
 recording status webhook.
 
+Live state is read from Twilio, never inferred from configuration. When the
+channel carries no control state of its own, `_softphone_recording_state_twilio`
+calls `_twilio_active_recording()`, which walks `_twilio_recording_call_sids()`
+— this leg and then its parent chain — and asks the Recording API for
+recordings with `status='in-progress'`. The parent hop matters because a
+callflow emits `<Dial record='record-from-answer-dual'>` on the inbound leg
+while the softphone holds the client child leg; without it a recorded callflow
+call reports `off`. `_softphone_recording_stop_twilio` resolves the same way, so
+stop targets the leg that actually carries the recording and falls back to
+`channel.sid` + `Twilio.CURRENT` only when no live recording is found. Lookup
+failures are logged and degrade to `off` rather than breaking the widget.
+
 The phone renders `off` as a purple circular badge with a white dot and `REC`
 label, and `on` as a purple `fa-stop-circle` active action; transitions use a
 spinner. The button exposes a dynamic accessible label and `aria-pressed`.
 `connect.user.record_calls=False` keeps automatic recording off but does not
-hide the manual start action.
+hide the manual start action, and it no longer influences the reported state.
 
 ---
 

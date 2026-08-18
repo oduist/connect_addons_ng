@@ -26,15 +26,20 @@ Recording can be enabled at multiple levels (configured by your administrator):
 
 When runtime recording control is available for your phone provider, the phone
 widget shows a recording button during an active call. Use it to start or stop
-recording for that call. If your administrator enabled automatic recording, the
-button shows the active recording state and can stop the current recording when
-the provider supports it.
+recording for that call.
 
-A purple circular badge with a white dot and **REC** means recording is off and
-the button will **start** a manual recording. A purple stop icon appears only
-while recording is active and will **stop** it. The manual button remains
-available when **Record Calls** is disabled for the user; that setting controls
-automatic recording, not whether a specific call may be recorded manually.
+The button reflects what the phone system reports for the call, not what the
+settings would have done. Recording started automatically by a call flow, by
+the per-user **Record Calls** option, or manually from the phone all show the
+same active state, and stopping the recording stops whichever of them is
+running.
+
+A purple circular badge with a white dot and **REC** means nothing is being
+recorded and the button will **start** a manual recording. A purple stop icon
+appears only while a recording is actually running and will **stop** it. The
+manual button remains available when **Record Calls** is disabled for the user;
+that setting controls automatic recording, not whether a specific call may be
+recorded manually.
 
 ## AI Transcription
 
