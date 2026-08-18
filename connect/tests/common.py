@@ -89,10 +89,16 @@ class ConnectTestCommon(TransactionCase):
             yield
 
     @contextmanager
-    def mock_openai_client(self, transcript_text='Test transcript', summary_text='Test summary'):
+    def mock_openai_client(
+        self,
+        transcript_text='Test transcript',
+        summary_text='Test summary',
+        transcript_duration=60,
+    ):
         mock_client = MagicMock()
         mock_transcript = MagicMock()
         mock_transcript.segments = []
+        mock_transcript.duration = transcript_duration
         mock_client.audio.transcriptions.create.return_value = mock_transcript
 
         mock_summary = MagicMock()

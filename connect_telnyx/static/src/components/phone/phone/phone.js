@@ -459,11 +459,14 @@ export class Phone extends Component {
         const {token} = await this.orm.call('connect.user', 'get_telnyx_client_token')
         if (token) {
             this.token = token
-            try {
-                this.userAgent.disconnect()
-            } catch (e) {
-                console.warn(e)
+            if (this.userAgent) {
+                try {
+                    await this.userAgent.disconnect()
+                } catch (error) {
+                    console.warn('Telnyx client disconnect failed:', error)
+                }
             }
+            this.sipRegistered = false
             this.initUserAgent()
         }
     }
@@ -500,7 +503,9 @@ export class Phone extends Component {
             }
             // An unusable microphone is not fixed by a fresh token.
             if (error && error.recoverable !== false) {
-                self.updateToken().then()
+                self.updateToken().catch((refreshError) => {
+                    console.error('Telnyx token refresh failed:', refreshError)
+                })
             }
         })
 
@@ -508,7 +513,9 @@ export class Phone extends Component {
             self._onTelnyxNotification(notification)
         })
 
-        self.userAgent.connect()
+        self.userAgent.connect().catch((error) => {
+            console.error('Telnyx client connect failed:', error)
+        })
     }
 
     _onTelnyxNotification(notification) {

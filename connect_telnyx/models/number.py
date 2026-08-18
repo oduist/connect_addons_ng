@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
 import logging
 
 from odoo import fields, models, api
@@ -7,7 +6,7 @@ from odoo.exceptions import ValidationError
 
 from odoo.addons.connect.models.settings import debug
 from .settings import format_connect_response
-from .texml_response import Connect, VoiceResponse
+from .utils import format_telnyx_debug_payload
 
 logger = logging.getLogger(__name__)
 
@@ -182,13 +181,7 @@ class Number(models.Model):
         elif self.destination == 'callflow' and self.callflow:
             return self.callflow.render(request)
         elif self.destination == 'ai_assistant' and self.ai_assistant:
-            if not self.ai_assistant.sid:
-                return '<Response><Say>AI assistant is not synchronized.</Say></Response>'
-            response = VoiceResponse()
-            connect = Connect()
-            connect.ai_assistant(self.ai_assistant.sid)
-            response.append(connect)
-            return response.to_xml()
+            return self.ai_assistant.render(request=request, params=params)
         else:
             return '<Response><Say>Number not configured. Goodbye!</Say></Response>'
 
@@ -197,7 +190,7 @@ class Number(models.Model):
         debug(
             self,
             'Route number call: %s'
-            % json.dumps(request, indent=2),
+            % format_telnyx_debug_payload(request),
         )
         self.env['connect.call'].on_telnyx_call_status(request)
         return self.sudo().render_inbound(request, params=params)

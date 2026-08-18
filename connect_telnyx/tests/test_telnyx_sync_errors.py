@@ -93,6 +93,9 @@ class TestTelnyxSyncErrors(TransactionCase):
             stack.enter_context(patch.object(
                 Settings, '_ensure_telnyx_messaging_profile',
                 autospec=True, return_value=True))
+            stack.enter_context(patch.object(
+                Settings, '_sync_telnyx_tts_voices',
+                autospec=True, return_value=[]))
             for model_name in sync_models:
                 kwargs = {'autospec': True, 'return_value': True}
                 if model_name == 'connect.telnyx.whatsapp_sender':

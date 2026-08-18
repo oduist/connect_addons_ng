@@ -1,14 +1,14 @@
 import base64
-import json
 import logging
 import os
-import requests
-from urllib.parse import quote
-from markupsafe import escape
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from tempfile import NamedTemporaryFile
+from urllib.parse import quote
+
+import requests
+from markupsafe import escape
 from odoo import fields, models, api, release, SUPERUSER_ID
 from odoo.exceptions import ValidationError
-from .settings import format_connect_response, debug
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,10 @@ class Recording(models.Model):
     _rec_name = 'id'
     _order = 'id desc'
 
+    _TRANSCRIPTION_MODEL = 'whisper-1'
+    _TRANSCRIPTION_PRICE_PER_MINUTE = Decimal('0.006')
+    _TRANSCRIPTION_PRICE_QUANTUM = Decimal('0.000001')
+
     call = fields.Many2one('connect.call', ondelete='set null')
     channel = fields.Many2one('connect.channel', ondelete='set null')
     partner = fields.Many2one('res.partner', ondelete='set null')
@@ -27,6 +31,7 @@ class Recording(models.Model):
     call_sid = fields.Char(string='Channel SID', readonly=True)
     caller_user = fields.Many2one(related='call.caller_user', store=True, readonly=False)
     called_user = fields.Many2one('res.users', ondelete='set null')
+    users = fields.Many2many('res.users', compute='_compute_users', string='Users')
     caller_number = fields.Char()
     called_number = fields.Char()
     media_url = fields.Char()
@@ -53,6 +58,24 @@ class Recording(models.Model):
     transcription_price = fields.Char()
     summary = fields.Html()
     list_view_summary = fields.Html(compute='_get_list_view_summary')
+
+    @api.depends(
+        'caller_user',
+        'called_user',
+        'call.caller_user',
+        'call.called_users',
+        'call.answered_user',
+    )
+    def _compute_users(self):
+        for rec in self:
+            users = rec.caller_user | rec.called_user
+            if rec.call:
+                users |= (
+                    rec.call.caller_user
+                    | rec.call.called_users
+                    | rec.call.answered_user
+                )
+            rec.users = users
 
     def transcribe_recording(self, openai_api_key, summary_prompt):
         result = {}
@@ -81,8 +104,9 @@ class Recording(models.Model):
                 temp_file_path = temp_file.name
             with open(temp_file_path, 'rb') as audio_file:
                 transcript = client.audio.transcriptions.create(
-                    model="whisper-1", file=audio_file,
+                    model=self._TRANSCRIPTION_MODEL, file=audio_file,
                     response_format='verbose_json', timestamp_granularities=["segment"])
+            result['transcription_price'] = self._get_transcription_price(transcript)
             segments = ''
             for s in transcript.segments:
                 seconds = int(s.start)
@@ -90,7 +114,7 @@ class Recording(models.Model):
                 segments += '{} {}\n'.format(ts, s.text)
             result['transcript'] = segments
             result.update(self.make_summary(client, summary_prompt, result['transcript']))
-            result['transcription_error'] = False
+            result.setdefault('transcription_error', False)
         except Exception as e:
             logger.exception(f'Transcribe error: {e}')
             result['transcription_error'] = str(e)
@@ -102,14 +126,52 @@ class Recording(models.Model):
                     os.unlink(temp_file_path)
                 except OSError:
                     logger.warning('Could not remove temp file %s', temp_file_path)
+            result['transcription_pending'] = False
             self.write(result)
+            self._delete_after_successful_transcription()
+
+    @api.model
+    def _format_transcription_price(self, price):
+        if price is None or price is False:
+            return False
+        try:
+            value = Decimal(str(price)).quantize(
+                self._TRANSCRIPTION_PRICE_QUANTUM,
+                rounding=ROUND_HALF_UP,
+            )
+        except (InvalidOperation, TypeError, ValueError):
+            logger.warning('Invalid transcription price: %r', price)
+            return False
+        return format(value, 'f').rstrip('0').rstrip('.') or '0'
+
+    @api.model
+    def _get_transcription_price(self, transcript):
+        usage = getattr(transcript, 'usage', None)
+        duration = getattr(usage, 'seconds', None)
+        if not isinstance(duration, (int, float, Decimal)):
+            duration = getattr(transcript, 'duration', None)
+        if not isinstance(duration, (int, float, Decimal)):
+            logger.warning('OpenAI transcription response has no duration')
+            return False
+        price = (
+            Decimal(str(duration))
+            * self._TRANSCRIPTION_PRICE_PER_MINUTE
+            / Decimal('60')
+        )
+        return self._format_transcription_price(price)
 
     def make_summary(self, client, summary_prompt, transcript):
         logger.info('Make summary!')
         try:
-            response = client.chat.completions.create(
-                model=os.environ.get('OPENAI_COMPLETION_MODEL', 'gpt-4o'),
-                messages=[
+            settings = self.env['connect.settings']
+            model = (
+                os.environ.get('OPENAI_COMPLETION_MODEL')
+                or settings.get_param('openai_summary_model', 'gpt-5.4-mini')
+            )
+            max_tokens = int(os.environ.get('OPENAI_COMPLETION_MAX_TOKENS', 4096))
+            completion_params = {
+                'model': model,
+                'messages': [
                     {
                         'role': 'user',
                         'content': summary_prompt
@@ -119,14 +181,22 @@ class Recording(models.Model):
                         'content': transcript,
                     },
                 ],
-                temperature=float(os.environ.get('OPENAI_COMPLETION_TEMPERATURE', 0.5)),
-                max_tokens=int(os.environ.get('OPENAI_COMPLETION_MAX_TOKENS', 4096)),
-                top_p=float(os.environ.get('OPENAI_COMPLETION_TOP_P', 1.0)),
-                frequency_penalty=float(os.environ.get('OPENAI_COMPLETION_FREQUENCY_PENALTY', 0.0)),
-                presence_penalty=float(os.environ.get(
-                    'OPENAI_COMPLETION_PRESENCE_PENALTY',
-                    os.environ.get('OPENAI_COMPLETION_PRESENSE_PENALTY', 0.0))),
-            )
+            }
+            if model.startswith('gpt-5'):
+                completion_params['max_completion_tokens'] = max_tokens
+            else:
+                completion_params.update({
+                    'temperature': float(os.environ.get(
+                        'OPENAI_COMPLETION_TEMPERATURE', 0.5)),
+                    'max_tokens': max_tokens,
+                    'top_p': float(os.environ.get('OPENAI_COMPLETION_TOP_P', 1.0)),
+                    'frequency_penalty': float(os.environ.get(
+                        'OPENAI_COMPLETION_FREQUENCY_PENALTY', 0.0)),
+                    'presence_penalty': float(os.environ.get(
+                        'OPENAI_COMPLETION_PRESENCE_PENALTY',
+                        os.environ.get('OPENAI_COMPLETION_PRESENSE_PENALTY', 0.0))),
+                })
+            response = client.chat.completions.create(**completion_params)
             logger.info('%s', response.usage)
             return {'summary': response.choices[0].message.content.strip('\n\n')}
         except Exception as e:
@@ -149,24 +219,43 @@ class Recording(models.Model):
 
     def update_transcript(self, data):
         self.ensure_one()
-        transcription_price = data.get('transcription_price')
-        if transcription_price:
-            transcription_price = round(transcription_price, 2)
+        call = self.call
         vals = {
             'transcript': data.get('transcript'),
-            'transcription_price': str(transcription_price),
+            'transcription_price': self._format_transcription_price(
+                data.get('transcription_price')
+            ),
             'summary': data.get('summary'),
             'transcription_token': False,
-            'transcription_error': data.get('transcription_error')
+            'transcription_error': data.get('transcription_error'),
+            'transcription_pending': False,
         }
         self.with_context(tracking_disable=True).write(vals)
-        if self.call:
-            self.call.summary = data.get('summary')
+        self._delete_after_successful_transcription()
+        if call:
             self.env['connect.settings'].connect_reload_view('connect.call')
         self.env['connect.settings'].connect_reload_view('connect.recording')
         if data.get('notify_uid'):
             self.env['connect.settings'].connect_notify(
                 'Transcript updated', notify_uid=data['notify_uid'])
+
+    def _delete_after_successful_transcription(self):
+        """Remove processed audio only after its analysis is durable."""
+        self.ensure_one()
+        if (
+            not self.exists()
+            or not self.call
+            or not self.transcript
+            or self.transcription_error
+        ):
+            return False
+        delete_recording = self.env['connect.settings'].sudo().get_param(
+            'delete_recording_after_transcription'
+        )
+        if not delete_recording:
+            return False
+        self.unlink()
+        return True
 
     def _get_recording_widget(self):
         proxy_recordings = self.env['connect.settings'].sudo().get_param('proxy_recordings')
@@ -204,6 +293,10 @@ class Recording(models.Model):
         for rec in self:
             rec.list_view_summary = rec.summary
 
+    def unlink(self):
+        self._sync_analysis_to_call()
+        return super().unlink()
+
     @api.model_create_multi
     def create(self, vals_list):
         if self.env.context.get('skip_transcription'):
@@ -232,7 +325,8 @@ class Recording(models.Model):
         pending = self.search([('transcription_pending', '=', True)], limit=limit)
         for rec in pending:
             try:
-                rec.get_transcript(fail_silently=True)
+                if not rec.transcript:
+                    rec.get_transcript(fail_silently=True)
             except Exception:
                 logger.exception('Cron transcript error for recording %s', rec.id)
             # Clear the flag whether or not it succeeded: transcribe_recording
@@ -240,7 +334,8 @@ class Recording(models.Model):
             # matches the previous inline behaviour while avoiding an
             # unbounded retry loop. The commit is safe here — the cron owns
             # its own transaction, unlike create().
-            rec.transcription_pending = False
+            if rec.exists():
+                rec.transcription_pending = False
             self.env.cr.commit()
 
     @api.depends('duration')
@@ -253,7 +348,18 @@ class Recording(models.Model):
             else:
                 record.duration_human = "00:00"
 
-    @api.constrains('summary')
-    def _sync_summary(self):
-        if self.call:
-            self.with_user(SUPERUSER_ID).call.summary = self.summary
+    @api.constrains('call', 'transcript', 'summary')
+    def _sync_analysis_to_call(self):
+        for rec in self.filtered('call'):
+            recordings = self.search(
+                [('call', '=', rec.call.id)], order='id desc'
+            )
+            vals = {}
+            latest_transcript = recordings.filtered('transcript')[:1]
+            latest_summary = recordings.filtered('summary')[:1]
+            if rec == latest_transcript:
+                vals['transcript'] = rec.transcript
+            if rec == latest_summary:
+                vals['summary'] = rec.summary
+            if vals:
+                rec.call.with_user(SUPERUSER_ID).write(vals)

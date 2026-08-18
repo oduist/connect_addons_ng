@@ -8,10 +8,17 @@ from odoo import fields, models, api
 from odoo.exceptions import ValidationError
 
 from odoo.addons.connect.models.settings import debug
-from .settings import format_connect_response
+from .settings import TELNYX_SYSTEM_VOICE_DEFAULT, format_connect_response
 from .texml_response import Dial, VoiceResponse, pretty_xml
 
 logger = logging.getLogger(__name__)
+
+FAILED_DIAL_STATUSES = frozenset({
+    'busy',
+    'canceled',
+    'failed',
+    'no-answer',
+})
 
 
 class User(models.Model):
@@ -372,19 +379,23 @@ class User(models.Model):
 
     def get_telnyx_greeting_message(self, response):
         self.ensure_one()
+        voice = self.voice or self.env['connect.settings'].sudo().get_param(
+            'telnyx_system_voice', TELNYX_SYSTEM_VOICE_DEFAULT)
         response.say(
             self.greeting_message,
             language=self.language or 'en-US',
-            voice=self.voice or 'Polly.Joanna',
+            voice=voice,
         )
 
     def get_telnyx_voicemail_prompt(self, response):
         self.ensure_one()
         voicemail_prompt = self.telnyx_render_voicemail_prompt()
+        voice = self.voice or self.env['connect.settings'].sudo().get_param(
+            'telnyx_system_voice', TELNYX_SYSTEM_VOICE_DEFAULT)
         response.say(
             voicemail_prompt,
             language=self.language or 'en-US',
-            voice=self.voice or 'Polly.Joanna',
+            voice=voice,
         )
 
     def telnyx_render_voicemail(self, response, request, params):
@@ -519,6 +530,69 @@ class User(models.Model):
         return 'sip:{}@sip.telnyx.com{}'.format(
             username, '?{}'.format(query) if query else '')
 
+    def _telnyx_registration_status(self, username):
+        """Return live Telnyx registration state for a telephony credential."""
+        self.ensure_one()
+        return self.env['connect.settings'].sudo().telnyx_api_request(
+            'GET', 'sip_registration_status',
+            params={
+                'credential_type': 'telephony_credential',
+                'username': username,
+            },
+            timeout=1.5,
+        )
+
+    def _telnyx_transfer_target(self, check_registration=True):
+        """Select the best SIP/WebRTC credential for an AI warm transfer.
+
+        A negative registration response is authoritative for that device.
+        API errors are advisory: keep one configured credential as a fallback
+        so a status endpoint outage cannot disable all human transfers.
+        """
+        self.ensure_one()
+        candidates = []
+        for order, channel in enumerate(('client', 'sip')):
+            if not self['telnyx_{}_enabled'.format(channel)]:
+                continue
+            username = self['telnyx_{}_username'.format(channel)]
+            if not username:
+                continue
+            priority = int(self['telnyx_{}_priority'.format(channel)] or 99)
+            candidates.append((priority, order, channel, username))
+        candidates.sort()
+        if not candidates:
+            return False
+        if not check_registration:
+            _priority, _order, channel, username = candidates[0]
+            return {
+                'to': self._telnyx_credential_uri(username),
+                'channel': channel,
+                'registration': 'unchecked',
+            }
+        unknown = False
+        for _priority, _order, channel, username in candidates:
+            try:
+                status = self._telnyx_registration_status(username) or {}
+            except Exception as exc:
+                logger.warning(
+                    'Could not check Telnyx %s registration for user %s: %s',
+                    channel, self.name, exc)
+                if not unknown:
+                    unknown = {
+                        'to': self._telnyx_credential_uri(username),
+                        'channel': channel,
+                        'registration': 'unknown',
+                    }
+                continue
+            if status.get('registered') or (
+                    status.get('sip_registration_status') == 'registered'):
+                return {
+                    'to': self._telnyx_credential_uri(username),
+                    'channel': channel,
+                    'registration': 'registered',
+                }
+        return unknown or False
+
     @api.model
     def _telnyx_caller(self, request):
         """The calling party of a webhook.
@@ -631,13 +705,15 @@ class User(models.Model):
         # Called by the public Dial action webhook, whose user has no
         # read access on connect.user.
         user = self.sudo().browse(record_id)
-        call_status = request.get('CallStatus')
-        if not call_status:
-            call_status = request.get('DialCallStatus')
-        if call_status != 'completed':
-            dialplan = user.telnyx_render(request)
-            return dialplan
-        else:
-            response = VoiceResponse()
-            response.hangup()
-            return response.to_xml()
+        dial_status = (
+            request.get('DialCallStatus') or request.get('CallStatus')
+        )
+        if dial_status in FAILED_DIAL_STATUSES:
+            return user.telnyx_render(request)
+        if dial_status != 'completed':
+            logger.warning(
+                'Ending Telnyx user call action %s with unexpected Dial '
+                'status %r', record_id, dial_status)
+        response = VoiceResponse()
+        response.hangup()
+        return response.to_xml()

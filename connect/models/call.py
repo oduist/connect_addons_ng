@@ -17,7 +17,7 @@ class Call(models.Model):
     name = fields.Char(compute='_get_name')
     channels = fields.One2many('connect.channel', 'call', readonly=True)
     recording = fields.Many2one('connect.recording', compute='_get_recording_data')
-    transcript = fields.Text(compute='_get_recording_data')
+    transcript = fields.Text(default='')
     if release.version_info[0] >= 17.0:
         recording_widget = fields.Html(compute='_get_recording_data', sanitize=False)
     else:
@@ -83,12 +83,10 @@ class Call(models.Model):
             if recording:
                 recording = max(recording, key=lambda x: x.id)
                 rec.recording = recording
-                rec.transcript = recording.transcript
                 rec.recording_icon = '<span class="fa fa-file-sound-o"/>'
                 rec.recording_widget = recording.recording_widget
             else:
                 rec.recording_icon = ''
-                rec.transcript = ''
                 rec.recording = False
                 rec.recording_widget = ''
 

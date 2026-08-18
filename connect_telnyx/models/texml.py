@@ -174,7 +174,9 @@ class TeXMLApp(models.Model):
         self = self.sudo()
         api_url_check = self.env['connect.settings'].check_api_url()
         if api_url_check:
-            return '<Response><Say>{}</Say></Response>'.format(api_url_check)
+            return self.env[
+                'connect.settings'].telnyx_apply_system_voice(
+                    '<Response><Say>{}</Say></Response>'.format(api_url_check))
         self.ensure_one()
         api_url = self.env['connect.settings'].sudo().get_param('api_url')
         recording_voice_status_url = urljoin(api_url, 'telnyx/webhook/recordingstatus')
@@ -189,6 +191,8 @@ class TeXMLApp(models.Model):
             res = self.render_python(request=request, params=params)
         elif self.code_type == 'model_method':
             res = str(getattr(self.env[self.model], self.method)(request=request, params=params))
+        res = self.env[
+            'connect.settings'].sudo().telnyx_apply_system_voice(res)
         debug(self, 'TeXML render result: %s' % pretty_xml(res))
         return res
 
