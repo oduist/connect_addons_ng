@@ -37,8 +37,8 @@ class TestUserCallflowWalk(TwilioTestCommon):
         dialplan = self.pbx_user.render()
 
         self.assertEqual(dialplan.count('<Dial'), 1)
-        self.assertIn('<Client>', dialplan)
-        self.assertNotIn('<Sip>', dialplan)
+        self.assertIn('<Client', dialplan)
+        self.assertNotIn('<Sip', dialplan)
 
     def test_render_without_call_marks_dialed_callflow(self):
         """The action URL carries the callflow that already rang."""
@@ -55,8 +55,8 @@ class TestUserCallflowWalk(TwilioTestCommon):
             'done_callflows': str(self.client_flow.id),
         })
 
-        self.assertIn('<Sip>', dialplan)
-        self.assertNotIn('<Client>', dialplan)
+        self.assertIn('<Sip', dialplan)
+        self.assertNotIn('<Client', dialplan)
         self.assertIn('done_callflows={},{}'.format(
             self.client_flow.id, self.sip_flow.id), dialplan)
 
