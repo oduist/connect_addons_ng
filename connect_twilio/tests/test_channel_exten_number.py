@@ -15,7 +15,13 @@ class TestChannelExtenNumber(TwilioTestCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.exten = cls.env['connect.twilio.exten'].create({'number': '100'})
+        # Pick free numbers: the database under test already carries the
+        # extensions the demo setup created.
+        taken = set(cls.env['connect.twilio.exten'].search([]).mapped('number'))
+        free = [str(n) for n in range(7000, 8000) if str(n) not in taken]
+        cls.number, cls.unknown_number = free[0], free[1]
+        cls.exten = cls.env['connect.twilio.exten'].create(
+            {'number': cls.number})
 
     def _map(self, caller, called='client:demo@test.sip.twilio.com'):
         return self.env['connect.channel']._map_twilio_params({
@@ -28,13 +34,16 @@ class TestChannelExtenNumber(TwilioTestCommon):
         })
 
     def test_known_exten_loses_the_plus(self):
-        self.assertEqual(self._map('+100')['caller'], '100')
+        self.assertEqual(
+            self._map('+' + self.number)['caller'], self.number)
 
     def test_plain_exten_is_untouched(self):
-        self.assertEqual(self._map('100')['caller'], '100')
+        self.assertEqual(self._map(self.number)['caller'], self.number)
 
     def test_unknown_short_number_keeps_the_plus(self):
-        self.assertEqual(self._map('+199')['caller'], '+199')
+        self.assertEqual(
+            self._map('+' + self.unknown_number)['caller'],
+            '+' + self.unknown_number)
 
     def test_real_phone_number_keeps_the_plus(self):
         self.assertEqual(
@@ -45,4 +54,6 @@ class TestChannelExtenNumber(TwilioTestCommon):
         self.assertEqual(self._map(caller)['caller'], caller)
 
     def test_called_exten_loses_the_plus(self):
-        self.assertEqual(self._map('+19789814066', '+100')['called'], '100')
+        self.assertEqual(
+            self._map('+19789814066', '+' + self.number)['called'],
+            self.number)

@@ -19,9 +19,6 @@ class TestUserCallflowWalk(TwilioTestCommon):
         cls.env['connect.settings'].sudo().set_param(
             'api_url', 'https://pbx.example.com/')
         cls.pbx_user = cls._create_connect_user('walk_user')
-        cls.domain = cls.env['connect.twilio.domain'].with_context(
-            no_twilio_create=True).create({'domain_name': 'test.sip.twilio.com'})
-        cls.pbx_user.write({'domain': cls.domain.id})
         cls.client_flow = cls.env['connect.twilio.user_callflow'].create({
             'user': cls.pbx_user.id,
             'prio': 1,
