@@ -1,0 +1,50 @@
+{#-
+  Sidebar scoped to one module.
+
+  Upstream renders every top-level nav entry, which here means all ~28 modules
+  aggregated by mkdocs-monorepo-plugin — a wall of links that buries the pages
+  of the module actually being read. This copy keeps the upstream markup and
+  only narrows the top-level loop to the section the current page belongs to:
+  inside Twilio the sidebar lists Twilio's pages and nothing else.
+
+  Readers move between modules through the Home crumb (navigation.path) and
+  search, not through the sidebar. Root-level pages (Home, Changelog) have no
+  ancestor to scope to; they fall back to the full list, but both hide the
+  sidebar outright via "hide: navigation" in their front matter.
+
+  Kept in sync with material/templates/partials/nav.html — see the two marked
+  lines below for the only deviation.
+-#}
+{% import "partials/nav-item.html" as item with context %}
+{% set class = "md-nav md-nav--primary" %}
+{% if "navigation.tabs" in features %}
+  {% set class = class ~ " md-nav--lifted" %}
+{% endif %}
+{% if "toc.integrate" in features %}
+  {% set class = class ~ " md-nav--integrated" %}
+{% endif %}
+{#- Deviation: the module the current page lives in, or none at root level. -#}
+{% set root = (page.ancestors | last) if page and page.ancestors else none %}
+<nav class="{{ class }}" aria-label="{{ lang.t('nav') }}" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-nav__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
+      {% include "partials/logo.html" %}
+    </a>
+    {{ config.site_name }}
+  </label>
+  {% if config.repo_url %}
+    <div class="md-nav__source">
+      {% include "partials/source.html" %}
+    </div>
+  {% endif %}
+  <ul class="md-nav__list" data-md-scrollfix>
+    {% for nav_item in nav.items %}
+      {#- Deviation: skip the other modules. loop.index is left untouched so
+          the generated "__nav_N" toggle ids keep matching upstream. -#}
+      {% if root is none or nav_item == root %}
+        {% set path = "__nav_" ~ loop.index %}
+        {{ item.render(nav_item, path, 1) }}
+      {% endif %}
+    {% endfor %}
+  </ul>
+</nav>

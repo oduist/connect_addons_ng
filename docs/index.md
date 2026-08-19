@@ -1,6 +1,7 @@
 ---
 title: Oduist Connect
 hide:
+  - navigation
   - toc
 ---
 

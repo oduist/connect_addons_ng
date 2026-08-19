@@ -451,6 +451,24 @@
 }
 
 /* ------------------------------------------------------------------ *
+ * Breadcrumbs (navigation.path)
+ * ------------------------------------------------------------------ *
+ * Colors come for free: upstream already paints the trail with
+ * --md-default-fg-color--light and the separator with --lighter, both
+ * remapped to the Aurora neutrals above. Only two things are added — the
+ * hover needs the same easing as the rest of the site, and the trail needs
+ * air below it so it reads as a header for the h1 rather than a first line
+ * of the page. The trail is the only way back to Home (and from there to
+ * the other modules), so it stays visible on every screen size.
+ */
+.md-path__link {
+  transition: color 150ms ease;
+}
+.md-path {
+  padding-bottom: 0.4rem;
+}
+
+/* ------------------------------------------------------------------ *
  * Misc
  * ------------------------------------------------------------------ */
 ::selection {

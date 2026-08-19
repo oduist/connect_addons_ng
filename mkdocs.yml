@@ -40,6 +40,11 @@ theme:
     code: Geist Mono
   features:
     - navigation.sections
+    # Breadcrumbs above the page title (Home / Twilio / ...). Every crumb is a
+    # link: a section resolves to its first page, so the trail is walkable all
+    # the way back to Home — which is how readers reach other modules, since
+    # the sidebar is scoped to the current one (docs/overrides/partials/nav.html).
+    - navigation.path
     - navigation.top
     - navigation.tracking
     - search.highlight

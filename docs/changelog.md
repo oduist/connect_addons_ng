@@ -1,3 +1,9 @@
+---
+title: Changelog
+hide:
+  - navigation
+---
+
 # Changelog
 
 All notable changes to Oduist Connect are recorded here.
