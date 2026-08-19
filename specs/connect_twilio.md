@@ -476,10 +476,22 @@ Twilio SIP domain management for SIP trunking.
 | `create_domain()` | High-level domain creation workflow |
 | `update_twilio_domain()` | Push domain config to Twilio |
 | `sync()` | Sync SIP domains from Twilio API |
-| `route_call()` | Route incoming SIP call to user extension |
+| `route_call()` | Route incoming SIP call to user extension; inbound WhatsApp falls back to `connect.twilio.number` |
 | `originate_external_call()` | Originate outbound call via SIP domain |
 | `originate_whatsapp_call()` | Originate WhatsApp call via domain |
 | `get_domain_app()` | Get or create the domain's TwiML application |
+
+`route_call()` resolves the dialled value to `found_num` and looks it up in
+`connect.twilio.exten`. The meaning of `found_num` differs per path: on the SIP
+path it is what the softphone dialled (an outbound destination), while for an
+inbound WhatsApp call it is one of our own numbers. Because of that, only the
+WhatsApp branch falls back to `connect.twilio.number` — searching
+`phone_number` and delegating to its `render()` — so a WhatsApp call reaches
+the same user or callflow a PSTN call to that number reaches, with no separate
+extension. An extension still wins when one exists; the "Whatsapp Extension not
+found" prompt remains for a number that matches neither. The SIP path keeps its
+old behaviour: falling back there would turn dialling our own number into a
+loop back inbound instead of an outbound call. See ADR-057.
 
 ---
 

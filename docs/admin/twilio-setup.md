@@ -123,6 +123,12 @@ Twilio numbers carry:
 
 Webhook URLs for voice and messaging are automatically configured when you assign a destination.
 
+The destination also serves inbound **WhatsApp** calls to that number: a
+WhatsApp call reaches the same user, callflow or TwiML app as a regular call,
+with no extra setup. Create an extension for the number only when WhatsApp
+should follow a different dialplan than the destination — an extension takes
+precedence over it.
+
 ## WhatsApp Setup
 
 ### WhatsApp Senders
