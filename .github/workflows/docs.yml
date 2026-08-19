@@ -8,13 +8,8 @@ on:
     branches:
       - "19.0"
     paths:
-      # Root site (Home + shared assets) and aggregating config.
       - "docs/**"
       - "mkdocs.yml"
-      # Per-module documentation aggregated via mkdocs-monorepo-plugin: each
-      # module keeps its docs under <module>/docs/ with its own mkdocs.yml.
-      - "connect*/docs/**"
-      - "connect*/mkdocs.yml"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
