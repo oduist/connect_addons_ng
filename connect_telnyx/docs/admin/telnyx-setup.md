@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - A Telnyx account ([telnyx.com](https://telnyx.com))
-- An API key (Mission Control Portal > Account > Keys & Credentials)
+- An API key — Telnyx Portal ([portal.telnyx.com](https://portal.telnyx.com/)) → **Account → API Keys**
 - The account **Public Key** (same page) — used to verify webhook signatures
 - The **TeXML Account SID** (your Telnyx account ID, shown in the TeXML section of the portal)
 - At least one Telnyx phone number
@@ -40,7 +40,7 @@ assistant form if it may have been exposed.
 | Field | Description |
 |-------|-------------|
 | **API Key** | Your Telnyx v2 API key. Masked for non-managers. |
-| **Public Key** | The Ed25519 public key from Mission Control. Not secret; required to verify webhook signatures. |
+| **Public Key** | The Ed25519 public key from the Telnyx Portal (**Account → API Keys**). Not secret; required to verify webhook signatures. |
 | **Account SID** | The TeXML Account SID (your Telnyx account ID). Required for click-to-call. |
 
 ### Options

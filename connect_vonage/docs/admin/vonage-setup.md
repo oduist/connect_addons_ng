@@ -11,7 +11,7 @@ call recordings with AI transcription.
   the signed-callback JWTs require it). Verify `connect.api_url` in
   System Parameters before syncing.
 - A Vonage API account with an API key and secret
-  ([dashboard.nexmo.com](https://dashboard.nexmo.com/)).
+  ([dashboard.vonage.com](https://dashboard.vonage.com/)).
 - The `vonage` Python package installed in the Odoo environment
   (`pip install vonage`).
 
@@ -19,9 +19,12 @@ call recordings with AI transcription.
 
 1. Install the `connect_vonage` module (requires `connect`).
 2. Open **Connect → Settings → Vonage API** and fill in:
-   - **API Key** and **API Secret** — from the Vonage dashboard.
-   - **Signature Secret** — from Dashboard → Settings → *Signature
-     secret*. It authenticates incoming webhooks (signed callbacks).
+   - **API Key** and **API Secret** — from the Vonage Dashboard →
+     **Settings** (API keys section; expand your username in the left
+     sidebar → Settings). The API secret is shown only at creation.
+   - **Signature Secret** — from the same Dashboard → **Settings** page
+     (*Signature secret*). It authenticates incoming webhooks (signed
+     callbacks).
    - **Region** — optional voice region for the application.
 3. Click **SYNC VONAGE ACCOUNT**. The sync:
    - creates a Vonage **Application** with voice, messages (v1) and RTC

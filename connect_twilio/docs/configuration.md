@@ -17,7 +17,10 @@ exposes **only** the Twilio fields.
 
 ## Credentials
 
-Find these in your [Twilio Console](https://console.twilio.com/).
+Find these in the [Twilio Console](https://console.twilio.com/):
+
+- **Account SID** and **Auth Token** are shown on the Console **dashboard** (home page).
+- **API Key SID** and **API Key Secret** are created under **Account → API keys & tokens** (Console **Settings → API keys & auth tokens**). The secret is displayed only once, at creation.
 
 | Field | Description |
 |-------|-------------|

@@ -15,9 +15,10 @@ below essential — inbound calls do not work without it.
   one voice-capable number, and — for messaging — SMS enabled and a
   registered WhatsApp sender (WABA number).
 - Your **personalized base URL** (e.g. `https://xxxxx.api.infobip.com`)
-  and an **API key**, both shown in the
-  [Infobip portal](https://portal.infobip.com/) under the developer/API
-  section.
+  and an **API key**. In the [Infobip portal](https://portal.infobip.com/)
+  open **Developer Tools → API Keys** (or **Manage API Keys** on the home
+  page); the base URL is shown on the same page and on the API Keys screen.
+  A new key is viewable/copyable for 2 days after creation.
 - Odoo must be reachable from the internet over HTTPS (webhooks).
 
 ## Odoo configuration

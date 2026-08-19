@@ -29,10 +29,12 @@ Install `connect_bird` like any Odoo addon.
 
 ## 2. Create a Bird access key
 
-In your Bird workspace create an access key (`bk_...`) with scopes for
-**sms**, **whatsapp**, **voice**, **numbers** and **webhooks**. A key
-without these scopes authenticates but receives `403` on the respective
-endpoints.
+In Bird, open **User Settings → Security → Access Keys → Add new access
+key** (bottom-left menu; Application Developer role) and create an access
+key (`bk_...`) with scopes for **sms**, **whatsapp**, **voice**,
+**numbers** and **webhooks**. A key without these scopes authenticates
+but receives `403` on the respective endpoints. The full key is shown
+only once, at creation.
 
 ## 3. Configure Connect → Bird → Configuration → Settings
 

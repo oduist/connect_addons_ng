@@ -20,8 +20,11 @@ exposes **only** the ElevenLabs fields (opened via `open_elevenlabs_form()`).
 | **API Key** (`display_elevenlabs_api_key`) | Your ElevenLabs API key. Stored on the protected `elevenlabs_api_key` field (restricted to `base.group_erp_manager`), shown masked (`****`) to everyone else, and never exposed to the webhook identity. Leading/trailing whitespace is stripped when the client is built. |
 | **Selected Voice** (`elevenlabs_voice`) | The default voice used for text-to-speech file generation (call-flow prompts, voicemail greetings). Populated from the synced voice library. |
 
-The form also links to **OPEN A NEW ELEVENLABS ACCOUNT HERE** (shown until a key
-is set) and to the ElevenLabs shared voice library.
+Generate the API key in the ElevenLabs dashboard under **Developers → API
+Keys** (direct link: [elevenlabs.io/app/settings/api-keys](https://elevenlabs.io/app/settings/api-keys)).
+The full key is shown only once, at creation. The form also links to **OPEN A
+NEW ELEVENLABS ACCOUNT HERE** (shown until a key is set) and to the ElevenLabs
+shared voice library.
 
 ### Action buttons
 

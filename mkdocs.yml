@@ -12,20 +12,31 @@ exclude_docs: |
 theme:
   name: material
   custom_dir: docs/overrides
-  # Dark ("slate") is the default scheme (mirrors oduflow.dev); light stays
-  # available via the header toggle. Actual colors are overridden in
-  # stylesheets/oduflow.css via the --md-* custom properties.
+  # Site logo (header) and browser favicon — the shared Oduist Connect icon.
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  # Dark ("slate") is the default scheme (the brand site is dark-only); light
+  # stays available via the header toggle. Actual colors come from the "Aurora"
+  # brand palette in stylesheets/aurora.css via the --md-* custom properties.
+  # primary/accent are "custom" on purpose: Material's built-in palettes ship
+  # rules like [data-md-color-scheme=slate][data-md-color-primary=indigo] that
+  # outrank our single-attribute overrides. "custom" carries no colors of its
+  # own, so aurora.css owns every --md-* value.
   palette:
     - scheme: slate
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-night
         name: Switch to light mode
     - scheme: default
+      primary: custom
+      accent: custom
       toggle:
         icon: material/weather-sunny
         name: Switch to dark mode
   font:
-    text: Outfit
+    text: Geist
     code: Geist Mono
   features:
     - navigation.sections
@@ -37,7 +48,11 @@ theme:
     - content.code.annotate
 
 extra_css:
-  - stylesheets/oduflow.css
+  - stylesheets/aurora.css
+  - stylesheets/module-table.css
+
+extra_javascript:
+  - javascripts/module-table.js
 
 # Documentation lives inside each Odoo module under <module>/docs/. The
 # mkdocs-monorepo-plugin aggregates every module's own mkdocs.yml (site_name +
@@ -49,6 +64,7 @@ plugins:
 
 nav:
   - Home: index.md
+  - Changelog: changelog.md
   - Core: '!include ./connect/mkdocs.yml'
   - Twilio: '!include ./connect_twilio/mkdocs.yml'
   - FreeSWITCH: '!include ./connect_freeswitch/mkdocs.yml'
