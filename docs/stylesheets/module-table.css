@@ -79,7 +79,9 @@
   position: relative;
 }
 .hero-art img.hero-art__zoomable {
-  cursor: zoom-in;
+  /* Plain pointer, not zoom-in: the magnifier chip that fades in on hover
+     already carries that meaning, and two magnifiers read as a glitch. */
+  cursor: pointer;
   transition: transform 200ms ease, box-shadow 200ms ease,
     border-color 200ms ease;
 }
