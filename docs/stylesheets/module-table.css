@@ -73,18 +73,63 @@
 /* ------------------------------------------------------------------ *
  * Hero screenshot lightbox (hero-zoom.js)
  * ------------------------------------------------------------------ */
-/* The class is added by the script, so the affordance only appears once the
-   click handler is actually attached. */
+/* Both classes are added by the script, so the affordance only appears once the
+   click handler behind it is actually attached. */
+.hero-art--zoomable {
+  position: relative;
+}
 .hero-art img.hero-art__zoomable {
   cursor: zoom-in;
   transition: transform 200ms ease, box-shadow 200ms ease,
     border-color 200ms ease;
 }
-.hero-art img.hero-art__zoomable:hover,
+.hero-art--zoomable:hover img.hero-art__zoomable,
 .hero-art img.hero-art__zoomable:focus-visible {
   transform: translateY(-2px);
   border-color: var(--md-default-fg-color--lighter);
   box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.9);
+}
+
+/* Magnifier hint. The scrim is what makes the chip legible over a screenshot
+   that is mostly white, so the two fade in together. */
+.hero-art__hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--au-radius-lg, 12px);
+  background-color: rgb(4 5 10 / 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+.hero-art__hint-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 1px solid var(--au-border-strong, rgb(255 255 255 / 0.16));
+  border-radius: 50%;
+  background-color: rgb(4 5 10 / 0.72);
+  backdrop-filter: blur(4px);
+  transform: scale(0.82);
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.hero-art__hint svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  fill: var(--au-cyan, #2dd4ff);
+}
+.hero-art--zoomable:hover .hero-art__hint,
+.hero-art img.hero-art__zoomable:focus-visible + .hero-art__hint {
+  opacity: 1;
+}
+.hero-art--zoomable:hover .hero-art__hint-chip,
+.hero-art img.hero-art__zoomable:focus-visible + .hero-art__hint
+  .hero-art__hint-chip {
+  transform: scale(1);
 }
 
 .hero-zoom {
@@ -116,18 +161,68 @@
   /* The FLIP maths in hero-zoom.js assumes the top-left corner as the origin,
      which reduces the inverse to one translate plus one scale. */
   transform-origin: 0 0;
-  border: 1px solid var(--md-default-fg-color--lightest);
+  /* Border only — the scrim already separates the screenshot from the page,
+     and a drop shadow underneath it would fight the close button. */
+  border: 1px solid var(--au-border-strong, rgb(255 255 255 / 0.16));
   border-radius: var(--au-radius-lg, 12px);
-  box-shadow: 0 40px 120px -40px rgb(0 0 0 / 0.9);
   transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
   will-change: transform;
+}
+
+/* Close button. Positioned by the script: straddling the image's top-right
+   corner when the whole screenshot fits, pinned to the viewport when it is
+   wider than the screen and pans. */
+.hero-zoom__close {
+  position: fixed;
+  z-index: 21;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 1px solid var(--au-border-strong, rgb(255 255 255 / 0.16));
+  border-radius: 50%;
+  background-color: rgb(4 5 10 / 0.82);
+  backdrop-filter: blur(4px);
+  color: var(--au-ink, #eef0fa);
+  cursor: pointer;
+  opacity: 0;
+  /* Delayed so it arrives once the picture has settled, not mid-flight. */
+  transition: opacity 200ms ease 220ms, transform 180ms ease,
+    color 180ms ease, border-color 180ms ease;
+}
+.hero-zoom__close--fixed {
+  top: 0.6rem;
+  right: 0.6rem;
+}
+.hero-zoom__close.is-open {
+  opacity: 1;
+}
+/* Hover only: the button takes focus as the dialog opens, and reusing this
+   treatment for :focus-visible would leave it looking permanently hovered.
+   The focus ring from aurora.css carries the keyboard state on its own. */
+.hero-zoom__close:hover {
+  transform: scale(1.1);
+  border-color: var(--au-border-hover, rgb(255 255 255 / 0.28));
+  color: var(--au-cyan, #2dd4ff);
+}
+.hero-zoom__close svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: currentcolor;
 }
 
 /* Keep the reveal, drop the travel. */
 @media (prefers-reduced-motion: reduce) {
   .hero-art img.hero-art__zoomable,
-  .hero-zoom__img {
+  .hero-art__hint-chip,
+  .hero-zoom__img,
+  .hero-zoom__close {
     transition: none;
+  }
+  .hero-art__hint-chip {
+    transform: none;
   }
 }
 

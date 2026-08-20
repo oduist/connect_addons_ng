@@ -18,7 +18,25 @@
   // Kept in sync with the transition declared on .hero-zoom / .hero-zoom__img.
   var DURATION = 420;
 
+  // mdi magnify-plus-outline / mdi close, inlined so the hint and the close
+  // button do not depend on Material's icon pipeline.
+  var ICON_MAGNIFY =
+    "M15.5,14L20.5,19L19,20.5L14,15.5V14.71L13.73,14.43C12.59,15.41 11.11,16 " +
+    "9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3A6.5,6.5 0 0,1 " +
+    "16,9.5C16,11.11 15.41,12.59 14.43,13.73L14.71,14H15.5M9.5,14C12,14 " +
+    "14,12 14,9.5C14,7 12,5 9.5,5C7,5 5,7 5,9.5C5,12 7,14 " +
+    "9.5,14M12,10H10V12H9V10H7V9H9V7H10V9H12V10Z";
+  var ICON_CLOSE =
+    "M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12," +
+    "13.41L17.59,19L19,17.59L13.41,12L19,6.41Z";
+
   var state = null;
+
+  function icon(path) {
+    return (
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + path + '"/></svg>'
+    );
+  }
 
   function reducedMotion() {
     return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -88,8 +106,30 @@
     clone.style.width = target.width + "px";
     clone.style.height = target.height + "px";
 
+    var closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "hero-zoom__close";
+    closeBtn.setAttribute("aria-label", "Close");
+    closeBtn.innerHTML = icon(ICON_CLOSE);
+    if (target.scrollLeft > 0) {
+      // The image is wider than the screen and pans, so a button pinned to its
+      // corner would start off-screen. Pin it to the viewport instead.
+      closeBtn.classList.add("hero-zoom__close--fixed");
+    } else {
+      // Straddling the image's top-right corner: clear of the screenshot's
+      // content, and unmistakably attached to it. Content and viewport
+      // coordinates coincide here, because nothing scrolls.
+      closeBtn.style.left = target.left + target.width - 22 + "px";
+      closeBtn.style.top = target.top - 22 + "px";
+    }
+    closeBtn.addEventListener("click", close);
+
     overlay.appendChild(clone);
     document.body.appendChild(overlay);
+    // Deliberately a sibling of the overlay, not a child: the overlay's
+    // backdrop-filter would make it the containing block for position:fixed,
+    // and the button would then pan away with the image on narrow screens.
+    document.body.appendChild(closeBtn);
 
     // Centre the pan before the first paint, so an image wider than the
     // viewport opens on its middle rather than its left edge.
@@ -98,7 +138,13 @@
       clone.style.transform = invert(rect, target, overlay.scrollLeft);
     }
 
-    state = { img: img, overlay: overlay, clone: clone, target: target };
+    state = {
+      img: img,
+      overlay: overlay,
+      clone: clone,
+      closeBtn: closeBtn,
+      target: target
+    };
 
     // Two frames: the first commits the inverted transform as the starting
     // style, the second changes it so the transition actually runs.
@@ -106,8 +152,12 @@
       requestAnimationFrame(function () {
         if (!state) return;
         overlay.classList.add("is-open");
+        closeBtn.classList.add("is-open");
         clone.style.transform = "none";
         img.style.visibility = "hidden";
+        // Move focus into the dialog, so Escape and Tab behave as expected and
+        // the close button is the first thing a keyboard user lands on.
+        closeBtn.focus({ preventScroll: true });
       });
     });
 
@@ -125,6 +175,7 @@
     window.removeEventListener("resize", close);
 
     current.overlay.classList.remove("is-open");
+    current.closeBtn.classList.remove("is-open");
     // Re-measure both ends: the page may have been scrolled and the overlay
     // panned while it was up, so neither the thumbnail nor the enlarged image
     // is necessarily where it was when we opened.
@@ -138,9 +189,9 @@
     }
 
     window.setTimeout(function () {
-      if (current.overlay.parentNode) {
-        current.overlay.parentNode.removeChild(current.overlay);
-      }
+      [current.overlay, current.closeBtn].forEach(function (el) {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      });
     }, DURATION);
 
     current.img.focus({ preventScroll: true });
@@ -159,6 +210,19 @@
     img.setAttribute("role", "button");
     img.setAttribute("tabindex", "0");
     img.setAttribute("aria-label", "Enlarge screenshot");
+
+    // Hover affordance: a magnifier over a soft scrim, revealed on hover and on
+    // keyboard focus. Built here rather than in index.md so it only ever shows
+    // up when the click handler behind it is actually attached.
+    var art = img.parentNode;
+    art.classList.add("hero-art--zoomable");
+    art.insertAdjacentHTML(
+      "beforeend",
+      '<span class="hero-art__hint" aria-hidden="true">' +
+        '<span class="hero-art__hint-chip">' +
+        icon(ICON_MAGNIFY) +
+        "</span></span>"
+    );
 
     img.addEventListener("click", function () {
       open(img);
