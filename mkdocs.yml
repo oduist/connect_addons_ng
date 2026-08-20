@@ -58,6 +58,7 @@ extra_css:
 
 extra_javascript:
   - javascripts/module-table.js
+  - javascripts/hero-zoom.js
 
 # Documentation lives inside each Odoo module under <module>/docs/. The
 # mkdocs-monorepo-plugin aggregates every module's own mkdocs.yml (site_name +

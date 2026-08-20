@@ -70,6 +70,67 @@
   box-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.85);
 }
 
+/* ------------------------------------------------------------------ *
+ * Hero screenshot lightbox (hero-zoom.js)
+ * ------------------------------------------------------------------ */
+/* The class is added by the script, so the affordance only appears once the
+   click handler is actually attached. */
+.hero-art img.hero-art__zoomable {
+  cursor: zoom-in;
+  transition: transform 200ms ease, box-shadow 200ms ease,
+    border-color 200ms ease;
+}
+.hero-art img.hero-art__zoomable:hover,
+.hero-art img.hero-art__zoomable:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--md-default-fg-color--lighter);
+  box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.9);
+}
+
+.hero-zoom {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  cursor: zoom-out;
+  /* Narrow screens show the screenshot at 1:1 rather than shrunk to nothing,
+     so the overlay has to be pannable. On a desktop the image fits and this
+     never engages. */
+  overflow: auto;
+  overscroll-behavior: contain;
+  background-color: rgb(4 5 10 / 0.78);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+[data-md-color-scheme="default"] .hero-zoom {
+  background-color: rgb(20 22 31 / 0.62);
+}
+.hero-zoom.is-open {
+  opacity: 1;
+}
+
+.hero-zoom__img {
+  /* Absolute, not fixed: it has to live inside the overlay's scroll area so a
+     1:1 screenshot wider than the viewport can be panned. */
+  position: absolute;
+  /* The FLIP maths in hero-zoom.js assumes the top-left corner as the origin,
+     which reduces the inverse to one translate plus one scale. */
+  transform-origin: 0 0;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: var(--au-radius-lg, 12px);
+  box-shadow: 0 40px 120px -40px rgb(0 0 0 / 0.9);
+  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+}
+
+/* Keep the reveal, drop the travel. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-art img.hero-art__zoomable,
+  .hero-zoom__img {
+    transition: none;
+  }
+}
+
 
 /*
  * "The module system" — the periodic-table block on the docs home page.
