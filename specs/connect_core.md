@@ -63,6 +63,7 @@ for easy access from other models.
 |--------|-------------|
 | `get_param()` | Singleton parameter access |
 | `set_param()` | Singleton parameter write |
+| `get_media_auth(media_url)` | Credentials for the media proxy to fetch provider audio; `None` in core, overridden per provider (ADR-060) |
 | `open_settings_form(view_xmlid="connect.connect_settings_form", name="General Settings")` | UI action opening the settings singleton through the given form view. Parametrized so each provider module's Settings menu opens the same record through its own standalone view (e.g. `connect_twilio.twilio_settings_form`). |
 | `originate_call(number, res_model=None, res_id=None, user=None, **kwargs)` | Click-to-call dispatcher. Resolves the provider via `_get_originate_provider()`; provider modules override and chain via `super()` — each handles the call when its key matches, otherwise falls through. The core base raises a `UserError` when no provider can handle the call. |
 | `_get_originate_provider(user=None)` | Resolve the provider key for the user: explicit `connect.user.originate_provider` → the only installed provider (single `selection_add` entry) → `UserError` (none installed, or several installed and no choice made). |
@@ -553,10 +554,12 @@ regeneration hooks.
 | `/connect/<uid>/` | GET | - | Health check endpoint |
 
 **Notes:**
-- `_serve_media()` is abstract. It needs authentication credentials from the integration
-  module to fetch the actual audio file from the provider. Core provides the routing
-  structure; integration modules override with provider-specific auth (e.g., Twilio
-  basic auth with account_sid/auth_token).
+- `_serve_media()` fetches the provider's audio and streams it to the browser. It takes
+  its credentials from `connect.settings.get_media_auth(media_url)`, which core answers
+  with `None` and provider modules override (e.g. `connect_twilio` returns
+  `(account_sid, auth_token)` for Twilio hosts only). A failed fetch answers `502` and
+  logs the upstream status: the audio element itself shows nothing but a 0-second
+  recording, so the log is the only place the cause can appear (ADR-060).
 
 ---
 

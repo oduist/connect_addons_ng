@@ -67,6 +67,7 @@ Extends core settings with Twilio API credentials, client management, and sync.
 |--------|-------------|
 | `get_client()` | Create and return Twilio REST client instance |
 | `sync()` | Full sync of all Twilio resources (numbers, callerIDs, domains, etc.) |
+| `get_media_auth(media_url)` | `(account_sid, auth_token)` for `*.twilio.com` media, `None` for anything else — an External Storage bucket must not receive the Twilio token (ADR-060) |
 | `originate_call()` | Override of the core dispatcher: when `_get_originate_provider(user)` is not `'twilio'`, falls through to `super()`; otherwise initiates the outbound call via the Twilio API. The `From` of an internal originate comes from `connect.user.twilio_caller_id()` (ADR-058) |
 | `get_external_call_route()` | Return TwiML route for external calls |
 | `get_twilio_balance()` | Fetch account balance from Twilio API |
@@ -191,8 +192,10 @@ recording status webhook.
 Live state is read from Twilio, never inferred from configuration. When the
 channel carries no control state of its own, `_softphone_recording_state_twilio`
 calls `_twilio_active_recording()`, which walks `_twilio_recording_call_sids()`
-— this leg and then its parent chain — and asks the Recording API for
-recordings with `status='in-progress'`. The parent hop matters because a
+— this leg and then its parent chain — lists each leg's recordings and keeps
+the ones whose `status` is `in-progress`. The filtering is done here, in
+Python: `CallRecordingList.list()` filters by date only, and passing it
+`status=` raises `TypeError`. The parent hop matters because a
 callflow emits `<Dial record='record-from-answer-dual'>` on the inbound leg
 while the softphone holds the client child leg; without it a recorded callflow
 call reports `off`. `_softphone_recording_stop_twilio` resolves the same way, so

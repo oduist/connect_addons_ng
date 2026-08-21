@@ -70,13 +70,23 @@ class TestTwilioRecordingControls(TransactionCase):
             requested['sid'] = call_sid
             return call_context
 
-        def _list(**kwargs):
+        # Mirror twilio.rest...call.recording.RecordingList.list(): it
+        # filters by date only. A **kwargs stub would accept status= and hide
+        # the TypeError the real library raises.
+        def _list(date_created=None, date_created_before=None,
+                  date_created_after=None, limit=None, page_size=None):
             running = active_calls.get(requested['sid'])
-            if not running:
-                return []
-            active = MagicMock()
-            active.sid = running
-            return [active]
+            recordings = []
+            done = MagicMock()
+            done.sid = 'REDONE'
+            done.status = 'completed'
+            recordings.append(done)
+            if running:
+                active = MagicMock()
+                active.sid = running
+                active.status = 'in-progress'
+                recordings.append(active)
+            return recordings
 
         client.calls.side_effect = _calls
         recordings.list.side_effect = _list
@@ -146,7 +156,25 @@ class TestTwilioRecordingControls(TransactionCase):
                     'channel_sid': channel.sid,
                 })
         self.assertEqual(state['state'], 'off')
-        recordings.list.assert_called_with(status='in-progress')
+        # The API is asked for the call's recordings and the running one is
+        # picked here; status= is not a parameter of that endpoint.
+        self.assertNotIn('status', recordings.list.call_args.kwargs)
+
+    def test_a_finished_recording_does_not_report_on(self):
+        """Every call has completed recordings once it has been recorded."""
+        channel = self._channel('CARECDONE')
+        client, __ = self._mock_client()
+
+        with patch.object(type(self.Settings), 'get_client',
+                          return_value=client):
+            state = self.env['connect.channel'].with_user(
+                self.owner_user).get_softphone_recording_state({
+                    'provider': 'twilio',
+                    'channel_sid': channel.sid,
+                })
+
+        self.assertEqual(state['state'], 'off')
+        self.assertEqual(state['recording_ref'], '')
 
     def test_recording_state_reports_on_for_this_leg(self):
         channel = self._channel('CARECLIVE')

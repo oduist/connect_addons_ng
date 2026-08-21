@@ -112,8 +112,17 @@ class Channel(models.Model):
             return '', ''
         for call_sid in self._twilio_recording_call_sids():
             try:
-                recordings = client.calls(call_sid).recordings.list(
-                    status='in-progress')
+                # CallRecordingList.list() filters by date only. Asking it for
+                # status='in-progress' raises TypeError, and the except below
+                # swallowed it -- so a recording running on the call was never
+                # seen and the softphone button stayed idle through a call the
+                # Record Calls option was recording.
+                recordings = [
+                    recording
+                    for recording in client.calls(call_sid).recordings.list(
+                        limit=20)
+                    if getattr(recording, 'status', '') == 'in-progress'
+                ]
             except Exception:
                 logger.exception(
                     'Twilio recording lookup failed for %s', call_sid)

@@ -191,3 +191,22 @@ For Twilio, outgoing caller IDs can be validated:
 1. Create a new caller ID in **Connect > Twilio > Outgoing Caller IDs**
 2. Click **Validate** — Twilio will call the number and provide a validation code
 3. Enter the validation code to confirm the number
+
+## Call Recordings
+
+Recordings are played in Odoo through the media proxy: the `<audio>` player
+asks Odoo for the file and Odoo fetches it from Twilio, using the account
+credentials when Twilio requires them. Nothing extra is needed for a standard
+account.
+
+**A recording that plays as 0 seconds means the media could not be fetched** —
+the metadata (duration, price, caller) comes from the Twilio API and is
+correct, but the file itself never arrived. The Odoo log names the URL and the
+status Twilio or the storage answered.
+
+The common cause is **External Storage** on the Twilio account (Voice >
+Settings > Recording storage). With it enabled, Twilio writes the media to your
+own S3 bucket and keeps only the metadata: the Twilio API no longer serves the
+file, and the bucket rejects Odoo's request because Connect holds no bucket
+credentials. To play recordings in Odoo, turn External Storage off so Twilio
+stores the media itself.
