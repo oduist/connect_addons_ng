@@ -8,6 +8,9 @@ let indexPromise = null;
 
 async function loadIndex(base) {
   const response = await fetch(`${base}search/search_index.json`);
+  if (!response.ok) {
+    throw new Error(`search index request failed: ${response.status}`);
+  }
   const payload = await response.json();
   const documents = new Map();
 
@@ -29,6 +32,18 @@ function moduleOf(location) {
   return first && !first.includes(".") ? first : "Home";
 }
 
+function escapeHtml(text) {
+  return text.replace(/[&<>]/g, (c) => `&#${c.charCodeAt(0)};`);
+}
+
+// Terms come straight from what the reader typed, and technical docs invite
+// terms full of regex metacharacters (a function call, a glob, a version
+// range like "1.2.*"). Escape before building a RegExp from them, or a term
+// like "(" throws a SyntaxError that aborts the whole result render.
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function snippet(text, terms) {
   const lowered = text.toLowerCase();
   const at = terms
@@ -37,10 +52,10 @@ function snippet(text, terms) {
     .sort((a, b) => a - b)[0];
   const start = Math.max(0, (at ?? 0) - 60);
   const raw = text.slice(start, start + 200);
-  const escaped = raw.replace(/[&<>]/g, (c) => `&#${c.charCodeAt(0)};`);
+  const escaped = escapeHtml(raw);
   return terms.reduce(
     (acc, term) =>
-      acc.replace(new RegExp(`(${term})`, "gi"), "<mark>$1</mark>"),
+      acc.replace(new RegExp(`(${escapeRegExp(term)})`, "gi"), "<mark>$1</mark>"),
     escaped,
   );
 }
@@ -54,12 +69,27 @@ export function initSearch() {
 
   const base = document.documentElement.dataset.base || "";
 
+  const showUnavailable = () => {
+    output.innerHTML =
+      "<li class='docs-search__status'>Search is unavailable right now. Try again.</li>";
+  };
+
   const open = () => {
     dialog.showModal();
     input.focus();
     if (!indexPromise) {
       output.innerHTML = "<li class='docs-search__status'>Indexing…</li>";
-      indexPromise = loadIndex(base);
+      // On failure, null out indexPromise so the NEXT open() genuinely
+      // retries the fetch instead of re-awaiting a promise that is
+      // permanently rejected. The rejection is swallowed here (not
+      // rethrown) so it never becomes an unhandled promise rejection when
+      // nothing is awaiting it yet (the reader opened the dialog but has
+      // not typed) — awaiters instead see `undefined`, which the input
+      // handler's own try/catch turns into the same "unavailable" message.
+      indexPromise = loadIndex(base).catch((error) => {
+        indexPromise = null;
+        showUnavailable();
+      });
     }
   };
 
@@ -87,37 +117,51 @@ export function initSearch() {
       output.innerHTML = "";
       return;
     }
-    const { index, documents } = await indexPromise;
-    const terms = query.split(/\s+/);
-    const hits = index.query((q) => {
-      for (const term of terms) {
-        q.term(term, { boost: 2 });
-        q.term(term, { wildcard: lunr.Query.wildcard.TRAILING });
-      }
-    });
+    if (!indexPromise) {
+      // A previous load already failed and cleared the promise; open()
+      // will retry on the next dialog open, but this keystroke has nothing
+      // to query against.
+      showUnavailable();
+      return;
+    }
+    // Defensive as a whole: a malformed query, a rejected index load, or
+    // anything else thrown while building results must land on the status
+    // line instead of leaving an unhandled rejection and a frozen list.
+    try {
+      const { index, documents } = await indexPromise;
+      const terms = query.split(/\s+/);
+      const hits = index.query((q) => {
+        for (const term of terms) {
+          q.term(term, { boost: 2 });
+          q.term(term, { wildcard: lunr.Query.wildcard.TRAILING });
+        }
+      });
 
-    output.innerHTML =
-      hits
-        .slice(0, 20)
-        .map((hit) => {
-          const doc = documents.get(hit.ref);
-          // doc.location carries a trailing #anchor for section-level hits
-          // (one record per heading — see the module comment above). A
-          // fragment absorbs everything after it, including a literal "?",
-          // so ?h=<query> must be inserted before the anchor or the query
-          // string never reaches the destination page and highlightQuery()
-          // finds nothing.
-          const [path, anchor] = doc.location.split("#");
-          const href = `${base}${path}?h=${encodeURIComponent(query)}${anchor ? `#${anchor}` : ""}`;
-          return `<li class="docs-search__hit">
-            <a href="${href}">
-              <span class="docs-search__module">${moduleOf(doc.location)}</span>
-              <span class="docs-search__title">${doc.title}</span>
-              <span class="docs-search__text">${snippet(doc.text, terms)}</span>
-            </a>
-          </li>`;
-        })
-        .join("") || "<li class='docs-search__status'>No results</li>";
+      output.innerHTML =
+        hits
+          .slice(0, 20)
+          .map((hit) => {
+            const doc = documents.get(hit.ref);
+            // doc.location carries a trailing #anchor for section-level hits
+            // (one record per heading — see the module comment above). A
+            // fragment absorbs everything after it, including a literal "?",
+            // so ?h=<query> must be inserted before the anchor or the query
+            // string never reaches the destination page and highlightQuery()
+            // finds nothing.
+            const [path, anchor] = doc.location.split("#");
+            const href = `${base}${path}?h=${encodeURIComponent(query)}${anchor ? `#${anchor}` : ""}`;
+            return `<li class="docs-search__hit">
+              <a href="${href}">
+                <span class="docs-search__module">${escapeHtml(moduleOf(doc.location))}</span>
+                <span class="docs-search__title">${escapeHtml(doc.title)}</span>
+                <span class="docs-search__text">${snippet(doc.text, terms)}</span>
+              </a>
+            </li>`;
+          })
+          .join("") || "<li class='docs-search__status'>No results</li>";
+    } catch (error) {
+      showUnavailable();
+    }
   });
 
   // Keyboard navigation across the result list.
