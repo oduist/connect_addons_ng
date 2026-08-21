@@ -55,7 +55,7 @@ Use the `agent-browser` skill. Capture each of these, in **both** schemes (use t
 |---|---|---|
 | `home` | `/` | hero, module table, legend, lightbox |
 | `module-table-admonition` | `/Twilio/configuration/` | a table plus admonitions |
-| `tabs` | `/FreeSWITCH/admin/freeswitch-setup/` | tabbed content |
+| `tabs` | `/Core/admin/installation/` | tabbed content and a code block |
 | `changelog` | `/changelog/` | long plain page, no sidebar |
 | `notfound` | `/no-such-page/` | 404 template |
 
@@ -93,6 +93,8 @@ SITE = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "site")
 HOME = SITE / "index.html"
 MODULE_PAGE = SITE / "Twilio" / "configuration" / "index.html"
 CHANGELOG = SITE / "changelog" / "index.html"
+# Carries both a code block and a tabbed set; the Twilio page has neither.
+CODE_PAGE = SITE / "Core" / "admin" / "installation" / "index.html"
 NOT_FOUND = SITE / "404.html"
 
 failures = []
@@ -496,7 +498,7 @@ Create `docs/theme/base.html`:
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
     {% block styles %}
-      <link rel="stylesheet" href="{{ 'theme/assets/app.css' | url }}">
+      <link rel="stylesheet" href="{{ 'assets/app.css' | url }}">
     {% endblock %}
   </head>
   <body>
@@ -521,7 +523,7 @@ Create `docs/theme/base.html`:
     {% include "partials/footer.html" %}
 
     {% block scripts %}
-      <script type="module" src="{{ 'theme/assets/theme.js' | url }}"></script>
+      <script type="module" src="{{ 'assets/theme.js' | url }}"></script>
       {% for path in config.extra_javascript %}
         <script src="{{ path | url }}"></script>
       {% endfor %}
@@ -584,6 +586,21 @@ theme:
   static_templates:
     - 404.html
 ```
+
+`docs/theme/` sits inside `docs_dir`, so MkDocs would otherwise ALSO treat the
+templates as documentation files and copy them into the site. Add it to the
+existing exclusion:
+
+```yaml
+exclude_docs: |
+  superpowers/
+  theme/
+```
+
+Theme static files are copied to the site **root** (their path relative to the
+theme directory), so `docs/theme/assets/app.css` is served at `assets/app.css`,
+alongside the existing `docs/assets/` images. Every URL in the templates
+reflects that.
 
 Delete the `extra:` block (`generator: false` was a Material setting) and the `extra_css:` block. Leave `plugins`, `nav`, `markdown_extensions` and `extra_javascript` untouched.
 
@@ -1074,7 +1091,7 @@ def _content_components():
 
 @check("code blocks carry Pygments classes")
 def _code_highlighting():
-    html = read(MODULE_PAGE)
+    html = read(CODE_PAGE)
     if 'class="highlight"' not in html:
         return "no highlighted code block found"
 ```
@@ -1304,7 +1321,7 @@ Wire both into `docs/theme/assets/theme.js` (add the import and the two calls ne
 Note: `wrapTables()` runs client-side, so the `docs-table-wrap` assertion added in Step 1 would fail against static HTML. Change that assertion to check the CSS instead — replace the table clause with:
 
 ```python
-    if "docs-table-wrap" not in (SITE / "theme" / "assets" / "app.css").read_text():
+    if "docs-table-wrap" not in (SITE / "assets" / "app.css").read_text():
         return "the table wrapper class is not in the compiled stylesheet"
 ```
 
@@ -1318,7 +1335,7 @@ Expected: `OK: 11 checks passed`.
 
 - [ ] **Step 7: Compare against the baseline**
 
-Screenshot `/Twilio/configuration/` and `/FreeSWITCH/admin/freeswitch-setup/` in both schemes and compare with `/tmp/docs-baseline/`. Admonition colours, code block surface and table rules should read the same. Fix what drifted.
+Screenshot `/Twilio/configuration/` and `/Core/admin/installation/` in both schemes and compare with `/tmp/docs-baseline/`. Admonition colours, code block surface and table rules should read the same. Fix what drifted.
 
 - [ ] **Step 8: Commit**
 
@@ -1348,7 +1365,7 @@ def _search_ui():
     html = read(MODULE_PAGE)
     if "data-search" not in html:
         return "no search dialog in the page"
-    if not (SITE / "theme" / "assets" / "vendor" / "lunr.min.js").exists():
+    if not (SITE / "assets" / "vendor" / "lunr.min.js").exists():
         return "lunr.min.js was not copied into the site"
 ```
 
@@ -1541,7 +1558,7 @@ In `docs/theme/partials/header.html`, put a search button before the scheme togg
 In `docs/theme/base.html`: include `partials/search.html` just before the footer include, load lunr before the theme module, and expose the site base URL for `search.js`:
 
 ```html
-    <script src="{{ 'theme/assets/vendor/lunr.min.js' | url }}"></script>
+    <script src="{{ 'assets/vendor/lunr.min.js' | url }}"></script>
 ```
 
 and on the `<html>` tag: `data-base="{{ '' | url }}"`.
