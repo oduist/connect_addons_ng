@@ -26,11 +26,15 @@ docs_dir: docs
 # inside docs_dir so it must be excluded or MkDocs would also publish the
 # templates themselves as documentation pages. README.md documents this
 # build for contributors and conflicts with index.md (the actual Home page)
-# in the same directory if MkDocs tries to build both.
+# in the same directory if MkDocs tries to build both. exclude_docs compiles
+# to a gitignore-style spec (mkdocs/structure/files.py:529), where a bare
+# pattern matches at any depth in the aggregated tree; the leading slash
+# anchors this entry to the root docs_dir so it does NOT also swallow a
+# future module's own docs/README.md.
 exclude_docs: |
   superpowers/
   theme/
-  README.md
+  /README.md
 
 theme:
   name: null
