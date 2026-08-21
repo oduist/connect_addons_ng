@@ -24,10 +24,13 @@ docs_dir: docs
 # Internal design notes kept in the repo but not part of the published site.
 # theme/ holds the Jinja templates for docs/theme's custom_dir; it sits
 # inside docs_dir so it must be excluded or MkDocs would also publish the
-# templates themselves as documentation pages.
+# templates themselves as documentation pages. README.md documents this
+# build for contributors and conflicts with index.md (the actual Home page)
+# in the same directory if MkDocs tries to build both.
 exclude_docs: |
   superpowers/
   theme/
+  README.md
 
 theme:
   name: null

@@ -1,7 +1,13 @@
-# Documentation build dependencies (MkDocs Material).
-# mkdocs-material pulls in mkdocs, pymdown-extensions and the rest of the
-# stack used by mkdocs.yml (admonition, pymdownx.*, tables, attr_list).
-mkdocs-material==9.7.6
+# Documentation build dependencies.
+# The site ships its own theme (docs/theme/, specs/docs_site.md); the CSS is
+# built with the Tailwind CLI from package.json and committed, so a
+# Markdown-only contributor needs nothing but these.
+mkdocs==1.6.1
+
+# mkdocs.yml's markdown_extensions use pymdownx.details, pymdownx.superfences
+# and pymdownx.tabbed. The Material theme package used to pull this in
+# transitively, so it was never pinned here.
+pymdown-extensions==11.0.1
 
 # Aggregates each module's docs/ folder into one site (see root mkdocs.yml).
 mkdocs-monorepo-plugin==1.1.2

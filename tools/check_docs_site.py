@@ -174,6 +174,17 @@ def _edit_url():
         return f"edit link points at {url}, not the module source"
 
 
+@check("the build no longer depends on Material")
+def _material_gone():
+    requirements = pathlib.Path("docs/requirements.txt").read_text()
+    if "mkdocs-material" in requirements:
+        return "mkdocs-material is still a documented dependency"
+    if pathlib.Path("docs/overrides").exists():
+        return "docs/overrides/ still exists"
+    if pathlib.Path("docs/stylesheets/aurora.css").exists():
+        return "docs/stylesheets/aurora.css still exists"
+
+
 def main():
     for fn in CHECKS:
         try:

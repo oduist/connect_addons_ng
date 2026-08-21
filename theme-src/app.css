@@ -248,6 +248,11 @@
 
   .docs-header__spacer { flex: 1; }
 
+  .docs-header__repo {
+    color: inherit;
+    text-decoration: none;
+  }
+
   .docs-crumbs {
     position: sticky;
     top: 3.1rem;
@@ -487,7 +492,6 @@
     width: min(36rem, 92vw);
     max-height: min(28rem, 80vh);
     margin: 3.5rem auto auto;
-    display: flex;
     flex-direction: column;
     gap: 0.6rem;
     border: 1px solid var(--au-border);
@@ -496,6 +500,12 @@
     color: var(--au-ink);
     padding: 0.9rem;
   }
+
+  /* The dialog is closed by default (matching the browser's own
+     `dialog:not([open]) { display: none }`); only lay it out as a flex
+     column once JS opens it, so the closed dialog does not render inline in
+     the middle of every page. */
+  .docs-search[open] { display: flex; }
 
   .docs-search::backdrop { background-color: rgb(4 5 10 / 0.6); }
 

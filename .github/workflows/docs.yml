@@ -11,6 +11,9 @@ on:
       - "docs/**"
       - "mkdocs.yml"
       - ".github/workflows/docs.yml"
+      - "theme-src/**"
+      - "package.json"
+      - "package-lock.json"
   workflow_dispatch:
 
 # gh-deploy needs to push the built site to the `website` branch.
@@ -36,6 +39,19 @@ jobs:
       - name: Install dependencies
         run: pip install -r docs/requirements.txt
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Build the theme stylesheet
+        run: npm ci && npm run build:css
+
+      # The compiled stylesheet is committed so that `mkdocs serve` works
+      # without Node. Fail loudly if the committed copy is stale.
+      - name: Verify the committed stylesheet is current
+        run: git diff --exit-code docs/theme/assets/app.css
+
       # Bring the existing `website` history into this fresh checkout so
       # gh-deploy appends a new commit on top of it (keeping the full deploy
       # history) instead of starting a divergent branch. Skipped on the very
@@ -43,5 +59,11 @@ jobs:
       - name: Fetch existing website branch
         run: git fetch origin website:website || echo "website branch does not exist yet (first deploy)"
 
-      - name: Build and deploy to website branch
+      - name: Build the site
+        run: mkdocs build --strict
+
+      - name: Check the built site
+        run: python3 tools/check_docs_site.py site
+
+      - name: Deploy to website branch
         run: mkdocs gh-deploy --remote-branch website

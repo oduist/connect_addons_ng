@@ -48,7 +48,13 @@ docs/theme/                     # the theme itself
     toc.html  search.html  footer.html
   assets/
     app.css                     # Tailwind build output — COMMITTED (see Build)
-    theme.js                    # scheme toggle, TOC scrollspy, copy buttons, search, drawer
+    theme.js                    # entry point — wires the js/ modules up on DOM ready
+    js/
+      scheme.js                 # dark/light toggle, anti-flash persistence
+      toc.js                    # TOC scrollspy
+      drawer.js                 # mobile navigation drawer
+      copy.js                   # copy-to-clipboard buttons, table wrapping
+      search.js                 # search dialog, lunr index, result rendering
     vendor/lunr.min.js          # search engine (not shipped by the search plugin)
 
 docs/javascripts/               # unchanged, loaded via extra_javascript
@@ -83,7 +89,7 @@ theme:
     - 404.html
 
 repo_url: https://github.com/oduist/connect_addons_ng
-edit_uri: edit/19.0/
+edit_uri: edit/19.0/docs/
 ```
 
 Unchanged: `site_name`, `site_url`, `copyright`, `docs_dir`, `exclude_docs`,
@@ -97,6 +103,16 @@ that does not exist in the repository; the plugin rewrites the URL back to the
 owning module in `on_pre_page` (`mkdocs_monorepo_plugin/plugin.py:72`,
 `edit_uri.py`). The link must be verified on a module page, not only on
 `docs/index.md`.
+
+`edit_uri` **must** literally contain `docs/` as a path segment — not just
+`edit/19.0/`. `mkdocs_monorepo_plugin/edit_uri.py` rewrites the edit URL with a
+plain substring replacement of the root `docs_dir` ("docs") against each
+module's own `docs_dir` (e.g. "connect_twilio/docs"); if `edit_uri` does not
+contain the string "docs", the replacement silently no-ops and every module
+page falls back to the un-rewritten root `edit_uri`, producing a broken link
+that points at a path that does not exist in the repository. Do not
+"simplify" this back to `edit/19.0/` — it looks equivalent but breaks the
+rewrite.
 
 ## Templates
 
@@ -289,9 +305,15 @@ committed file honest, CI rebuilds it and fails on any difference:
 ```
 
 `.github/workflows/docs.yml` gains `actions/setup-node` and those two steps
-before `mkdocs gh-deploy`; nothing else in the workflow changes.
-`docs/requirements.txt` drops `mkdocs-material` and keeps `mkdocs` (explicitly,
-since Material used to pull it in) and `mkdocs-monorepo-plugin`.
+before `mkdocs gh-deploy`, plus an explicit `mkdocs build --strict` and a
+`tools/check_docs_site.py site` run so the checker has a build directory to
+inspect (`mkdocs gh-deploy` does not leave one behind); the `paths:` trigger
+filter is extended with `theme-src/**`, `package.json` and
+`package-lock.json`.
+`docs/requirements.txt` drops `mkdocs-material` and keeps `mkdocs` and
+`pymdown-extensions` (explicitly, since Material used to pull both in
+transitively — `markdown_extensions` in `mkdocs.yml` uses `pymdownx.details`,
+`pymdownx.superfences` and `pymdownx.tabbed`) and `mkdocs-monorepo-plugin`.
 
 ## Migration Order
 
