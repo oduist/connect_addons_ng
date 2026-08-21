@@ -9,8 +9,15 @@ export function initCopyButtons() {
     button.className = "docs-copy";
     button.textContent = "Copy";
     button.addEventListener("click", async () => {
-      await navigator.clipboard.writeText(code.innerText);
-      button.textContent = "Copied";
+      try {
+        await navigator.clipboard.writeText(code.innerText);
+        button.textContent = "Copied";
+      } catch (error) {
+        // Denied clipboard permission or a non-secure context both reject
+        // here; without the catch the button was left stuck on "Copy" with
+        // no feedback at all.
+        button.textContent = "Copy failed";
+      }
       setTimeout(() => (button.textContent = "Copy"), 1500);
     });
     block.append(button);

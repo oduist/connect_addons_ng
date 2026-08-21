@@ -33,7 +33,7 @@ function moduleOf(location) {
 }
 
 function escapeHtml(text) {
-  return text.replace(/[&<>]/g, (c) => `&#${c.charCodeAt(0)};`);
+  return text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
 // Terms come straight from what the reader typed, and technical docs invite
@@ -62,10 +62,12 @@ function snippet(text, terms) {
 
 export function initSearch() {
   const dialog = document.querySelector("[data-search]");
+  const form = dialog?.querySelector("[data-search-form]");
   const input = dialog?.querySelector("[data-search-input]");
   const output = dialog?.querySelector("[data-search-results]");
+  const closeButton = dialog?.querySelector("[data-search-close]");
   const opener = document.querySelector("[data-search-open]");
-  if (!dialog || !input || !output || !opener) return;
+  if (!dialog || !form || !input || !output || !closeButton || !opener) return;
 
   const base = document.documentElement.dataset.base || "";
 
@@ -94,6 +96,18 @@ export function initSearch() {
   };
 
   opener.addEventListener("click", open);
+  closeButton.addEventListener("click", () => dialog.close());
+
+  // The form has no method="dialog" (see the comment in search.html), so
+  // Enter in the input reaches here as an ordinary submit instead of
+  // implicitly closing the dialog. Follow the first result, same as
+  // clicking it.
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const firstHit = output.querySelector("a");
+    if (firstHit) window.location.assign(firstHit.href);
+  });
+
   document.addEventListener("keydown", (event) => {
     const typing = /^(INPUT|TEXTAREA)$/.test(event.target.tagName);
     if (typing) return;
