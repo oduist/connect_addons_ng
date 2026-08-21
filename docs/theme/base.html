@@ -1,0 +1,65 @@
+{#-
+  Page skeleton for the Aurora theme (specs/docs_site.md).
+
+  Everything read from the template context is MkDocs core: page.meta,
+  page.toc, page.ancestors, nav.items, config.*. Nothing here depends on a
+  third-party theme.
+-#}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block htmltitle %}{% if page.title and not page.is_homepage %}{{ page.title }} — {{ config.site_name }}{% else %}{{ config.site_name }}{% endif %}{% endblock %}</title>
+    {% if config.site_description %}
+      <meta name="description" content="{{ config.site_description }}">
+    {% endif %}
+    <link rel="icon" href="{{ 'assets/logo.png' | url }}">
+    {#- Written before first paint so the page never flashes the wrong palette. -#}
+    <script>
+      (function () {
+        var stored = null;
+        try { stored = localStorage.getItem("docs-scheme"); } catch (e) {}
+        var prefersLight =
+          window.matchMedia("(prefers-color-scheme: light)").matches;
+        document.documentElement.dataset.theme =
+          stored || (prefersLight ? "light" : "dark");
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+    {% block styles %}
+      <link rel="stylesheet" href="{{ 'assets/app.css' | url }}">
+    {% endblock %}
+  </head>
+  <body>
+    <a class="skip-link" href="#docs-main">Skip to content</a>
+    {% include "partials/header.html" %}
+    {% include "partials/breadcrumbs.html" %}
+
+    <div class="docs-shell">
+      {#- page is None for static_templates (404.html), which has no meta. -#}
+      {% if not page or "navigation" not in (page.meta.hide or []) %}
+        {% include "partials/nav.html" %}
+      {% endif %}
+
+      <main id="docs-main" class="docs-content">
+        {% block content %}{% endblock %}
+      </main>
+
+      {% if not page or "toc" not in (page.meta.hide or []) %}
+        {% include "partials/toc.html" %}
+      {% endif %}
+    </div>
+
+    {% include "partials/footer.html" %}
+
+    {% block scripts %}
+      <script type="module" src="{{ 'assets/theme.js' | url }}"></script>
+      {% for path in config.extra_javascript %}
+        <script src="{{ path | url }}"></script>
+      {% endfor %}
+    {% endblock %}
+  </body>
+</html>

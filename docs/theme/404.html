@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block htmltitle %}Page not found — {{ config.site_name }}{% endblock %}
+
+{% block content %}
+  <article class="prose max-w-none dark:prose-invert">
+    <h1>Page not found</h1>
+    <p>
+      That page does not exist. Try the
+      <a href="{{ '/' | url }}">documentation home page</a>, or search from the
+      header.
+    </p>
+  </article>
+{% endblock %}

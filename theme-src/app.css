@@ -1,0 +1,166 @@
+/*
+ * "Aurora" — the Oduist Connect brand palette, now owned by this theme.
+ *
+ * Source of truth: PALETTE.md / global.css in the oduist-com site; values are
+ * mirrored here 1:1. Brand rules carried over from DESIGN.md:
+ *   - One Gradient: cyan -> iris -> fuchsia is the only multi-hue decorative
+ *     element (header hairline, h1 rule, primary button). Cyan doubles as the
+ *     flat accent.
+ *   - Neutrals are subtly cool; body text >= 7:1 on the void background.
+ *
+ * Deviation, deliberate: the brand site is dark-only, but a docs site needs a
+ * light mode, and admonitions need semantic (not decorative) colors. The
+ * light scheme reuses the brand hues at darker, AA-contrast values, and three
+ * semantic accents (mint / amber / rose) sit alongside the brand trio.
+ */
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Scheme is an explicit attribute on <html>, written before first paint by
+   assets/js/scheme.js, so there is no flash of the wrong palette. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  /* Brand */
+  --color-au-cyan: #2dd4ff;    /* gradient 0%   · flat primary accent */
+  --color-au-iris: #7c83ff;    /* gradient 42%  · focus ring · glow drop */
+  --color-au-fuchsia: #e16bff; /* gradient 100% */
+  --color-au-soft: #c9ccff;    /* soft highlight */
+
+  /* Accent aliases */
+  --color-au-signal-bright: #5cdcff; /* links / bright icons */
+  --color-au-signal-deep: #1a86b0;   /* selection background, rails */
+  --color-au-signal-faint: rgb(45 212 255 / 0.14);
+  --color-au-primary-ink: #06070d;   /* ink on gradient / cyan fills */
+
+  /* Semantic accents (docs-only, harmonized with the brand trio) */
+  --color-au-mint: #2ee6a8;
+  --color-au-amber: #ffc14d;
+  --color-au-rose: #ff5d7a;
+
+  /* Radii */
+  --radius-au-sm: 6px;
+  --radius-au-md: 10px;
+  --radius-au-lg: 12px;
+
+  /* Geist is loaded from Google Fonts in base.html, as Material used to. */
+  --font-sans: Geist, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Scheme-dependent surfaces. Dark is the brand look and the default. */
+:root,
+[data-theme="dark"] {
+  --au-bg: #04050a;           /* page background (void) */
+  --au-panel: #0e0f14;        /* card / panel / code surface */
+  --au-panel-raised: #14161f; /* raised surface */
+  --au-header-bg: rgb(4 5 10 / 0.8);
+  --au-ink: #eef0fa;
+  --au-muted: #9aa1bd;
+  --au-faint: #5b6184;
+  --au-border: rgb(255 255 255 / 0.08);
+  --au-border-strong: rgb(255 255 255 / 0.16);
+  --au-border-hover: rgb(255 255 255 / 0.28);
+  --au-link: var(--color-au-signal-bright);
+  --au-code-ink: #dfe3f5;
+}
+
+/* Light scheme: the brand hues darkened to hold AA contrast. The current site
+   only overrides accents here and inherits Material's light neutrals, so
+   these neutral values are new — check them against the reference
+   screenshots. */
+[data-theme="light"] {
+  --au-bg: #ffffff;
+  --au-panel: #f2f5f9;
+  --au-panel-raised: #ffffff;
+  --au-header-bg: rgb(255 255 255 / 0.86);
+  --au-ink: #14161f;
+  --au-muted: #4d5470;
+  --au-faint: #6b7392;
+  --au-border: rgb(0 0 0 / 0.1);
+  --au-border-strong: rgb(0 0 0 / 0.2);
+  --au-border-hover: rgb(0 0 0 / 0.32);
+  --au-link: var(--color-au-signal-deep);
+  --au-code-ink: #1f2333;
+}
+
+/* The one gradient. */
+:root {
+  --au-gradient: linear-gradient(
+    100deg, var(--color-au-cyan) 0%, var(--color-au-iris) 42%,
+    var(--color-au-fuchsia) 100%);
+}
+
+@layer base {
+  html {
+    background-color: var(--au-bg);
+    color: var(--au-ink);
+    scroll-behavior: smooth;
+  }
+
+  /* Anchored headings must clear both the sticky header and the breadcrumb
+     trail beneath it. */
+  :target {
+    scroll-margin-top: 7rem;
+  }
+
+  a {
+    color: var(--au-link);
+  }
+
+  ::selection {
+    background-color: var(--color-au-signal-deep);
+    color: var(--color-au-primary-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-au-iris);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .docs-shell {
+    display: grid;
+    grid-template-columns: 16rem minmax(0, 1fr) 14rem;
+    gap: 2.5rem;
+    max-width: 84rem;
+    margin-inline: auto;
+    padding: 1.5rem 1.5rem 4rem;
+  }
+
+  /* The nav and TOC partials are only present when the current page has
+     content for them (module-scoped sidebar, in-page TOC) — pages without
+     either render zero grid items on that side. Without an explicit column,
+     CSS Grid auto-places whatever items ARE present starting at the first
+     track, which would squeeze the main content into the 16rem nav column.
+     Pinning it to the middle track keeps the content column correct
+     regardless of which siblings exist. */
+  .docs-content {
+    grid-column: 2;
+  }
+
+  @media (width < 76rem) {
+    .docs-shell {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .docs-content {
+      grid-column: 1;
+    }
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+  }
+
+  .skip-link:focus {
+    left: 1rem;
+    top: 1rem;
+    z-index: 50;
+    padding: 0.5rem 0.9rem;
+    border-radius: var(--radius-au-md);
+    background-color: var(--au-panel-raised);
+  }
+}

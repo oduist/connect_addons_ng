@@ -12,55 +12,18 @@ copyright: Copyright &copy; Oduist OÜ
 docs_dir: docs
 
 # Internal design notes kept in the repo but not part of the published site.
+# theme/ holds the Jinja templates for docs/theme's custom_dir; it sits
+# inside docs_dir so it must be excluded or MkDocs would also publish the
+# templates themselves as documentation pages.
 exclude_docs: |
   superpowers/
+  theme/
 
 theme:
-  name: material
-  custom_dir: docs/overrides
-  # Site logo (header) and browser favicon — the shared Oduist Connect icon.
-  logo: assets/logo.png
-  favicon: assets/logo.png
-  # Dark ("slate") is the default scheme (the brand site is dark-only); light
-  # stays available via the header toggle. Actual colors come from the "Aurora"
-  # brand palette in stylesheets/aurora.css via the --md-* custom properties.
-  # primary/accent are "custom" on purpose: Material's built-in palettes ship
-  # rules like [data-md-color-scheme=slate][data-md-color-primary=indigo] that
-  # outrank our single-attribute overrides. "custom" carries no colors of its
-  # own, so aurora.css owns every --md-* value.
-  palette:
-    - scheme: slate
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/weather-night
-        name: Switch to light mode
-    - scheme: default
-      primary: custom
-      accent: custom
-      toggle:
-        icon: material/weather-sunny
-        name: Switch to dark mode
-  font:
-    text: Geist
-    code: Geist Mono
-  features:
-    - navigation.sections
-    # Breadcrumbs above the page title (Home / Twilio / ...). Every crumb is a
-    # link: a section resolves to its first page, so the trail is walkable all
-    # the way back to Home — which is how readers reach other modules, since
-    # the sidebar is scoped to the current one (docs/overrides/partials/nav.html).
-    - navigation.path
-    - navigation.top
-    - navigation.tracking
-    - search.highlight
-    - search.suggest
-    - content.code.copy
-    - content.code.annotate
-
-extra_css:
-  - stylesheets/aurora.css
-  - stylesheets/module-table.css
+  name: null
+  custom_dir: docs/theme
+  static_templates:
+    - 404.html
 
 extra_javascript:
   - javascripts/module-table.js
@@ -103,10 +66,6 @@ nav:
   - Sales: '!include ./connect_sale/mkdocs.yml'
   - Accounting: '!include ./connect_account/mkdocs.yml'
   - Project: '!include ./connect_project/mkdocs.yml'
-
-extra:
-  # Remove the "Made with Material for MkDocs" footer notice.
-  generator: false
 
 markdown_extensions:
   - admonition

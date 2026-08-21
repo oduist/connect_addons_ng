@@ -66,6 +66,22 @@ def _search_index():
         return "search/search_index.json is missing"
 
 
+@check("pages carry the theme skeleton")
+def _skeleton():
+    html = read(MODULE_PAGE)
+    for marker in ('data-theme=', 'class="docs-content', "assets/theme.js"):
+        if marker not in html:
+            return f"{marker!r} missing from {MODULE_PAGE}"
+
+
+@check("no Material markup survives")
+def _no_material():
+    for path in (HOME, MODULE_PAGE, CHANGELOG):
+        html = read(path)
+        if "md-header" in html or "data-md-color-scheme" in html:
+            return f"{path} still contains Material markup"
+
+
 def main():
     for fn in CHECKS:
         try:
