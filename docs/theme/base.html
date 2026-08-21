@@ -39,8 +39,10 @@
     {% include "partials/breadcrumbs.html" %}
 
     <div class="docs-shell">
-      {#- page is None for static_templates (404.html), which has no meta. -#}
-      {% if not page or "navigation" not in (page.meta.hide or []) %}
+      {#- page is None for static_templates (404.html): there is no page.meta
+         to read hide flags from, and the nav/toc partials read page.ancestors
+         / page.toc, which do not exist either — skip both outright. -#}
+      {% if page and "navigation" not in (page.meta.hide or []) %}
         {% include "partials/nav.html" %}
       {% endif %}
 
@@ -48,7 +50,7 @@
         {% block content %}{% endblock %}
       </main>
 
-      {% if not page or "toc" not in (page.meta.hide or []) %}
+      {% if page and "toc" not in (page.meta.hide or []) %}
         {% include "partials/toc.html" %}
       {% endif %}
     </div>
