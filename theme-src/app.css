@@ -168,6 +168,12 @@
      root) and its line-height. tools/check_docs_site.py locks this in. */
   font-size: 1.25rem;
   line-height: 1.6;
+  /* Matches Material's `.md-typeset { overflow-wrap: break-word }`: lets any
+     content word that cannot fit the column (long URLs, unbroken tokens)
+     wrap instead of forcing the page wide. Typography sets neither this nor
+     word-break below, so there is no layer to fight — plain @layer
+     components would win the same way. */
+  overflow-wrap: break-word;
 }
 
 .prose :not(pre) > code {
@@ -175,6 +181,14 @@
   /* Typography default is 0.875em (14px @ 16px root); 0.85em keeps inline
      code close to body size the way the pre-migration site did. */
   font-size: 0.85em;
+  /* Matches Material's `.md-typeset code { word-break: break-word }`.
+     Monospace identifiers (e.g. `connect.twilio.outgoing_callerid`) have no
+     natural break point, so overflow-wrap alone is not enough at narrow
+     viewports; word-break lets it split mid-token. Scoped to inline code
+     only (:not(pre) > code) — code blocks keep their own horizontal scroll
+     via `overflow-x: auto` and must not wrap, same as Material's explicit
+     `pre > code { word-break: normal }` reset. */
+  word-break: break-word;
 }
 
 .prose :not(pre) > code::before,
@@ -187,13 +201,17 @@
    gets an explicit value here. h3's font-size ratio already matches (1.25em)
    and is left to the plugin default; only its line-height needs correcting.
 
-   The `:not(:where([class~="not-prose"],[class~="not-prose"] *))` clause
-   copies Typography's own escape hatch verbatim (see the compiled
-   `.prose :where(h1):not(...)` rule it emits into `@layer utilities`):
-   without it these unlayered, un-:where()'d rules would outrank
-   `.hero-home`'s and `.mod-system`'s own `not-prose` component styling
+   The `:not(:where([class~="not-prose"],[class~="not-prose"] *))` clause is
+   copied verbatim from Typography's own escape hatch. What is NOT copied is
+   the `:where()` Typography wraps around the element itself (its compiled
+   rule is `.prose :where(h1):not(...)`, zeroing the selector's specificity);
+   this rule uses a bare `.prose h1:not(...)` instead. That is harmless here
+   only because the rule is unlayered and therefore already wins over
+   `.hero-home`'s and `.mod-system`'s `not-prose` component styling
    (`.prose .hero-title`, `.prose .mod-h2`, both in `@layer components`) by
-   layer alone, regardless of their higher selector specificity. */
+   cascade layer alone, regardless of specificity — if this pattern is ever
+   copied into a layered rule, the missing `:where()` would start to matter
+   and should be added back. */
 .prose h1:not(:where([class~="not-prose"], [class~="not-prose"] *)) {
   font-size: 2em;
   line-height: 1.3;
