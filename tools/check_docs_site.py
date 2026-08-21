@@ -154,6 +154,26 @@ def _home_components():
         return "md-button still present on the home page"
 
 
+@check("the footer offers prev/next navigation")
+def _prev_next():
+    html = read(MODULE_PAGE)
+    if 'class="docs-pager"' not in html:
+        return "no pager in the footer of a module page"
+
+
+@check("edit links point at the owning module's source file")
+def _edit_url():
+    html = read(MODULE_PAGE)
+    match = re.search(r'href="([^"]*edit/19\.0/[^"]+)"', html)
+    if not match:
+        return "no Edit on GitHub link on a module page"
+    url = match.group(1)
+    # mkdocs-monorepo-plugin must rewrite this back to the module's own docs/
+    # folder; an unrewritten URL would point at the aggregated temp path.
+    if "connect_twilio/docs/configuration.md" not in url:
+        return f"edit link points at {url}, not the module source"
+
+
 def main():
     for fn in CHECKS:
         try:

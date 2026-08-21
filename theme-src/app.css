@@ -1021,4 +1021,37 @@
     color: var(--color-au-primary-ink);
     font-weight: 600;
   }
+
+  .docs-footer {
+    max-width: 84rem;
+    margin-inline: auto;
+    padding: 2rem 1.5rem 3rem;
+    border-top: 1px solid var(--au-border);
+    color: var(--au-muted);
+    font-size: 0.82rem;
+  }
+
+  .docs-pager { display: flex; justify-content: space-between; gap: 1rem; }
+
+  .docs-pager__link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.7rem 1rem;
+    border: 1px solid var(--au-border);
+    border-radius: var(--radius-au-md);
+    color: var(--au-ink);
+    text-decoration: none;
+  }
+
+  .docs-pager__link--next { margin-left: auto; text-align: right; }
+  .docs-pager__link:hover { border-color: var(--au-border-hover); }
+  .docs-pager__label { color: var(--au-faint); font-size: 0.72rem; }
+
+  .docs-footer__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.6rem;
+  }
 }

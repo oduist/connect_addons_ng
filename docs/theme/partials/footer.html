@@ -1,1 +1,26 @@
-{#- Filled in by a later task (see docs/superpowers/plans). -#}
+<footer class="docs-footer">
+  {% if page and (page.previous_page or page.next_page) %}
+    <nav class="docs-pager" aria-label="Page navigation">
+      {% if page.previous_page %}
+        <a class="docs-pager__link" href="{{ page.previous_page.url | url }}">
+          <span class="docs-pager__label">Previous</span>
+          <span>{{ page.previous_page.title }}</span>
+        </a>
+      {% endif %}
+      {% if page.next_page %}
+        <a class="docs-pager__link docs-pager__link--next"
+           href="{{ page.next_page.url | url }}">
+          <span class="docs-pager__label">Next</span>
+          <span>{{ page.next_page.title }}</span>
+        </a>
+      {% endif %}
+    </nav>
+  {% endif %}
+
+  <div class="docs-footer__meta">
+    <span>{{ config.copyright }}</span>
+    {% if page and page.edit_url %}
+      <a href="{{ page.edit_url }}" rel="noopener" target="_blank">Edit on GitHub</a>
+    {% endif %}
+  </div>
+</footer>

@@ -7,6 +7,16 @@ site_description: Telephony integration platform for Odoo
 # rel="canonical"> and sitemap.xml. Set this to the real address once the docs
 # get a domain of their own.
 site_url: ""
+# Drives the "Edit on GitHub" link. Aggregated pages live in a temporary
+# docs_dir, so a naive edit_url would point at a path that does not exist in
+# the repository; mkdocs-monorepo-plugin rewrites it back to the owning module
+# (mkdocs_monorepo_plugin/edit_uri.py). That rewrite does a plain string
+# replace of this root docs_dir ("docs") inside edit_uri with each module's
+# own docs_dir ("connect_twilio/docs", ...), so edit_uri MUST literally
+# contain "docs/" as a path segment — "edit/19.0/" alone silently fails to
+# match and every module page falls back to the un-rewritten root edit_uri.
+repo_url: https://github.com/oduist/connect_addons_ng
+edit_uri: edit/19.0/docs/
 copyright: Copyright &copy; Oduist OÜ
 
 docs_dir: docs

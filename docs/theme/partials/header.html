@@ -13,6 +13,11 @@
     Search <kbd>/</kbd>
   </button>
 
+  {% if config.repo_url %}
+    <a class="docs-header__repo" href="{{ config.repo_url }}" rel="noopener"
+       target="_blank">GitHub</a>
+  {% endif %}
+
   <button class="docs-header__toggle" type="button" data-scheme-toggle
           aria-pressed="true" aria-label="Toggle colour scheme">
     <span class="docs-header__toggle-dark">Dark</span>
