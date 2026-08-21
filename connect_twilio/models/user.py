@@ -87,6 +87,26 @@ class User(models.Model):
         return self.env['connect.twilio.exten'].create_extension(
             self, 'connect.user', current_exten=self.twilio_exten)
 
+    def twilio_caller_id(self):
+        """Caller ID to present for calls this user places.
+
+        The extension is the identity a colleague should see. When none is
+        assigned, fall back to the user's client identity: an empty caller ID
+        makes Twilio substitute an arbitrary number of its own, which then
+        reaches the callee's phone and the ledger as a bogus caller.
+        """
+        self.ensure_one()
+        if self.twilio_exten.number:
+            return self.twilio_exten.number
+        if not (self.username and self.domain):
+            return ''
+        identity = self.get_client_identity()
+        logger.warning(
+            'Exten not set for user %s, calling as client:%s',
+            self.name, identity,
+        )
+        return 'client:{}'.format(identity)
+
     @api.model
     def get_user_by_uri(self, userinfo):
         """Lookup connect.user by SIP/client URI using username."""
@@ -746,11 +766,7 @@ class User(models.Model):
             request.get('Caller')
         )
         if caller_user:
-            callerId = caller_user.twilio_exten.number or ''
-            if not callerId:
-                logger.warning(
-                    'Exten not set for user %s', caller_user.name
-                )
+            callerId = caller_user.twilio_caller_id()
         else:
             callerId = request.get('Caller')
         return callerId

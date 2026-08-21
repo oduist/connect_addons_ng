@@ -203,7 +203,9 @@ class Settings(models.Model):
             api_url, "twilio/webhook/callstatus#e={}".format(edge)
         )
         if exten:
-            callerId = user.connect_user.twilio_exten.number
+            # An extension-less caller must still present an identity: an
+            # empty caller ID makes Twilio substitute an arbitrary number.
+            callerId = user.connect_user.twilio_caller_id()
             # Rendering the destination dialplan is system work: it reads the
             # callee's connect.user, which the record rules keep private to
             # its owner. Without sudo, calling a colleague's extension fails

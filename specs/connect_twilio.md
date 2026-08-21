@@ -67,7 +67,7 @@ Extends core settings with Twilio API credentials, client management, and sync.
 |--------|-------------|
 | `get_client()` | Create and return Twilio REST client instance |
 | `sync()` | Full sync of all Twilio resources (numbers, callerIDs, domains, etc.) |
-| `originate_call()` | Override of the core dispatcher: when `_get_originate_provider(user)` is not `'twilio'`, falls through to `super()`; otherwise initiates the outbound call via the Twilio API |
+| `originate_call()` | Override of the core dispatcher: when `_get_originate_provider(user)` is not `'twilio'`, falls through to `super()`; otherwise initiates the outbound call via the Twilio API. The `From` of an internal originate comes from `connect.user.twilio_caller_id()` (ADR-058) |
 | `get_external_call_route()` | Return TwiML route for external calls |
 | `get_twilio_balance()` | Fetch account balance from Twilio API |
 | `_reset_twilio_edge()` | Onchange: reset edge when region changes |
@@ -253,10 +253,12 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `get_greeting_message()` / `get_voicemail_prompt()` | `<Say>` the user prompts with `language`/`voice` from `connect.user` (fallbacks `en-US` / `Woman`, ADR-037) |
 | `get_client_token()` | Generate JWT for Twilio Voice SDK |
 | `get_client_identity()` | Return SIP identity string |
+| `twilio_caller_id()` | Caller ID for calls this user places: the extension, else the client identity `client:<username>@<domain>` — an empty caller ID makes Twilio substitute an arbitrary number (ADR-058) |
 | `_get_sip_uri()` | Compute SIP URI |
 | `_manage_sip_callflow()` | Auto-manage SIP callflow entries |
 | `_manage_client_callflow()` | Auto-manage client callflow entries |
 | `create()` | Override: auto-create SIP account and extension |
+| `_get_caller_id()` | Caller ID for a rendered dialplan: `twilio_caller_id()` of the calling user, or the raw `Caller` when it maps to no PBX user |
 | `write()` | Override: handle SIP credential updates |
 | `unlink()` | Override: cleanup SIP account on Twilio |
 | `on_call_action()` | `<Dial>` action webhook: records the dialed callflows, stops on a leg that was answered/canceled (`DialCallStatus`), otherwise renders the next device |

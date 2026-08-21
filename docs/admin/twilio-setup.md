@@ -96,6 +96,17 @@ When editing a PBX user (**Connect > Users**), the Twilio integration adds:
 | **TwiML Application** | Override domain-level TwiML app for this user. |
 | **WhatsApp Sender** | WhatsApp number assigned to this user. |
 
+### Extension
+
+Give every PBX user an extension: open the user and press **Extension**, then
+enter the number (100, 101, ...). The extension is what colleagues dial to
+reach the user, and it is the caller ID the user's own calls present — the
+number that shows on the callee's phone and in the call history.
+
+A user without an extension still places calls, but presents their client
+identity (`client:<username>@<domain>`) instead, so the call history shows the
+login rather than a number. Assigning the extension corrects both.
+
 ## TwiML Applications
 
 Navigate to **Connect > Twilio > TwiML Apps** to manage voice applications.
