@@ -135,6 +135,15 @@ def _code_highlighting():
         return "no highlighted code block found"
 
 
+@check("the search dialog and engine ship with the site")
+def _search_ui():
+    html = read(MODULE_PAGE)
+    if "data-search" not in html:
+        return "no search dialog in the page"
+    if not (SITE / "assets" / "vendor" / "lunr.min.js").exists():
+        return "lunr.min.js was not copied into the site"
+
+
 def main():
     for fn in CHECKS:
         try:

@@ -480,4 +480,93 @@
   .tabbed-set > input:nth-child(6):checked ~ .tabbed-content > .tabbed-block:nth-child(6) {
     display: block;
   }
+
+  /* Search dialog. Sized and surfaced like .docs-drawer (same tokens, same
+     ::backdrop treatment) but centered instead of docked to an edge. */
+  .docs-search {
+    width: min(36rem, 92vw);
+    max-height: min(28rem, 80vh);
+    margin: 3.5rem auto auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    border: 1px solid var(--au-border);
+    border-radius: var(--radius-au-lg);
+    background-color: var(--au-panel-raised);
+    color: var(--au-ink);
+    padding: 0.9rem;
+  }
+
+  .docs-search::backdrop { background-color: rgb(4 5 10 / 0.6); }
+
+  .docs-search__form {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--au-border);
+  }
+
+  .docs-search__input {
+    flex: 1;
+    border: 0;
+    background: none;
+    color: var(--au-ink);
+    font-size: 0.95rem;
+    outline: none;
+  }
+
+  .docs-search__close {
+    color: var(--au-muted);
+  }
+
+  .docs-search__close:hover { color: var(--au-ink); }
+
+  .docs-search__results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+  }
+
+  .docs-search__hit a {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--radius-au-sm);
+    color: var(--au-ink);
+    text-decoration: none;
+  }
+
+  .docs-search__hit a:hover,
+  .docs-search__hit a:focus-visible {
+    background-color: var(--au-panel);
+  }
+
+  .docs-search__module {
+    color: var(--au-faint);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .docs-search__title { font-weight: 600; }
+
+  .docs-search__text {
+    color: var(--au-muted);
+    font-size: 0.82rem;
+  }
+
+  .docs-search__status {
+    padding: 0.5rem 0.6rem;
+    color: var(--au-muted);
+    font-size: 0.86rem;
+  }
+
+  .prose mark,
+  ::highlight(search) {
+    background-color: var(--color-au-signal-faint);
+    color: inherit;
+  }
 }

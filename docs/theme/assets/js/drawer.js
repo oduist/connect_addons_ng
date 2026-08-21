@@ -16,6 +16,14 @@ export function initDrawer() {
     dialog.close();
   });
 
+  // A click that lands on the <dialog> element itself (not on any of its
+  // children) is a click on the backdrop — native <dialog> only wires up
+  // Esc, so close on backdrop click too. Clicks on the nav/close button
+  // inside always target a descendant, never the dialog itself.
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+
   // Put the sidebar back where the layout expects it once the drawer closes.
   dialog.addEventListener("close", () => {
     document.querySelector(".docs-shell")?.prepend(nav);

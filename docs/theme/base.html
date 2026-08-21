@@ -6,7 +6,7 @@
   third-party theme.
 -#}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" data-base="{{ '' | url }}/">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -55,9 +55,11 @@
       {% endif %}
     </div>
 
+    {% include "partials/search.html" %}
     {% include "partials/footer.html" %}
 
     {% block scripts %}
+      <script src="{{ 'assets/vendor/lunr.min.js' | url }}"></script>
       <script type="module" src="{{ 'assets/theme.js' | url }}"></script>
       {% for path in config.extra_javascript %}
         <script src="{{ path | url }}"></script>
