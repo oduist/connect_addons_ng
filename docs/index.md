@@ -5,7 +5,7 @@ hide:
   - toc
 ---
 
-<section class="hero-home">
+<section class="hero-home not-prose">
   <div class="hero-copy">
     <p class="hero-kicker">Oduist Connect</p>
     <h1 class="hero-title">Give Odoo a voice.</h1>
@@ -18,9 +18,9 @@ hide:
       and call recording.
     </p>
     <div class="hero-actions">
-      <a class="md-button md-button--primary" href="Core/admin/installation/">Installation</a>
-      <a class="md-button" href="changelog/">Changelog</a>
-      <a class="md-button" href="https://github.com/oduist/connect_addons_ng" target="_blank" rel="noopener">View on GitHub</a>
+      <a class="docs-button docs-button--primary" href="Core/admin/installation/">Installation</a>
+      <a class="docs-button" href="changelog/">Changelog</a>
+      <a class="docs-button" href="https://github.com/oduist/connect_addons_ng" target="_blank" rel="noopener">View on GitHub</a>
     </div>
   </div>
   <div class="hero-art">
@@ -28,7 +28,7 @@ hide:
   </div>
 </section>
 
-<section class="mod-system">
+<section class="mod-system not-prose">
   <p class="mod-kicker">The module system</p>
   <h2 class="mod-h2">A periodic table of everything you can install.</h2>
   <p class="mod-intro">Every square is one Odoo module from <code>connect_addons_ng</code>. Providers plug in under a technology-agnostic core; agents, apps, and memory sit on top. Click a category to isolate it, or a square to open its documentation.</p>

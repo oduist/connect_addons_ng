@@ -144,6 +144,16 @@ def _search_ui():
         return "lunr.min.js was not copied into the site"
 
 
+@check("the home page keeps its component class names")
+def _home_components():
+    html = read(HOME)
+    for cls in ("hero-art", "mod-grid", "mod-tile", "docs-button"):
+        if cls not in html:
+            return f"{cls} missing from the home page"
+    if "md-button" in html:
+        return "md-button still present on the home page"
+
+
 def main():
     for fn in CHECKS:
         try:
