@@ -3,12 +3,7 @@
 {% block htmltitle %}Page not found — {{ config.site_name }}{% endblock %}
 
 {% block content %}
-  {#- dark:prose-invert is a temporary stopgap owned by Task 4, not a
-     permanent styling choice: Typography's default --tw-prose-headings
-     is a fixed near-black, illegible on the Aurora void background in
-     dark mode. Task 4 remaps every --tw-prose-* var onto the --au-*
-     tokens directly and removes this class. -#}
-  <article class="prose max-w-none dark:prose-invert">
+  <article class="prose max-w-none">
     <h1>Page not found</h1>
     <p>
       That page does not exist. Try the

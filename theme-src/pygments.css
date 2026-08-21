@@ -1,0 +1,43 @@
+/*
+ * Pygments tokens in Aurora colours. pymdownx.superfences already emits these
+ * class names; only Material's stylesheet for them went away.
+ * Mapping preserved from the previous --md-code-hl-* assignments.
+ */
+.highlight pre { color: var(--au-code-ink); }
+
+.highlight .k,  /* keyword */
+.highlight .kd,
+.highlight .kn,
+.highlight .kr { color: var(--color-au-iris); }
+
+.highlight .s,  /* string */
+.highlight .s1,
+.highlight .s2,
+.highlight .sb,
+.highlight .se { color: var(--color-au-cyan); }
+
+.highlight .nf, /* function */
+.highlight .fm { color: var(--color-au-signal-bright); }
+
+.highlight .kc, /* constant */
+.highlight .no,
+.highlight .m,  /* number */
+.highlight .mi,
+.highlight .mf,
+.highlight .o,  /* operator */
+.highlight .ow { color: var(--color-au-fuchsia); }
+
+.highlight .nv, /* variable */
+.highlight .vi { color: var(--color-au-soft); }
+
+.highlight .n,  /* name */
+.highlight .nx,
+.highlight .nt { color: var(--au-ink); }
+
+.highlight .p { color: var(--au-muted); }  /* punctuation */
+
+.highlight .c,  /* comment */
+.highlight .c1,
+.highlight .cm { color: var(--au-faint); font-style: italic; }
+
+.highlight .err { color: var(--color-au-rose); }

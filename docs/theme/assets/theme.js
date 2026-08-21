@@ -3,7 +3,10 @@
 import { initScheme } from "./js/scheme.js";
 import { initToc } from "./js/toc.js";
 import { initDrawer } from "./js/drawer.js";
+import { initCopyButtons, wrapTables } from "./js/copy.js";
 
 initScheme();
 initToc();
 initDrawer();
+wrapTables();
+initCopyButtons();

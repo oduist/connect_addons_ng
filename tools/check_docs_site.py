@@ -116,6 +116,25 @@ def _toc():
         return "no table of contents on a module page"
 
 
+@check("admonitions and tables are wrapped for styling")
+def _content_components():
+    html = read(MODULE_PAGE)
+    if "admonition" not in html:
+        return "expected an admonition on the Twilio configuration page"
+    # Table wrapping happens client-side (js/copy.js wrapTables(), run from
+    # theme.js), so static HTML never carries docs-table-wrap. Check that the
+    # CSS the wrapper depends on actually shipped instead.
+    if "docs-table-wrap" not in (SITE / "assets" / "app.css").read_text():
+        return "the table wrapper class is not in the compiled stylesheet"
+
+
+@check("code blocks carry Pygments classes")
+def _code_highlighting():
+    html = read(CODE_PAGE)
+    if 'class="highlight"' not in html:
+        return "no highlighted code block found"
+
+
 def main():
     for fn in CHECKS:
         try:
