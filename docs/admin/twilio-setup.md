@@ -103,9 +103,10 @@ enter the number (100, 101, ...). The extension is what colleagues dial to
 reach the user, and it is the caller ID the user's own calls present — the
 number that shows on the callee's phone and in the call history.
 
-A user without an extension still places calls, but presents their client
-identity (`client:<username>@<domain>`) instead, so the call history shows the
-login rather than a number. Assigning the extension corrects both.
+A user without an extension still places calls, but presents their own
+outgoing caller ID, or the default one, and only their client identity when
+neither is configured. Assigning the extension is what makes colleagues see
+the extension.
 
 ## TwiML Applications
 

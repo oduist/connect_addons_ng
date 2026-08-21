@@ -247,13 +247,13 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `delete_sip_account()` | Delete SIP credential from Twilio |
 | `generate_twilio_password()` | Generate strong random password |
 | `render()` | Main TwiML rendering: dispatches to client/sip/voicemail. With a ledger call it walks the callflows through `connect.twilio.user_callflow_call`; without one (click-to-call, rendered before the channel exists) it emits a single `<Dial>` and carries the already-dialed ids in the action URL |
-| `render_client()` | Generate TwiML `<Dial><Client>` |
+| `render_client()` | Generate TwiML `<Dial><Client>`; passes the caller ID as a `From` `<Parameter>` because Twilio hands the callee the E.164 form of a bare extension (`+101`) and the web phone prefers the parameter (ADR-058) |
 | `render_sip()` | Generate TwiML `<Dial><Sip>` |
 | `render_voicemail()` | Generate TwiML `<Record>` for voicemail |
 | `get_greeting_message()` / `get_voicemail_prompt()` | `<Say>` the user prompts with `language`/`voice` from `connect.user` (fallbacks `en-US` / `Woman`, ADR-037) |
 | `get_client_token()` | Generate JWT for Twilio Voice SDK |
 | `get_client_identity()` | Return SIP identity string |
-| `twilio_caller_id()` | Caller ID for calls this user places: the extension, else the client identity `client:<username>@<domain>` — an empty caller ID makes Twilio substitute an arbitrary number (ADR-058) |
+| `twilio_caller_id()` | Caller ID for calls this user places: the extension, else `twilio_outgoing_callerid`, else the default outgoing caller ID, else the client identity `client:<username>@<domain>` — an empty caller ID makes Twilio substitute an arbitrary number (ADR-058) |
 | `_get_sip_uri()` | Compute SIP URI |
 | `_manage_sip_callflow()` | Auto-manage SIP callflow entries |
 | `_manage_client_callflow()` | Auto-manage client callflow entries |
@@ -567,7 +567,11 @@ All routes under `/twilio/webhook/` with Twilio request signature validation.
 
 **Signature validation:** All webhook routes validate the `X-Twilio-Signature` header
 using `twilio.request_validator.RequestValidator` when `twilio_verify_requests` is enabled
-in settings.
+in settings. `check_signature()` takes no arguments and validates against
+`request.httprequest.form` — the POST body only. Twilio signs the request URL
+(query string included) **plus** the POST parameters, and Odoo merges the query
+string into the route kwargs, so validating with those counts a query parameter
+twice and no URL carrying one can validate (ADR-059).
 
 ---
 

@@ -90,22 +90,25 @@ class User(models.Model):
     def twilio_caller_id(self):
         """Caller ID to present for calls this user places.
 
-        The extension is the identity a colleague should see. When none is
-        assigned, fall back to the user's client identity: an empty caller ID
-        makes Twilio substitute an arbitrary number of its own, which then
-        reaches the callee's phone and the ledger as a bogus caller.
+        The extension is the identity a colleague should see. Without one,
+        fall back to a real number -- the user's own outgoing caller ID,
+        else the default one -- and only then to the client identity: an empty
+        caller ID makes Twilio substitute an arbitrary number of its own,
+        which reaches the callee's phone and the ledger as a bogus caller.
         """
         self.ensure_one()
         if self.twilio_exten.number:
             return self.twilio_exten.number
-        if not (self.username and self.domain):
-            return ''
-        identity = self.get_client_identity()
+        callerid = self.twilio_outgoing_callerid.number or self.env[
+            'connect.twilio.outgoing_callerid'
+        ].sudo().search([('is_default', '=', True)], limit=1).number
+        if not callerid and self.username and self.domain:
+            callerid = 'client:{}'.format(self.get_client_identity())
         logger.warning(
-            'Exten not set for user %s, calling as client:%s',
-            self.name, identity,
+            'Exten not set for user %s, calling as %s',
+            self.name, callerid or '(no caller ID)',
         )
-        return 'client:{}'.format(identity)
+        return callerid or ''
 
     @api.model
     def get_user_by_uri(self, userinfo):
@@ -463,6 +466,12 @@ class User(models.Model):
             statusCallback=status_url,
         )
         client.identity(self.get_client_identity())
+        # Twilio E.164-prefixes a bare extension used as caller ID, so the
+        # web phone is handed '+101' for a call from extension 101. Pass the
+        # caller ID we actually set: the widget prefers this parameter over
+        # the From Twilio reports.
+        if callerId:
+            client.parameter(name='From', value=callerId)
         if caller_name:
             client.parameter(name='CallerName', value=caller_name)
         channel = self.env['connect.channel'].search(

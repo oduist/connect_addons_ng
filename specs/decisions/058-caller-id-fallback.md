@@ -1,4 +1,4 @@
-# ADR-058: A caller without an extension calls as its client identity
+# ADR-058: Caller ID of a user without an extension
 
 **Status:** Accepted
 **Date:** 2026-08-21
@@ -28,24 +28,34 @@ Neither is the caller. The only signal was a `logger.warning('Exten not set
 for user %s')` that nobody reads, so a missing extension looked like a
 ledger bug rather than a configuration gap.
 
+A second, related defect is visible even when the extension *is* set. Twilio
+E.164-prefixes a bare extension used as caller ID, so the callee's web phone
+was handed `From=+101` and displayed that. `connect.channel._strip_exten_plus()`
+(ADR from the click-to-call fix) already repairs this for the ledger, but the
+browser has no extension list to repair it with.
+
 ## Decision
 
-Add `connect.user.twilio_caller_id()` and use it on both paths. It returns
-the extension when one is assigned, and otherwise the caller's client
-identity — `client:<username>@<domain>` — which Twilio accepts as a caller ID
-for both `<Dial>` and the REST `From`, and which the ledger already resolves
-back to the calling user (`connect.channel._get_channel_numbers()` maps
-`client:x@y` through `get_user_by_uri()`). The warning is kept and now names
-the identity used instead.
+**One caller ID for both paths.** Add `connect.user.twilio_caller_id()` and
+use it in `_get_caller_id()` and `originate_call()`. It walks a ladder:
 
-Consequences:
+1. the user's extension — the identity a colleague should see;
+2. the user's own `twilio_outgoing_callerid`;
+3. the default outgoing caller ID (`is_default`);
+4. the client identity `client:<username>@<domain>` — accepted by Twilio for
+   both `<Dial callerId>` and the REST `From`, and resolved back to the
+   calling user by `connect.channel._get_channel_numbers()`.
 
-- No call ever goes out with an empty caller ID, so Twilio never substitutes
-  a number of its own.
-- The ledger attributes such a call to the real caller: it reads `demo`, the
-  same value the inbound leg already carried, instead of a bogus `+32573`.
-- Assigning the extension remains the fix — `twilio_caller_id()` then returns
-  `101` on both paths without any further change.
+The warning is kept and now names the value used. Steps 2–4 exist so that no
+call ever goes out with an empty caller ID; assigning the extension makes
+step 1 answer and the rest never runs.
+
+**The web phone is told the caller ID directly.** `render_client()` adds
+`<Parameter name="From" value="<callerId>"/>` to the `<Client>` verb. The
+widget already prefers `session.customParameters.get('From')` over
+`session.parameters.From`, so it shows `101` instead of Twilio's `+101`
+without any change to the JS. A SIP endpoint still sees the E.164 form in the
+`From` header — SIP takes no custom parameters.
 
 ## Alternatives considered
 
@@ -56,10 +66,10 @@ callee's screen, and it cannot be applied to the dialplan path: raising
 inside webhook rendering drops a live call. Two different behaviours for one
 missing setting is worse than one honest fallback.
 
-**Fall back to the default outgoing caller ID.** It presents an external
-PSTN number to a colleague on an internal call, and the ledger then reads
-that number as an outside caller — the same class of wrong answer as the
-number Twilio invents.
+**Strip the `+` in the web phone widget.** The browser would have to guess
+which `+<digits>` values are extensions and which are real short numbers —
+the same guess `_strip_exten_plus()` only makes safely because it can query
+`connect.twilio.exten`. The server already knows the answer, so it says it.
 
 ## Notes
 
