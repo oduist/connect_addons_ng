@@ -2,18 +2,25 @@ name: Publish docs
 
 # Render the MkDocs site and push it to the `website` branch, which GitHub
 # Pages serves from. Runs on pushes to 19.0 that touch the docs, plus manual
-# dispatch.
+# dispatch. Also runs the build/verify steps (not the deploy) on pull
+# requests touching the same paths, so a PR that edits theme-src/ without
+# rebuilding the committed stylesheet fails here instead of merging green and
+# only breaking on the next push-triggered deploy.
 on:
   push:
     branches:
       - "19.0"
-    paths:
+    paths: &docs-paths
       - "docs/**"
       - "mkdocs.yml"
       - ".github/workflows/docs.yml"
       - "theme-src/**"
       - "package.json"
       - "package-lock.json"
+      - "tools/check_docs_site.py"
+      - "docs/requirements.txt"
+  pull_request:
+    paths: *docs-paths
   workflow_dispatch:
 
 # gh-deploy needs to push the built site to the `website` branch.
@@ -21,7 +28,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: publish-docs
+  group: publish-docs-${{ github.event_name == 'pull_request' && github.ref || 'push' }}
   cancel-in-progress: true
 
 jobs:
@@ -48,15 +55,19 @@ jobs:
         run: npm ci && npm run build:css
 
       # The compiled stylesheet is committed so that `mkdocs serve` works
-      # without Node. Fail loudly if the committed copy is stale.
+      # without Node. Fail loudly if the committed copy is stale — this is
+      # the check a PR most needs, since it is the one push-only CI used to
+      # miss until the deploy job ran after merge.
       - name: Verify the committed stylesheet is current
         run: git diff --exit-code docs/theme/assets/app.css
 
       # Bring the existing `website` history into this fresh checkout so
       # gh-deploy appends a new commit on top of it (keeping the full deploy
       # history) instead of starting a divergent branch. Skipped on the very
-      # first deploy, when the branch does not exist yet.
+      # first deploy, when the branch does not exist yet. Only meaningful
+      # ahead of an actual deploy.
       - name: Fetch existing website branch
+        if: github.event_name != 'pull_request'
         run: git fetch origin website:website || echo "website branch does not exist yet (first deploy)"
 
       - name: Build the site
@@ -66,4 +77,5 @@ jobs:
         run: python3 tools/check_docs_site.py site
 
       - name: Deploy to website branch
+        if: github.event_name != 'pull_request'
         run: mkdocs gh-deploy --remote-branch website

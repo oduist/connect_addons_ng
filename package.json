@@ -5,7 +5,7 @@
   "scripts": {
     "build:css": "tailwindcss --input theme-src/app.css --output docs/theme/assets/app.css --minify",
     "watch:css": "tailwindcss --input theme-src/app.css --output docs/theme/assets/app.css --watch",
-    "dev": "npm run watch:css & .venv-docs/bin/mkdocs serve"
+    "dev": "npm run watch:css & mkdocs serve"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.0",
