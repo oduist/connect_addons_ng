@@ -79,9 +79,10 @@
   position: relative;
 }
 .hero-art img.hero-art__zoomable {
-  /* Plain pointer, not zoom-in: the magnifier chip that fades in on hover
-     already carries that meaning, and two magnifiers read as a glitch. */
-  cursor: pointer;
+  /* Plain arrow, not pointer or zoom-in: the magnifier chip that fades in on
+     hover already carries the affordance, and a second cursor-level hint on top
+     of it reads as a glitch. */
+  cursor: default;
   transition: transform 200ms ease, box-shadow 200ms ease,
     border-color 200ms ease;
 }
@@ -157,6 +158,9 @@
 }
 
 .hero-zoom__img {
+  /* Arrow over the picture itself; the scrim around it keeps zoom-out, which is
+     where clicking to close actually reads as an affordance. */
+  cursor: default;
   /* Absolute, not fixed: it has to live inside the overlay's scroll area so a
      1:1 screenshot wider than the viewport can be panned. */
   position: absolute;
