@@ -191,6 +191,31 @@
     grid-column: 2;
   }
 
+  /* A page that hides its sidebar and/or its TOC (home has neither,
+     changelog has no sidebar) must not leave the empty track's width
+     reserved and unused — collapse whichever track has no sibling to fill
+     it so the content column matches its pre-migration width. Scoped to
+     the three-column breakpoint: the mobile block below always forces a
+     single column, and these unconditional :has() selectors would
+     otherwise outrank it on specificity regardless of source order. */
+  @media (width >= 76rem) {
+    .docs-shell:not(:has(> .docs-nav)) {
+      grid-template-columns: minmax(0, 1fr) 14rem;
+    }
+
+    .docs-shell:not(:has(> .docs-nav)) > .docs-content {
+      grid-column: 1;
+    }
+
+    .docs-shell:not(:has(> .docs-toc)) {
+      grid-template-columns: 16rem minmax(0, 1fr);
+    }
+
+    .docs-shell:not(:has(> .docs-nav)):not(:has(> .docs-toc)) {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   @media (width < 76rem) {
     .docs-shell {
       grid-template-columns: minmax(0, 1fr);
@@ -353,6 +378,36 @@
        into .docs-shell, hiding it again. */
     .docs-shell > .docs-nav {
       display: none;
+    }
+
+    /* "the header collapses to two buttons (navigation, search)" on narrow
+       screens (specs/docs_site.md, partials/header.html) — the repo link
+       and scheme toggle step out of the way rather than wrapping the
+       header onto extra lines. */
+    .docs-header__repo,
+    .docs-header__toggle {
+      display: none;
+    }
+
+    /* The brand name is long ("Oduist Connect Documentation"); let it
+       truncate with an ellipsis instead of wrapping or pushing the search
+       button out of the header. min-width: 0 overrides the flex item
+       default that would otherwise block shrinking below content size. */
+    .docs-header__brand {
+      min-width: 0;
+    }
+
+    /* The search button keeps its natural size and its own text on one
+       line — it is the brand name that gives way, not this. */
+    .docs-header__search {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .docs-header__brand span {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
   }
 
