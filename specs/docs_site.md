@@ -92,9 +92,9 @@ repo_url: https://github.com/oduist/connect_addons_ng
 edit_uri: edit/19.0/docs/
 ```
 
-Unchanged: `site_name`, `site_url`, `copyright`, `docs_dir`, `exclude_docs`,
-`plugins` (`search`, `monorepo`), the whole `nav` block with its 26 `!include`
-entries, `markdown_extensions`, `extra_javascript`.
+Unchanged: `site_name`, `copyright`, `docs_dir`, `exclude_docs`, `plugins`
+(`search`, `monorepo`), the whole `nav` block with its 26 `!include` entries,
+`markdown_extensions`, `extra_javascript`.
 
 `repo_url` and `edit_uri` are new and exist only to drive the "Edit on GitHub"
 link. Aggregated pages live in a temporary `docs_dir` built by
@@ -103,6 +103,35 @@ that does not exist in the repository; the plugin rewrites the URL back to the
 owning module in `on_pre_page` (`mkdocs_monorepo_plugin/plugin.py:72`,
 `edit_uri.py`). The link must be verified on a module page, not only on
 `docs/index.md`.
+
+`site_url` was later changed, deliberately, from
+`https://oduist.github.io/connect_addons_ng/` to `""` (commit 5043b0d) so the
+home page is not addressed by the repository name. That trade-off has a
+concrete cost worth recording:
+
+MkDocs derives `404.html`'s asset URLs and its "back to home" link from
+`site_url`'s path component. With `site_url: ""` that path is empty, so the
+built `404.html` links `assets/app.css` and home as absolute paths from the
+domain root (`/assets/app.css`, `/`) rather than relative to wherever the page
+actually lives. On the current deploy target — `website` branch served at the
+repository root of a `*.github.io` custom/apex domain, or any path-less
+`site_url` — those absolute paths are correct and 404.html looks and works
+exactly like the rest of the site. They break specifically if the site is ever
+served under a **project-pages path** (e.g.
+`https://oduist.github.io/connect_addons_ng/`, GitHub Pages' default for a
+repo without a custom domain): `/assets/app.css` and `/` then resolve above
+the site root, so the 404 page renders unstyled and its home link leaves the
+site entirely.
+Every other page is unaffected — they link relatively, which is exactly what
+motivated leaving `site_url` empty in the first place.
+
+Setting `site_url` back to the full deployed URL (path included) fixes this:
+MkDocs would then emit `/connect_addons_ng/assets/app.css` and
+`/connect_addons_ng/` for 404.html, correct under a project-pages path, at the
+cost of reintroducing the repository name into the canonical home address
+that commit 5043b0d removed it for. Whether that trade is worth making is a
+call for the repository owner, contingent on where the site ends up being
+served — `site_url` is deliberately left as `""` here (see ADR-050).
 
 `edit_uri` **must** literally contain `docs/` as a path segment — not just
 `edit/19.0/`. `mkdocs_monorepo_plugin/edit_uri.py` rewrites the edit URL with a
@@ -169,8 +198,10 @@ the trail.
 ### `partials/toc.html`
 
 `page.toc` to depth 2, with an `IntersectionObserver` scrollspy setting
-`aria-current` on the active entry. On narrow screens it collapses into a
-`<details>` above the content.
+`aria-current` on the active entry. On narrow screens it is not sticky
+(`position: static`) and renders inline as a plain block below the content —
+no `<details>` collapse was built; an earlier draft of this spec described
+one, but it never shipped.
 
 ### `partials/footer.html`
 
@@ -235,7 +266,13 @@ block.
 
 - **Admonitions** — five types only: `info`, `note`, `warning`, `tip`,
   `danger`. That is the complete set the 87 admonitions in the corpus use.
-  Styling is CSS plus one inline SVG mask per type.
+  **Deviation from the original plan:** styling is CSS only — a left border
+  and an uppercase title in the type's accent color
+  (`--admonition-accent`, `theme-src/app.css`). No per-type inline SVG icon
+  mask shipped, and the original's tinted title strip (a background fill
+  behind the title, not just colored text) did not carry over either; the
+  admonition otherwise keeps the same border/background/radius chrome as
+  before.
 - **Tabs** — `pymdownx.tabbed` with `alternate_style: true` emits radio inputs;
   styling only, no JavaScript. Used in 6 files.
 - **Tables** — present in 58 of 75 files, the most load-bearing component. Each
