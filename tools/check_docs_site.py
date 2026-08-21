@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""Structural assertions for the built documentation site.
+
+Run after `mkdocs build`. The docs site has no unit tests: these checks are the
+regression net for the theme's templates — every invariant a task establishes
+gets an assertion here, so a later task cannot silently break it.
+
+Usage: python3 tools/check_docs_site.py [site_dir]
+"""
+
+import pathlib
+import re
+import sys
+
+SITE = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "site")
+
+# One representative page per template path through the site.
+HOME = SITE / "index.html"
+MODULE_PAGE = SITE / "Twilio" / "configuration" / "index.html"
+CHANGELOG = SITE / "changelog" / "index.html"
+# Carries both a code block and a tabbed set; the Twilio page has neither.
+CODE_PAGE = SITE / "Core" / "admin" / "installation" / "index.html"
+NOT_FOUND = SITE / "404.html"
+
+failures = []
+
+
+def check(name):
+    """Register a check. Each returns None on success or a failure message."""
+
+    def register(fn):
+        fn.check_name = name
+        CHECKS.append(fn)
+        return fn
+
+    return register
+
+
+CHECKS = []
+
+
+def read(path):
+    if not path.exists():
+        raise AssertionError(f"{path} was not built")
+    return path.read_text(encoding="utf-8")
+
+
+@check("every representative page was built")
+def _pages_exist():
+    for path in (HOME, MODULE_PAGE, CHANGELOG, NOT_FOUND):
+        if not path.exists():
+            return f"{path} is missing"
+
+
+@check("pages link the compiled stylesheet")
+def _stylesheet_linked():
+    for path in (HOME, MODULE_PAGE, NOT_FOUND):
+        html = read(path)
+        if "assets/app.css" not in html:
+            return f"{path} does not link assets/app.css"
+
+
+@check("the search index was emitted")
+def _search_index():
+    if not (SITE / "search" / "search_index.json").exists():
+        return "search/search_index.json is missing"
+
+
+def main():
+    for fn in CHECKS:
+        try:
+            problem = fn()
+        except AssertionError as exc:
+            problem = str(exc)
+        if problem:
+            failures.append(f"{fn.check_name}: {problem}")
+
+    for failure in failures:
+        print(f"FAIL: {failure}")
+    if failures:
+        print(f"\n{len(failures)} of {len(CHECKS)} checks failed")
+        return 1
+    print(f"OK: {len(CHECKS)} checks passed")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
