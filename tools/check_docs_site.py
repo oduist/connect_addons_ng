@@ -13,6 +13,10 @@ import re
 import sys
 
 SITE = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "site")
+# Anchor repo-relative lookups (docs/requirements.txt, docs/overrides/, ...)
+# to the repository root instead of the process CWD, so this script gives the
+# same answer whether it is run from the repo root or from tools/.
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 # One representative page per template path through the site.
 HOME = SITE / "index.html"
@@ -176,13 +180,39 @@ def _edit_url():
 
 @check("the build no longer depends on Material")
 def _material_gone():
-    requirements = pathlib.Path("docs/requirements.txt").read_text()
+    requirements = (REPO_ROOT / "docs/requirements.txt").read_text()
     if "mkdocs-material" in requirements:
         return "mkdocs-material is still a documented dependency"
-    if pathlib.Path("docs/overrides").exists():
+    if (REPO_ROOT / "docs/overrides").exists():
         return "docs/overrides/ still exists"
-    if pathlib.Path("docs/stylesheets/aurora.css").exists():
+    if (REPO_ROOT / "docs/stylesheets/aurora.css").exists():
         return "docs/stylesheets/aurora.css still exists"
+
+
+@check("the scheme toggle hides the inapplicable label")
+def _scheme_toggle_labels():
+    css = (SITE / "assets" / "app.css").read_text()
+    # F1: both spans used to render unconditionally, so the button read
+    # "Dark Light" in both schemes. The fix hides each one under the scheme
+    # it does not apply to; assert both halves of that rule shipped.
+    if "docs-header__toggle-light" not in css:
+        return "no rule hides .docs-header__toggle-light in the dark scheme"
+    if "docs-header__toggle-dark" not in css:
+        return "no rule hides .docs-header__toggle-dark in the light scheme"
+
+
+@check("data-base always ends with a slash")
+def _data_base_trailing_slash():
+    html = read(MODULE_PAGE)
+    if not re.search(r'data-base="[^"]*/"', html):
+        return f'{MODULE_PAGE} has no data-base=".../" attribute'
+
+
+@check("theme.js still wraps tables for styling")
+def _theme_js_calls_wrap_tables():
+    theme_js = (SITE / "assets" / "theme.js").read_text()
+    if "wrapTables" not in theme_js:
+        return "assets/theme.js no longer calls wrapTables()"
 
 
 def main():
