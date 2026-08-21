@@ -66,7 +66,6 @@
   --au-bg: #04050a;           /* page background (void) */
   --au-panel: #0e0f14;        /* card / panel / code surface */
   --au-panel-raised: #14161f; /* raised surface */
-  --au-header-bg: rgb(4 5 10 / 0.8);
   --au-ink: #eef0fa;
   --au-muted: #9aa1bd;
   --au-faint: #5b6184;
@@ -85,7 +84,6 @@
   --au-bg: #ffffff;
   --au-panel: #f2f5f9;
   --au-panel-raised: #ffffff;
-  --au-header-bg: rgb(255 255 255 / 0.86);
   --au-ink: #14161f;
   --au-muted: #4d5470;
   --au-faint: #6b7392;
@@ -101,6 +99,23 @@
   --au-gradient: linear-gradient(
     100deg, var(--color-au-cyan) 0%, var(--color-au-iris) 42%,
     var(--color-au-fuchsia) 100%);
+}
+
+/* Header & breadcrumb trail — the void brand bar in both schemes. Unlike
+   every other surface, this one does not follow the active scheme: it is
+   always the dark brand bar, so its background and text tokens are declared
+   once here rather than inside the [data-theme] blocks above. The ink tones
+   are pinned to the dark scheme's values (the ones already tuned for
+   contrast against this same background) — the crumbs trail shares them
+   because it sits sticky, directly under the header with no border between
+   the two, and needs to read as the same continuous bar rather than as
+   page content that happens to be adjacent. */
+:root {
+  --au-header-bg: rgb(4 5 10 / 0.8);
+  --au-header-ink: #eef0fa;
+  --au-header-muted: #9aa1bd;
+  --au-header-faint: #5b6184;
+  --au-header-link: var(--color-au-signal-bright);
 }
 
 /* @tailwindcss/typography emits `.prose` itself (variables, the backtick
@@ -249,6 +264,10 @@
     gap: 0.75rem;
     padding: 0.6rem 1.5rem;
     background-color: var(--au-header-bg);
+    /* Fixed light ink so the brand text and the search/repo/toggle buttons
+       (which inherit this via `color: inherit`) stay legible against the
+       header's always-dark background in the light scheme too. */
+    color: var(--au-header-ink);
     backdrop-filter: blur(8px);
   }
 
@@ -267,8 +286,15 @@
     align-items: center;
     gap: 0.5rem;
     font-weight: 600;
-    color: var(--au-ink);
+    color: var(--au-header-ink);
     text-decoration: none;
+  }
+
+  /* The header stays a dark brand bar in both schemes, but the site logo is
+     a dark source PNG. Render it white so it stays visible against the
+     void. */
+  .docs-header__brand img {
+    filter: brightness(0) invert(1);
   }
 
   .docs-header__spacer { flex: 1; }
@@ -287,7 +313,7 @@
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--au-border);
     font-size: 0.78rem;
-    color: var(--au-muted);
+    color: var(--au-header-muted);
   }
 
   .docs-crumbs__list {
@@ -302,7 +328,11 @@
   .docs-crumbs__list li + li::before {
     content: "/";
     margin-right: 0.35rem;
-    color: var(--au-faint);
+    color: var(--au-header-faint);
+  }
+
+  .docs-crumbs a {
+    color: var(--au-header-link);
   }
 
   .docs-nav { align-self: start; position: sticky; top: 6.5rem; }
