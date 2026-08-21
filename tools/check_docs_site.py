@@ -215,6 +215,19 @@ def _theme_js_calls_wrap_tables():
         return "assets/theme.js no longer calls wrapTables()"
 
 
+@check("the content column keeps its 20px base size")
+def _prose_base_font_size():
+    # Material for MkDocs set the root font size to 125% (20px) and its type
+    # scale followed from that; this theme keeps the root at 16px (so the
+    # docs-shell layout dimensions do not move) and instead scales the .prose
+    # container itself to 1.25rem (20px @ 16px root). The compiled stylesheet
+    # is the only place this is visible from a build — assert it directly so
+    # a future edit cannot silently shrink the whole content scale again.
+    css = (SITE / "assets" / "app.css").read_text()
+    if "font-size:1.25rem;line-height:1.6}" not in css:
+        return "no unlayered .prose rule sets font-size:1.25rem;line-height:1.6"
+
+
 def main():
     for fn in CHECKS:
         try:

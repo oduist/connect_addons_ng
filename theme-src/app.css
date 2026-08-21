@@ -126,18 +126,29 @@
 }
 
 /* @tailwindcss/typography emits `.prose` itself (variables, the backtick
-   pseudo-elements on inline code, code font-weight, ...) as a utility, which
-   Tailwind v4 places in `@layer utilities`. Cascade layers rank entire
-   layers before specificity: utilities always outranks `@layer components`
-   for a matching declaration, no matter how specific or how late in source
-   our rule is — so remapping these same properties from inside `@layer
-   components` would silently lose. Declaring them unlayered instead (like
-   the [data-theme] surface variables above) beats every layered rule,
-   including the plugin's own, regardless of layer order. Everything else
-   this theme adds to .prose (the h1 rule, table/code-block chrome, admonitions,
-   tabs) targets selectors and properties the plugin never touches, so it
-   has no such conflict and stays in the ordinary @layer components block
-   below. */
+   pseudo-elements on inline code, code font-weight, the font-size/line-height
+   on .prose and on h1/h2/h3/table/code/pre, ...) as a utility, which Tailwind
+   v4 places in `@layer utilities`. Cascade layers rank entire layers before
+   specificity: utilities always outranks `@layer components` for a matching
+   declaration, no matter how specific or how late in source our rule is — so
+   remapping these same properties from inside `@layer components` would
+   silently lose. Declaring them unlayered instead (like the [data-theme]
+   surface variables above) beats every layered rule, including the plugin's
+   own, regardless of layer order.
+
+   Material for MkDocs set the root font size to 125% (20px) and its whole
+   type scale followed from that; this theme keeps the root at the browser
+   default (16px, so the docs-shell layout dimensions do not move) and
+   instead scales the .prose content block on its own via font-size +
+   line-height below. Typography sizes headings/table/code in em relative to
+   that content font-size, so most of them fall out of this one change; the
+   handful whose default em ratio does not match the pre-migration baseline
+   get their own em/line-height override, also unlayered for the same reason.
+
+   Everything else this theme adds to .prose (the h1 gradient rule, table/
+   code-block chrome, admonitions, tabs) targets selectors and properties the
+   plugin never touches, so it has no such conflict and stays in the ordinary
+   @layer components block below. */
 .prose {
   --tw-prose-body: var(--au-ink);
   --tw-prose-headings: var(--au-ink);
@@ -153,15 +164,58 @@
   --tw-prose-pre-bg: var(--au-panel);
   --tw-prose-th-borders: var(--au-border-strong);
   --tw-prose-td-borders: var(--au-border);
+  /* Base content size (20px @ default 16px root, matching Material's 20px
+     root) and its line-height. tools/check_docs_site.py locks this in. */
+  font-size: 1.25rem;
+  line-height: 1.6;
 }
 
 .prose :not(pre) > code {
   font-weight: 400;
+  /* Typography default is 0.875em (14px @ 16px root); 0.85em keeps inline
+     code close to body size the way the pre-migration site did. */
+  font-size: 0.85em;
 }
 
 .prose :not(pre) > code::before,
 .prose :not(pre) > code::after {
   content: none;
+}
+
+/* h1/h2/h3/table/pre: Typography's default em ratios and line-heights do not
+   all match the pre-migration baseline at this new content size, so each
+   gets an explicit value here. h3's font-size ratio already matches (1.25em)
+   and is left to the plugin default; only its line-height needs correcting.
+
+   The `:not(:where([class~="not-prose"],[class~="not-prose"] *))` clause
+   copies Typography's own escape hatch verbatim (see the compiled
+   `.prose :where(h1):not(...)` rule it emits into `@layer utilities`):
+   without it these unlayered, un-:where()'d rules would outrank
+   `.hero-home`'s and `.mod-system`'s own `not-prose` component styling
+   (`.prose .hero-title`, `.prose .mod-h2`, both in `@layer components`) by
+   layer alone, regardless of their higher selector specificity. */
+.prose h1:not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  font-size: 2em;
+  line-height: 1.3;
+}
+
+.prose h2:not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  font-size: 1.5625em;
+  line-height: 1.4;
+}
+
+.prose h3:not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  line-height: 1.5;
+}
+
+.prose table:not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  font-size: 0.9em;
+  line-height: 1.6;
+}
+
+.prose pre:not(:where([class~="not-prose"], [class~="not-prose"] *)) {
+  font-size: 0.85em;
+  line-height: 1.4;
 }
 
 @layer base {
@@ -336,6 +390,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    font-size: 1.125rem;
     font-weight: 600;
     color: var(--au-header-ink);
     text-decoration: none;
@@ -370,7 +425,11 @@
     background-color: var(--au-header-bg);
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--au-header-border);
-    font-size: 0.78rem;
+    /* No Material baseline exists for this trail (it rendered no .md-path on
+       the pages measured for the type-scale audit) — scaled with everything
+       else at the same 1.25 factor (0.78rem -> 0.975rem) rather than matched
+       against a real target. */
+    font-size: 0.975rem;
     color: var(--au-header-muted);
   }
 
@@ -403,7 +462,8 @@
     border-radius: var(--radius-au-sm);
     color: var(--au-muted);
     text-decoration: none;
-    font-size: 0.86rem;
+    font-size: 1.125rem;
+    line-height: 1.3;
   }
 
   .docs-nav__link:hover { color: var(--au-ink); background-color: var(--au-panel); }
@@ -424,7 +484,8 @@
     padding-top: 0.8rem;
     border-top: 1px solid var(--au-border);
     color: var(--au-muted);
-    font-size: 0.78rem;
+    font-size: 1rem;
+    line-height: 1.3;
     font-weight: 700;
     letter-spacing: 0.09em;
     text-transform: uppercase;
@@ -432,7 +493,7 @@
 
   .docs-nav__section::-webkit-details-marker { display: none; }
 
-  .docs-toc { align-self: start; position: sticky; top: 6.5rem; font-size: 0.8rem; }
+  .docs-toc { align-self: start; position: sticky; top: 6.5rem; font-size: 1.125rem; line-height: 1.3; }
   .docs-toc__list { list-style: none; margin: 0; padding: 0; }
   .docs-toc__list--nested { padding-left: 0.75rem; }
   .docs-toc__link { color: var(--au-muted); text-decoration: none; }
@@ -515,13 +576,17 @@
     border-radius: var(--radius-au-md);
     background-color: var(--au-panel);
     padding: 0.8rem 1rem;
+    /* Relative to the .prose font-size, so it tracks the content scale
+       instead of the (unrelated) root font size. */
+    font-size: 0.9em;
   }
 
   .admonition-title {
     margin: 0 0 0.4rem;
     color: var(--admonition-accent, var(--color-au-cyan));
     font-weight: 600;
-    font-size: 0.86rem;
+    /* Same size as the admonition body — inherits the 0.9em set above. */
+    font-size: 1em;
     letter-spacing: 0.02em;
     text-transform: uppercase;
   }
@@ -553,7 +618,8 @@
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
     color: var(--au-muted);
-    font-size: 0.86rem;
+    font-size: 0.8rem;
+    line-height: 1.6;
     cursor: pointer;
   }
 
@@ -712,22 +778,22 @@
   .hero-home {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 2rem;
+    gap: 2.5rem;
     align-items: center;
-    margin: 0 0 3.5rem;
+    margin: 0 0 4.375rem;
   }
 
   @media screen and (min-width: 70em) {
     .hero-home {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-      gap: 2.5rem;
+      gap: 3.125rem;
     }
   }
 
   .hero-kicker {
     margin: 0;
     font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -735,8 +801,8 @@
   }
 
   .prose .hero-title {
-    margin: 0.5rem 0 0;
-    font-size: 2.1rem;
+    margin: 0.625rem 0 0;
+    font-size: 2.625rem;
     font-weight: 700;
     letter-spacing: -0.03em;
     line-height: 1.1;
@@ -746,8 +812,8 @@
   }
 
   .hero-lede {
-    margin: 0.9rem 0 0;
-    font-size: 0.86rem;
+    margin: 1.125rem 0 0;
+    font-size: 1.075rem;
     line-height: 1.65;
     color: var(--au-muted);
   }
@@ -755,14 +821,14 @@
   .hero-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
-    margin-top: 1.6rem;
+    gap: 0.75rem;
+    margin-top: 2rem;
   }
 
   .prose .hero-actions .docs-button {
     /* Tighter than the default .docs-button so the three entry points sit on one
        row inside the hero's copy column. */
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     padding: 0.5em 1.15em;
   }
 
@@ -816,8 +882,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.6rem;
-    height: 2.6rem;
+    width: 3.25rem;
+    height: 3.25rem;
     border: 1px solid var(--au-border-strong, rgb(255 255 255 / 0.16));
     border-radius: 50%;
     background-color: rgb(4 5 10 / 0.72);
@@ -826,8 +892,8 @@
     transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
   .hero-art__hint svg {
-    width: 1.3rem;
-    height: 1.3rem;
+    width: 1.625rem;
+    height: 1.625rem;
     fill: var(--color-au-cyan);
   }
   .hero-art--zoomable:hover .hero-art__hint,
@@ -889,8 +955,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.2rem;
-    height: 2.2rem;
+    width: 2.75rem;
+    height: 2.75rem;
     padding: 0;
     border: 1px solid var(--au-border-strong, rgb(255 255 255 / 0.16));
     border-radius: 50%;
@@ -904,8 +970,8 @@
       color 180ms ease, border-color 180ms ease;
   }
   .hero-zoom__close--fixed {
-    top: 0.6rem;
-    right: 0.6rem;
+    top: 0.75rem;
+    right: 0.75rem;
   }
   .hero-zoom__close.is-open {
     opacity: 1;
@@ -920,8 +986,8 @@
     color: var(--color-au-cyan);
   }
   .hero-zoom__close svg {
-    width: 1.1rem;
-    height: 1.1rem;
+    width: 1.375rem;
+    height: 1.375rem;
     fill: currentcolor;
   }
 
@@ -950,13 +1016,13 @@
    */
 
   .mod-system {
-    margin: 0 0 3rem;
+    margin: 0 0 3.75rem;
   }
 
   .mod-kicker {
     margin: 0;
     font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -964,8 +1030,8 @@
   }
 
   .prose .mod-h2 {
-    margin: 0.4rem 0 0;
-    font-size: 1.5rem;
+    margin: 0.5rem 0 0;
+    font-size: 1.875rem;
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.2;
@@ -975,9 +1041,9 @@
   }
 
   .mod-intro {
-    max-width: 42rem;
-    margin: 0.6rem 0 0;
-    font-size: 0.8rem;
+    max-width: 52.5rem;
+    margin: 0.75rem 0 0;
+    font-size: 1rem;
     line-height: 1.6;
     color: var(--au-muted);
   }
@@ -986,22 +1052,22 @@
   .mod-legend {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 1.5rem;
+    gap: 0.625rem;
+    margin-top: 1.875rem;
   }
 
   .mod-leg {
     --c: var(--color-au-cyan);
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.5625rem;
     font: inherit;
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     color: var(--au-muted);
     background: var(--au-panel);
     border: 1px solid var(--au-border);
     border-radius: 999px;
-    padding: 0.3rem 0.7rem;
+    padding: 0.375rem 0.875rem;
     cursor: pointer;
     user-select: none;
     transition: color 120ms ease, border-color 120ms ease, opacity 120ms ease;
@@ -1017,8 +1083,8 @@
   }
 
   .mod-dot {
-    width: 0.6rem;
-    height: 0.6rem;
+    width: 0.75rem;
+    height: 0.75rem;
     border-radius: 3px;
     background: var(--c);
   }
@@ -1027,8 +1093,8 @@
   .mod-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-    gap: 0.6rem;
-    margin-top: 1.2rem;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
   }
 
   .prose .mod-tile {
@@ -1037,7 +1103,7 @@
     display: block;
     overflow: hidden;
     min-height: 104px;
-    padding: 0.7rem 0.75rem 0.8rem;
+    padding: 0.875rem 0.9375rem 1rem;
     background: var(--au-panel);
     border: 1px solid var(--au-border);
     border-radius: var(--radius-au-lg);
@@ -1070,7 +1136,7 @@
 
   .mod-sym {
     display: block;
-    font-size: 1.25rem;
+    font-size: 1.5625rem;
     font-weight: 600;
     letter-spacing: -0.02em;
     line-height: 1.1;
@@ -1079,8 +1145,8 @@
 
   .mod-nm {
     display: block;
-    margin-top: 0.35rem;
-    font-size: 0.72rem;
+    margin-top: 0.4375rem;
+    font-size: 0.9rem;
     font-weight: 500;
     line-height: 1.2;
     color: var(--au-ink);
@@ -1088,9 +1154,9 @@
 
   .mod-code {
     display: block;
-    margin-top: 0.3rem;
+    margin-top: 0.375rem;
     font-family: var(--font-mono);
-    font-size: 0.58rem;
+    font-size: 0.725rem;
     line-height: 1.3;
     /* The markup carries <wbr> after each underscore, so long module names
        wrap at segment boundaries instead of mid-word. */
@@ -1101,13 +1167,13 @@
   .mod-tip {
     position: fixed;
     z-index: 20;
-    max-width: 22rem;
-    padding: 0.5rem 0.7rem;
+    max-width: 27.5rem;
+    padding: 0.625rem 0.875rem;
     background: var(--au-panel-raised, #14161f);
     border: 1px solid var(--au-border-strong, rgb(0 0 0 / 0.2));
     border-radius: var(--radius-au-md);
     box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.7);
-    font-size: 0.7rem;
+    font-size: 0.875rem;
     line-height: 1.5;
     color: var(--au-ink);
     opacity: 0;
@@ -1117,12 +1183,12 @@
 
   .mod-tip .tt {
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: 0.8125rem;
     color: var(--color-au-cyan);
   }
 
   .mod-tip .tb {
-    margin-top: 0.2rem;
+    margin-top: 0.25rem;
   }
 
   @media (pointer: coarse) {
@@ -1162,7 +1228,8 @@
     padding: 2rem 1.5rem 3rem;
     border-top: 1px solid var(--au-border);
     color: var(--au-muted);
-    font-size: 0.82rem;
+    font-size: 0.8rem;
+    line-height: 1.6;
   }
 
   .docs-pager { display: flex; justify-content: space-between; gap: 1rem; }
