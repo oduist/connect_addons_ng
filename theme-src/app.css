@@ -116,6 +116,13 @@
   --au-header-muted: #9aa1bd;
   --au-header-faint: #5b6184;
   --au-header-link: var(--color-au-signal-bright);
+  /* Same value as the dark scheme's --au-border. The crumbs trail's own
+     border-bottom (separating it from page content below, not from the
+     header above) must stay pinned to that same dark baseline for the same
+     reason the tokens above are: the page's --au-border flips to a light
+     hairline in the light scheme, which is nearly invisible against this
+     bar's permanently dark background. */
+  --au-header-border: rgb(255 255 255 / 0.08);
 }
 
 /* @tailwindcss/typography emits `.prose` itself (variables, the backtick
@@ -229,6 +236,8 @@
     .docs-shell:not(:has(> .docs-nav)):not(:has(> .docs-toc)) {
       grid-template-columns: minmax(0, 1fr);
     }
+
+    .docs-header__burger { display: none; }
   }
 
   @media (width < 76rem) {
@@ -238,6 +247,48 @@
 
     .docs-content {
       grid-column: 1;
+    }
+
+    .docs-toc { position: static; }
+
+    /* Below the sidebar's own column, the drawer is the only way to reach
+       it: hide it while it sits in its normal spot as a direct child of
+       .docs-shell. drawer.js moves the same element into
+       [data-drawer-body], which this selector does not match, so it
+       reappears inside the dialog; closing the dialog prepends it back
+       into .docs-shell, hiding it again. */
+    .docs-shell > .docs-nav {
+      display: none;
+    }
+
+    /* "the header collapses to two buttons (navigation, search)" on narrow
+       screens (specs/docs_site.md, partials/header.html) — the repo link
+       and scheme toggle step out of the way rather than wrapping the
+       header onto extra lines. */
+    .docs-header__repo,
+    .docs-header__toggle {
+      display: none;
+    }
+
+    /* The brand name is long ("Oduist Connect Documentation"); let it
+       truncate with an ellipsis instead of wrapping or pushing the search
+       button out of the header. min-width: 0 overrides the flex item
+       default that would otherwise block shrinking below content size. */
+    .docs-header__brand {
+      min-width: 0;
+    }
+
+    /* The search button keeps its natural size and its own text on one
+       line — it is the brand name that gives way, not this. */
+    .docs-header__search {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .docs-header__brand span {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
   }
 
@@ -304,6 +355,13 @@
     text-decoration: none;
   }
 
+  /* The toggle names the active scheme, not the switch target: only one of
+     the two spans applies at a time, matching aria-pressed (true = dark). */
+  [data-theme="dark"] .docs-header__toggle-light,
+  [data-theme="light"] .docs-header__toggle-dark {
+    display: none;
+  }
+
   .docs-crumbs {
     position: sticky;
     top: 3.1rem;
@@ -311,7 +369,7 @@
     padding: 0.5rem 1.5rem;
     background-color: var(--au-header-bg);
     backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--au-border);
+    border-bottom: 1px solid var(--au-header-border);
     font-size: 0.78rem;
     color: var(--au-header-muted);
   }
@@ -393,53 +451,13 @@
 
   .docs-drawer::backdrop { background-color: rgb(4 5 10 / 0.6); }
 
-  @media (width >= 76rem) {
-    .docs-header__burger { display: none; }
-  }
-
-  @media (width < 76rem) {
-    .docs-toc { position: static; }
-
-    /* Below the sidebar's own column, the drawer is the only way to reach
-       it: hide it while it sits in its normal spot as a direct child of
-       .docs-shell. drawer.js moves the same element into
-       [data-drawer-body], which this selector does not match, so it
-       reappears inside the dialog; closing the dialog prepends it back
-       into .docs-shell, hiding it again. */
-    .docs-shell > .docs-nav {
-      display: none;
-    }
-
-    /* "the header collapses to two buttons (navigation, search)" on narrow
-       screens (specs/docs_site.md, partials/header.html) — the repo link
-       and scheme toggle step out of the way rather than wrapping the
-       header onto extra lines. */
-    .docs-header__repo,
-    .docs-header__toggle {
-      display: none;
-    }
-
-    /* The brand name is long ("Oduist Connect Documentation"); let it
-       truncate with an ellipsis instead of wrapping or pushing the search
-       button out of the header. min-width: 0 overrides the flex item
-       default that would otherwise block shrinking below content size. */
-    .docs-header__brand {
-      min-width: 0;
-    }
-
-    /* The search button keeps its natural size and its own text on one
-       line — it is the brand name that gives way, not this. */
-    .docs-header__search {
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-
-    .docs-header__brand span {
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-  }
+  /* Both breakpoints already have their own @media (width >= / < 76rem)
+     block near the top of this layer (the grid-column rules); the
+     header/drawer/toc rules above are folded into those same two blocks
+     rather than opening a second pair here — @layer components is one
+     layer regardless of how many rule blocks contribute to it, the same
+     principle the layer-ordering note near the top of the file (around the
+     .prose remap, ~line 121) explains for layer ranking. */
 
   /* The one gradient, as the rule under the page title. */
   .prose h1 {
@@ -517,7 +535,12 @@
   /* Tabs: pymdownx.tabbed with alternate_style renders radio inputs, so the
      switching is pure CSS. */
   .tabbed-set { margin-block: 1.4rem; }
-  .tabbed-set > input { position: absolute; opacity: 0; }
+  /* Hidden but still focusable via keyboard (not display: none). Every
+     input in the set stacks at the content box's origin, so without
+     pointer-events: none the first one intercepts clicks aimed anywhere
+     near the top-left of the label row, regardless of which tab the reader
+     meant to hit. */
+  .tabbed-set > input { position: absolute; opacity: 0; pointer-events: none; }
 
   .tabbed-labels {
     display: flex;
@@ -552,6 +575,21 @@
   .tabbed-set > input:nth-child(6):checked ~ .tabbed-labels > label:nth-child(6) {
     color: var(--color-au-cyan);
     border-bottom-color: var(--color-au-cyan);
+  }
+
+  /* The input itself is the thing that receives keyboard focus (opacity: 0,
+     not display: none, so Tab still reaches it) but it is invisible, so the
+     ring has to land on the label it is paired with instead. Same positional
+     pairing as the :checked rules above. */
+  .tabbed-set > input:nth-child(1):focus-visible ~ .tabbed-labels > label:nth-child(1),
+  .tabbed-set > input:nth-child(2):focus-visible ~ .tabbed-labels > label:nth-child(2),
+  .tabbed-set > input:nth-child(3):focus-visible ~ .tabbed-labels > label:nth-child(3),
+  .tabbed-set > input:nth-child(4):focus-visible ~ .tabbed-labels > label:nth-child(4),
+  .tabbed-set > input:nth-child(5):focus-visible ~ .tabbed-labels > label:nth-child(5),
+  .tabbed-set > input:nth-child(6):focus-visible ~ .tabbed-labels > label:nth-child(6) {
+    outline: 2px solid var(--color-au-iris);
+    outline-offset: 2px;
+    border-radius: var(--radius-au-sm);
   }
 
   .tabbed-labels > label:hover { color: var(--au-ink); }
@@ -693,7 +731,7 @@
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--au-cyan, #2dd4ff);
+    color: var(--color-au-cyan);
   }
 
   .prose .hero-title {
@@ -733,7 +771,7 @@
     width: 100%;
     height: auto;
     border: 1px solid var(--au-border);
-    border-radius: var(--au-radius-lg, 12px);
+    border-radius: var(--radius-au-lg);
     box-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.85);
   }
 
@@ -768,7 +806,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--au-radius-lg, 12px);
+    border-radius: var(--radius-au-lg);
     background-color: rgb(4 5 10 / 0.3);
     opacity: 0;
     pointer-events: none;
@@ -790,7 +828,7 @@
   .hero-art__hint svg {
     width: 1.3rem;
     height: 1.3rem;
-    fill: var(--au-cyan, #2dd4ff);
+    fill: var(--color-au-cyan);
   }
   .hero-art--zoomable:hover .hero-art__hint,
   .hero-art img.hero-art__zoomable:focus-visible + .hero-art__hint {
@@ -837,7 +875,7 @@
     /* Border only — the scrim already separates the screenshot from the page,
        and a drop shadow underneath it would fight the close button. */
     border: 1px solid var(--au-border-strong, rgb(255 255 255 / 0.16));
-    border-radius: var(--au-radius-lg, 12px);
+    border-radius: var(--radius-au-lg);
     transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
     will-change: transform;
   }
@@ -874,11 +912,12 @@
   }
   /* Hover only: the button takes focus as the dialog opens, and reusing this
      treatment for :focus-visible would leave it looking permanently hovered.
-     The focus ring from aurora.css carries the keyboard state on its own. */
+     The :focus-visible outline declared in @layer base carries the keyboard
+     state on its own. */
   .hero-zoom__close:hover {
     transform: scale(1.1);
     border-color: var(--au-border-hover, rgb(255 255 255 / 0.28));
-    color: var(--au-cyan, #2dd4ff);
+    color: var(--color-au-cyan);
   }
   .hero-zoom__close svg {
     width: 1.1rem;
@@ -906,8 +945,8 @@
    *
    * Category colours are a dataviz-validated categorical set, deliberately
    * distinct from the brand gradient (which stays for chrome). Surfaces and
-   * text reference the Aurora --au-* tokens directly, so the block follows
-   * both the dark and light schemes.
+   * text reference the theme's --color-au-* and --radius-au-* tokens
+   * directly, so the block follows both the dark and light schemes.
    */
 
   .mod-system {
@@ -921,7 +960,7 @@
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: var(--au-cyan, #2dd4ff);
+    color: var(--color-au-cyan);
   }
 
   .prose .mod-h2 {
@@ -952,7 +991,7 @@
   }
 
   .mod-leg {
-    --c: var(--au-cyan, #2dd4ff);
+    --c: var(--color-au-cyan);
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
@@ -993,7 +1032,7 @@
   }
 
   .prose .mod-tile {
-    --c: var(--au-cyan, #2dd4ff);
+    --c: var(--color-au-cyan);
     position: relative;
     display: block;
     overflow: hidden;
@@ -1001,7 +1040,7 @@
     padding: 0.7rem 0.75rem 0.8rem;
     background: var(--au-panel);
     border: 1px solid var(--au-border);
-    border-radius: var(--au-radius-lg, 12px);
+    border-radius: var(--radius-au-lg);
     color: inherit;
     text-decoration: none;
     transition: transform 120ms ease, border-color 120ms ease,
@@ -1066,11 +1105,11 @@
     padding: 0.5rem 0.7rem;
     background: var(--au-panel-raised, #14161f);
     border: 1px solid var(--au-border-strong, rgb(0 0 0 / 0.2));
-    border-radius: var(--au-radius-md, 10px);
+    border-radius: var(--radius-au-md);
     box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.7);
     font-size: 0.7rem;
     line-height: 1.5;
-    color: #eef0fa;
+    color: var(--au-ink);
     opacity: 0;
     pointer-events: none;
     transition: opacity 120ms ease;
@@ -1079,7 +1118,7 @@
   .mod-tip .tt {
     font-family: var(--font-mono);
     font-size: 0.65rem;
-    color: var(--au-cyan, #2dd4ff);
+    color: var(--color-au-cyan);
   }
 
   .mod-tip .tb {
