@@ -15,7 +15,8 @@ from twilio.jwt.access_token.grants import VoiceGrant
 from twilio.twiml.voice_response import Client, Dial, VoiceResponse
 
 from odoo.addons.connect.models.settings import debug
-from .settings import TWILIO_EDGES, strip_number, format_connect_response
+from .settings import (
+    MAX_EXTEN_LEN, TWILIO_EDGES, strip_number, format_connect_response)
 from .twiml import pretty_xml
 
 logger = logging.getLogger(__name__)
@@ -467,10 +468,10 @@ class User(models.Model):
         )
         client.identity(self.get_client_identity())
         # Twilio E.164-prefixes a bare extension used as caller ID, so the
-        # web phone is handed '+101' for a call from extension 101. Pass the
-        # caller ID we actually set: the widget prefers this parameter over
-        # the From Twilio reports.
-        if callerId:
+        # web phone is handed '+101' for a call from extension 101. Only that
+        # case needs a hint -- the widget prefers this parameter over the From
+        # Twilio reports, so every other caller ID is left to arrive as it is.
+        if callerId and callerId.isdigit() and len(callerId) <= MAX_EXTEN_LEN:
             client.parameter(name='From', value=callerId)
         if caller_name:
             client.parameter(name='CallerName', value=caller_name)

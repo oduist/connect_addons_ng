@@ -190,7 +190,13 @@ class Settings(models.Model):
                 )
             )
         if "client:" in to:
-            to += "&From={}".format((number or '').replace("+", ""))
+            # The widget labels the call from this parameter -- and reads the
+            # whatsapp: prefix as "show the WhatsApp badge". The plus is
+            # dropped because it decodes as a space in a query string.
+            display_number = (number or '').replace("+", "")
+            if whatsapp_call:
+                display_number = "whatsapp:{}".format(display_number)
+            to += "&From={}".format(display_number)
         exten = self.env["connect.twilio.exten"].search(
             [("number", "=", number)], limit=1
         )

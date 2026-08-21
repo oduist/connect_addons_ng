@@ -247,7 +247,7 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `delete_sip_account()` | Delete SIP credential from Twilio |
 | `generate_twilio_password()` | Generate strong random password |
 | `render()` | Main TwiML rendering: dispatches to client/sip/voicemail. With a ledger call it walks the callflows through `connect.twilio.user_callflow_call`; without one (click-to-call, rendered before the channel exists) it emits a single `<Dial>` and carries the already-dialed ids in the action URL |
-| `render_client()` | Generate TwiML `<Dial><Client>`; passes the caller ID as a `From` `<Parameter>` because Twilio hands the callee the E.164 form of a bare extension (`+101`) and the web phone prefers the parameter (ADR-058) |
+| `render_client()` | Generate TwiML `<Dial><Client>`; for a bare extension caller ID it adds a `From` `<Parameter>` (Twilio hands the callee `+101`; the web phone prefers the parameter). Other caller IDs reach the browser as Twilio's own `From` (ADR-058) |
 | `render_sip()` | Generate TwiML `<Dial><Sip>` |
 | `render_voicemail()` | Generate TwiML `<Record>` for voicemail |
 | `get_greeting_message()` / `get_voicemail_prompt()` | `<Say>` the user prompts with `language`/`voice` from `connect.user` (fallbacks `en-US` / `Woman`, ADR-037) |

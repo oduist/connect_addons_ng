@@ -109,24 +109,38 @@ class TestUserCallerId(TwilioTestCommon):
 
         self.assertEqual(channel.caller_number, self.pbx_user.username)
 
-    def test_web_phone_is_told_the_extension_not_the_e164_form(self):
-        """Twilio hands the callee '+101'; the widget must show '101'."""
+    def _render_client(self, caller):
         from twilio.twiml.voice_response import VoiceResponse
 
+        response = VoiceResponse()
+        self.pbx_user.render_client(response, {'Caller': caller}, {})
+        return str(response)
+
+    def test_web_phone_is_told_the_extension_not_the_e164_form(self):
+        """Twilio hands the callee '+101'; the widget must show '101'."""
         exten = self.env['connect.twilio.exten'].create({
             'number': self.number,
             'dst': 'connect.user,{}'.format(self.pbx_user.id),
         })
-        response = VoiceResponse()
-        self.pbx_user.render_client(
-            response,
-            {'Caller': 'client:{}'.format(self.identity)},
-            {},
-        )
-        dialplan = str(response)
+
+        dialplan = self._render_client('client:{}'.format(self.identity))
 
         self.assertIn('callerId="{}"'.format(exten.number), dialplan)
         self.assertIn(
             '<Parameter name="From" value="{}"'.format(exten.number),
             dialplan,
         )
+
+    def test_a_phone_number_reaches_the_web_phone_untouched(self):
+        """Only a bare extension needs the hint -- E.164 arrives as it is."""
+        dialplan = self._render_client('+19789814066')
+
+        self.assertIn('callerId="+19789814066"', dialplan)
+        self.assertNotIn('<Parameter name="From"', dialplan)
+
+    def test_a_whatsapp_caller_reaches_the_web_phone_untouched(self):
+        """The widget reads the whatsapp: prefix off Twilio's own From."""
+        dialplan = self._render_client('whatsapp:+37360681783')
+
+        self.assertIn('callerId="whatsapp:+37360681783"', dialplan)
+        self.assertNotIn('<Parameter name="From"', dialplan)

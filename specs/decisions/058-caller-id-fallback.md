@@ -57,6 +57,18 @@ widget already prefers `session.customParameters.get('From')` over
 without any change to the JS. A SIP endpoint still sees the E.164 form in the
 `From` header — SIP takes no custom parameters.
 
+The parameter is sent **only for a bare extension** (digits, at most
+`MAX_EXTEN_LEN`). That is the one caller ID Twilio rewrites; every other value
+— E.164, `whatsapp:+…`, a client identity — already reaches the browser
+intact as Twilio's own `From`, and overriding it would put the value through
+Twilio's custom-parameter encoding for no gain.
+
+Click-to-call builds the same parameter itself, in the `client:…?…&From=`
+query of the leg it originates. There the number is sent without its `+`
+(a plus decodes as a space in a query string) and, for a WhatsApp call, with
+the `whatsapp:` prefix — the widget reads that prefix as "show the WhatsApp
+badge", and without it an outgoing WhatsApp call looked like a plain call.
+
 ## Alternatives considered
 
 **Raise a `ValidationError` in `originate_call()` when the caller has no
