@@ -163,4 +163,134 @@
     border-radius: var(--radius-au-md);
     background-color: var(--au-panel-raised);
   }
+
+  .docs-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1.5rem;
+    background-color: var(--au-header-bg);
+    backdrop-filter: blur(8px);
+  }
+
+  /* The one gradient, as the header's hairline. */
+  .docs-header::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 1px;
+    background: var(--au-gradient);
+  }
+
+  .docs-header__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--au-ink);
+    text-decoration: none;
+  }
+
+  .docs-header__spacer { flex: 1; }
+
+  .docs-crumbs {
+    position: sticky;
+    top: 3.1rem;
+    z-index: 20;
+    padding: 0.5rem 1.5rem;
+    background-color: var(--au-header-bg);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--au-border);
+    font-size: 0.78rem;
+    color: var(--au-muted);
+  }
+
+  .docs-crumbs__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .docs-crumbs__list li + li::before {
+    content: "/";
+    margin-right: 0.35rem;
+    color: var(--au-faint);
+  }
+
+  .docs-nav { align-self: start; position: sticky; top: 6.5rem; }
+
+  .docs-nav__list { list-style: none; margin: 0; padding: 0; }
+
+  .docs-nav__link {
+    display: block;
+    padding: 0.28rem 0.5rem;
+    border-radius: var(--radius-au-sm);
+    color: var(--au-muted);
+    text-decoration: none;
+    font-size: 0.86rem;
+  }
+
+  .docs-nav__link:hover { color: var(--au-ink); background-color: var(--au-panel); }
+
+  .docs-nav__link--active {
+    color: var(--color-au-cyan);
+    background-color: var(--color-au-signal-faint);
+  }
+
+  /* Section headers are labels, not links — the plain arrow cursor says so. */
+  .docs-nav__section {
+    cursor: default;
+    margin-top: 1.2rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--au-border);
+    color: var(--au-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .docs-toc { align-self: start; position: sticky; top: 6.5rem; font-size: 0.8rem; }
+  .docs-toc__list { list-style: none; margin: 0; padding: 0; }
+  .docs-toc__list--nested { padding-left: 0.75rem; }
+  .docs-toc__link { color: var(--au-muted); text-decoration: none; }
+  .docs-toc__link[aria-current] { color: var(--color-au-cyan); }
+
+  .docs-drawer {
+    width: min(20rem, 90vw);
+    height: 100%;
+    max-height: 100%;
+    margin: 0 auto 0 0;
+    border: 0;
+    border-right: 1px solid var(--au-border);
+    background-color: var(--au-panel);
+    color: var(--au-ink);
+  }
+
+  .docs-drawer::backdrop { background-color: rgb(4 5 10 / 0.6); }
+
+  @media (width >= 76rem) {
+    .docs-header__burger { display: none; }
+  }
+
+  @media (width < 76rem) {
+    .docs-toc { position: static; }
+
+    /* Below the sidebar's own column, the drawer is the only way to reach
+       it: hide it while it sits in its normal spot as a direct child of
+       .docs-shell. drawer.js moves the same element into
+       [data-drawer-body], which this selector does not match, so it
+       reappears inside the dialog; closing the dialog prepends it back
+       into .docs-shell, hiding it again. */
+    .docs-shell > .docs-nav {
+      display: none;
+    }
+  }
 }

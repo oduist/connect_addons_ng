@@ -1,0 +1,24 @@
+{#- One entry in the sidebar tree. Sections expand with <details>, driven by
+    nav_item.active, so no JavaScript is involved. -#}
+{% macro render(nav_item, level) %}
+  {% if nav_item.children %}
+    <li class="docs-nav__item">
+      <details {% if nav_item.active %}open{% endif %}>
+        <summary class="docs-nav__section">{{ nav_item.title }}</summary>
+        <ul class="docs-nav__list">
+          {% for child in nav_item.children %}
+            {{ render(child, level + 1) }}
+          {% endfor %}
+        </ul>
+      </details>
+    </li>
+  {% elif nav_item.is_page %}
+    <li class="docs-nav__item">
+      <a class="docs-nav__link{% if nav_item.active %} docs-nav__link--active{% endif %}"
+         href="{{ nav_item.url | url }}"
+         {% if nav_item.active %}aria-current="page"{% endif %}>
+        {{ nav_item.title }}
+      </a>
+    </li>
+  {% endif %}
+{% endmacro %}

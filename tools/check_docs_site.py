@@ -82,6 +82,40 @@ def _no_material():
             return f"{path} still contains Material markup"
 
 
+@check("the sidebar is scoped to the current module")
+def _sidebar_scope():
+    html = read(MODULE_PAGE)
+    if 'class="docs-nav"' not in html:
+        return "no sidebar rendered on a module page"
+    # The Twilio page must not advertise other modules in its sidebar.
+    sidebar = html.split('class="docs-nav"', 1)[1].split("</nav>", 1)[0]
+    for stranger in ("FreeSWITCH", "LiveKit", "Telnyx"):
+        if stranger in sidebar:
+            return f"sidebar leaks {stranger} on a Twilio page"
+
+
+@check("root pages hide the sidebar")
+def _root_pages_have_no_sidebar():
+    if 'class="docs-nav"' in read(HOME):
+        return "the home page renders a sidebar despite hide: navigation"
+
+
+@check("breadcrumbs walk back to home")
+def _breadcrumbs():
+    html = read(MODULE_PAGE)
+    if 'class="docs-crumbs"' not in html:
+        return "no breadcrumb trail on a module page"
+    crumbs = html.split('class="docs-crumbs"', 1)[1].split("</nav>", 1)[0]
+    if "Twilio" not in crumbs or ">Home<" not in crumbs:
+        return "breadcrumb trail does not run Home -> Twilio"
+
+
+@check("the page TOC is rendered")
+def _toc():
+    if 'class="docs-toc"' not in read(MODULE_PAGE):
+        return "no table of contents on a module page"
+
+
 def main():
     for fn in CHECKS:
         try:

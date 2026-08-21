@@ -1,1 +1,23 @@
-{#- Filled in by a later task (see docs/superpowers/plans). -#}
+{#- Page contents, two levels deep, with a scrollspy in js/toc.js. Collapses
+    into a <details> on narrow screens (CSS-driven). -#}
+{% if page.toc %}
+  <aside class="docs-toc" aria-label="On this page">
+    <p class="docs-toc__title">On this page</p>
+    <ul class="docs-toc__list">
+      {% for entry in page.toc %}
+        <li>
+          <a class="docs-toc__link" href="{{ entry.url }}">{{ entry.title }}</a>
+          {% if entry.children %}
+            <ul class="docs-toc__list docs-toc__list--nested">
+              {% for child in entry.children %}
+                <li>
+                  <a class="docs-toc__link" href="{{ child.url }}">{{ child.title }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </aside>
+{% endif %}

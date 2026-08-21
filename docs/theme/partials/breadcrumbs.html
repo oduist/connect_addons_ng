@@ -1,1 +1,34 @@
-{#- Filled in by a later task (see docs/superpowers/plans). -#}
+{#- Sticky under the header: it is the only way back to Home, and from there to
+    the other modules, so scrolling must not take it away.
+
+    A section carries no url of its own (MkDocs leaves it undefined). The
+    pre-migration site (navigation.path, commit 32a885c) made every crumb a
+    link by resolving a section to its first page, so readers can jump into a
+    module ("Twilio") without picking a specific page first — match that here
+    instead of falling back to inert text. -#}
+{% macro _first_page_url(nav_item) -%}
+  {%- if nav_item.is_page -%}
+    {{ nav_item.url }}
+  {%- elif nav_item.children -%}
+    {{ _first_page_url(nav_item.children | first) }}
+  {%- endif -%}
+{%- endmacro %}
+{% if page and page.ancestors %}
+  <nav class="docs-crumbs" aria-label="Breadcrumb">
+    <ol class="docs-crumbs__list">
+      {% if nav.homepage %}
+        <li><a href="{{ nav.homepage.url | url }}">Home</a></li>
+      {% endif %}
+      {% for ancestor in page.ancestors | reverse %}
+        <li>
+          {% if ancestor.url %}
+            <a href="{{ ancestor.url | url }}">{{ ancestor.title }}</a>
+          {% else %}
+            <a href="{{ _first_page_url(ancestor) | trim | url }}">{{ ancestor.title }}</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+      <li aria-current="page">{{ page.title }}</li>
+    </ol>
+  </nav>
+{% endif %}

@@ -1,1 +1,23 @@
-{#- Filled in by a later task (see docs/superpowers/plans). -#}
+<header class="docs-header">
+  <button class="docs-header__burger" type="button" data-drawer-open
+          aria-label="Open navigation">☰</button>
+
+  <a class="docs-header__brand" href="{{ nav.homepage.url | url }}">
+    <img src="{{ 'assets/logo.png' | url }}" alt="" width="24" height="24">
+    <span>{{ config.site_name }}</span>
+  </a>
+
+  <div class="docs-header__spacer"></div>
+
+  <button class="docs-header__toggle" type="button" data-scheme-toggle
+          aria-pressed="true" aria-label="Toggle colour scheme">
+    <span class="docs-header__toggle-dark">Dark</span>
+    <span class="docs-header__toggle-light">Light</span>
+  </button>
+</header>
+
+<dialog class="docs-drawer" data-drawer aria-label="Navigation">
+  <button class="docs-drawer__close" type="button" data-drawer-close
+          aria-label="Close navigation">×</button>
+  <div data-drawer-body></div>
+</dialog>
