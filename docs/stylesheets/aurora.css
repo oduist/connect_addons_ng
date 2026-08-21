@@ -464,8 +464,31 @@
 .md-path__link {
   transition: color 150ms ease;
 }
+/* Pinned directly under the sticky header. The trail is the only way back to
+   Home — and from there to the other modules — so it has to stay reachable
+   instead of scrolling off with the content. Upstream's horizontal margin
+   becomes padding, so the backdrop spans the full content width; left as a
+   margin, text would slide past uncovered in the gutters. */
 .md-path {
-  padding-bottom: 0.4rem;
+  position: sticky;
+  top: 2.4rem; /* .md-header height */
+  z-index: 2;
+  margin: 0;
+  padding: 1.2rem 0.8rem 0.4rem;
+  background-color: var(--md-default-bg-color);
+}
+@media screen and (min-width: 76.25em) {
+  .md-path {
+    padding-right: 1.2rem;
+    padding-left: 1.2rem;
+  }
+}
+/* Anchored headings have to clear the trail as well as the header. Upstream's
+   3.6rem covers the 2.4rem header plus breathing room; the pinned trail adds
+   roughly 2.5rem on top. Scoped to pages that actually render a trail — Home
+   and Changelog have none, and would otherwise land needlessly low. */
+.md-path ~ .md-typeset :target {
+  --md-scroll-margin: 6.2rem;
 }
 
 /* ------------------------------------------------------------------ *

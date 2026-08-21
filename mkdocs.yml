@@ -1,6 +1,12 @@
 site_name: Oduist Connect Documentation
 site_description: Telephony integration platform for Odoo
-site_url: https://oduist.github.io/connect_addons_ng/
+# Deliberately left without a path: the repository name is an implementation
+# detail and should not show up in the home page's address. MkDocs links every
+# page relatively, so the built site works from whatever prefix it is served
+# under; site_url only drives the `mkdocs serve` mount point, <link
+# rel="canonical"> and sitemap.xml. Set this to the real address once the docs
+# get a domain of their own.
+site_url: ""
 copyright: Copyright &copy; Oduist OÜ
 
 docs_dir: docs
