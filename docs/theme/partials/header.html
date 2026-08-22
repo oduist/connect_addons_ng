@@ -1,34 +1,36 @@
 <header class="docs-header">
-  {#- Same guard as the .docs-nav include in base.html: on a page with no
-      sidebar (hide: navigation, or a static template with no page.meta at
-      all) drawer.js's initDrawer() bails on the missing .docs-nav, so a
-      burger button here would sit there doing nothing on mobile. -#}
-  {% if page and "navigation" not in (page.meta.hide or []) %}
-    <button class="docs-header__burger" type="button" data-drawer-open
-            aria-label="Open navigation">☰</button>
-  {% endif %}
+  <div class="docs-header__inner">
+    {#- Same guard as the .docs-nav include in base.html: on a page with no
+        sidebar (hide: navigation, or a static template with no page.meta at
+        all) drawer.js's initDrawer() bails on the missing .docs-nav, so a
+        burger button here would sit there doing nothing on mobile. -#}
+    {% if page and "navigation" not in (page.meta.hide or []) %}
+      <button class="docs-header__burger" type="button" data-drawer-open
+              aria-label="Open navigation">☰</button>
+    {% endif %}
 
-  <a class="docs-header__brand" href="{{ nav.homepage.url | url }}">
-    <img src="{{ 'assets/logo.png' | url }}" alt="" width="24" height="24">
-    <span>{{ config.site_name }}</span>
-  </a>
+    <a class="docs-header__brand" href="{{ nav.homepage.url | url }}">
+      <img src="{{ 'assets/logo.png' | url }}" alt="" width="24" height="24">
+      <span>{{ config.site_name }}</span>
+    </a>
 
-  <div class="docs-header__spacer"></div>
+    <div class="docs-header__spacer"></div>
 
-  <button class="docs-header__search" type="button" data-search-open>
-    Search <kbd>/</kbd>
-  </button>
+    <button class="docs-header__search" type="button" data-search-open>
+      Search <kbd>/</kbd>
+    </button>
 
-  {% if config.repo_url %}
-    <a class="docs-header__repo" href="{{ config.repo_url }}" rel="noopener"
-       target="_blank">GitHub</a>
-  {% endif %}
+    {% if config.repo_url %}
+      <a class="docs-header__repo" href="{{ config.repo_url }}" rel="noopener"
+         target="_blank">GitHub</a>
+    {% endif %}
 
-  <button class="docs-header__toggle" type="button" data-scheme-toggle
-          aria-pressed="true" aria-label="Toggle colour scheme">
-    <span class="docs-header__toggle-dark">Dark</span>
-    <span class="docs-header__toggle-light">Light</span>
-  </button>
+    <button class="docs-header__toggle" type="button" data-scheme-toggle
+            aria-pressed="true" aria-label="Toggle colour scheme">
+      <span class="docs-header__toggle-dark">Dark</span>
+      <span class="docs-header__toggle-light">Light</span>
+    </button>
+  </div>
 </header>
 
 <dialog class="docs-drawer" data-drawer aria-label="Navigation">

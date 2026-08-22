@@ -378,20 +378,29 @@
     background-color: var(--au-panel-raised);
   }
 
+  /* The bar itself is full-bleed — the background and the gradient hairline
+     run edge to edge — while its contents sit in the same 84rem container as
+     .docs-shell and .docs-footer, so the logo lines up with the sidebar and
+     the toggle with the table of contents. */
   .docs-header {
     position: sticky;
     top: 0;
     z-index: 30;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 1.5rem;
     background-color: var(--au-header-bg);
     /* Fixed light ink so the brand text and the search/repo/toggle buttons
        (which inherit this via `color: inherit`) stay legible against the
        header's always-dark background in the light scheme too. */
     color: var(--au-header-ink);
     backdrop-filter: blur(8px);
+  }
+
+  .docs-header__inner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 84rem;
+    margin-inline: auto;
+    padding: 0.6rem 1.5rem;
   }
 
   /* The one gradient, as the header's hairline. */
@@ -439,7 +448,6 @@
     position: sticky;
     top: 3.1rem;
     z-index: 20;
-    padding: 0.5rem 1.5rem;
     background-color: var(--au-header-bg);
     backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--au-header-border);
@@ -449,6 +457,14 @@
        against a real target. */
     font-size: 0.975rem;
     color: var(--au-header-muted);
+  }
+
+  /* Same container as the header above it, so the trail starts on the same
+     vertical line as the logo and the page content. */
+  .docs-crumbs__inner {
+    max-width: 84rem;
+    margin-inline: auto;
+    padding: 0.5rem 1.5rem;
   }
 
   .docs-crumbs__list {

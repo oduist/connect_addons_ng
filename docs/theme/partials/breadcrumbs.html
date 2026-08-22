@@ -15,20 +15,22 @@
 {%- endmacro %}
 {% if page and page.ancestors %}
   <nav class="docs-crumbs" aria-label="Breadcrumb">
-    <ol class="docs-crumbs__list">
-      {% if nav.homepage %}
-        <li><a href="{{ nav.homepage.url | url }}">Home</a></li>
-      {% endif %}
-      {% for ancestor in page.ancestors | reverse %}
-        <li>
-          {% if ancestor.url %}
-            <a href="{{ ancestor.url | url }}">{{ ancestor.title }}</a>
-          {% else %}
-            <a href="{{ _first_page_url(ancestor) | trim | url }}">{{ ancestor.title }}</a>
-          {% endif %}
-        </li>
-      {% endfor %}
-      <li aria-current="page">{{ page.title }}</li>
-    </ol>
+    <div class="docs-crumbs__inner">
+      <ol class="docs-crumbs__list">
+        {% if nav.homepage %}
+          <li><a href="{{ nav.homepage.url | url }}">Home</a></li>
+        {% endif %}
+        {% for ancestor in page.ancestors | reverse %}
+          <li>
+            {% if ancestor.url %}
+              <a href="{{ ancestor.url | url }}">{{ ancestor.title }}</a>
+            {% else %}
+              <a href="{{ _first_page_url(ancestor) | trim | url }}">{{ ancestor.title }}</a>
+            {% endif %}
+          </li>
+        {% endfor %}
+        <li aria-current="page">{{ page.title }}</li>
+      </ol>
+    </div>
   </nav>
 {% endif %}

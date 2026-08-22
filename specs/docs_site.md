@@ -175,6 +175,12 @@ Logo + `site_name` linking home, the search field, the scheme toggle, a link to
 the GitHub repository, and — below the header, sticky — the breadcrumb trail.
 On narrow screens the header collapses to two buttons (navigation, search).
 
+The bar and the trail are full-bleed — background and gradient hairline run edge
+to edge — but their contents sit in an inner container (`.docs-header__inner`,
+`.docs-crumbs__inner`) capped at the same `84rem` as `.docs-shell` and
+`.docs-footer`. Without it the logo and the crumbs drift to the viewport edges on
+a wide screen while the page content stays centred.
+
 ### `partials/nav.html` + `nav-item.html`
 
 The sidebar is scoped to a single module: the top-level loop is narrowed to
