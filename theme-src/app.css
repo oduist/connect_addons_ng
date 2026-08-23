@@ -337,11 +337,6 @@
        screens (specs/docs_site.md, partials/header.html) — the repo link
        and scheme toggle step out of the way rather than wrapping the
        header onto extra lines. */
-    .docs-header__repo,
-    .docs-header__toggle {
-      display: none;
-    }
-
     /* The brand name is long ("Oduist Connect Documentation"); let it
        truncate with an ellipsis instead of wrapping or pushing the search
        button out of the header. min-width: 0 overrides the flex item
@@ -352,11 +347,6 @@
 
     /* The search button keeps its natural size and its own text on one
        line — it is the brand name that gives way, not this. */
-    .docs-header__search {
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-
     .docs-header__brand span {
       overflow: hidden;
       white-space: nowrap;
@@ -444,16 +434,95 @@
 
   .docs-header__spacer { flex: 1; }
 
-  .docs-header__repo {
+  /* Icon controls (repository, scheme): bare glyphs, as the header carried
+     before the theme was rebuilt — no border, no label, no button chrome. */
+  .docs-header__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
     color: inherit;
     text-decoration: none;
+    opacity: 0.75;
+    cursor: pointer;
+    transition: opacity 150ms ease, background-color 150ms ease;
   }
 
-  /* The toggle names the active scheme, not the switch target: only one of
-     the two spans applies at a time, matching aria-pressed (true = dark). */
+  .docs-header__icon:hover {
+    opacity: 1;
+    background-color: rgb(255 255 255 / 0.08);
+  }
+
+  .docs-header__icon svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    fill: currentColor;
+  }
+
+  /* One icon per scheme, so the button never shows both: the moon is on
+     screen while the dark scheme is, and switches to light. */
   [data-theme="dark"] .docs-header__toggle-light,
   [data-theme="light"] .docs-header__toggle-dark {
     display: none;
+  }
+
+  /* The control that opens the search dialog is shaped like the field it
+     replaces — same 36px height, 10px radius and faint fill the header's
+     search box had before the theme was rebuilt. */
+  .docs-header__search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 14.6rem;
+    height: 2.25rem;
+    padding: 0 0.75rem;
+    border: 0;
+    border-radius: 10px;
+    background-color: rgb(255 255 255 / 0.05);
+    color: var(--au-header-muted);
+    font-family: inherit;
+    font-size: 1rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 150ms ease, color 150ms ease;
+  }
+
+  .docs-header__search:hover {
+    background-color: rgb(255 255 255 / 0.12);
+    color: var(--au-header-ink);
+  }
+
+  .docs-header__search svg {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    fill: currentColor;
+  }
+
+  /* Narrow screens: the burger and the search field are the only header
+     controls that survive, as they did before the rebuild. These overrides
+     must stay AFTER the rules above — same cascade layer, so source order is
+     what decides, and an earlier media block would simply lose. */
+  @media (width < 48rem) {
+    .docs-header__icon {
+      display: none;
+    }
+
+    /* The field shrinks to its icon so the brand name keeps its room. */
+    .docs-header__search {
+      flex-shrink: 0;
+      width: auto;
+      white-space: nowrap;
+    }
+
+    .docs-header__search span {
+      display: none;
+    }
   }
 
   /* Subordinate to the header, not a second one: it shares the topbar's
