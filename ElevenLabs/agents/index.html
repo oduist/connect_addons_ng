@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-base="../../">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Agents, Tools & Voices — Oduist Connect Documentation</title>
+    
+      <meta name="description" content="Telephony integration platform for Odoo">
+    
+      <link rel="icon" href="../../assets/img/logo.png">
+    <script>
+      (function () {
+        var stored = null;
+        try { stored = localStorage.getItem("docs-scheme"); } catch (e) {}
+        var prefersLight =
+          window.matchMedia("(prefers-color-scheme: light)").matches;
+        document.documentElement.dataset.theme =
+          stored || (prefersLight ? "light" : "dark");
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+    
+      <link rel="stylesheet" href="../../assets/app.css">
+    
+  </head>
+  <body>
+    <a class="skip-link" href="#docs-main">Skip to content</a><div class="docs-topbar">
+      <header class="docs-header">
+  <div class="docs-header__inner">
+      <button class="docs-header__burger" type="button" data-drawer-open
+              aria-label="Open navigation">☰</button>
+    
+
+    <a class="docs-header__brand" href="../..">
+      
+        <img src="../../assets/img/logo.png" alt="" width="24" height="24">
+      
+      <span>Oduist Connect Documentation</span>
+    </a>
+
+    <div class="docs-header__spacer"></div>
+      <a class="docs-header__icon docs-header__repo" href="https://github.com/oduist/connect_addons_ng"
+         rel="noopener" target="_blank" title="Go to repository"
+         aria-label="Go to repository">
+        <svg viewBox="0 0 512 512" aria-hidden="true"><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+      </a>
+    <button class="docs-header__icon docs-header__toggle" type="button"
+            data-scheme-toggle aria-pressed="true"
+            title="Switch to light mode" aria-label="Switch to light mode">
+      <svg class="docs-header__toggle-dark" viewBox="0 0 24 24"
+           aria-hidden="true"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      <svg class="docs-header__toggle-light" viewBox="0 0 24 24"
+           aria-hidden="true"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+    </button><button class="docs-header__search" type="button" data-search-open>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      <span>Search</span>
+    </button>
+  </div>
+</header>
+
+<dialog class="docs-drawer" data-drawer aria-label="Navigation">
+  <button class="docs-drawer__close" type="button" data-drawer-close
+          aria-label="Close navigation">×</button>
+  <div data-drawer-body></div>
+</dialog>
+      
+
+  <nav class="docs-crumbs" aria-label="Breadcrumb">
+    <div class="docs-crumbs__inner">
+      <ol class="docs-crumbs__list">
+        
+          <li><a href="../..">Home</a></li>
+        
+        
+          <li>
+            
+              <a href="../">ElevenLabs</a>
+            
+          </li>
+        
+      </ol>
+    </div>
+  </nav>
+
+    </div>
+
+    <div class="docs-shell">
+        
+
+<nav class="docs-nav" aria-label="Module navigation">
+  <ul class="docs-nav__list">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+  
+    <li class="docs-nav__item">
+      <details open>
+        <summary class="docs-nav__section">ElevenLabs</summary>
+        <ul class="docs-nav__list">
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../"
+         >
+        Overview
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../installation/"
+         >
+        Installation
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../configuration/"
+         >
+        Account Configuration
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link docs-nav__link--active"
+         href="./"
+         aria-current="page">
+        Agents, Tools & Voices
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../webhooks-security/"
+         >
+        Webhooks & Security
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../maintenance/"
+         >
+        Maintenance
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </details>
+    </li>
+  
+
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </ul>
+</nav>
+      
+
+      <main id="docs-main" class="docs-content">
+        
+  <article class="prose max-w-none">
+    <h1 id="agents-tools-voices">Agents, Tools &amp; Voices</h1>
+<p>This page covers building an ElevenLabs agent and everything it depends on:
+prompts, templates, tools, transfers, voices and text-to-speech files, plus how
+to route calls to an agent.</p>
+<h2 id="agents">Agents</h2>
+<p>Manage agents under <strong>Connect ▸ ElevenLabs ▸ Agents</strong> (<code>connect.elevenlabs_agent</code>).
+Creating, editing or deleting an agent in Odoo synchronises the change to your
+ElevenLabs workspace over the API — there is no need to touch the ElevenLabs
+dashboard.</p>
+<div class="admonition info">
+<p class="admonition-title">Live sync to ElevenLabs</p>
+<p>On <strong>create</strong>, the module calls <code>conversational_ai.agents.create</code>, stores the
+returned <code>agent_uid</code>, pushes the full config, and registers a <strong>virtual SIP
+phone number</strong> so ElevenLabs will accept inbound SIP INVITEs for the agent.
+On <strong>write</strong> it calls <code>conversational_ai.agents.update</code>; on <strong>delete</strong> it
+removes the agent and its virtual number. Every create/write first checks the
+<code>connect_elevenlabs</code> license.</p>
+</div>
+<h3 id="prompt-tab">Prompt tab</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Template</strong> (<code>template</code>)</td>
+<td>Optional starting point; selecting one copies the template's system prompt into <code>prompt</code>.</td>
+</tr>
+<tr>
+<td><strong>Prompt Version</strong> (<code>active_prompt_version</code>)</td>
+<td>Pick a previously saved version to restore its text into the prompt.</td>
+</tr>
+<tr>
+<td><strong>First Message</strong> (<code>first_message</code>)</td>
+<td>The agent's opening line. Translatable — per-language translations become ElevenLabs <em>language presets</em> for the languages you list under <strong>Additional Languages</strong>.</td>
+</tr>
+<tr>
+<td><strong>Prompt</strong> (<code>prompt</code>)</td>
+<td>The system prompt.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Automatic prompt versioning</p>
+<p>Every time you change <strong>Prompt</strong>, the module snapshots the new text as a new
+<code>connect.elevenlabs_agent_prompt</code> record (<code>v1</code>, <code>v2</code>, …) and marks it the
+active version. Use <strong>Prompt Version</strong> to roll back to an earlier snapshot.</p>
+</div>
+<p>The prompt sent to ElevenLabs is augmented at build time with two blocks that
+reference dynamic variables: a <em>last conversation summary</em> (<code>{{previous_topics}}</code>)
+and <em>call transfer information</em> listing <code>{{available_extensions}}</code>. These are
+filled per call by the conversation-initiation webhook (see below).</p>
+<h3 id="conversation-tab">Conversation tab</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Voice</strong> (<code>voice</code>, required)</td>
+<td>The ElevenLabs voice, from the synced voice library.</td>
+</tr>
+<tr>
+<td><strong>Tools</strong> (<code>tools</code>)</td>
+<td>The tools this agent can call (see <a href="#tools">Tools</a>).</td>
+</tr>
+<tr>
+<td><strong>Transfer targets</strong> (<code>transfer_to_agent</code>)</td>
+<td>Shown when the <code>transfer_to_agent</code> system tool is attached: one row per target agent plus a natural-language <strong>condition</strong>.</td>
+</tr>
+<tr>
+<td><strong>Language</strong> / <strong>Additional Languages</strong></td>
+<td>Primary language and the extra languages (from <code>res.lang</code>) for which first-message translations are exported as presets.</td>
+</tr>
+<tr>
+<td><strong>Turn timeout</strong>, <strong>Silence end-call timeout</strong></td>
+<td>Conversation timing knobs.</td>
+</tr>
+<tr>
+<td><strong>Max duration (s)</strong>, <strong>Agent concurrency limit</strong>, <strong>Daily limit</strong></td>
+<td>Call limits pushed to ElevenLabs platform settings (<code>-1</code> = unlimited).</td>
+</tr>
+<tr>
+<td><strong>Exten</strong> (<code>exten_number</code>)</td>
+<td>The internal extension routed to this agent (created with the <strong>Extension</strong> button — see <a href="#routing-calls-to-an-agent">Routing</a>).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="llm-tts-tab">LLM / TTS tab</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LLM</strong> (<code>llm</code>)</td>
+<td>The model the agent reasons with — OpenAI GPT, Google Gemini, Anthropic Claude, or an ElevenLabs-hosted open model. Default <code>gpt-5.2</code>.</td>
+</tr>
+<tr>
+<td><strong>Max Tokens</strong> (<code>max_tokens</code>)</td>
+<td><code>-1</code> means no cap; a positive value limits the LLM prediction length.</td>
+</tr>
+<tr>
+<td><strong>Output / User Input Audio Format</strong></td>
+<td>Codec/sample rate (default <code>ulaw_8000</code>, the Twilio telephony format).</td>
+</tr>
+<tr>
+<td><strong>Temperature</strong></td>
+<td><code>0.0</code>–<code>1.0</code> creativity.</td>
+</tr>
+<tr>
+<td><strong>Model</strong> (<code>model</code>)</td>
+<td>The ElevenLabs TTS model (Turbo / Flash v2 / v2.5).</td>
+</tr>
+<tr>
+<td><strong>Stability</strong></td>
+<td><code>0.0</code>–<code>1.0</code>.</td>
+</tr>
+<tr>
+<td><strong>Speed</strong></td>
+<td><code>0.7</code>–<code>1.2</code>.</td>
+</tr>
+<tr>
+<td><strong>Similarity Boost</strong></td>
+<td><code>0.0</code>–<code>1.0</code>.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">Validated ranges</p>
+<p>Temperature (0–1), stability (0–1), similarity boost (0–1) and speed
+(0.7–1.2) are enforced by model constraints; out-of-range values raise a
+validation error on save.</p>
+</div>
+<h3 id="sip-tab-managers-only">SIP tab (managers only)</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ElevenLabs Virtual Number ID</strong> (<code>el_virtual_number_uid</code>)</td>
+<td>Read-only. The ElevenLabs <code>phone_number</code> entity registered under the agent, used as the SIP routing identifier when no real DID is attached (e.g. an extension routed straight to the agent).</td>
+</tr>
+<tr>
+<td><strong>Inbound Allowed IPs</strong> (<code>el_inbound_allowed_ips</code>)</td>
+<td>Comma- or newline-separated IP/CIDR list ElevenLabs will accept SIP INVITEs from. Defaults to Twilio's SIP signalling ranges. Empty allows all sources. Editing this re-syncs the virtual number's inbound trunk config.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="header-buttons">Header buttons</h3>
+<ul>
+<li><strong>Extension</strong> — creates a <code>connect.twilio.exten</code> pointing at this agent so it
+  can be dialled internally and routed to.</li>
+<li><strong>Print</strong> — developer helper that logs the agent's live ElevenLabs config.</li>
+</ul>
+<h2 id="agent-templates">Agent Templates</h2>
+<p>Manage under <strong>Connect ▸ ElevenLabs ▸ Agent Templates</strong>
+(<code>connect.elevenlabs_agent_template</code>, admin only). A template is just a named
+reusable <strong>system prompt</strong>. Selecting a template on a new agent copies its
+<code>system_prompt</code> into the agent's prompt. The module ships an <em>Appointment
+Assistant</em> template wired for the calendar tools.</p>
+<h2 id="tools">Tools</h2>
+<p>Manage under <strong>Connect ▸ ElevenLabs ▸ Tools</strong> (<code>connect.elevenlabs_agent_tool</code>).
+Tools are what let an agent <em>do</em> things during a call. There are three types.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>System</strong></td>
+<td>Built-in ElevenLabs behaviours (end call, language detection, voicemail detection, transfer to agent, keypad tones). Managed as part of the agent config, not as standalone remote tools.</td>
+</tr>
+<tr>
+<td><strong>Webhook</strong></td>
+<td>An HTTP call ElevenLabs makes during the conversation — usually back into Odoo. Created/updated in the ElevenLabs tool registry (<code>conversational_ai.tools</code>).</td>
+</tr>
+<tr>
+<td><strong>Client</strong></td>
+<td>A tool executed on the client side; may block the conversation until a response is returned.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition info">
+<p class="admonition-title">Automatic tool sync</p>
+<p>Creating a non-system tool syncs it to ElevenLabs and stores the returned
+<code>tool_id</code>; editing updates it; deleting removes it. Editing a <strong>system</strong> tool
+instead re-pushes every agent that uses it (system tools live in agent
+config). Use <strong>SYNC TOOLS</strong> on the settings form to reconcile all tools at
+once. Names must match <code>^[a-zA-Z0-9_-]{1,64}$</code> and are unique.</p>
+</div>
+<h3 id="tool-fields">Tool fields</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Name</strong>, <strong>Description</strong></td>
+<td>The tool identifier and the natural-language instructions the LLM uses to decide when to call it.</td>
+</tr>
+<tr>
+<td><strong>Tool Type</strong></td>
+<td><code>system</code> / <code>webhook</code> / <code>client</code>.</td>
+</tr>
+<tr>
+<td><strong>Path</strong> / <strong>URL</strong></td>
+<td>For webhook tools: an internal Odoo path (resolved against the API URL) <strong>or</strong> an external URL.</td>
+</tr>
+<tr>
+<td><strong>Method</strong></td>
+<td><code>GET</code> / <code>POST</code> / <code>PATCH</code> / <code>PUT</code> / <code>DELETE</code> (default <code>POST</code>).</td>
+</tr>
+<tr>
+<td><strong>Parameters</strong> (<code>params</code>)</td>
+<td>The arguments the tool takes (see below).</td>
+</tr>
+<tr>
+<td><strong>Parameters Description</strong></td>
+<td>Extra guidance for populating the body.</td>
+</tr>
+<tr>
+<td><strong>Response Timeout</strong></td>
+<td>Seconds (webhook: 5–120; client: 1–30).</td>
+</tr>
+<tr>
+<td><strong>Expects Response</strong> (client)</td>
+<td>Whether the conversation blocks for the client reply.</td>
+</tr>
+<tr>
+<td><strong>Disable interruptions</strong></td>
+<td>Prevent the user from interrupting while the tool runs.</td>
+</tr>
+<tr>
+<td><strong>Voicemail Message</strong></td>
+<td>(for the <code>voicemail_detection</code> system tool) message to play when voicemail is detected.</td>
+</tr>
+<tr>
+<td><strong>Out of Band DTMF</strong></td>
+<td>(for the <code>play_keypad_touch_tone</code> system tool) use out-of-band DTMF.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tool-parameters">Tool parameters</h3>
+<p>Each parameter (<code>connect.agent_tool_params</code>) has a <strong>data type</strong> (string /
+boolean / integer), a <strong>required</strong> flag and a <strong>value type</strong> that decides where
+its value comes from:</p>
+<table>
+<thead>
+<tr>
+<th>Value type</th>
+<th>Source of the value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LLM Prompt</strong> (<code>description</code>)</td>
+<td>The LLM fills it from the conversation, guided by the parameter's description.</td>
+</tr>
+<tr>
+<td><strong>Dynamic Variable</strong></td>
+<td>Filled from a per-call dynamic variable (e.g. <code>channel_sid</code>, <code>partner_phone</code>, <code>call_id</code>) supplied by the conversation-initiation webhook or SIP headers.</td>
+</tr>
+<tr>
+<td><strong>Constant Value</strong></td>
+<td>A fixed value.</td>
+</tr>
+</tbody>
+</table>
+<p>Webhook tools that call Odoo automatically include the
+<code>x-elevenlabs-agent-token</code> header so the Odoo controller can authenticate the
+call.</p>
+<h3 id="seed-tools-shipped-with-the-module">Seed tools shipped with the module</h3>
+<p><strong>System tools:</strong> <code>language_detection</code>, <code>end_call</code>, <code>skip_turn</code>,
+<code>play_keypad_touch_tone</code>, <code>voicemail_detection</code>, <code>transfer_to_agent</code>.</p>
+<p><strong>Webhook tools (call back into Odoo):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Endpoint</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>transfer_to_exten</code></td>
+<td><code>/connect_elevenlabs/transfer</code></td>
+<td>Transfer the live call to a company extension (e.g. "connect me to a human").</td>
+</tr>
+<tr>
+<td><code>create_partner</code></td>
+<td><code>/connect_elevenlabs/create_partner</code></td>
+<td>Create a <code>res.partner</code> for an unknown caller and link it to the call.</td>
+</tr>
+<tr>
+<td><code>calendar_get_available_slots</code></td>
+<td><code>/connect_elevenlabs/get_available_slots</code></td>
+<td>Free business-hours slots (08:00–18:00) for a user on a date.</td>
+</tr>
+<tr>
+<td><code>calendar_create_event</code></td>
+<td><code>/connect_elevenlabs/create_event</code></td>
+<td>Book a calendar event (deduped by user + start/stop).</td>
+</tr>
+<tr>
+<td><code>calendar_get_current_date</code></td>
+<td><code>/connect_elevenlabs/get_current_date</code></td>
+<td>Current server date/time.</td>
+</tr>
+<tr>
+<td><code>calendar_get_meetings</code></td>
+<td><code>/connect_elevenlabs/get_meetings</code></td>
+<td>List a partner's meetings.</td>
+</tr>
+<tr>
+<td><code>calendar_remove_meeting</code></td>
+<td><code>/connect_elevenlabs/remove_meeting</code></td>
+<td>Cancel a meeting by event id.</td>
+</tr>
+</tbody>
+</table>
+<p>All of these Odoo endpoints are authenticated by the agent token — see
+<a href="../webhooks-security/">Webhooks &amp; Security</a>.</p>
+<h2 id="agent-to-agent-transfer">Agent-to-agent transfer</h2>
+<p>When an agent carries the <code>transfer_to_agent</code> system tool, its <strong>Transfer
+targets</strong> list becomes editable. Each row names a <strong>target agent</strong> and a
+<strong>condition</strong> describing when to hand the conversation over. These are exported
+into the system tool's config so ElevenLabs performs a warm agent-to-agent
+transfer mid-conversation.</p>
+<h2 id="voices">Voices</h2>
+<p>See <a href="../configuration/#voices">Configuration ▸ Voices</a>. Voices are synced from the
+ElevenLabs voice library and referenced by agents (per-agent <strong>Voice</strong>) and by
+the settings-level <strong>Selected Voice</strong> used for TTS file generation.</p>
+<h2 id="text-to-speech-files-call-flow-voicemail-prompts">Text-to-speech files (call-flow &amp; voicemail prompts)</h2>
+<p><code>connect.elevenlabs_file</code> holds ElevenLabs TTS audio (MP3) generated from text
+with the <strong>Selected Voice</strong> (<code>text_to_speech.convert</code>, model
+<code>eleven_multilingual_v2</code>). These files are public-read so Twilio can fetch them
+with <code>&lt;Play&gt;</code>.</p>
+<p>When the integration is enabled, the Twilio call-flow prompts and per-user
+voicemail greetings are voiced by ElevenLabs instead of Twilio <code>&lt;Say&gt;</code>:</p>
+<ul>
+<li><strong><code>connect.twilio.callflow</code></strong> — the <strong>prompt</strong>, <strong>invalid-input</strong> and
+  <strong>voicemail</strong> messages each get a generated TTS file, regenerated whenever the
+  text changes (or in bulk via <strong>REGENERATE PROMPTS</strong>). At render time the
+  call-flow <code>&lt;Play&gt;</code>s the file URL, falling back to the base <code>&lt;Say&gt;</code> behaviour on
+  any error or when the integration is disabled.</li>
+<li><strong><code>connect.user</code></strong> — a user's voicemail greeting is rendered to a TTS file and
+  played back the same way.</li>
+</ul>
+<h2 id="routing-calls-to-an-agent">Routing calls to an agent</h2>
+<p>An agent answers only calls that reach it through Twilio. There are three ways to
+route:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Phone number (DID)</label><label for="__tabbed_1_2">Extension</label><label for="__tabbed_1_3">WhatsApp calls</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<p>On a <strong>Connect ▸ Twilio ▸ Numbers</strong> record, set <strong>Destination</strong> to <em>Agent</em>
+and pick the <strong>ElevenLabs agent</strong>. Inbound calls to that number render TwiML
+that dials ElevenLabs' SIP ingress for the agent
+(<code>connect.twilio.number.render</code> → <code>agent.render()</code>).</p>
+</div>
+<div class="tabbed-block">
+<p>Use the <strong>Extension</strong> button on the agent form to create a
+<code>connect.twilio.exten</code> whose <code>dst</code> references the agent. Dialling that
+extension routes the call to the agent. When no real DID is attached, the
+agent's registered <strong>virtual number</strong> is used as the SIP identifier.</p>
+</div>
+<div class="tabbed-block">
+<p><code>connect.whatsapp_sender.action_route_calls_to_agent(agent)</code> creates (or
+updates) an extension matching the sender's E.164 number so inbound WhatsApp
+calls on that number are answered by the agent.</p>
+</div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Published extensions drive transfers</p>
+<p>The <code>is_published</code> flag on <code>connect.twilio.exten</code> (re-added by this module)
+controls which extensions the agent is told about. Only <strong>published</strong>
+extensions appear in the <code>{{available_extensions}}</code> dynamic variable and are
+valid targets for the <code>transfer_to_exten</code> tool. Mark the extensions you want
+the AI to be able to transfer to as <strong>Published</strong>.</p>
+</div>
+  </article>
+
+      </main>
+
+      
+        
+
+
+  
+
+
+  <aside class="docs-toc" aria-label="On this page">
+    <p class="docs-toc__title">On this page</p>
+    <ul class="docs-toc__list">
+      
+        <li>
+          <a class="docs-toc__link" href="#agents">Agents</a>
+          
+            <ul class="docs-toc__list docs-toc__list--nested">
+              
+                <li>
+                  <a class="docs-toc__link" href="#prompt-tab">Prompt tab</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#conversation-tab">Conversation tab</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#llm-tts-tab">LLM / TTS tab</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#sip-tab-managers-only">SIP tab (managers only)</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#header-buttons">Header buttons</a>
+                </li>
+              
+            </ul>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#agent-templates">Agent Templates</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#tools">Tools</a>
+          
+            <ul class="docs-toc__list docs-toc__list--nested">
+              
+                <li>
+                  <a class="docs-toc__link" href="#tool-fields">Tool fields</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#tool-parameters">Tool parameters</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#seed-tools-shipped-with-the-module">Seed tools shipped with the module</a>
+                </li>
+              
+            </ul>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#agent-to-agent-transfer">Agent-to-agent transfer</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#voices">Voices</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#text-to-speech-files-call-flow-voicemail-prompts">Text-to-speech files (call-flow &amp; voicemail prompts)</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#routing-calls-to-an-agent">Routing calls to an agent</a>
+          
+        </li>
+      
+    </ul>
+  </aside>
+
+      
+    </div>
+
+    <dialog class="docs-search" data-search aria-label="Search"><form class="docs-search__form" data-search-form>
+    <input class="docs-search__input" data-search-input type="search"
+           placeholder="Search the documentation" autocomplete="off">
+    <button class="docs-search__close" type="button" data-search-close
+            aria-label="Close">×</button>
+  </form>
+  <ul class="docs-search__results" data-search-results></ul>
+</dialog>
+    <footer class="docs-footer">
+  
+    <nav class="docs-pager" aria-label="Page navigation">
+      
+        <a class="docs-pager__link" href="../configuration/">
+          <span class="docs-pager__label">Previous</span>
+          <span>Account Configuration</span>
+        </a>
+      
+      
+        <a class="docs-pager__link docs-pager__link--next"
+           href="../webhooks-security/">
+          <span class="docs-pager__label">Next</span>
+          <span>Webhooks & Security</span>
+        </a>
+      
+    </nav>
+  
+
+  <div class="docs-footer__meta">
+    <span>Copyright &copy; Oduist OÜ</span>
+    
+      <a href="https://github.com/oduist/connect_addons_ng/edit/19.0/connect_elevenlabs/docs/agents.md" rel="noopener" target="_blank">Edit on GitHub</a>
+    
+  </div>
+</footer>
+
+    
+      <script src="../../assets/vendor/lunr.min.js"></script>
+      <script type="module" src="../../assets/theme.js"></script>
+      
+        <script src="../../search/main.js"></script>
+      
+    
+  </body>
+</html>

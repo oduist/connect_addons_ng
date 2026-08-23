@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-base="../../../">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SIP Firewall — Oduist Connect Documentation</title>
+    
+      <meta name="description" content="Telephony integration platform for Odoo">
+    
+      <link rel="icon" href="../../../assets/img/logo.png">
+    <script>
+      (function () {
+        var stored = null;
+        try { stored = localStorage.getItem("docs-scheme"); } catch (e) {}
+        var prefersLight =
+          window.matchMedia("(prefers-color-scheme: light)").matches;
+        document.documentElement.dataset.theme =
+          stored || (prefersLight ? "light" : "dark");
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+    
+      <link rel="stylesheet" href="../../../assets/app.css">
+    
+  </head>
+  <body>
+    <a class="skip-link" href="#docs-main">Skip to content</a><div class="docs-topbar">
+      <header class="docs-header">
+  <div class="docs-header__inner">
+      <button class="docs-header__burger" type="button" data-drawer-open
+              aria-label="Open navigation">☰</button>
+    
+
+    <a class="docs-header__brand" href="../../..">
+      
+        <img src="../../../assets/img/logo.png" alt="" width="24" height="24">
+      
+      <span>Oduist Connect Documentation</span>
+    </a>
+
+    <div class="docs-header__spacer"></div>
+      <a class="docs-header__icon docs-header__repo" href="https://github.com/oduist/connect_addons_ng"
+         rel="noopener" target="_blank" title="Go to repository"
+         aria-label="Go to repository">
+        <svg viewBox="0 0 512 512" aria-hidden="true"><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+      </a>
+    <button class="docs-header__icon docs-header__toggle" type="button"
+            data-scheme-toggle aria-pressed="true"
+            title="Switch to light mode" aria-label="Switch to light mode">
+      <svg class="docs-header__toggle-dark" viewBox="0 0 24 24"
+           aria-hidden="true"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      <svg class="docs-header__toggle-light" viewBox="0 0 24 24"
+           aria-hidden="true"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+    </button><button class="docs-header__search" type="button" data-search-open>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      <span>Search</span>
+    </button>
+  </div>
+</header>
+
+<dialog class="docs-drawer" data-drawer aria-label="Navigation">
+  <button class="docs-drawer__close" type="button" data-drawer-close
+          aria-label="Close navigation">×</button>
+  <div data-drawer-body></div>
+</dialog>
+      
+
+  <nav class="docs-crumbs" aria-label="Breadcrumb">
+    <div class="docs-crumbs__inner">
+      <ol class="docs-crumbs__list">
+        
+          <li><a href="../../..">Home</a></li>
+        
+        
+          <li>
+            
+              <a href="../freeswitch-setup/">FreeSWITCH</a>
+            
+          </li>
+        
+          <li>
+            
+              <a href="../freeswitch-setup/">Admin Guide</a>
+            
+          </li>
+        
+      </ol>
+    </div>
+  </nav>
+
+    </div>
+
+    <div class="docs-shell">
+        
+
+<nav class="docs-nav" aria-label="Module navigation">
+  <ul class="docs-nav__list">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+  
+    <li class="docs-nav__item">
+      <details open>
+        <summary class="docs-nav__section">FreeSWITCH</summary>
+        <ul class="docs-nav__list">
+          
+            
+  
+    <li class="docs-nav__item">
+      <details open>
+        <summary class="docs-nav__section">Admin Guide</summary>
+        <ul class="docs-nav__list">
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../freeswitch-setup/"
+         >
+        FreeSWITCH Integration
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../customer-onboarding/"
+         >
+        Customer Onboarding
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../parking/"
+         >
+        Call Parking
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link docs-nav__link--active"
+         href="./"
+         aria-current="page">
+        SIP Firewall
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../../fs_cli/"
+         >
+        fs_cli Reference
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </details>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <details >
+        <summary class="docs-nav__section">User Guide</summary>
+        <ul class="docs-nav__list">
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../../user/parking/"
+         >
+        Call Parking
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </details>
+    </li>
+  
+
+          
+        </ul>
+      </details>
+    </li>
+  
+
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </ul>
+</nav>
+      
+
+      <main id="docs-main" class="docs-content">
+        
+  <article class="prose max-w-none">
+    <h1 id="firewall-service-sip-brute-force-protection">Firewall Service — SIP brute-force protection</h1>
+<p>The <code>connect_freeswitch</code> module ships with an out-of-process firewall
+service that pairs with FreeSWITCH and blocks SIP brute-force attempts
+at the kernel level. It is <strong>disabled by default</strong> and turned on with a
+single toggle once you've added the supporting container.</p>
+<h2 id="what-it-does">What it does</h2>
+<p>Every SIP REGISTER / INVITE that FreeSWITCH sees produces an event on
+the ESL bus. The firewall service listens, classifies the event, and
+moves the source IP between six <code>ipset</code> tables that an <code>iptables</code> chain
+in front of the SIP ports consults at line rate:</p>
+<table>
+<thead>
+<tr>
+<th>ipset</th>
+<th>TTL</th>
+<th>What happens to traffic from listed IPs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>connect_fw_whitelist</code></td>
+<td>permanent</td>
+<td>always ACCEPT</td>
+</tr>
+<tr>
+<td><code>connect_fw_blacklist</code></td>
+<td>permanent</td>
+<td>always DROP (admin-managed)</td>
+</tr>
+<tr>
+<td><code>connect_fw_authenticated</code></td>
+<td>7 d (sliding)</td>
+<td>ACCEPT — IP has registered successfully</td>
+</tr>
+<tr>
+<td><code>connect_fw_banned</code></td>
+<td>24 h</td>
+<td>DROP — auto-ban after a failed authentication</td>
+</tr>
+<tr>
+<td><code>connect_fw_expire_short</code></td>
+<td>30 s</td>
+<td>ACCEPT — challenge response window after a SIP 401</td>
+</tr>
+<tr>
+<td><code>connect_fw_expire_long</code></td>
+<td>24 h</td>
+<td>DROP — default-deny after a challenge is sent but not answered</td>
+</tr>
+</tbody>
+</table>
+<p>Both address families are covered: each table above is the IPv4
+(<code>family inet</code>) set, and a <code>6</code>-suffixed twin (<code>connect_fw_whitelist6</code>,
+<code>connect_fw_banned6</code>, …) holds the IPv6 entries, consulted by an
+identical <code>connect_fw_voip</code> chain installed via <code>ip6tables</code>. Whitelist
+and blacklist entries in Odoo accept both families and are routed to
+the right set automatically; on hosts without IPv6 (<code>ipv6.disable=1</code>)
+the service logs an error for the v6 family and keeps protecting IPv4.</p>
+<p>In addition, an <code>iptables -m string</code> filter at the bottom of the chain
+DROPs known SIP-scanner User-Agents (<code>friendly-scanner</code>, <code>sipvicious</code>,
+<code>sipcli</code>, <code>VaxSIPUserAgent</code>, <code>sundayddr</code>, <code>sipsak</code>, <code>sip-scan</code>) before
+they even reach FreeSWITCH.</p>
+<h2 id="how-a-session-flows">How a session flows</h2>
+<ol>
+<li>Phone sends REGISTER. FreeSWITCH issues a 401 challenge → IP lands in
+   <code>expire_short</code> (30 s pass) <strong>and</strong> <code>expire_long</code> (24 h default-deny).</li>
+<li>Phone re-sends REGISTER with credentials.</li>
+<li><strong>Correct</strong> → <code>sofia::register</code> event → IP moves to
+     <code>authenticated</code> (7 days, sliding). All further packets ACCEPT.</li>
+<li><strong>Wrong</strong> → <code>sofia::register_attempt</code> with <code>auth-result=FORBIDDEN</code>
+     and/or <code>sofia::register_failure</code> → IP moves to <code>banned</code> (24 h).
+     Subsequent packets DROP.</li>
+<li>An INVITE without an established session emits
+   <code>sofia::wrong_call_state</code> → treated as toll-fraud, IP banned.</li>
+</ol>
+<p>A whitelisted IP / CIDR short-circuits the whole pipeline.</p>
+<h2 id="components">Components</h2>
+<pre class="highlight"><code>┌──────────────┐     POST /firewall/sync (Bearer)      ┌──────────────────┐
+│     Odoo     │ ─────────────────────────────────────▶│ firewall service │
+│ (connect_fw) │ ◀── HTTP /freeswitch/firewall/api/* ──│ (oduist/         │
+│              │     (Bearer; fetch/report)            │  freeswitch-     │
+│ - whitelist  │                                       │  firewall)       │
+│ - blacklist  │            ESL events                 │                  │
+│ - events log │            ◀────────────              │ - ipset / iptables
+│ - settings   │                                       │ - HTTP / SSE
+│ - agent st.  │                                       │   dashboard
+└──────────────┘                                       └─────────┬────────┘
+                                                                 │ ESL :8021
+                                                                 ▼
+                                                          ┌──────────────┐
+                                                          │  FreeSWITCH  │
+                                                          └──────────────┘</code></pre>
+<ul>
+<li><strong>Odoo</strong> owns the configuration, the static whitelist/blacklist, the
+  event audit log and the agent status singleton. It exposes a small
+  HTTP control plane under <code>/freeswitch/firewall/api/*</code> that the
+  service polls (<code>config</code>, <code>whitelist</code>, <code>blacklist</code>) and posts to
+  (<code>heartbeat</code>, <code>event</code>, <code>applied</code>).</li>
+<li><strong>firewall service</strong> is a small async Python container; it talks to
+  FreeSWITCH via <code>mod_event_socket</code> (ESL), to Odoo over plain HTTP
+  authenticated with a shared Bearer token, and manipulates <code>ipset</code> /
+  <code>iptables</code> on the host kernel. It also serves a Lit-based dashboard
+  at <code>/firewall/</code>.</li>
+</ul>
+<p>Both directions use the <strong>same</strong> shared secret
+(<code>connect.settings.firewall_service_token</code> in Odoo, <code>AGENT_TOKEN</code> env
+var on the service). There is no dedicated Odoo user for the service.</p>
+<p>The data plane (<code>ipset</code> + <code>iptables</code>) lives in the host kernel and is
+<strong>not</strong> affected by restarts of either container.</p>
+<h2 id="installing-the-firewall-service">Installing the firewall service</h2>
+<p>The service container must:</p>
+<ul>
+<li>run with <strong><code>network_mode: host</code></strong> (it needs to talk to ESL on
+  <code>127.0.0.1:8021</code> and have <code>iptables</code> see the real outside traffic);</li>
+<li>hold the <strong><code>NET_ADMIN</code></strong> capability so <code>ipset</code> / <code>iptables</code> syscalls
+  succeed against the host kernel.</li>
+</ul>
+<h3 id="required-environment-variables">Required environment variables</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ODOO_URL</code></td>
+<td>base URL of the Odoo instance (e.g. <code>https://pbx.example.com</code>). The service appends <code>/freeswitch/firewall/api/*</code> paths to it.</td>
+</tr>
+<tr>
+<td><code>AGENT_TOKEN</code></td>
+<td>shared Bearer token. Must match <strong>Firewall Service Token</strong> in Odoo settings. Used in both directions (this service → Odoo and Odoo → <code>/firewall/sync</code> on this service). The service refuses to start without it.</td>
+</tr>
+<tr>
+<td><code>FS_ESL_HOST</code></td>
+<td>usually <code>127.0.0.1</code></td>
+</tr>
+<tr>
+<td><code>FS_ESL_PORT</code></td>
+<td>usually <code>8021</code></td>
+</tr>
+<tr>
+<td><code>FS_ESL_PASSWORD</code></td>
+<td>password of FreeSWITCH <code>mod_event_socket</code>. The shipped FS image bakes in <code>ConnectNGESLPassword</code>; set <code>FS_ESL_PASSWORD</code> on both containers if you want a different value.</td>
+</tr>
+<tr>
+<td><code>HTTP_BIND_HOST</code>, <code>HTTP_BIND_PORT</code></td>
+<td>where the service listens. The production compose binds <code>127.0.0.1:8081</code> and exposes <code>/firewall</code> through Traefik.</td>
+</tr>
+<tr>
+<td><code>DASHBOARD_USER</code>, <code>DASHBOARD_PASSWORD</code></td>
+<td>basic-auth credentials for the dashboard / JSON API</td>
+</tr>
+</tbody>
+</table>
+<p>Optionally:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LOG_LEVEL</code></td>
+<td><code>INFO</code> (default) or <code>DEBUG</code></td>
+</tr>
+<tr>
+<td><code>CONFIG_CACHE_PATH</code></td>
+<td>local JSON cache (default <code>/var/lib/connect-firewall/config.json</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="docker-compose-example">Docker Compose example</h3>
+<pre class="highlight"><code class="language-yaml">firewall:
+  image: oduist/freeswitch-firewall:2.1.1
+  network_mode: host
+  cap_add: [NET_ADMIN]
+  environment:
+    ODOO_URL: https://pbx.example.com
+    AGENT_TOKEN: &lt;copy from Firewall Service Token in Odoo settings&gt;
+    FS_ESL_HOST: 127.0.0.1
+    FS_ESL_PASSWORD: ConnectNGESLPassword
+    HTTP_BIND_HOST: 127.0.0.1
+    DASHBOARD_USER: admin
+    DASHBOARD_PASSWORD: &lt;pick a strong password&gt;
+  volumes:
+    - firewall-cache:/var/lib/connect-firewall</code></pre>
+<p>A ready preset for <code>oduflow</code> lives at
+<code>connect_freeswitch/deploy/firewall/oduflow-preset.yaml</code>.</p>
+<h2 id="setting-up-in-odoo">Setting up in Odoo</h2>
+<ol>
+<li>Install or upgrade <code>connect_freeswitch</code> — <code>post_init_hook</code> (or the
+   per-version migration on upgrade) runs the missing-only deployment
+   bootstrap, generates both service tokens, and creates the agent singleton.</li>
+<li>Open <strong>Connect → FreeSWITCH → Configuration → Settings</strong>, page <strong>Firewall</strong>, as an admin:</li>
+<li>Toggle <strong>Firewall Enabled</strong> on.</li>
+<li>Set <strong>Firewall Service URL</strong> to where Traefik (or whichever
+     reverse-proxy you use) reaches the service container.</li>
+<li><strong>Firewall Service Token</strong>: leave the auto-generated value unchanged
+     during normal installation. Oduflow reads the protected
+     <code>firewall_service_token</code> with a sudo Odoo shell and passes it directly as
+     the service's <code>AGENT_TOKEN</code>. For a manual deployment, retrieve the same
+     setting through an administrative Odoo shell. Entering a value in this
+     masked field is an explicit rotation and requires updating and restarting
+     the service in the same maintenance window.</li>
+<li>Adjust port lists and timeouts if you need to deviate from the
+     defaults.</li>
+<li>Connect → FreeSWITCH → Firewall → <strong>Whitelist</strong>: add your trunk providers,
+   office NAT exits, anything you don't want auto-banned. Save —
+   <code>connect.firewall.agent._trigger_sync()</code> will POST to
+   <code>/firewall/sync</code> immediately.</li>
+<li>Connect → FreeSWITCH → Firewall → <strong>Agent Status</strong>: should show the agent
+   as <em>online</em> within one heartbeat interval (default 60 s).</li>
+</ol>
+<h2 id="daily-operations">Daily operations</h2>
+<ul>
+<li><strong>Active auto-bans</strong> — they live only in the kernel. View them on
+  the service's dashboard:
+  <code>https://&lt;your-host&gt;/firewall/</code> (basic-auth with <code>DASHBOARD_USER</code> /
+  <code>DASHBOARD_PASSWORD</code>). Each row has an Unban button.</li>
+<li><strong>From Odoo</strong> — open <code>Connect → FreeSWITCH → Firewall → Events</code>. Every row
+  with <strong>Event Type = Automatic Ban</strong> gets a small unlock-icon
+  button. Clicking it calls back into the service to remove the IP
+  from <code>connect_fw_banned</code> and writes a <code>manual_unban_applied</code>
+  audit record. The button hides itself as soon as the IP is no
+  longer banned.</li>
+<li><strong>Permanent block</strong> — <code>Connect → FreeSWITCH → Firewall → Blacklist</code>, add an
+  IP or CIDR. Useful for blocking entire VPS-provider subnets.</li>
+</ul>
+<h2 id="settings-reference">Settings reference</h2>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Firewall Enabled</td>
+<td>False</td>
+<td>Master switch. When off, the service still runs but reports <code>firewall_enabled=False</code>.</td>
+</tr>
+<tr>
+<td>Firewall Service URL</td>
+<td>See deployment</td>
+<td>Odoo posts <code>/firewall/sync</code> here. In production set this to <code>https://&lt;freeswitch-host&gt;</code>; Traefik routes the <code>/firewall</code> prefix to the loopback-only service on <code>127.0.0.1:8081</code>.</td>
+</tr>
+<tr>
+<td>Firewall Service Token</td>
+<td><em>generated</em></td>
+<td>Shared Bearer secret. ≥24 chars, <code>[A-Za-z0-9_-]</code> only. The service uses the same value for both directions; restart the container after changing it.</td>
+</tr>
+<tr>
+<td>Heartbeat Interval</td>
+<td>60 s</td>
+<td>How often the service pings Odoo.</td>
+</tr>
+<tr>
+<td>Event Retention</td>
+<td>30 days</td>
+<td>How long the audit log is kept; the daily cron prunes older.</td>
+</tr>
+<tr>
+<td>Firewall TCP/UDP Ports</td>
+<td><code>5060,5061,5080,5081</code></td>
+<td>Where the chain hooks in. Must match the ports <code>sofia</code> actually listens on.</td>
+</tr>
+<tr>
+<td>Auto-ban TTL</td>
+<td>86400 s (24 h)</td>
+<td>How long an auto-ban stays in <code>connect_fw_banned</code>.</td>
+</tr>
+<tr>
+<td>Trust TTL</td>
+<td>604800 s (7 d)</td>
+<td>How long a successful registration buys trust.</td>
+</tr>
+<tr>
+<td>Challenge Window</td>
+<td>30 s</td>
+<td><code>expire_short</code> lifetime.</td>
+</tr>
+<tr>
+<td>Default-Deny TTL</td>
+<td>86400 s (24 h)</td>
+<td><code>expire_long</code> lifetime if the challenge is never answered.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<pre class="highlight"><code class="language-bash"># 1a. Process-level liveness (no auth, always 200 while the service is up).
+#     Wire this to Kubernetes / Traefik / Docker liveness probes — it must
+#     not flap when Odoo is down, otherwise the orchestrator restarts the
+#     container in a loop while the upstream recovers.
+curl -sk https://&lt;host&gt;/healthz
+
+# 1b. Dependency-aware readiness check (no auth, the URL to point external
+#     monitoring at — Uptime Kuma, Prometheus blackbox exporter, etc.).
+#     Returns 200 + {"status":"ok","odoo":true,"esl":true} when both Odoo
+#     and FreeSWITCH ESL are reachable; 503 + {"status":"error","odoo":...,
+#     "esl":...} otherwise.
+curl -sk -i https://&lt;host&gt;/firewall/healthz
+
+# 1c. Rich JSON for the dashboard (auth required — Bearer token or basic).
+curl -sk -u admin:&lt;pw&gt; https://&lt;host&gt;/firewall/api/heartbeat | jq
+
+# 2. Is ESL really connected?
+docker logs &lt;firewall-container&gt; | grep -E "ESL connected|Reconciler|AUTO-BAN"
+
+# 3. Look at the actual kernel state (the "6"-suffixed sets and
+#    ip6tables are the IPv6 side).
+ipset list connect_fw_banned
+ipset list connect_fw_banned6
+ipset list connect_fw_authenticated
+iptables -L connect_fw_voip -v -n
+ip6tables -L connect_fw_voip -v -n
+
+# 4. Verify the chain is hooked into INPUT for both families.
+iptables -L INPUT -v -n | grep connect_fw_voip
+ip6tables -L INPUT -v -n | grep connect_fw_voip</code></pre>
+<p>If the agent stays <em>offline</em> in Odoo:</p>
+<ul>
+<li>check that <code>AGENT_TOKEN</code> in the service env matches <strong>Firewall
+  Service Token</strong> in Odoo settings — the easiest mistake is rotating
+  the token in Odoo but not redeploying the container;</li>
+<li>check that <code>/freeswitch/firewall/api/heartbeat</code> on Odoo is reachable
+  from inside the firewall container (curl with the Bearer header
+  should return <code>{"ok":true}</code>);</li>
+<li>check that <code>/firewall/sync</code> is reachable from inside the Odoo
+  container — Odoo sends notifications to this URL, not the service
+  to Odoo.</li>
+</ul>
+<p>If you see events arrive in Odoo but no auto-bans land in <code>ipset</code>:</p>
+<ul>
+<li>the container is running without <code>NET_ADMIN</code> — <code>ipset add</code> returns
+  <code>Operation not permitted</code>, visible in the service logs;</li>
+<li>the kernel does not have the <code>ip_set</code> / <code>xt_set</code> modules
+  available — typical on hardened/minimal hosts. <code>modprobe ip_set</code>
+  on the host fixes it. The IPv6 side additionally needs <code>ip6_tables</code> /
+  <code>ip6table_filter</code>; on hosts booted with <code>ipv6.disable=1</code> the service
+  logs an error for the v6 family and continues IPv4-only — that is the
+  expected degradation, not a fault.</li>
+</ul>
+<h2 id="architecture-level-reference">Architecture-level reference</h2>
+<p>See <code>specs/decisions/014-freeswitch-firewall-service.md</code> for the
+design decisions behind this stack (six-table ipset model, direct
+HTTP control plane, hardcoded UA blacklist, single-instance) and
+<code>specs/decisions/037-firewall-ipv6-support.md</code> for how IPv6 was
+layered in (parallel <code>inet6</code> sets + <code>ip6tables</code> chain).</p>
+  </article>
+
+      </main>
+
+      
+        
+
+
+  
+
+
+  <aside class="docs-toc" aria-label="On this page">
+    <p class="docs-toc__title">On this page</p>
+    <ul class="docs-toc__list">
+      
+        <li>
+          <a class="docs-toc__link" href="#what-it-does">What it does</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#how-a-session-flows">How a session flows</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#components">Components</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#installing-the-firewall-service">Installing the firewall service</a>
+          
+            <ul class="docs-toc__list docs-toc__list--nested">
+              
+                <li>
+                  <a class="docs-toc__link" href="#required-environment-variables">Required environment variables</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#docker-compose-example">Docker Compose example</a>
+                </li>
+              
+            </ul>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#setting-up-in-odoo">Setting up in Odoo</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#daily-operations">Daily operations</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#settings-reference">Settings reference</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#troubleshooting">Troubleshooting</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#architecture-level-reference">Architecture-level reference</a>
+          
+        </li>
+      
+    </ul>
+  </aside>
+
+      
+    </div>
+
+    <dialog class="docs-search" data-search aria-label="Search"><form class="docs-search__form" data-search-form>
+    <input class="docs-search__input" data-search-input type="search"
+           placeholder="Search the documentation" autocomplete="off">
+    <button class="docs-search__close" type="button" data-search-close
+            aria-label="Close">×</button>
+  </form>
+  <ul class="docs-search__results" data-search-results></ul>
+</dialog>
+    <footer class="docs-footer">
+  
+    <nav class="docs-pager" aria-label="Page navigation">
+      
+        <a class="docs-pager__link" href="../parking/">
+          <span class="docs-pager__label">Previous</span>
+          <span>Call Parking</span>
+        </a>
+      
+      
+        <a class="docs-pager__link docs-pager__link--next"
+           href="../../fs_cli/">
+          <span class="docs-pager__label">Next</span>
+          <span>fs_cli Reference</span>
+        </a>
+      
+    </nav>
+  
+
+  <div class="docs-footer__meta">
+    <span>Copyright &copy; Oduist OÜ</span>
+    
+      <a href="https://github.com/oduist/connect_addons_ng/edit/19.0/connect_freeswitch/docs/admin/firewall.md" rel="noopener" target="_blank">Edit on GitHub</a>
+    
+  </div>
+</footer>
+
+    
+      <script src="../../../assets/vendor/lunr.min.js"></script>
+      <script type="module" src="../../../assets/theme.js"></script>
+      
+        <script src="../../../search/main.js"></script>
+      
+    
+  </body>
+</html>

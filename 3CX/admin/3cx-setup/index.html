@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-base="../../../">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>3CX Integration — Oduist Connect Documentation</title>
+    
+      <meta name="description" content="Telephony integration platform for Odoo">
+    
+      <link rel="icon" href="../../../assets/img/logo.png">
+    <script>
+      (function () {
+        var stored = null;
+        try { stored = localStorage.getItem("docs-scheme"); } catch (e) {}
+        var prefersLight =
+          window.matchMedia("(prefers-color-scheme: light)").matches;
+        document.documentElement.dataset.theme =
+          stored || (prefersLight ? "light" : "dark");
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+    
+      <link rel="stylesheet" href="../../../assets/app.css">
+    
+  </head>
+  <body>
+    <a class="skip-link" href="#docs-main">Skip to content</a><div class="docs-topbar">
+      <header class="docs-header">
+  <div class="docs-header__inner">
+      <button class="docs-header__burger" type="button" data-drawer-open
+              aria-label="Open navigation">☰</button>
+    
+
+    <a class="docs-header__brand" href="../../..">
+      
+        <img src="../../../assets/img/logo.png" alt="" width="24" height="24">
+      
+      <span>Oduist Connect Documentation</span>
+    </a>
+
+    <div class="docs-header__spacer"></div>
+      <a class="docs-header__icon docs-header__repo" href="https://github.com/oduist/connect_addons_ng"
+         rel="noopener" target="_blank" title="Go to repository"
+         aria-label="Go to repository">
+        <svg viewBox="0 0 512 512" aria-hidden="true"><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+      </a>
+    <button class="docs-header__icon docs-header__toggle" type="button"
+            data-scheme-toggle aria-pressed="true"
+            title="Switch to light mode" aria-label="Switch to light mode">
+      <svg class="docs-header__toggle-dark" viewBox="0 0 24 24"
+           aria-hidden="true"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      <svg class="docs-header__toggle-light" viewBox="0 0 24 24"
+           aria-hidden="true"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+    </button><button class="docs-header__search" type="button" data-search-open>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      <span>Search</span>
+    </button>
+  </div>
+</header>
+
+<dialog class="docs-drawer" data-drawer aria-label="Navigation">
+  <button class="docs-drawer__close" type="button" data-drawer-close
+          aria-label="Close navigation">×</button>
+  <div data-drawer-body></div>
+</dialog>
+      
+
+  <nav class="docs-crumbs" aria-label="Breadcrumb">
+    <div class="docs-crumbs__inner">
+      <ol class="docs-crumbs__list">
+        
+          <li><a href="../../..">Home</a></li>
+        
+        
+          <li>
+            
+              <a href="./">3CX</a>
+            
+          </li>
+        
+      </ol>
+    </div>
+  </nav>
+
+    </div>
+
+    <div class="docs-shell">
+        
+
+<nav class="docs-nav" aria-label="Module navigation">
+  <ul class="docs-nav__list">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+  
+    <li class="docs-nav__item">
+      <details open>
+        <summary class="docs-nav__section">3CX</summary>
+        <ul class="docs-nav__list">
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link docs-nav__link--active"
+         href="./"
+         aria-current="page">
+        3CX Integration
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </details>
+    </li>
+  
+
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </ul>
+</nav>
+      
+
+      <main id="docs-main" class="docs-content">
+        
+  <article class="prose max-w-none">
+    <h1 id="3cx-integration">3CX Integration</h1>
+<p>The <code>connect_3cx</code> module connects Odoo to an <strong>existing 3CX V20 PBX</strong>
+through 3CX's server-side CRM integration. 3CX keeps full ownership of
+numbering, routing and phones; Odoo receives contact lookups and call
+journals and offers click-to-call through the 3CX Web Client.</p>
+<div class="admonition warning">
+<p class="admonition-title">3CX edition requirements</p>
+<p>Server-side CRM integration is available on the <strong>3CX PRO</strong> and
+<strong>3CX AI</strong> editions only. The Free, Basic and SMB (hosted
+multi-tenant) editions have no CRM integration — the module cannot
+work with them. 3CX <strong>V20</strong> is required (the template uses V20-only
+variables).</p>
+</div>
+<h2 id="how-it-works">How it works</h2>
+<p>You download a CRM template (an XML file generated by Odoo with your
+instance URL and a shared API key baked in) and upload it to the 3CX
+Admin Console. From then on the 3CX server calls Odoo on every external
+call:</p>
+<ul>
+<li><strong>at call arrival</strong> — a contact lookup: the caller's name from Odoo
+  appears in 3CX clients, with a link to the partner form (screen pop);</li>
+<li><strong>at call end</strong> — a call journal: the call lands in the Connect
+  ledger (<code>Connect → Calls</code>) with direction, answered/missed status,
+  duration, agent and queue. If your 3CX license produces recordings,
+  transcriptions or summaries, their references are stored on the call;</li>
+<li><strong>on request</strong> — agents can create an Odoo contact for an unknown
+  caller directly from the 3CX client.</li>
+</ul>
+<p>Click-to-call from Odoo opens the <strong>3CX Web Client dial URL</strong> in a new
+tab — the call is placed by the user's own 3CX client and appears in
+the ledger when it ends.</p>
+<div class="admonition note">
+<p class="admonition-title">What this integration does not do</p>
+<p>Calls appear in Odoo <strong>after they end</strong> — there are no live call
+states in the phone widget. Internal 3CX calls are not reported.
+Recording audio stays on the PBX (Odoo stores a link). There is no
+SMS integration and no web phone (3CX does not allow third-party
+WebRTC clients).</p>
+</div>
+<h2 id="1-install-the-module">1. Install the module</h2>
+<p>Install <code>connect_3cx</code> like any Odoo addon. On install a random webhook
+API key is generated automatically.</p>
+<h2 id="2-configure-connect-3cx-configuration-settings">2. Configure Connect → 3CX → Configuration → Settings</h2>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3CX Enabled</td>
+<td>Master toggle — webhooks are rejected while off</td>
+</tr>
+<tr>
+<td>PBX URL</td>
+<td>Base URL of your 3CX web client, e.g. <code>https://mycompany.3cx.eu</code></td>
+</tr>
+<tr>
+<td>API Key</td>
+<td>Shared secret the 3CX server sends with every webhook request (<code>X-Connect-Api-Key</code>). Regenerate with the button; re-download and re-upload the template afterwards</td>
+</tr>
+<tr>
+<td>Last Contact Lookup / Last Call Journal</td>
+<td>Health stamps — updated every time 3CX calls Odoo</td>
+</tr>
+</tbody>
+</table>
+<p>Odoo must be reachable from the 3CX server over HTTPS (the generated
+template uses the <code>connect.api_url</code> system parameter).</p>
+<h2 id="3-download-and-upload-the-crm-template">3. Download and upload the CRM template</h2>
+<ol>
+<li>Click <strong>DOWNLOAD CRM TEMPLATE</strong> in the settings form — you get
+   <code>odoo_connect_3cx.xml</code> with the URL and key pre-filled.</li>
+<li>In the 3CX Admin Console open <strong>Integrations → CRM</strong>, add/upload the
+   template and select <strong>Odoo Connect</strong>.</li>
+<li>Check the parameters (Odoo URL, API Key, journaling and contact
+   creation toggles) and use the 3CX <strong>Test</strong> button to verify the
+   lookup — the <em>Last Contact Lookup</em> stamp in Odoo should update.</li>
+</ol>
+<p>3CX loads templates at service start and caches them; after replacing
+an already-uploaded template a 3CX service restart may be required.</p>
+<h2 id="4-map-the-agents">4. Map the agents</h2>
+<p>For every Odoo user handling calls, set the <strong>3CX Extension</strong> on the
+Connect user (<code>Connect → Users</code>). The journal webhook uses it to
+attribute calls to the right user. If several telephony providers are
+installed, also select <strong>3CX</strong> as the user's <em>Click-to-call Provider</em>.</p>
+<h2 id="5-verify">5. Verify</h2>
+<ul>
+<li>Call your 3CX DID from outside: the 3CX client should show the Odoo
+  contact name; after hangup the call appears under <code>Connect → Calls</code>.</li>
+<li>Click a phone number in Odoo: a new tab opens the 3CX Web Client with
+  the number pre-filled.</li>
+</ul>
+<h2 id="deep-tier-the-3cx-agent-ai-edition-8sc">Deep tier: the 3CX agent (AI edition, 8SC+)</h2>
+<p>If your PBX runs the <strong>3CX AI edition</strong> (8 simultaneous calls or
+larger), you can additionally deploy the <code>oduist/3cx-agent</code> sidecar to
+get <strong>live call events</strong> (calls appear in Odoo while ringing, with
+durations measured from the actual answer), <strong>server-side
+click-to-call</strong> (rings all your 3CX devices instead of opening a
+browser tab) and <strong>recording audio download</strong> into Odoo (so OpenAI
+transcription applies).</p>
+<ol>
+<li>In the 3CX Admin Console open <strong>Integrations → API</strong> and create a
+   <strong>dedicated</strong> client application for the agent: check both <em>3CX
+   Call Control API Access</em> and <em>3CX Configuration API Access</em>, assign
+   the <strong>System Owner</strong> role (needed for recordings), and list the
+   extensions to monitor. Copy the Client ID and the API key (shown
+   once). Nothing else may use this client — 3CX keeps one active
+   token per client application.</li>
+<li>In <code>Connect → 3CX → Configuration → Settings</code>, section <em>Agent</em>:
+   enable the agent, set the agent URL, and paste the 3CX Client ID and
+   Client Secret.</li>
+<li>Run the agent next to Odoo (or anywhere with HTTPS reach to both
+   Odoo and the PBX):</li>
+</ol>
+<pre class="highlight"><code class="language-bash">docker run -d --name connect-3cx-agent \
+  -e ODOO_URL=https://odoo.example.com \
+  -e AGENT_TOKEN=&lt;API key from Connect Settings → 3CX&gt; \
+  -p 8083:8083 \
+  -v connect-3cx-agent:/var/lib/connect-3cx \
+  oduist/3cx-agent:latest</code></pre>
+<p>The agent pulls the PBX URL and the 3CX credentials from Odoo
+   automatically.
+4. Press <strong>PING AGENT</strong> in the settings form — the status should show
+   <em>Call Control WS connected</em>.</p>
+<p>With the agent enabled, the CRM template keeps working: caller-name
+lookup and screen pop stay server-side, and the end-of-call journal
+now <strong>merges</strong> its 3CX AI transcript/summary into the live call record
+instead of creating a duplicate.</p>
+<div class="admonition warning">
+<p class="admonition-title">Validated against mocks</p>
+<p>The deep tier has not yet been validated against a live 3CX
+installation. Treat it as a beta: verify call directions, durations
+and recording matching on your PBX before relying on it.</p>
+</div>
+<h2 id="security-notes">Security notes</h2>
+<ul>
+<li>All webhook routes live under <code>/3cx/webhook/*</code> and require the API
+  key (constant-time comparison); they are additionally disabled while
+  <em>3CX Enabled</em> is off.</li>
+<li>The key is embedded in the downloaded template file — treat the file
+  as a secret and rotate the key if it leaks.</li>
+</ul>
+  </article>
+
+      </main>
+
+      
+        
+
+
+  
+
+
+  <aside class="docs-toc" aria-label="On this page">
+    <p class="docs-toc__title">On this page</p>
+    <ul class="docs-toc__list">
+      
+        <li>
+          <a class="docs-toc__link" href="#how-it-works">How it works</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#1-install-the-module">1. Install the module</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#2-configure-connect-3cx-configuration-settings">2. Configure Connect → 3CX → Configuration → Settings</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#3-download-and-upload-the-crm-template">3. Download and upload the CRM template</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#4-map-the-agents">4. Map the agents</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#5-verify">5. Verify</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#deep-tier-the-3cx-agent-ai-edition-8sc">Deep tier: the 3CX agent (AI edition, 8SC+)</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#security-notes">Security notes</a>
+          
+        </li>
+      
+    </ul>
+  </aside>
+
+      
+    </div>
+
+    <dialog class="docs-search" data-search aria-label="Search"><form class="docs-search__form" data-search-form>
+    <input class="docs-search__input" data-search-input type="search"
+           placeholder="Search the documentation" autocomplete="off">
+    <button class="docs-search__close" type="button" data-search-close
+            aria-label="Close">×</button>
+  </form>
+  <ul class="docs-search__results" data-search-results></ul>
+</dialog>
+    <footer class="docs-footer">
+  
+    <nav class="docs-pager" aria-label="Page navigation">
+      
+        <a class="docs-pager__link" href="../../../Telnyx/admin/telnyx-setup/">
+          <span class="docs-pager__label">Previous</span>
+          <span>Telnyx Integration</span>
+        </a>
+      
+      
+        <a class="docs-pager__link docs-pager__link--next"
+           href="../../../LiveKit/admin/livekit-setup/">
+          <span class="docs-pager__label">Next</span>
+          <span>LiveKit Integration</span>
+        </a>
+      
+    </nav>
+  
+
+  <div class="docs-footer__meta">
+    <span>Copyright &copy; Oduist OÜ</span>
+    
+      <a href="https://github.com/oduist/connect_addons_ng/edit/19.0/connect_3cx/docs/admin/3cx-setup.md" rel="noopener" target="_blank">Edit on GitHub</a>
+    
+  </div>
+</footer>
+
+    
+      <script src="../../../assets/vendor/lunr.min.js"></script>
+      <script type="module" src="../../../assets/theme.js"></script>
+      
+        <script src="../../../search/main.js"></script>
+      
+    
+  </body>
+</html>

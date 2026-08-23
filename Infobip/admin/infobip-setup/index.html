@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-base="../../../">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Infobip Integration — Oduist Connect Documentation</title>
+    
+      <meta name="description" content="Telephony integration platform for Odoo">
+    
+      <link rel="icon" href="../../../assets/img/logo.png">
+    <script>
+      (function () {
+        var stored = null;
+        try { stored = localStorage.getItem("docs-scheme"); } catch (e) {}
+        var prefersLight =
+          window.matchMedia("(prefers-color-scheme: light)").matches;
+        document.documentElement.dataset.theme =
+          stored || (prefersLight ? "light" : "dark");
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+    
+      <link rel="stylesheet" href="../../../assets/app.css">
+    
+  </head>
+  <body>
+    <a class="skip-link" href="#docs-main">Skip to content</a><div class="docs-topbar">
+      <header class="docs-header">
+  <div class="docs-header__inner">
+      <button class="docs-header__burger" type="button" data-drawer-open
+              aria-label="Open navigation">☰</button>
+    
+
+    <a class="docs-header__brand" href="../../..">
+      
+        <img src="../../../assets/img/logo.png" alt="" width="24" height="24">
+      
+      <span>Oduist Connect Documentation</span>
+    </a>
+
+    <div class="docs-header__spacer"></div>
+      <a class="docs-header__icon docs-header__repo" href="https://github.com/oduist/connect_addons_ng"
+         rel="noopener" target="_blank" title="Go to repository"
+         aria-label="Go to repository">
+        <svg viewBox="0 0 512 512" aria-hidden="true"><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+      </a>
+    <button class="docs-header__icon docs-header__toggle" type="button"
+            data-scheme-toggle aria-pressed="true"
+            title="Switch to light mode" aria-label="Switch to light mode">
+      <svg class="docs-header__toggle-dark" viewBox="0 0 24 24"
+           aria-hidden="true"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      <svg class="docs-header__toggle-light" viewBox="0 0 24 24"
+           aria-hidden="true"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+    </button><button class="docs-header__search" type="button" data-search-open>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      <span>Search</span>
+    </button>
+  </div>
+</header>
+
+<dialog class="docs-drawer" data-drawer aria-label="Navigation">
+  <button class="docs-drawer__close" type="button" data-drawer-close
+          aria-label="Close navigation">×</button>
+  <div data-drawer-body></div>
+</dialog>
+      
+
+  <nav class="docs-crumbs" aria-label="Breadcrumb">
+    <div class="docs-crumbs__inner">
+      <ol class="docs-crumbs__list">
+        
+          <li><a href="../../..">Home</a></li>
+        
+        
+          <li>
+            
+              <a href="./">Infobip</a>
+            
+          </li>
+        
+      </ol>
+    </div>
+  </nav>
+
+    </div>
+
+    <div class="docs-shell">
+        
+
+<nav class="docs-nav" aria-label="Module navigation">
+  <ul class="docs-nav__list">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+  
+    <li class="docs-nav__item">
+      <details open>
+        <summary class="docs-nav__section">Infobip</summary>
+        <ul class="docs-nav__list">
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link docs-nav__link--active"
+         href="./"
+         aria-current="page">
+        Infobip Integration
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </details>
+    </li>
+  
+
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </ul>
+</nav>
+      
+
+      <main id="docs-main" class="docs-content">
+        
+  <article class="prose max-w-none">
+    <h1 id="infobip-integration">Infobip Integration</h1>
+<p>The <code>connect_infobip</code> module integrates Infobip voice calls (Calls API),
+a browser WebRTC phone, SMS and WhatsApp messaging with the shared
+Connect call/message ledger.</p>
+<p>Unlike Twilio/Telnyx there is no TwiML-style markup: Infobip voice is
+purely event-driven, so Odoo receives call events over webhooks and
+drives the call with REST actions. This makes the webhook configuration
+below essential — inbound calls do not work without it.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>An Infobip account with Voice &amp; Video (Calls API) enabled, at least
+  one voice-capable number, and — for messaging — SMS enabled and a
+  registered WhatsApp sender (WABA number).</li>
+<li>Your <strong>personalized base URL</strong> (e.g. <code>https://xxxxx.api.infobip.com</code>)
+  and an <strong>API key</strong>. In the <a href="https://portal.infobip.com/">Infobip portal</a>
+  open <strong>Developer Tools → API Keys</strong> (or <strong>Manage API Keys</strong> on the home
+  page); the base URL is shown on the same page and on the API Keys screen.
+  A new key is viewable/copyable for 2 days after creation.</li>
+<li>Odoo must be reachable from the internet over HTTPS (webhooks).</li>
+</ul>
+<h2 id="odoo-configuration">Odoo configuration</h2>
+<p>Open <strong>Connect → Infobip → Configuration → Settings</strong>:</p>
+<ol>
+<li>Enter the <strong>Base URL</strong> and the <strong>API Key</strong> (masked after saving).</li>
+<li>Press <strong>SYNC INFOBIP ACCOUNT</strong>. The sync:</li>
+<li>creates (or finds) an <strong>"Odoo Connect" Calls configuration</strong> and
+     stores its ID — this is the voice application inbound calls are
+     routed to;</li>
+<li>imports your numbers into <strong>Connect → Infobip → Numbers</strong> and
+     <strong>Outgoing Caller IDs</strong>;</li>
+<li>pushes the per-number SMS "forward to HTTP" action to the Odoo
+     inbound SMS webhook (best-effort — see Webhooks below);</li>
+<li>imports WhatsApp senders and templates when WhatsApp is enabled on
+     the account (failures here are non-fatal).</li>
+</ol>
+<h2 id="webhook-security">Webhook security</h2>
+<p>Infobip does not sign webhooks. Instead, every webhook URL shown in the
+settings form embeds a shared secret token (<code>?token=...</code>), which the
+controllers verify with a constant-time comparison; requests without a
+valid token get a uniform 401. The token can also be supplied as the
+password of Basic Auth credentials configured on the Infobip forwarding
+profile. Keep the URLs (they contain the token) out of screenshots and
+logs. <code>Verify Infobip Requests</code> (Development tab) disables the check
+for local testing only.</p>
+<h2 id="webhooks-to-configure-in-the-infobip-portal">Webhooks to configure in the Infobip portal</h2>
+<p>The settings form lists the exact URLs. Configure on the Infobip side:</p>
+<table>
+<thead>
+<tr>
+<th>URL</th>
+<th>Where to configure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Voice receive URL</td>
+<td>Calls configuration → inbound call events (<code>CALL_RECEIVED</code>)</td>
+</tr>
+<tr>
+<td>Voice event URL</td>
+<td>Calls configuration → call/dialog event subscriptions</td>
+</tr>
+<tr>
+<td>Inbound SMS URL</td>
+<td>Number → SMS action "Forward to HTTP" (pushed automatically on sync when the Numbers API allows it)</td>
+</tr>
+<tr>
+<td>Inbound WhatsApp URL</td>
+<td>WhatsApp sender → inbound message forwarding</td>
+</tr>
+<tr>
+<td>Delivery report URL</td>
+<td>WhatsApp sender → delivery reports (SMS delivery reports need no setup — they use a per-message <code>notifyUrl</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Point each voice-capable number's voice action at the "Odoo Connect"
+Calls configuration (the sync attempts this automatically; account
+plans differ, so verify in the portal).</p>
+<h2 id="voice-routing">Voice routing</h2>
+<ul>
+<li><strong>Numbers</strong> (Connect → Infobip → Numbers): set <em>Destination</em> to a
+  <strong>User</strong> (rings their web phone and/or external phone by priority) or
+  an <strong>External Number</strong> (forwarded; <em>External CallerID</em> controls
+  whether the DID or the original caller is presented — the latter
+  requires CLI passthrough entitlement on the account).</li>
+<li><strong>Users</strong> (Connect → Users → Infobip Phone tab): enable the <strong>Web
+  Phone</strong> (a WebRTC identity is generated automatically) and/or an
+  <strong>External Phone</strong> in E.164, each with a priority and ring timeout.
+  Ring timeouts run on the Infobip platform, not in Odoo.</li>
+<li><strong>Extensions</strong> (Connect → Infobip → Extensions): short internal
+  numbers pointing at users, used for web-phone dialing and click-to-call
+  caller IDs. Call flows (IVR) are not part of v1.</li>
+<li>Unrouted or exhausted calls hear a spoken message (the user's
+  voicemail prompt when enabled) and are hung up; recorded voicemail is
+  not part of v1.</li>
+</ul>
+<h2 id="web-phone-and-click-to-call">Web phone and click-to-call</h2>
+<p>The web phone appears in the systray for users with the Infobip web
+phone enabled (it is on by default when Infobip is the only telephony
+module). Outgoing web-phone calls dial through the Calls configuration,
+so extensions and caller IDs are resolved by Odoo and every call lands
+in the ledger. Click-to-call from phone fields uses the per-user
+<em>Click-to-Call Provider</em> = Infobip: the agent's phone rings first, then
+the destination is bridged.</p>
+<h2 id="recordings-and-transcription">Recordings and transcription</h2>
+<p>Calls to/from users with <em>Record Calls</em> enabled are recorded at the
+dialog level. Recording files are downloaded by a cron with the API key
+and stored as attachments; OpenAI transcription (core setting) picks
+them up automatically.</p>
+<h2 id="messaging">Messaging</h2>
+<ul>
+<li><strong>SMS</strong>: send from any record's SMS composer (sender = the user's
+  Infobip outgoing caller ID) or reply from Connect → Infobip →
+  Messages. Delivery reports update message status automatically.</li>
+<li><strong>WhatsApp</strong>: register senders in the Infobip portal, then sync.
+  Templates are created and submitted for Meta approval from
+  Connect → Infobip → Messages → WhatsApp Templates (templates are
+  per-sender at Infobip). Free-form replies require an inbound message
+  within the last 24 hours; otherwise pick an approved template in the
+  WhatsApp composer.</li>
+<li><strong>Message Configuration</strong> (admin-only) maps inbound messages on a
+  number to a destination model (e.g. auto-create partners).</li>
+</ul>
+<h2 id="known-limitations-v1">Known limitations (v1)</h2>
+<ul>
+<li>No IVR/call flows, no recorded voicemail, no RCS/Viber, no number
+  purchasing from Odoo, no call transfer from the web phone.</li>
+<li>Call prices are not fetched (Infobip exposes no per-call price on the
+  call resource).</li>
+<li>The browser receives inbound calls only while a tab with the web
+  phone is open (no push wake-up in the JS SDK) — use the External
+  Phone ring step as a fallback.</li>
+</ul>
+  </article>
+
+      </main>
+
+      
+        
+
+
+  
+
+
+  <aside class="docs-toc" aria-label="On this page">
+    <p class="docs-toc__title">On this page</p>
+    <ul class="docs-toc__list">
+      
+        <li>
+          <a class="docs-toc__link" href="#prerequisites">Prerequisites</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#odoo-configuration">Odoo configuration</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#webhook-security">Webhook security</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#webhooks-to-configure-in-the-infobip-portal">Webhooks to configure in the Infobip portal</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#voice-routing">Voice routing</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#web-phone-and-click-to-call">Web phone and click-to-call</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#recordings-and-transcription">Recordings and transcription</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#messaging">Messaging</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#known-limitations-v1">Known limitations (v1)</a>
+          
+        </li>
+      
+    </ul>
+  </aside>
+
+      
+    </div>
+
+    <dialog class="docs-search" data-search aria-label="Search"><form class="docs-search__form" data-search-form>
+    <input class="docs-search__input" data-search-input type="search"
+           placeholder="Search the documentation" autocomplete="off">
+    <button class="docs-search__close" type="button" data-search-close
+            aria-label="Close">×</button>
+  </form>
+  <ul class="docs-search__results" data-search-results></ul>
+</dialog>
+    <footer class="docs-footer">
+  
+    <nav class="docs-pager" aria-label="Page navigation">
+      
+        <a class="docs-pager__link" href="../../../LiveKit/user/meetings/">
+          <span class="docs-pager__label">Previous</span>
+          <span>Video Meetings</span>
+        </a>
+      
+      
+        <a class="docs-pager__link docs-pager__link--next"
+           href="../../../Dograh/admin/dograh-setup/">
+          <span class="docs-pager__label">Next</span>
+          <span>Dograh Integration (AI Agents)</span>
+        </a>
+      
+    </nav>
+  
+
+  <div class="docs-footer__meta">
+    <span>Copyright &copy; Oduist OÜ</span>
+    
+      <a href="https://github.com/oduist/connect_addons_ng/edit/19.0/connect_infobip/docs/admin/infobip-setup.md" rel="noopener" target="_blank">Edit on GitHub</a>
+    
+  </div>
+</footer>
+
+    
+      <script src="../../../assets/vendor/lunr.min.js"></script>
+      <script type="module" src="../../../assets/theme.js"></script>
+      
+        <script src="../../../search/main.js"></script>
+      
+    
+  </body>
+</html>
