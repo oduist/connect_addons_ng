@@ -35,19 +35,10 @@ theme:
   # Aurora lives in its own repository and installs from docs/requirements.txt;
   # MkDocs resolves this name through the package's mkdocs.themes entry point.
   name: aurora
-  # The theme ships no brand of its own — the site names its own artwork, which
-  # lives in docs/assets/ alongside the hero screenshot.
-  logo: assets/logo.png
-  favicon: assets/logo.png
-
-extra_css:
-  # The home page's own components (hero, lightbox, module table). Plain CSS —
-  # the theme carries the tokens it references, so the site needs no build step.
-  - stylesheets/home.css
-
-extra_javascript:
-  - javascripts/module-table.js
-  - javascripts/hero-zoom.js
+  # Both files ship with the theme, which also carries the home page kit this
+  # site's index.md is written against.
+  logo: assets/img/logo.png
+  favicon: assets/img/logo.png
 
 # Documentation lives inside each Odoo module under <module>/docs/. The
 # mkdocs-monorepo-plugin aggregates every module's own mkdocs.yml (site_name +

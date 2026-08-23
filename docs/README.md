@@ -17,16 +17,15 @@ stylesheet already compiled.
 
 ## Changing how the site looks
 
-Where a change belongs depends on what it touches:
+Everything visual belongs to the theme — the page skeleton, header, navigation,
+typography, search and footer, and also the home page kit that `docs/index.md`
+is written against (the hero, the buttons and the module table). Clone the theme
+repository, install it here in editable mode
+(`pip install -e /path/to/mkdocs-theme-aurora`) and work there; when the change
+ships, bump the pin in `docs/requirements.txt`.
 
-- **The home page** — its hero, the screenshot lightbox and the module table —
-  is this repository's own. Styles: `docs/stylesheets/home.css` (plain CSS).
-  Markup: `docs/index.md`. Behaviour: `docs/javascripts/`.
-- **Everything else** — page skeleton, header, navigation, typography, search,
-  footer, colour tokens — belongs to the theme. Clone the theme repository,
-  install it here in editable mode (`pip install -e /path/to/mkdocs-theme-aurora`)
-  and work there; when the change ships, bump the pin in
-  `docs/requirements.txt`.
+What stays here is what a page says: the Markdown, the navigation in
+`mkdocs.yml`, and the hand-written HTML on the home page.
 
 ## Checking the built site
 

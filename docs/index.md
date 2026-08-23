@@ -24,7 +24,7 @@ hide:
     </div>
   </div>
   <div class="hero-art">
-    <img src="assets/hero-agent.png" alt="A voice AI agent configured inside Odoo: prompt, conversation, LLM/TTS and knowledge-base tabs." loading="lazy">
+    <img src="assets/img/hero-agent.png" alt="A voice AI agent configured inside Odoo: prompt, conversation, LLM/TTS and knowledge-base tabs." loading="lazy">
   </div>
 </section>
 
