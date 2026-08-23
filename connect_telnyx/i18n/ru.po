@@ -1,0 +1,29 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* connect_telnyx
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"PO-Revision-Date: 2026-08-16 00:00+0000\n"
+"Last-Translator: Oduist\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : "
+"n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#. module: connect_telnyx
+#. odoo-python
+#: code:addons/connect_telnyx/models/ai_assistant.py:0
+msgid "Hello! I can register your request or connect you with a colleague. Before I do, could you briefly tell me what you are calling about?"
+msgstr "Здравствуйте! Я могу зарегистрировать ваше обращение или соединить вас с сотрудником. Но сначала кратко расскажите, пожалуйста, по какому вопросу вы звоните."
+
+#. module: connect_telnyx
+#. odoo-python
+#: code:addons/connect_telnyx/models/ai_assistant.py:0
+#, python-format
+msgid "Hello, %(customer_name)s. Am I speaking with %(customer_name)s? I can register your request or connect you with a colleague. Before I do, could you briefly tell me what you are calling about?"
+msgstr "Здравствуйте, %(customer_name)s. Я правильно понимаю, что говорю с %(customer_name)s? Я могу зарегистрировать ваше обращение или соединить вас с сотрудником. Но сначала кратко расскажите, пожалуйста, по какому вопросу вы звоните."

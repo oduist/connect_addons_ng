@@ -17,6 +17,29 @@ def _format_attr(value):
     return str(value)
 
 
+def apply_say_voice(content, voice):
+    """Add a fallback voice to every Say that has no explicit voice."""
+    if content is None or not voice:
+        return content
+    text = str(content)
+    try:
+        root = ET.fromstring(text)
+    except (ET.ParseError, TypeError, ValueError):
+        return text
+    changed = False
+    for element in root.iter():
+        tag = element.tag.rsplit('}', 1)[-1]
+        if tag == 'Say' and not element.get('voice'):
+            element.set('voice', voice)
+            changed = True
+    if not changed:
+        return text
+    xml = ET.tostring(root, encoding='unicode')
+    if text.lstrip().startswith('<?xml'):
+        return '<?xml version="1.0" encoding="UTF-8"?>' + xml
+    return xml
+
+
 class TeXML:
     """Base TeXML element. Attribute kwargs are rendered verbatim
     (camelCase names as in TwiML/TeXML)."""

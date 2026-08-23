@@ -6,8 +6,10 @@
         <field name="arch" type="xml">
             <list>
                 <field name="name"/>
+                <field name="receptionist_mode"/>
+                <field name="exten_number" string="Extension"/>
                 <field name="model"/>
-                <field name="voice"/>
+                <field name="voice_label" string="Voice"/>
                 <field name="record_calls"/>
                 <field name="memory_enabled"/>
                 <field name="sid"/>
@@ -27,8 +29,8 @@
                             invisible="not sid"/>
                     <button name="action_push_to_telnyx" type="object"
                             string="Push to Telnyx"/>
-                    <button name="action_pull_from_telnyx" type="object"
-                            string="Pull from Telnyx" invisible="not sid"/>
+                    <button name="create_extension" type="object"
+                            string="Create Extension"/>
                     <button name="action_rotate_tool_token" type="object"
                             string="Rotate Tool Token"/>
                 </header>
@@ -40,14 +42,25 @@
                         <group string="Telnyx">
                             <field name="sid"/>
                             <field name="version_id"/>
-                            <field name="imported"/>
                             <field name="last_sync_at"/>
                             <field name="active"/>
                         </group>
                         <group string="Model and Voice">
                             <field name="model"/>
-                            <field name="voice"/>
+                            <field name="voice_is_expressive" invisible="1"/>
+                            <field name="voice_language"/>
+                            <field name="voice_provider"/>
+                            <field name="voice" widget="telnyx_voice"
+                                   options="{'language_field': 'voice_language',
+                                             'provider_field': 'voice_provider',
+                                             'speed_field': 'voice_speed',
+                                             'text_field': 'greeting'}"/>
                             <field name="voice_speed"/>
+                            <field name="language_boost"/>
+                            <field name="expressive_mode"
+                                   invisible="not voice_is_expressive"/>
+                            <field name="language_mode"/>
+                            <field name="default_lang" required="1"/>
                             <field name="transcription_model"/>
                             <field name="transcription_language"/>
                         </group>
@@ -62,9 +75,44 @@
                         </page>
                         <page string="Calling" name="calling">
                             <group>
+                                <group string="Receptionist">
+                                    <field name="receptionist_mode"/>
+                                    <field name="transfer_enabled"/>
+                                    <field name="manager"
+                                           invisible="receptionist_mode != 'personal'"
+                                           required="transfer_enabled and receptionist_mode == 'personal'"/>
+                                    <field name="transfer_callflows" widget="many2many_tags"
+                                           invisible="receptionist_mode != 'company'"
+                                           required="transfer_enabled and receptionist_mode == 'company'"/>
+                                    <field name="check_registration_before_transfer"
+                                           invisible="not transfer_enabled"/>
+                                    <field name="warm_transfer_instructions"
+                                           invisible="not transfer_enabled"/>
+                                    <field name="warm_transfer_message_delay_ms"
+                                           invisible="not transfer_enabled"/>
+                                </group>
+                                <group string="SIP / WebRTC Extension">
+                                    <field name="domain"/>
+                                    <field name="exten" readonly="1"/>
+                                    <field name="exten_number" readonly="1"/>
+                                    <field name="sip_uri" readonly="1"/>
+                                    <field name="transfer_tool_sid" readonly="1"
+                                           groups="connect.group_admin"/>
+                                </group>
+                            </group>
+                            <group string="Call Settings">
                                 <field name="time_limit_secs"/>
+                                <field name="user_idle_timeout_secs"/>
                                 <field name="record_calls"/>
                                 <field name="memory_enabled"/>
+                            </group>
+                            <group string="Turn Taking">
+                                <field name="allow_interruptions"/>
+                                <field name="protect_greeting"/>
+                                <field name="start_speaking_wait_secs"/>
+                                <field name="endpointing_no_punctuation_secs"/>
+                                <field name="endpointing_punctuation_secs"/>
+                                <field name="endpointing_number_secs"/>
                             </group>
                         </page>
                         <page string="Odoo Tools" name="odoo_tools">

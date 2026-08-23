@@ -53,6 +53,12 @@ class TestChannel(ConnectTestCommon):
         ch = self._create_channel('sip1', caller='sip:sipuser1@domain.com')
         self.assertEqual(ch.caller_number, 'sipuser1')
 
+    def test_called_number_from_bare_sip_uri(self):
+        """Provider callbacks may omit the optional sip: scheme."""
+        ch = self._create_channel(
+            'sip2', called='sipuser2@domain.com')
+        self.assertEqual(ch.called_number, 'sipuser2')
+
     def test_caller_number_empty_for_none(self):
         """Test empty string for non-string caller."""
         ch = self._create_channel('none1', caller=False)

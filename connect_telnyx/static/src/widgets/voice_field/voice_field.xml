@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="connect_telnyx.TelnyxVoiceField">
+        <t t-if="props.readonly">
+            <span t-esc="state.displayValue"/>
+        </t>
+        <t t-else="">
+            <div class="d-flex align-items-center gap-1 w-100">
+                <AutoComplete t-key="state.revision"
+                              value="state.displayValue"
+                              id="props.id"
+                              placeholder="placeholder"
+                              sources="sources"
+                              autoSelect="false"
+                              class="'flex-grow-1'"
+                              onBlur.bind="resetUnselectedInput"/>
+                <button type="button" class="btn btn-link p-1 o_telnyx_voice_play"
+                        t-if="rawValue"
+                        t-att-disabled="state.playing"
+                        title="Play a sample of this voice"
+                        t-on-click="() => this.playSample()">
+                    <i t-att-class="state.playing ? 'fa fa-spinner fa-spin' : 'fa fa-volume-up'"/>
+                </button>
+            </div>
+        </t>
+    </t>
+
+</templates>

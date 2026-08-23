@@ -80,6 +80,8 @@ class Recording(models.Model):
                 logger.exception(f"Transcribe error: {e}")
                 result['transcription_error'] = str(e)
             finally:
+                result['transcription_pending'] = False
                 self.write(result)
+                self._delete_after_successful_transcription()
         else:
             return super().transcribe_recording(openai_api_key, summary_prompt)

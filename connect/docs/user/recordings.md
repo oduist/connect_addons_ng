@@ -18,6 +18,9 @@ Recording can be enabled at multiple levels (configured by your administrator):
 - **Per user** — Enable/disable recording for a specific PBX user
 - **Per call flow** — Enable/disable recording for calls through a specific callflow
 
+The per-user setting also applies to outgoing calls placed from that user's
+Telnyx web phone or SIP phone.
+
 ### In-Call Recording Control
 
 When runtime recording control is available for your phone provider, the phone
@@ -31,22 +34,30 @@ the provider supports it.
 When transcription is enabled, recordings are automatically processed:
 
 1. **Speech-to-text** — Audio is sent to OpenAI Whisper for transcription
-2. **Summarization** — The transcript is sent to GPT-4o for a concise summary
+2. **Summarization** — The transcript is sent to the OpenAI model selected by
+   your administrator (GPT-5.4 mini by default) for a concise summary
 
 ### Viewing Transcripts
 
-On a recording record, you'll see:
+The linked call keeps the transcript and summary permanently. On a retained
+recording record, you'll also see:
 
 | Field | Description |
 |-------|-------------|
 | **Transcript** | Full text of the conversation. |
 | **Summary** | AI-generated summary of the call. |
+| **Transcription Price** | Estimated Whisper speech-to-text cost in USD, based on OpenAI's processed duration. |
 
-The summary also appears on the linked call record.
+The transcript and summary remain available on the linked call even if the
+recording is later deleted. The price remains on retained recording records.
+Administrators can configure Connect to delete successfully processed
+recordings automatically when audio must not be retained.
 
 ### Manual Transcription
 
-If automatic transcription is disabled, you can manually trigger it by clicking the **Transcribe** button on a recording record.
+You can manually trigger transcription by clicking the **Transcribe** button
+on a recording record. Once the manual attempt finishes, the recording is
+removed from the automatic queue so it is not sent to OpenAI twice.
 
 ### Partner Chatter Integration
 
@@ -56,13 +67,16 @@ When **Register Summary** is enabled in settings, call summaries are automatical
 
 Navigate to **Connect > Calls > Recordings** to see all recordings in a list view.
 
-The list shows:
+The list shows retained recordings with their call, phone numbers, duration,
+summary, and date. Successfully transcribed rows may be absent when automatic
+recording deletion is enabled. Use the column selector to show or hide the
+optional **Partner** and **Users** columns.
 
 | Field | Description |
 |-------|-------------|
 | **Call** | Link to the associated call record. |
 | **Partner** | Linked contact. |
+| **Users** | Internal Odoo users who participated in the call. |
 | **Duration** | Recording length. |
-| **Status** | Completed, processing, or failed. |
 | **Summary** | Truncated AI summary for quick review. |
-| **Player** | Inline audio playback. |
+| **Date** | Date and time when the recording record was created. |

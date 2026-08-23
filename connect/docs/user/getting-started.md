@@ -26,6 +26,12 @@ The phone widget is a browser-based phone embedded in Odoo. Click the phone icon
     French, Italian and Russian translations ship with the module; other
     languages fall back to English.
 
+=== "Telnyx"
+
+    The phone widget uses the Telnyx WebRTC SDK and connects automatically
+    when you open Odoo. If the browser suspends a background tab, the phone
+    reconnects when you return without interrupting Odoo with an error dialog.
+
 ### Widget Tabs
 
 | Tab | Description |

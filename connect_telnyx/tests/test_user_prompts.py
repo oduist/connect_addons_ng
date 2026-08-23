@@ -12,6 +12,8 @@ class TestTelnyxUserPrompts(TelnyxTestCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        cls.env['connect.settings'].sudo().set_param(
+            'telnyx_system_voice', 'Polly.Joanna')
         cls.user = cls._create_connect_user(
             'tx_prompts',
             greeting_message='Welcome to my line',

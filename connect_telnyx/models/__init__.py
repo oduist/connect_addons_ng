@@ -1,4 +1,5 @@
 from . import settings
+from . import ir_http
 from . import texml
 from . import call
 from . import channel
