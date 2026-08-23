@@ -92,7 +92,7 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_project.md` — Project bridge module spec (models, security, views)
 - `specs/connect_memory.md` — Memory base module spec (outbox/inbox contract, capture, backfill, controllers, deploy sidecar)
 - `specs/connect_memory_sale.md` — Memory Sale domain module spec (sale/invoice/payment events, payment digest)
-- `docs/` — User and admin documentation (MkDocs Material), see `mkdocs.yml` for structure
+- `docs/` — User and admin documentation (MkDocs; the Aurora theme installs from `docs/requirements.txt`, see `specs/docs_site.md`)
 
 ## Development Commands
 Use oduflow to manage module development and deployment.
