@@ -14,8 +14,10 @@
  * is a different job, better served by the mkdocs-glightbox plugin.
  */
 (function () {
-  // mdi close, inlined so the close button does not depend on an icon
-  // pipeline. The hover hint carries a word, not a glyph.
+  // mdi magnify-plus-outline / mdi close, inlined so the hover hint and the
+  // close button do not depend on an icon pipeline.
+  var ICON_MAGNIFY =
+    "M15.5,14L20.5,19L19,20.5L14,15.5V14.71L13.73,14.43C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.43,13.73L14.71,14H15.5M9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14M12,10H10V12H9V10H7V9H9V7H10V9H12V10Z";
   var ICON_CLOSE =
     "M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12," +
     "13.41L17.59,19L19,17.59L13.41,12L19,6.41Z";
@@ -70,8 +72,8 @@
     img.setAttribute("tabindex", "0");
     img.setAttribute("aria-label", "Enlarge screenshot");
 
-    // Hover affordance: crop marks closing in on the picture's corners and a
-    // label in its bottom-right, revealed on hover and on keyboard focus. Built
+    // Hover affordance: crop marks closing in on the picture's corners, a
+    // scrim and a magnifier, revealed on hover and on keyboard focus. Built
     // here rather than in index.md so it only ever shows up when the click
     // handler behind it is actually attached.
     var art = img.parentNode;
@@ -79,7 +81,10 @@
     art.insertAdjacentHTML(
       "beforeend",
       '<span class="hero-art__hint" aria-hidden="true">' +
-        '<span class="hero-art__hint-chip">Enlarge</span></span>'
+        '<span class="hero-art__hint-chip">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' +
+        ICON_MAGNIFY +
+        '"/></svg></span></span>'
     );
 
     img.addEventListener("click", function () {
