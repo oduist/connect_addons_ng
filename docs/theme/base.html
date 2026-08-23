@@ -35,8 +35,14 @@
   </head>
   <body>
     <a class="skip-link" href="#docs-main">Skip to content</a>
-    {% include "partials/header.html" %}
-    {% include "partials/breadcrumbs.html" %}
+    {#- Header and breadcrumb trail share ONE sticky surface. Sticking them
+        separately means their offsets have to agree by hand, and they stopped
+        agreeing the moment the type scale changed the header's height — a 4px
+        slit opened between them that page content scrolled through. -#}
+    <div class="docs-topbar">
+      {% include "partials/header.html" %}
+      {% include "partials/breadcrumbs.html" %}
+    </div>
 
     <div class="docs-shell">
       {#- page is None for static_templates (404.html): there is no page.meta

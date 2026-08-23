@@ -1,11 +1,15 @@
-{#- Sticky under the header: it is the only way back to Home, and from there to
+{#- Part of the sticky .docs-topbar surface, directly under the header: it is the only way back to Home, and from there to
     the other modules, so scrolling must not take it away.
 
     A section carries no url of its own (MkDocs leaves it undefined). The
     pre-migration site (navigation.path, commit 32a885c) made every crumb a
     link by resolving a section to its first page, so readers can jump into a
     module ("Twilio") without picking a specific page first — match that here
-    instead of falling back to inert text. -#}
+    instead of falling back to inert text.
+
+    The trail stops at the current page's parent. Material's path.html did the
+    same (it rendered nav.homepage + page.ancestors and no current-page item),
+    and rendering the title here put the very same string 20px above the h1. -#}
 {% macro _first_page_url(nav_item) -%}
   {%- if nav_item.is_page -%}
     {{ nav_item.url }}
@@ -29,7 +33,6 @@
             {% endif %}
           </li>
         {% endfor %}
-        <li aria-current="page">{{ page.title }}</li>
       </ol>
     </div>
   </nav>

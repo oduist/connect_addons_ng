@@ -246,7 +246,7 @@
   /* Anchored headings must clear both the sticky header and the breadcrumb
      trail beneath it. */
   :target {
-    scroll-margin-top: 7rem;
+    scroll-margin-top: 6.5rem;
   }
 
   a {
@@ -378,20 +378,32 @@
     background-color: var(--au-panel-raised);
   }
 
-  /* The bar itself is full-bleed — the background and the gradient hairline
-     run edge to edge — while its contents sit in the same 84rem container as
-     .docs-shell and .docs-footer, so the logo lines up with the sidebar and
-     the toggle with the table of contents. */
-  .docs-header {
+  /* Header and breadcrumb trail are one sticky surface, not two stacked ones:
+     separate sticky elements need their offsets to agree by hand, and they
+     stopped agreeing when the type scale changed the header's height, opening
+     a slit that page content scrolled through. The surface is full-bleed —
+     background and gradient hairline run edge to edge — while the contents of
+     both bars sit in the same 84rem container as .docs-shell and .docs-footer,
+     so the logo lines up with the sidebar and the toggle with the table of
+     contents. */
+  .docs-topbar {
     position: sticky;
     top: 0;
     z-index: 30;
     background-color: var(--au-header-bg);
+    /* 12px, as the original stylesheet used on .md-header: at 8px a bright
+       screenshot scrolling underneath still reads through the bar. */
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--au-header-border);
+  }
+
+  /* Positioned so the gradient hairline below can anchor to it. */
+  .docs-header {
+    position: relative;
     /* Fixed light ink so the brand text and the search/repo/toggle buttons
        (which inherit this via `color: inherit`) stay legible against the
        header's always-dark background in the light scheme too. */
     color: var(--au-header-ink);
-    backdrop-filter: blur(8px);
   }
 
   .docs-header__inner {
@@ -444,13 +456,9 @@
     display: none;
   }
 
+  /* Subordinate to the header, not a second one: it shares the topbar's
+     surface and adds no background or blur of its own. */
   .docs-crumbs {
-    position: sticky;
-    top: 3.1rem;
-    z-index: 20;
-    background-color: var(--au-header-bg);
-    backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--au-header-border);
     /* No Material baseline exists for this trail (it rendered no .md-path on
        the pages measured for the type-scale audit) — scaled with everything
        else at the same 1.25 factor (0.78rem -> 0.975rem) rather than matched

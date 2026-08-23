@@ -175,8 +175,14 @@ Logo + `site_name` linking home, the search field, the scheme toggle, a link to
 the GitHub repository, and — below the header, sticky — the breadcrumb trail.
 On narrow screens the header collapses to two buttons (navigation, search).
 
-The bar and the trail are full-bleed — background and gradient hairline run edge
-to edge — but their contents sit in an inner container (`.docs-header__inner`,
+The header and the trail are **one** sticky surface (`.docs-topbar`), which owns
+the background, the blur and the bottom border; neither bar sticks on its own.
+Sticking them separately means their offsets have to agree by hand, and they
+stopped agreeing the moment the type scale changed the header's height — a 4px
+slit opened between them that page content scrolled through.
+
+The surface is full-bleed — background and gradient hairline run edge to edge —
+but the contents of both bars sit in an inner container (`.docs-header__inner`,
 `.docs-crumbs__inner`) capped at the same `84rem` as `.docs-shell` and
 `.docs-footer`. Without it the logo and the crumbs drift to the viewport edges on
 a wide screen while the page content stays centred.
@@ -196,7 +202,9 @@ Material's `md-nav` structure. Section expansion uses `<details>` driven by
 
 ### `partials/breadcrumbs.html`
 
-`nav.homepage` followed by `page.ancestors | reverse`. Sticky under the header,
+`nav.homepage` followed by `page.ancestors | reverse` — the trail stops at the
+current page's parent, as Material's `path.html` did, because rendering the page
+title here put the same string 20px above the `h1`. Part of the sticky topbar,
 because it is the only way back to Home and from there to the other modules.
 Anchored headings keep a `scroll-margin-top` that clears both the header and
 the trail.
