@@ -2,10 +2,10 @@ name: Publish docs
 
 # Render the MkDocs site and push it to the `website` branch, which GitHub
 # Pages serves from. Runs on pushes to 19.0 that touch the docs, plus manual
-# dispatch. Also runs the build/verify steps (not the deploy) on pull
-# requests touching the same paths, so a PR that edits theme-src/ without
-# rebuilding the committed stylesheet fails here instead of merging green and
-# only breaking on the next push-triggered deploy.
+# dispatch. Also runs the build and the site checker (not the deploy) on pull
+# requests touching the same paths, so a PR that breaks the build or an
+# assertion fails here rather than after merge. The theme is installed from
+# docs/requirements.txt like any other dependency — nothing is compiled here.
 on:
   push:
     branches:
@@ -14,9 +14,6 @@ on:
       - "docs/**"
       - "mkdocs.yml"
       - ".github/workflows/docs.yml"
-      - "theme-src/**"
-      - "package.json"
-      - "package-lock.json"
       - "tools/check_docs_site.py"
       - "docs/requirements.txt"
   pull_request:
@@ -45,21 +42,6 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r docs/requirements.txt
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-
-      - name: Build the theme stylesheet
-        run: npm ci && npm run build:css
-
-      # The compiled stylesheet is committed so that `mkdocs serve` works
-      # without Node. Fail loudly if the committed copy is stale — this is
-      # the check a PR most needs, since it is the one push-only CI used to
-      # miss until the deploy job ran after merge.
-      - name: Verify the committed stylesheet is current
-        run: git diff --exit-code docs/theme/assets/app.css
 
       # Bring the existing `website` history into this fresh checkout so
       # gh-deploy appends a new commit on top of it (keeping the full deploy

@@ -22,10 +22,8 @@ copyright: Copyright &copy; Oduist OÜ
 docs_dir: docs
 
 # Internal design notes kept in the repo but not part of the published site.
-# theme/ holds the Jinja templates for docs/theme's custom_dir; it sits
-# inside docs_dir so it must be excluded or MkDocs would also publish the
-# templates themselves as documentation pages. README.md documents this
-# build for contributors and conflicts with index.md (the actual Home page)
+# README.md documents this build for contributors and conflicts with
+# index.md (the actual Home page)
 # in the same directory if MkDocs tries to build both. exclude_docs compiles
 # to a gitignore-style spec (mkdocs/structure/files.py:529), where a bare
 # pattern matches at any depth in the aggregated tree; the leading slash
@@ -33,14 +31,17 @@ docs_dir: docs
 # future module's own docs/README.md.
 exclude_docs: |
   superpowers/
-  theme/
   /README.md
 
 theme:
-  name: null
-  custom_dir: docs/theme
-  static_templates:
-    - 404.html
+  # Aurora lives in its own repository and installs from docs/requirements.txt;
+  # MkDocs resolves this name through the package's mkdocs.themes entry point.
+  name: aurora
+
+extra_css:
+  # The home page's own components (hero, lightbox, module table). Plain CSS —
+  # the theme carries the tokens it references, so the site needs no build step.
+  - stylesheets/home.css
 
 extra_javascript:
   - javascripts/module-table.js

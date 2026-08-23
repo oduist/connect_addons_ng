@@ -25,5 +25,3 @@ connect_freeswitch/deploy/freeswitch/conf/tls/*.pem
 /site/
 .venv-docs/
 
-# Documentation theme build (Tailwind CLI)
-node_modules/

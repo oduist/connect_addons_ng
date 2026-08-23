@@ -1,8 +1,11 @@
-# Documentation build dependencies.
-# The site ships its own theme (docs/theme/, specs/docs_site.md); the CSS is
-# built with the Tailwind CLI from package.json and committed, so a
-# Markdown-only contributor needs nothing but these.
+# Documentation build dependencies. This is the whole toolchain — there is no
+# Node here and nothing to compile; see docs/README.md.
 mkdocs==1.6.1
+
+# The site's look. Aurora lives in its own repository and ships its stylesheet
+# already compiled, so building the docs needs no Node and no build step here.
+# Pinned to a tag: bump it to adopt a theme change.
+mkdocs-theme-aurora @ git+https://github.com/oduist/mkdocs-theme-aurora@v1.0.0
 
 # mkdocs.yml's markdown_extensions use pymdownx.details, pymdownx.superfences
 # and pymdownx.tabbed. The Material theme package used to pull this in

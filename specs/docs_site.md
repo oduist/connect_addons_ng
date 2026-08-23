@@ -3,8 +3,10 @@
 ## Site Info
 
 - **Generator:** MkDocs (`mkdocs.yml` at the repository root)
-- **Theme:** in-repo, `theme: name: null` + `custom_dir: docs/theme`
-- **Styling:** Tailwind CSS v4 (CSS-first config, no `tailwind.config.js`)
+- **Theme:** [`oduist/mkdocs-theme-aurora`](https://github.com/oduist/mkdocs-theme-aurora),
+  installed from `docs/requirements.txt` and named as `theme: name: aurora`
+- **Styling:** the theme ships its stylesheet compiled; this site adds one plain
+  CSS file of its own for the home page
 - **Aggregation:** `mkdocs-monorepo-plugin` — 26 per-module `mkdocs.yml` files
   joined into one nav via `!include`
 - **Content:** 75 Markdown pages (~332 KB), of which 73 are plain Markdown
@@ -14,10 +16,18 @@
 
 ## Overview
 
-The site's presentation layer is owned by this repository: templates, tokens,
-components and search all live under `docs/theme/` and `theme-src/`. MkDocs
-provides page rendering, the nav tree and the search index; everything the
-reader sees is ours.
+The presentation layer is owned by Oduist rather than by a third party, but it
+no longer lives here: templates, tokens and search are the **Aurora** theme, a
+package of its own (`oduist/mkdocs-theme-aurora`) pinned in
+`docs/requirements.txt`. This repository owns the content, the navigation and
+the parts of the site that are specific to this front page.
+
+The line between them is meaning, not file type. The theme dresses any site:
+skeleton, header, module-scoped sidebar, breadcrumbs, table of contents,
+typography, code, admonitions, search, footer. The home page's hero, its
+screenshot lightbox and the "periodic table" of modules are this site's
+content — their markup is hand-written in `docs/index.md` — so they stay here,
+in `docs/stylesheets/home.css` and `docs/javascripts/`.
 
 The visual language is "Aurora" — the Oduist brand palette mirrored from
 `PALETTE.md` / `global.css` of the oduist.com site. Dark is the default scheme
@@ -30,67 +40,63 @@ Visual parity with the pre-migration site is the acceptance criterion.
 
 ## File Layout
 
+What this repository holds:
+
 ```
-mkdocs.yml                      # theme: name: null, custom_dir: docs/theme
-package.json                    # @tailwindcss/cli + @tailwindcss/typography
-package-lock.json
-
-theme-src/
-  app.css                       # @import "tailwindcss"; @theme tokens; @layer components
-  pygments.css                  # generated once, Aurora-coloured Pygments tokens
-
-docs/theme/                     # the theme itself
-  base.html                     # page skeleton + Jinja blocks
-  main.html                     # {% extends "base.html" %} — the only page template
-  404.html                      # via theme.static_templates
-  partials/
-    header.html  nav.html  nav-item.html  breadcrumbs.html
-    toc.html  search.html  footer.html
-  assets/
-    app.css                     # Tailwind build output — COMMITTED (see Build)
-    theme.js                    # entry point — wires the js/ modules up on DOM ready
-    js/
-      scheme.js                 # dark/light toggle, anti-flash persistence
-      toc.js                    # TOC scrollspy
-      drawer.js                 # mobile navigation drawer
-      copy.js                   # copy-to-clipboard buttons, table wrapping
-      search.js                 # search dialog, lunr index, result rendering
-    vendor/lunr.min.js          # search engine (not shipped by the search plugin)
-
-docs/javascripts/               # unchanged, loaded via extra_javascript
-  hero-zoom.js  module-table.js
+mkdocs.yml                      # theme: name: aurora, nav, plugins, extensions
+docs/
+  index.md  changelog.md        # the only pages outside the modules
+  README.md                     # how to build the site (excluded from it)
+  requirements.txt              # mkdocs, the theme pin, monorepo plugin
+  stylesheets/home.css          # the home page's own components — plain CSS
+  javascripts/
+    hero-zoom.js                # the screenshot lightbox (native <dialog>)
+    module-table.js             # the module table's filter and tooltips
+  assets/                       # logo, hero screenshot
+<module>/docs/                  # every module's own pages, aggregated by !include
+tools/check_docs_site.py        # assertions over the built site
+.github/workflows/docs.yml      # build, check, deploy to the website branch
 ```
 
-Deleted by this work: `docs/stylesheets/aurora.css`, `docs/overrides/`.
-`docs/stylesheets/module-table.css` moves into `theme-src/app.css` as a
-`@layer components` block; `extra_css` disappears from `mkdocs.yml`.
+What the theme holds (`oduist/mkdocs-theme-aurora`): `base.html`, `main.html`,
+`404.html`, the seven partials, `assets/app.css` (compiled and committed there),
+`assets/theme.js` plus the five behaviour modules under `assets/js/`, the
+vendored lunr, and the Tailwind source in `theme-src/`. That repository carries
+the Node toolchain; this one does not.
 
-### Why templates and assets can share one directory
+### Why the home page's styling lives here
 
-MkDocs excludes `*.html` from the files it copies out of a theme directory
-(`mkdocs/structure/files.py:151`) and renders only the templates named in
-`theme.static_templates` (default `404.html`, `sitemap.xml`) plus `main.html`
-per page. Templates and partials therefore sit at the theme root; anything that
-must reach `site/` goes under `assets/`.
+`docs/index.md` is hand-written HTML — a hero with a zoomable screenshot and a
+grid of module tiles — and `docs/javascripts/` drives it. Styling it from the
+theme would make the theme's class names a contract this site has to match
+across a repository boundary, and would put page-specific rules in a package
+that dresses arbitrary sites. `docs/stylesheets/home.css` is plain CSS: it
+references the theme's `--au-*`, `--color-au-*`, `--radius-au-*` and
+`--au-gradient` tokens and needs no build step.
+
+The theme renders `extra_css` after its own stylesheet, so where both describe
+the same element the page-specific rule wins.
 
 ## `mkdocs.yml` Changes
 
 Removed: `theme.name: material`, `theme.palette`, `theme.features`,
-`theme.font`, `theme.logo`, `theme.favicon`, `extra.generator`,
-`extra_css`.
+`theme.font`, `theme.logo`, `theme.favicon`, `extra.generator`.
 
 Added / changed:
 
 ```yaml
 theme:
-  name: null
-  custom_dir: docs/theme
-  static_templates:
-    - 404.html
+  name: aurora
 
 repo_url: https://github.com/oduist/connect_addons_ng
 edit_uri: edit/19.0/docs/
+
+extra_css:
+  - stylesheets/home.css
 ```
+
+`theme.static_templates` is not set here: the theme declares `404.html` in its
+own `mkdocs_theme.yml`, which MkDocs merges under the site's `theme:` block.
 
 Unchanged: `site_name`, `copyright`, `docs_dir`, `exclude_docs`, `plugins`
 (`search`, `monorepo`), the whole `nav` block with its 26 `!include` entries,
@@ -232,6 +238,8 @@ in `theme.js` (see Search).
 
 ### Tokens
 
+Paths in this section are relative to the **theme** repository.
+
 `aurora.css` is two layers today: the `--au-*` palette (mirror of the brand
 site) and a bridge pointing Material's `--md-*` properties at it. The bridge
 disappears. The palette moves verbatim into Tailwind's `@theme` block in
@@ -297,12 +305,18 @@ block.
 
 ### Home-page components
 
-`module-table.css` (the periodic table of modules, the category legend, the
-hero screenshot lightbox and its hover affordance) moves into `@layer components`
-**with its class names unchanged**. That keeps `docs/index.md`'s hand-written
-HTML and both JavaScript files working as-is. The single content edit in the
-whole migration is replacing `md-button` / `md-button--primary` in
-`docs/index.md` with the theme's own button classes.
+The periodic table of modules, the category legend, the hero screenshot and its
+lightbox live in `docs/stylesheets/home.css` — plain CSS, loaded through
+`extra_css`, in this repository rather than in the theme (see *Why the home
+page's styling lives here*). Class names are the ones
+`docs/javascripts/module-table.js` and `hero-zoom.js` query, so neither script
+knows anything changed.
+
+Hovering the screenshot dims it and brings up a magnifier; clicking opens the
+picture in a native modal `<dialog>`, where Escape, the focus trap and the
+backdrop are the element's own behaviour. On a narrow screen the picture stays
+at natural size and the dialog pans, because fitting it to a phone viewport
+would enlarge nothing at all.
 
 ## Search
 
@@ -310,7 +324,7 @@ The `search` plugin stays enabled and keeps doing what it does today: on
 `on_post_build` it writes `search/search_index.json` into the site
 (`mkdocs/contrib/search/__init__.py:95`). It does not ship a search engine —
 Material hid one in its own web worker — so the theme vendors
-`lunr.min.js` (~30 KB) under `docs/theme/assets/vendor/`.
+`lunr.min.js` (~30 KB) under its own `assets/vendor/`.
 
 The index format suits us: `search_index.py` emits one record per page **and**
 one per section with its anchor (`location`, `title`, `text`), so results land
@@ -333,64 +347,35 @@ If client-side index building ever becomes noticeable, the plugin's
 
 ## Build
 
-`package.json` carries two dependencies (`@tailwindcss/cli`,
-`@tailwindcss/typography`) and three scripts:
+`docs/requirements.txt` is the whole toolchain:
 
-| Script | Does |
-|---|---|
-| `npm run build:css` | `tailwindcss -i theme-src/app.css -o docs/theme/assets/app.css --minify` |
-| `npm run watch:css` | the same with `--watch` |
-| `npm run dev` | `watch:css` and `mkdocs serve` together |
-
-There is no JavaScript bundler: `theme.js` is a plain ES module and lunr is
-vendored as-is.
-
-`docs/theme/assets/app.css` is committed. The cost is a generated file in git;
-the benefit is that `mkdocs serve` and `mkdocs build` keep working for a
-contributor who only edits Markdown and has no Node installed. To keep the
-committed file honest, CI rebuilds it and fails on any difference:
-
-```yaml
-- run: npm ci && npm run build:css
-- run: git diff --exit-code docs/theme/assets/app.css
+```
+mkdocs==1.6.1
+mkdocs-theme-aurora @ git+https://github.com/oduist/mkdocs-theme-aurora@v1.0.0
+pymdown-extensions==11.0.1
+mkdocs-monorepo-plugin==1.1.2
 ```
 
-`.github/workflows/docs.yml` gains `actions/setup-node` and those two steps
-before `mkdocs gh-deploy`, plus an explicit `mkdocs build --strict` and a
-`tools/check_docs_site.py site` run so the checker has a build directory to
-inspect (`mkdocs gh-deploy` does not leave one behind); the `paths:` trigger
-filter is extended with `theme-src/**`, `package.json` and
-`package-lock.json`.
-`docs/requirements.txt` drops `mkdocs-material` and keeps `mkdocs` and
-`pymdown-extensions` (explicitly, since Material used to pull both in
-transitively — `markdown_extensions` in `mkdocs.yml` uses `pymdownx.details`,
-`pymdownx.superfences` and `pymdownx.tabbed`) and `mkdocs-monorepo-plugin`.
+`pip install -r docs/requirements.txt` then `mkdocs serve` is all a contributor
+needs — including one who only edits Markdown, and including CI. The theme is
+pinned to a tag and arrives with its stylesheet already compiled, so nothing is
+built in this repository and there is no Node here.
 
-## Migration Order
+Adopting a theme change is a one-line bump of that pin, which shows up in a pull
+request's diff like any other dependency change.
 
-One branch, `19.0-docs-tailwind-theme`, in this order:
+`.github/workflows/docs.yml` installs the requirements, builds with `--strict`,
+runs `tools/check_docs_site.py` against the built site, and deploys to the
+`website` branch. Pull requests run everything except the deploy.
 
-1. **Scaffold** — `package.json`, `theme-src/app.css` with the Aurora tokens,
-   `base.html` / `main.html` / `404.html`, `mkdocs.yml` switched to
-   `name: null`.
-2. **Navigation** — sidebar with module scoping, breadcrumbs, TOC with
-   scrollspy, mobile drawer.
-3. **Content** — prose on the tokens, Pygments stylesheet, five admonition
-   types, tables, tabs, copy buttons.
-4. **Search** — vendored lunr, dialog, in-page highlighting.
-5. **Home page** — `module-table.css` into `@layer components`, `md-button`
-   replaced in `docs/index.md`.
-6. **Header & footer** — prev/next, Edit on GitHub (`repo_url`, `edit_uri`),
-   scheme toggle, repository link.
-7. **Cleanup** — delete `aurora.css` and `docs/overrides/`, drop
-   `mkdocs-material` from `docs/requirements.txt`, add the CSS build steps to
-   the workflow, and update `AGENTS.md` (its Key Files list still calls the
-   site "MkDocs Material" and does not mention this spec).
+## History
 
-Between steps 1 and 5 the site **builds but looks unfinished**: Material is
-switched off at the first commit and the styles arrive in pieces. That is the
-accepted cost of replacing the foundation outright rather than running two CSS
-systems side by side.
+The theme was built inside this repository, replacing Material for MkDocs over
+nine reviewed steps (ADR-050; the plan and its execution are recorded in
+`docs/superpowers/plans/2026-08-21-docs-tailwind-theme.md`). It moved out into
+`oduist/mkdocs-theme-aurora` once it was finished, taking the Node toolchain
+with it. The visual parity that migration was measured against — the site had to
+look unchanged — still holds after the move.
 
 ## Verification
 
