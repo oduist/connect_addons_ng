@@ -5,7 +5,7 @@ mkdocs==1.6.1
 # The site's look. Aurora lives in its own repository and ships its stylesheet
 # already compiled, so building the docs needs no Node and no build step here.
 # Pinned to a tag: bump it to adopt a theme change.
-mkdocs-theme-aurora @ git+https://github.com/oduist/mkdocs-theme-aurora@v1.0.0
+mkdocs-theme-aurora @ git+https://github.com/oduist/mkdocs-theme-aurora@v1.1.0
 
 # mkdocs.yml's markdown_extensions use pymdownx.details, pymdownx.superfences
 # and pymdownx.tabbed. The Material theme package used to pull this in

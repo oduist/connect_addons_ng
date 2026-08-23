@@ -37,6 +37,10 @@ theme:
   # Aurora lives in its own repository and installs from docs/requirements.txt;
   # MkDocs resolves this name through the package's mkdocs.themes entry point.
   name: aurora
+  # The theme ships no brand of its own — the site names its own artwork, which
+  # lives in docs/assets/ alongside the hero screenshot.
+  logo: assets/logo.png
+  favicon: assets/logo.png
 
 extra_css:
   # The home page's own components (hero, lightbox, module table). Plain CSS —
