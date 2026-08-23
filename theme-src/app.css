@@ -978,62 +978,18 @@
      inward as they fade in — instead of the default centred icon disc. The old
      treatment dimmed the whole screenshot behind a scrim to keep a chip legible;
      this one darkens nothing and puts the only opaque surface under the label. */
+  /* Hover affordance: the picture dims and a magnifier comes up in the middle.
+     Nothing else — an earlier pass framed the corners with crop marks too, but
+     with the scrim and the glyph both saying "look closer", the marks only read
+     as a stray border. */
   .hero-art__hint {
-    --vf-arm: 1.5rem;    /* bracket length */
-    --vf-weight: 2px;
-    --vf-inset: 0;
     position: absolute;
-    /* The brackets sit OUTSIDE the picture, hugging its corners like crop
-       marks. Inside they landed on the product UI in the screenshot and read
-       as someone having drawn on it. */
-    inset: -0.65rem;
-    border-radius: var(--radius-au-lg);
-    opacity: 0;
-    pointer-events: none;
-    /* Eight strips — a horizontal and a vertical arm per corner. */
-    background-image:
-      linear-gradient(var(--au-link), var(--au-link)),
-      linear-gradient(var(--au-link), var(--au-link)),
-      linear-gradient(var(--au-link), var(--au-link)),
-      linear-gradient(var(--au-link), var(--au-link)),
-      linear-gradient(var(--au-link), var(--au-link)),
-      linear-gradient(var(--au-link), var(--au-link)),
-      linear-gradient(var(--au-link), var(--au-link)),
-      linear-gradient(var(--au-link), var(--au-link));
-    background-size:
-      var(--vf-arm) var(--vf-weight), var(--vf-weight) var(--vf-arm),
-      var(--vf-arm) var(--vf-weight), var(--vf-weight) var(--vf-arm),
-      var(--vf-arm) var(--vf-weight), var(--vf-weight) var(--vf-arm),
-      var(--vf-arm) var(--vf-weight), var(--vf-weight) var(--vf-arm);
-    background-position:
-      left var(--vf-inset) top var(--vf-inset),
-      left var(--vf-inset) top var(--vf-inset),
-      right var(--vf-inset) top var(--vf-inset),
-      right var(--vf-inset) top var(--vf-inset),
-      left var(--vf-inset) bottom var(--vf-inset),
-      left var(--vf-inset) bottom var(--vf-inset),
-      right var(--vf-inset) bottom var(--vf-inset),
-      right var(--vf-inset) bottom var(--vf-inset);
-    background-repeat: no-repeat;
-    /* The hint box is larger than the picture (the marks sit outside it), so
-       the scrim is drawn by a child inset back to the picture's own edges. */
-    --vf-bleed: 0.65rem;
-    /* Soft halo so the marks hold their edge against both the page and a
-       bright screenshot corner. */
-    filter: drop-shadow(0 0 2px rgb(4 5 10 / 0.35));
-    /* Starts a touch wide, so the frame closes in on the image. */
-    transform: scale(1.03);
-    transition: opacity 220ms ease,
-      transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-
-  /* Scrim, inset back to the picture's edges. */
-  .hero-art__hint::before {
-    content: "";
-    position: absolute;
-    inset: var(--vf-bleed);
+    inset: 0;
     border-radius: var(--radius-au-lg);
     background-color: rgb(4 5 10 / 0.42);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease;
   }
 
   /* Magnifier, centred on the picture. No disc behind it: the scrim already
@@ -1041,7 +997,7 @@
      one layer too many. */
   .hero-art__hint-chip {
     position: absolute;
-    inset: var(--vf-bleed);
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1061,7 +1017,6 @@
   .hero-art--zoomable:hover .hero-art__hint,
   .hero-art img.hero-art__zoomable:focus-visible + .hero-art__hint {
     opacity: 1;
-    transform: scale(1);
   }
   .hero-art--zoomable:hover .hero-art__hint-chip,
   .hero-art img.hero-art__zoomable:focus-visible + .hero-art__hint
