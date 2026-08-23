@@ -961,7 +961,7 @@
     position: relative;
   }
   .hero-art img.hero-art__zoomable {
-    cursor: zoom-in;
+    cursor: pointer;
     transition: transform 200ms ease, box-shadow 200ms ease,
       border-color 200ms ease;
   }

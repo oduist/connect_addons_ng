@@ -23,6 +23,8 @@
     "13.41L17.59,19L19,17.59L13.41,12L19,6.41Z";
 
   var dialog = null;
+  var trigger = null;
+  var openedByPointer = false;
 
   function build(img) {
     var el = document.createElement("dialog");
@@ -51,13 +53,24 @@
       if (e.target === el) el.close();
     });
 
+    // Closing a modal returns focus to whatever opened it, and the browser
+    // then treats that element as keyboard-focused — so the hover hint stayed
+    // painted over the thumbnail with the pointer nowhere near it. Drop focus
+    // again, but only when the pointer opened the dialog: a reader who got
+    // here with Enter needs the focus back where they left it.
+    el.addEventListener("close", function () {
+      if (openedByPointer && trigger) trigger.blur();
+    });
+
     el.appendChild(full);
     el.appendChild(close);
     document.body.appendChild(el);
     return el;
   }
 
-  function open(img) {
+  function open(img, fromPointer) {
+    trigger = img;
+    openedByPointer = !!fromPointer;
     if (!dialog) dialog = build(img);
     dialog.showModal();
   }
@@ -87,13 +100,17 @@
         '"/></svg></span></span>'
     );
 
-    img.addEventListener("click", function () {
-      open(img);
+    // detail is 0 for a click synthesised from Enter or Space, and non-zero
+    // for a real pointer click — which is how the close handler above knows
+    // whether returning focus here would be helpful or would just leave the
+    // hint stuck on screen.
+    img.addEventListener("click", function (e) {
+      open(img, e.detail > 0);
     });
     img.addEventListener("keydown", function (e) {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        open(img);
+        open(img, false);
       }
     });
   }
