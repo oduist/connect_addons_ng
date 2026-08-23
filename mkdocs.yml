@@ -21,7 +21,6 @@ copyright: Copyright &copy; Oduist OÜ
 
 docs_dir: docs
 
-# Internal design notes kept in the repo but not part of the published site.
 # README.md documents this build for contributors and conflicts with
 # index.md (the actual Home page)
 # in the same directory if MkDocs tries to build both. exclude_docs compiles
@@ -30,7 +29,6 @@ docs_dir: docs
 # anchors this entry to the root docs_dir so it does NOT also swallow a
 # future module's own docs/README.md.
 exclude_docs: |
-  superpowers/
   /README.md
 
 theme:

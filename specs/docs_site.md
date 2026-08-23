@@ -371,8 +371,7 @@ runs `tools/check_docs_site.py` against the built site, and deploys to the
 ## History
 
 The theme was built inside this repository, replacing Material for MkDocs over
-nine reviewed steps (ADR-050; the plan and its execution are recorded in
-`docs/superpowers/plans/2026-08-21-docs-tailwind-theme.md`). It moved out into
+nine reviewed steps (ADR-050; the work itself is in PR #198). It moved out into
 `oduist/mkdocs-theme-aurora` once it was finished, taking the Node toolchain
 with it. The visual parity that migration was measured against — the site had to
 look unchanged — still holds after the move.
