@@ -2,197 +2,62 @@
  * Lightbox for the hero screenshot on the docs home page.
  *
  * The screenshot ships at 1200px but renders at roughly half that inside the
- * hero's column, so the UI in it is hard to read. Clicking enlarges it to its
- * natural size (capped to the viewport).
+ * hero's column, so the UI in it is hard to read. Clicking opens it in a native
+ * modal <dialog>.
  *
- * The open/close motion is a FLIP transition: a clone is placed at its final
- * geometry, given the inverse transform that maps it back onto the thumbnail,
- * and then released to identity on the next frame. Only transform and opacity
- * animate, so the whole thing stays on the compositor — the picture appears to
- * grow out of the page rather than being swapped for a bigger one.
+ * The element does the work: Esc, the focus trap, making the rest of the page
+ * inert and the backdrop itself all come from showModal(). The only behaviour
+ * written here is closing on a backdrop click — a click that lands on the
+ * dialog box rather than on anything inside it.
  *
  * Scoped to the hero on purpose. Making every screenshot in the docs zoomable
  * is a different job, better served by the mkdocs-glightbox plugin.
  */
 (function () {
-  // Kept in sync with the transition declared on .hero-zoom / .hero-zoom__img.
-  var DURATION = 420;
-
   // mdi close, inlined so the close button does not depend on an icon
   // pipeline. The hover hint carries a word, not a glyph.
   var ICON_CLOSE =
     "M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12," +
     "13.41L17.59,19L19,17.59L13.41,12L19,6.41Z";
 
-  var state = null;
+  var dialog = null;
 
-  function icon(path) {
-    return (
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + path + '"/></svg>'
-    );
-  }
+  function build(img) {
+    var el = document.createElement("dialog");
+    el.className = "hero-zoom";
 
-  function reducedMotion() {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  }
+    var full = document.createElement("img");
+    full.className = "hero-zoom__img";
+    full.src = img.currentSrc || img.src;
+    full.alt = img.alt || "";
 
-  /* Geometry of the enlarged image, in the overlay's content coordinates.
-     Never upscales past the natural size — beyond that it only gets blurrier. */
-  function targetRect(img, rect) {
-    var vw = document.documentElement.clientWidth;
-    var vh = document.documentElement.clientHeight;
-    var nw = img.naturalWidth || img.offsetWidth;
-    var nh = img.naturalHeight || img.offsetHeight;
+    var close = document.createElement("button");
+    close.className = "hero-zoom__close";
+    close.type = "button";
+    close.setAttribute("aria-label", "Close");
+    close.innerHTML =
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' +
+      ICON_CLOSE +
+      '"/></svg>';
+    close.addEventListener("click", function () {
+      el.close();
+    });
 
-    var fit = Math.min((vw * 0.92) / nw, (vh * 0.9) / nh, 1);
-    // On a portrait phone the hero already spans the full column, so fitting
-    // the viewport would enlarge nothing at all. Fall back to the natural size
-    // and let the overlay scroll sideways instead — a UI screenshot is worth
-    // more at 1:1 than shrunk to fit.
-    var scale = nw * fit < rect.width * 1.25 ? Math.min((vh * 0.9) / nh, 1) : fit;
+    // A click on the backdrop is reported against the dialog element itself;
+    // anything inside the picture or the button targets those instead.
+    el.addEventListener("click", function (e) {
+      if (e.target === el) el.close();
+    });
 
-    var w = nw * scale;
-    var h = nh * scale;
-    var contentWidth = Math.max(w, vw);
-    return {
-      left: (contentWidth - w) / 2,
-      top: (vh - h) / 2,
-      width: w,
-      height: h,
-      scrollLeft: (contentWidth - vw) / 2
-    };
-  }
-
-  /* Transform that maps the enlarged box back onto `rect`. transform-origin is
-     0 0 (see the stylesheet), which keeps this to a translate plus a scale.
-     `scrollLeft` converts the target from content to viewport coordinates —
-     the two differ once the overlay is wide enough to pan. */
-  function invert(rect, target, scrollLeft) {
-    return (
-      "translate(" +
-      (rect.left - (target.left - scrollLeft)) +
-      "px, " +
-      (rect.top - target.top) +
-      "px) scale(" +
-      rect.width / target.width +
-      ")"
-    );
+    el.appendChild(full);
+    el.appendChild(close);
+    document.body.appendChild(el);
+    return el;
   }
 
   function open(img) {
-    if (state) return;
-
-    var rect = img.getBoundingClientRect();
-    var target = targetRect(img, rect);
-
-    var overlay = document.createElement("div");
-    overlay.className = "hero-zoom";
-    overlay.setAttribute("role", "dialog");
-    overlay.setAttribute("aria-modal", "true");
-    overlay.setAttribute("aria-label", img.alt || "Enlarged screenshot");
-
-    var clone = document.createElement("img");
-    clone.className = "hero-zoom__img";
-    clone.src = img.currentSrc || img.src;
-    clone.alt = "";
-    clone.style.left = target.left + "px";
-    clone.style.top = target.top + "px";
-    clone.style.width = target.width + "px";
-    clone.style.height = target.height + "px";
-
-    var closeBtn = document.createElement("button");
-    closeBtn.type = "button";
-    closeBtn.className = "hero-zoom__close";
-    closeBtn.setAttribute("aria-label", "Close");
-    closeBtn.innerHTML = icon(ICON_CLOSE);
-    if (target.scrollLeft > 0) {
-      // The image is wider than the screen and pans, so a button pinned to its
-      // corner would start off-screen. Pin it to the viewport instead.
-      closeBtn.classList.add("hero-zoom__close--fixed");
-    } else {
-      // Straddling the image's top-right corner: clear of the screenshot's
-      // content, and unmistakably attached to it. Content and viewport
-      // coordinates coincide here, because nothing scrolls.
-      closeBtn.style.left = target.left + target.width - 22 + "px";
-      closeBtn.style.top = target.top - 22 + "px";
-    }
-    closeBtn.addEventListener("click", close);
-
-    overlay.appendChild(clone);
-    document.body.appendChild(overlay);
-    // Deliberately a sibling of the overlay, not a child: the overlay's
-    // backdrop-filter would make it the containing block for position:fixed,
-    // and the button would then pan away with the image on narrow screens.
-    document.body.appendChild(closeBtn);
-
-    // Centre the pan before the first paint, so an image wider than the
-    // viewport opens on its middle rather than its left edge.
-    overlay.scrollLeft = target.scrollLeft;
-    if (!reducedMotion()) {
-      clone.style.transform = invert(rect, target, overlay.scrollLeft);
-    }
-
-    state = {
-      img: img,
-      overlay: overlay,
-      clone: clone,
-      closeBtn: closeBtn,
-      target: target
-    };
-
-    // Two frames: the first commits the inverted transform as the starting
-    // style, the second changes it so the transition actually runs.
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        if (!state) return;
-        overlay.classList.add("is-open");
-        closeBtn.classList.add("is-open");
-        clone.style.transform = "none";
-        img.style.visibility = "hidden";
-        // Move focus into the dialog, so Escape and Tab behave as expected and
-        // the close button is the first thing a keyboard user lands on.
-        closeBtn.focus({ preventScroll: true });
-      });
-    });
-
-    overlay.addEventListener("click", close);
-    document.addEventListener("keydown", onKeydown);
-    window.addEventListener("resize", close);
-  }
-
-  function close() {
-    if (!state) return;
-    var current = state;
-    state = null;
-
-    document.removeEventListener("keydown", onKeydown);
-    window.removeEventListener("resize", close);
-
-    current.overlay.classList.remove("is-open");
-    current.closeBtn.classList.remove("is-open");
-    // Re-measure both ends: the page may have been scrolled and the overlay
-    // panned while it was up, so neither the thumbnail nor the enlarged image
-    // is necessarily where it was when we opened.
-    current.img.style.visibility = "";
-    if (!reducedMotion()) {
-      current.clone.style.transform = invert(
-        current.img.getBoundingClientRect(),
-        current.target,
-        current.overlay.scrollLeft
-      );
-    }
-
-    window.setTimeout(function () {
-      [current.overlay, current.closeBtn].forEach(function (el) {
-        if (el.parentNode) el.parentNode.removeChild(el);
-      });
-    }, DURATION);
-
-    current.img.focus({ preventScroll: true });
-  }
-
-  function onKeydown(e) {
-    if (e.key === "Escape") close();
+    if (!dialog) dialog = build(img);
+    dialog.showModal();
   }
 
   function init() {
@@ -205,9 +70,10 @@
     img.setAttribute("tabindex", "0");
     img.setAttribute("aria-label", "Enlarge screenshot");
 
-    // Hover affordance: a magnifier over a soft scrim, revealed on hover and on
-    // keyboard focus. Built here rather than in index.md so it only ever shows
-    // up when the click handler behind it is actually attached.
+    // Hover affordance: crop marks closing in on the picture's corners and a
+    // label in its bottom-right, revealed on hover and on keyboard focus. Built
+    // here rather than in index.md so it only ever shows up when the click
+    // handler behind it is actually attached.
     var art = img.parentNode;
     art.classList.add("hero-art--zoomable");
     art.insertAdjacentHTML(
@@ -227,11 +93,7 @@
     });
   }
 
-  // Material re-emits document$ on instant navigation; fall back to the
-  // plain ready event when instant loading is off.
-  if (typeof document$ !== "undefined" && document$.subscribe) {
-    document$.subscribe(init);
-  } else if (document.readyState !== "loading") {
+  if (document.readyState !== "loading") {
     init();
   } else {
     document.addEventListener("DOMContentLoaded", init);

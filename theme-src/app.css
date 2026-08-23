@@ -1067,52 +1067,63 @@
     transform: translateY(0);
   }
 
+  /* Enlarged view: a native modal <dialog>. Esc, the focus trap and the
+     backdrop are the element's own behaviour, so the stylesheet only has to
+     dress it — and hero-zoom.js only has to handle the backdrop click. */
   .hero-zoom {
-    position: fixed;
-    inset: 0;
-    z-index: 20;
-    cursor: zoom-out;
-    /* Narrow screens show the screenshot at 1:1 rather than shrunk to nothing,
-       so the overlay has to be pannable. On a desktop the image fits and this
-       never engages. */
-    overflow: auto;
-    overscroll-behavior: contain;
-    background-color: rgb(4 5 10 / 0.78);
+    /* A modal dialog centres itself with the UA's `margin: auto`, which
+       Tailwind's preflight resets to 0 for every element — without this the
+       picture pins to the top-left corner and the close button lands
+       off-screen. */
+    margin: auto;
+    max-width: 92vw;
+    max-height: 92vh;
+    padding: 0;
+    border: 0;
+    /* The close button straddles the picture's corner, so it must be allowed
+       to sit outside the dialog's own box. */
+    overflow: visible;
+    background: transparent;
+  }
+
+  .hero-zoom::backdrop {
+    background-color: rgb(4 5 10 / 0.82);
     backdrop-filter: blur(6px);
-    opacity: 0;
-    transition: opacity 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  [data-theme="light"] .hero-zoom {
-    background-color: rgb(20 22 31 / 0.62);
-  }
-  .hero-zoom.is-open {
-    opacity: 1;
   }
 
   .hero-zoom__img {
-    /* Arrow over the picture itself; the scrim around it keeps zoom-out, which is
-       where clicking to close actually reads as an affordance. */
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 92vw;
+    max-height: 92vh;
+    /* Arrow over the picture itself: clicking it does nothing, and a zoom-out
+       cursor here would promise otherwise. The backdrop around it is what
+       closes. */
     cursor: default;
-    /* Absolute, not fixed: it has to live inside the overlay's scroll area so a
-       1:1 screenshot wider than the viewport can be panned. */
-    position: absolute;
-    /* The FLIP maths in hero-zoom.js assumes the top-left corner as the origin,
-       which reduces the inverse to one translate plus one scale. */
-    transform-origin: 0 0;
-    /* Border only — the scrim already separates the screenshot from the page,
-       and a drop shadow underneath it would fight the close button. */
     border: 1px solid var(--au-border-strong, rgb(255 255 255 / 0.16));
     border-radius: var(--radius-au-lg);
-    transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
-    will-change: transform;
   }
 
-  /* Close button. Positioned by the script: straddling the image's top-right
-     corner when the whole screenshot fits, pinned to the viewport when it is
-     wider than the screen and pans. */
+  /* Narrow screens: the hero already spans the full column, so fitting the
+     picture to the viewport would enlarge nothing at all. Show it at its
+     natural size and let the dialog pan instead — a UI screenshot is worth
+     more at 1:1 than shrunk to fit. */
+  @media (width < 48rem) {
+    .hero-zoom {
+      overflow: auto;
+      overscroll-behavior: contain;
+    }
+
+    .hero-zoom__img {
+      max-width: none;
+    }
+  }
+
   .hero-zoom__close {
-    position: fixed;
-    z-index: 21;
+    position: absolute;
+    top: -1rem;
+    right: -1rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1121,22 +1132,14 @@
     padding: 0;
     border: 1px solid var(--au-border-strong, rgb(255 255 255 / 0.16));
     border-radius: 50%;
-    background-color: rgb(4 5 10 / 0.82);
+    background-color: rgb(4 5 10 / 0.92);
     backdrop-filter: blur(4px);
-    color: var(--au-ink, #eef0fa);
+    color: var(--au-header-ink);
     cursor: pointer;
-    opacity: 0;
-    /* Delayed so it arrives once the picture has settled, not mid-flight. */
-    transition: opacity 200ms ease 220ms, transform 180ms ease,
-      color 180ms ease, border-color 180ms ease;
+    transition: transform 180ms ease, color 180ms ease,
+      border-color 180ms ease;
   }
-  .hero-zoom__close--fixed {
-    top: 0.75rem;
-    right: 0.75rem;
-  }
-  .hero-zoom__close.is-open {
-    opacity: 1;
-  }
+
   /* Hover only: the button takes focus as the dialog opens, and reusing this
      treatment for :focus-visible would leave it looking permanently hovered.
      The :focus-visible outline declared in @layer base carries the keyboard
@@ -1146,10 +1149,34 @@
     border-color: var(--au-border-hover, rgb(255 255 255 / 0.28));
     color: var(--color-au-cyan);
   }
+
   .hero-zoom__close svg {
     width: 1.375rem;
     height: 1.375rem;
     fill: currentcolor;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-zoom[open] {
+      animation: hero-zoom-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .hero-zoom[open]::backdrop {
+      animation: hero-zoom-fade 240ms ease;
+    }
+  }
+
+  @keyframes hero-zoom-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+
+  @keyframes hero-zoom-fade {
+    from {
+      opacity: 0;
+    }
   }
 
   /* Keep the reveal, drop the travel. */
@@ -1157,7 +1184,6 @@
     .hero-art img.hero-art__zoomable,
     .hero-art__hint,
     .hero-art__hint-chip,
-    .hero-zoom__img,
     .hero-zoom__close {
       transition: opacity 220ms ease;
     }
