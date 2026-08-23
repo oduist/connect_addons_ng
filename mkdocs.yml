@@ -1,76 +1,76 @@
 site_name: Oduist Connect Documentation
 site_description: Telephony integration platform for Odoo
-site_url: https://oduist.github.io/connect_addons_ng/
+# Deliberately left without a path: the repository name is an implementation
+# detail and should not show up in the home page's address. MkDocs links every
+# page relatively, so the built site works from whatever prefix it is served
+# under; site_url only drives the `mkdocs serve` mount point, <link
+# rel="canonical"> and sitemap.xml. Set this to the real address once the docs
+# get a domain of their own.
+site_url: ""
+# Drives the "Edit on GitHub" link. Aggregated pages live in a temporary
+# docs_dir, so a naive edit_url would point at a path that does not exist in
+# the repository; mkdocs-monorepo-plugin rewrites it back to the owning module
+# (mkdocs_monorepo_plugin/edit_uri.py). That rewrite does a plain string
+# replace of this root docs_dir ("docs") inside edit_uri with each module's
+# own docs_dir ("connect_twilio/docs", ...), so edit_uri MUST literally
+# contain "docs/" as a path segment — "edit/19.0/" alone silently fails to
+# match and every module page falls back to the un-rewritten root edit_uri.
+repo_url: https://github.com/oduist/connect_addons_ng
+edit_uri: edit/19.0/docs/
 copyright: Copyright &copy; Oduist OÜ
 
 docs_dir: docs
 
-theme:
-  name: material
-  custom_dir: docs/overrides
-  # Dark ("slate") is the default scheme (mirrors oduflow.dev); light stays
-  # available via the header toggle. Actual colors are overridden in
-  # stylesheets/oduflow.css via the --md-* custom properties.
-  palette:
-    - scheme: slate
-      toggle:
-        icon: material/weather-night
-        name: Switch to light mode
-    - scheme: default
-      toggle:
-        icon: material/weather-sunny
-        name: Switch to dark mode
-  font:
-    text: Outfit
-    code: Geist Mono
-  features:
-    - navigation.sections
-    - navigation.expand
-    - navigation.top
-    - navigation.tracking
-    - search.highlight
-    - search.suggest
-    - content.code.copy
-    - content.code.annotate
+# README.md documents this build for contributors and conflicts with
+# index.md (the actual Home page)
+# in the same directory if MkDocs tries to build both. exclude_docs compiles
+# to a gitignore-style spec (mkdocs/structure/files.py:529), where a bare
+# pattern matches at any depth in the aggregated tree; the leading slash
+# anchors this entry to the root docs_dir so it does NOT also swallow a
+# future module's own docs/README.md.
+exclude_docs: |
+  /README.md
 
-extra_css:
-  - stylesheets/oduflow.css
+theme:
+  # Aurora lives in its own repository and installs from docs/requirements.txt;
+  # MkDocs resolves this name through the package's mkdocs.themes entry point.
+  name: aurora
+  # Both files ship with the theme, which also carries the home page kit this
+  # site's index.md is written against.
+  logo: assets/img/logo.png
+  favicon: assets/img/logo.png
+
+# Documentation lives inside each Odoo module under <module>/docs/. The
+# mkdocs-monorepo-plugin aggregates every module's own mkdocs.yml (site_name +
+# nav) into this single site via the '!include' directives below. Only the
+# shared Home page and assets stay in the root docs/ directory.
+plugins:
+  - search
+  - monorepo
 
 nav:
   - Home: index.md
-  - Admin Guide:
-      - Installation: admin/installation.md
-      - Licensing & Trial: admin/licensing.md
-      - Customer Onboarding (FreeSWITCH): admin/customer-onboarding.md
-      - Core Configuration: admin/core-setup.md
-      - Twilio Integration: admin/twilio-setup.md
-      - Vonage Integration: admin/vonage-setup.md
-      - FreeSWITCH Integration: admin/freeswitch-setup.md
-      - Pipecat AI Agents: admin/pipecat-setup.md
-      - Asterisk Integration: admin/asterisk-setup.md
-      - Telnyx Integration: admin/telnyx-setup.md
-      - 3CX Integration: admin/3cx-setup.md
-      - LiveKit Integration: admin/livekit-setup.md
-      - Infobip Integration: admin/infobip-setup.md
-      - Dograh Integration (AI Agents): admin/dograh-setup.md
-      - Bird Integration: admin/bird-setup.md
-      - Call Parking: admin/parking.md
-      - Working Schedules: admin/working-schedule.md
-      - Security: admin/security.md
-      - SIP Firewall: admin/firewall.md
-  - User Guide:
-      - Getting Started: user/getting-started.md
-      - Making and Receiving Calls: user/calls.md
-      - Call Parking: user/parking.md
-      - Messages (SMS & WhatsApp): user/messages.md
-      - Video Meetings: user/meetings.md
-      - Recordings & Transcriptions: user/recordings.md
-      - Call Flows (IVR): user/callflows.md
-      - AI Voice Agents: user/ai-agents.md
-
-extra:
-  # Remove the "Made with Material for MkDocs" footer notice.
-  generator: false
+  - Changelog: changelog.md
+  - Core: '!include ./connect/mkdocs.yml'
+  - Twilio: '!include ./connect_twilio/mkdocs.yml'
+  - FreeSWITCH: '!include ./connect_freeswitch/mkdocs.yml'
+  - FreeSWITCH Website: '!include ./connect_freeswitch_website/mkdocs.yml'
+  - Vonage: '!include ./connect_vonage/mkdocs.yml'
+  - Pipecat: '!include ./connect_pipecat/mkdocs.yml'
+  - Asterisk: '!include ./connect_asterisk/mkdocs.yml'
+  - Telnyx: '!include ./connect_telnyx/mkdocs.yml'
+  - 3CX: '!include ./connect_3cx/mkdocs.yml'
+  - LiveKit: '!include ./connect_livekit/mkdocs.yml'
+  - Infobip: '!include ./connect_infobip/mkdocs.yml'
+  - Dograh: '!include ./connect_dograh/mkdocs.yml'
+  - Bird: '!include ./connect_bird/mkdocs.yml'
+  - ElevenLabs: '!include ./connect_elevenlabs/mkdocs.yml'
+  - ElevenLabs Helpdesk: '!include ./connect_elevenlabs_helpdesk/mkdocs.yml'
+  - ElevenLabs Knowledge: '!include ./connect_elevenlabs_knowledge/mkdocs.yml'
+  - ElevenLabs Sales: '!include ./connect_elevenlabs_sale/mkdocs.yml'
+  - CRM: '!include ./connect_crm/mkdocs.yml'
+  - CRM Twilio Bridge: '!include ./connect_crm_twilio/mkdocs.yml'
+  - Helpdesk: '!include ./connect_helpdesk/mkdocs.yml'
 
 markdown_extensions:
   - admonition

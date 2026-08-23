@@ -1,0 +1,16 @@
+# Per-module docs config, aggregated by root mkdocs.yml via mkdocs-monorepo-plugin.
+site_name: Core
+nav:
+  - Admin Guide:
+      - Installation: admin/installation.md
+      - Licensing & Trial: admin/licensing.md
+      - Core Configuration: admin/core-setup.md
+      - Security: admin/security.md
+  - User Guide:
+      - Getting Started: user/getting-started.md
+      - Making and Receiving Calls: user/calls.md
+      - Messages (SMS & WhatsApp): user/messages.md
+      - Recordings & Transcriptions: user/recordings.md
+      - Call Flows (IVR): user/callflows.md
+      - Calls and Business Records: user/business-records.md
+      - AI Voice Agents: user/ai-agents.md

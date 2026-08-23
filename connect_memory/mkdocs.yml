@@ -1,0 +1,7 @@
+# Per-module docs config, aggregated by root mkdocs.yml via mkdocs-monorepo-plugin.
+site_name: Customer Memory
+nav:
+  - Admin Guide:
+      - Setup: admin/memory-setup.md
+  - User Guide:
+      - Overview: user/memory.md
