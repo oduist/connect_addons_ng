@@ -962,6 +962,10 @@
   }
   .hero-art img.hero-art__zoomable {
     cursor: pointer;
+    /* Safari and Chrome still start a drag from an image whose draggable
+       attribute is false; this is the property that actually stops them. */
+    -webkit-user-drag: none;
+    user-select: none;
     transition: transform 200ms ease, box-shadow 200ms ease,
       border-color 200ms ease;
   }
@@ -1052,6 +1056,8 @@
     display: block;
     width: auto;
     height: auto;
+    -webkit-user-drag: none;
+    user-select: none;
     max-width: 92vw;
     max-height: 92vh;
     /* Arrow over the picture itself: clicking it does nothing, and a zoom-out

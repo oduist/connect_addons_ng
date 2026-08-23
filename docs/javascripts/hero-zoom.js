@@ -34,6 +34,10 @@
     full.className = "hero-zoom__img";
     full.src = img.currentSrc || img.src;
     full.alt = img.alt || "";
+    // Pressing and moving on an image starts the browser's own drag-and-drop
+    // and a ghost thumbnail follows the cursor. Nothing here accepts a drop,
+    // so the gesture only gets in the way of reading the picture.
+    full.draggable = false;
 
     var close = document.createElement("button");
     close.className = "hero-zoom__close";
@@ -81,6 +85,7 @@
     img.dataset.zoomInit = "1";
 
     img.classList.add("hero-art__zoomable");
+    img.draggable = false;
     img.setAttribute("role", "button");
     img.setAttribute("tabindex", "0");
     img.setAttribute("aria-label", "Enlarge screenshot");
