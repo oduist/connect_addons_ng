@@ -298,7 +298,7 @@ block.
 ### Home-page components
 
 `module-table.css` (the periodic table of modules, the category legend, the
-hero screenshot lightbox and its magnifier hint) moves into `@layer components`
+hero screenshot lightbox and its hover affordance) moves into `@layer components`
 **with its class names unchanged**. That keeps `docs/index.md`'s hand-written
 HTML and both JavaScript files working as-is. The single content edit in the
 whole migration is replacing `md-button` / `md-button--primary` in

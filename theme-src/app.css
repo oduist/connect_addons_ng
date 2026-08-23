@@ -906,46 +906,96 @@
     box-shadow: 0 30px 70px -30px rgb(0 0 0 / 0.9);
   }
 
-  /* Magnifier hint. The scrim is what makes the chip legible over a screenshot
-     that is mostly white, so the two fade in together. */
+  /* Zoom affordance: a viewfinder, not a button.
+     The subject here is a screenshot of the product, so the hint borrows from
+     how you frame something to look closer — four corner brackets that settle
+     inward as they fade in — instead of the default centred icon disc. The old
+     treatment dimmed the whole screenshot behind a scrim to keep a chip legible;
+     this one darkens nothing and puts the only opaque surface under the label. */
   .hero-art__hint {
+    --vf-arm: 1.5rem;    /* bracket length */
+    --vf-weight: 2px;
+    --vf-inset: 0;
     position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    /* The brackets sit OUTSIDE the picture, hugging its corners like crop
+       marks. Inside they landed on the product UI in the screenshot and read
+       as someone having drawn on it. */
+    inset: -0.65rem;
     border-radius: var(--radius-au-lg);
-    background-color: rgb(4 5 10 / 0.3);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 220ms ease;
+    /* Eight strips — a horizontal and a vertical arm per corner. */
+    background-image:
+      linear-gradient(var(--au-link), var(--au-link)),
+      linear-gradient(var(--au-link), var(--au-link)),
+      linear-gradient(var(--au-link), var(--au-link)),
+      linear-gradient(var(--au-link), var(--au-link)),
+      linear-gradient(var(--au-link), var(--au-link)),
+      linear-gradient(var(--au-link), var(--au-link)),
+      linear-gradient(var(--au-link), var(--au-link)),
+      linear-gradient(var(--au-link), var(--au-link));
+    background-size:
+      var(--vf-arm) var(--vf-weight), var(--vf-weight) var(--vf-arm),
+      var(--vf-arm) var(--vf-weight), var(--vf-weight) var(--vf-arm),
+      var(--vf-arm) var(--vf-weight), var(--vf-weight) var(--vf-arm),
+      var(--vf-arm) var(--vf-weight), var(--vf-weight) var(--vf-arm);
+    background-position:
+      left var(--vf-inset) top var(--vf-inset),
+      left var(--vf-inset) top var(--vf-inset),
+      right var(--vf-inset) top var(--vf-inset),
+      right var(--vf-inset) top var(--vf-inset),
+      left var(--vf-inset) bottom var(--vf-inset),
+      left var(--vf-inset) bottom var(--vf-inset),
+      right var(--vf-inset) bottom var(--vf-inset),
+      right var(--vf-inset) bottom var(--vf-inset);
+    background-repeat: no-repeat;
+    /* Soft halo so the marks hold their edge against both the page and a
+       bright screenshot corner. */
+    filter: drop-shadow(0 0 2px rgb(4 5 10 / 0.35));
+    /* Starts a touch wide, so the frame closes in on the image. */
+    transform: scale(1.03);
+    transition: opacity 220ms ease,
+      transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
+
+  /* The label rides in the corner rather than the middle: it names the action
+     and never covers what you are trying to look at. Set in the same uppercase
+     mono as the page's own kickers, so it reads as part of this page's voice. */
   .hero-art__hint-chip {
+    position: absolute;
+    right: 1.5rem;
+    bottom: 1.5rem;
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 3.25rem;
-    height: 3.25rem;
-    border: 1px solid var(--au-border-strong, rgb(255 255 255 / 0.16));
-    border-radius: 50%;
-    background-color: rgb(4 5 10 / 0.72);
-    backdrop-filter: blur(4px);
-    transform: scale(0.82);
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    /* The one gradient, as the label's hairline. */
+    background:
+      linear-gradient(rgb(4 5 10 / 0.88), rgb(4 5 10 / 0.88)) padding-box,
+      var(--au-gradient) border-box;
+    backdrop-filter: blur(6px);
+    color: var(--au-header-ink);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transform: translateY(0.4rem);
     transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
-  .hero-art__hint svg {
-    width: 1.625rem;
-    height: 1.625rem;
-    fill: var(--color-au-cyan);
-  }
+
   .hero-art--zoomable:hover .hero-art__hint,
   .hero-art img.hero-art__zoomable:focus-visible + .hero-art__hint {
     opacity: 1;
+    transform: scale(1);
   }
   .hero-art--zoomable:hover .hero-art__hint-chip,
   .hero-art img.hero-art__zoomable:focus-visible + .hero-art__hint
     .hero-art__hint-chip {
-    transform: scale(1);
+    transform: translateY(0);
   }
 
   .hero-zoom {
@@ -1036,11 +1086,13 @@
   /* Keep the reveal, drop the travel. */
   @media (prefers-reduced-motion: reduce) {
     .hero-art img.hero-art__zoomable,
+    .hero-art__hint,
     .hero-art__hint-chip,
     .hero-zoom__img,
     .hero-zoom__close {
-      transition: none;
+      transition: opacity 220ms ease;
     }
+    .hero-art__hint,
     .hero-art__hint-chip {
       transform: none;
     }
