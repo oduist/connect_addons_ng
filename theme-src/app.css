@@ -1370,6 +1370,12 @@
   .docs-button--primary {
     border-color: transparent;
     background: var(--au-gradient);
+    /* Without this the gradient is laid out against the padding box and then
+       repeated to fill the transparent 1px border, so the left edge shows the
+       gradient's tail (fuchsia) and the right edge its head (cyan) — two
+       hairlines in the wrong colours. */
+    background-origin: border-box;
+    background-repeat: no-repeat;
     color: var(--color-au-primary-ink);
     font-weight: 600;
   }
