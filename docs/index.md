@@ -30,7 +30,7 @@ hide:
 
 <section class="mod-system not-prose">
   <p class="mod-kicker">The module system</p>
-  <h2 class="mod-h2">A periodic table of everything you can install.</h2>
+  <h2 class="mod-h2">A periodic table of Connect elements.</h2>
   <p class="mod-intro">Every square is one Odoo module from <code>connect_addons_ng</code>. Providers plug in under a technology-agnostic core; agents, apps, and memory sit on top. Click a category to isolate it, or a square to open its documentation.</p>
   <div class="mod-legend" id="mod-legend">
     <button type="button" class="mod-leg" data-cat="core" style="--c:#e66767"><span class="mod-dot"></span>Core</button>
