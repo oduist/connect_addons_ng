@@ -1,4 +1,4 @@
-# ADR-050: Keep Asterisk endpoint hints consistent across editors
+# ADR-059: Keep Asterisk endpoint hints consistent across editors
 
 **Status:** Accepted
 **Date:** 2026-08-14
