@@ -5,3 +5,4 @@ vonage
 telnyx
 pynacl
 livekit-api
+elevenlabs
