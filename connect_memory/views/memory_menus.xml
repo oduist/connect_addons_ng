@@ -10,4 +10,11 @@
     <menuitem id="menu_memory_inbox" name="Inbox"
               parent="menu_memory_root" action="action_memory_inbox"
               sequence="20"/>
+    <!-- Settings live under the module's own Configuration child, the way the
+         provider submenus do (connect_twilio, connect_elevenlabs), not under
+         the core Connect > Configuration menu. -->
+    <menuitem id="menu_memory_config" name="Configuration"
+              parent="menu_memory_root"
+              groups="connect.group_admin"
+              sequence="100"/>
 </odoo>
