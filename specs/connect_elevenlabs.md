@@ -60,7 +60,13 @@ add-on** (ADR-046). Version `19.0.1.0.0`, depends `['connect', 'connect_twilio',
 - `/connect_elevenlabs/transfer`, `/connect_elevenlabs/create_partner` — agent
   server tools (token-guarded, run as `connect.user_connect_webhook`).
 - `controllers/calendar.py` — 5 calendar tools (get_available_slots, create_event,
-  get_current_date, get_meetings, remove_meeting), token-guarded.
+  get_current_date, get_meetings, remove_meeting), token-guarded. These routes
+  are `auth='public'`, so writes must be `with_user(user_id).sudo()` — in that
+  order. `sudo().with_user()` drops the sudo flag, and the deferred write of a
+  computed relation (`calendar.event.partner_ids`) is then checked against the
+  public user at the end of the request: the tool answers 403 and the agent
+  tells the caller it cannot book. Day windows are labelled with the caller's
+  local date; the event search bounds are UTC.
 
 ## Security
 
