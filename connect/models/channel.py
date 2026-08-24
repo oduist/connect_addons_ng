@@ -53,7 +53,8 @@ class Channel(models.Model):
 
     @api.depends('caller', 'called')
     def _get_channel_numbers(self):
-        re_number_domain = re.compile(r'^(sip|client):(.+)@(.+)$')
+        re_number_domain = re.compile(
+            r'^(?:(?:sip|client):)?([^@]+)@(.+)$')
         re_client_number = re.compile(r'^client:(\d{8})$')
         re_number = re.compile(r'^(\+?[0-9]+)$')
         re_whatsapp = re.compile(r'^whatsapp:(\+?[0-9]+)$')
@@ -66,7 +67,7 @@ class Channel(models.Model):
             elif re_whatsapp.search(callinfo):
                 return re_whatsapp.search(callinfo).group(1)
             elif re_number_domain.search(callinfo):
-                user_or_number = re_number_domain.search(callinfo).group(2)
+                user_or_number = re_number_domain.search(callinfo).group(1)
                 user = self.env['connect.user'].get_user_by_uri(callinfo)
                 if user:
                     return user.get_pbx_number() or user_or_number

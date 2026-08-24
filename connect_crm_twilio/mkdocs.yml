@@ -1,0 +1,6 @@
+# Per-module documentation config, aggregated by the root mkdocs.yml via the
+# mkdocs-monorepo-plugin (!include). docs_dir defaults to ./docs relative to
+# this file, i.e. connect_crm_twilio/docs/.
+site_name: CRM Twilio Bridge
+nav:
+  - Overview: index.md

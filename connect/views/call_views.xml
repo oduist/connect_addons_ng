@@ -59,6 +59,9 @@
                     <group string="Voicemail" invisible="not voicemail_widget">
                         <field name="voicemail_widget" nolabel="1" colspan="2"/>
                     </group>
+                    <group string="Transcript" invisible="not transcript">
+                        <field name="transcript" nolabel="1" colspan="2"/>
+                    </group>
                     <group string="Summary" invisible="not summary">
                         <field name="summary" nolabel="1" colspan="2"/>
                     </group>

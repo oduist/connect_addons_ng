@@ -1,0 +1,11 @@
+# Per-module docs config, aggregated by root mkdocs.yml via mkdocs-monorepo-plugin.
+site_name: FreeSWITCH
+nav:
+  - Admin Guide:
+      - FreeSWITCH Integration: admin/freeswitch-setup.md
+      - Customer Onboarding: admin/customer-onboarding.md
+      - Call Parking: admin/parking.md
+      - SIP Firewall: admin/firewall.md
+      - fs_cli Reference: fs_cli.md
+  - User Guide:
+      - Call Parking: user/parking.md

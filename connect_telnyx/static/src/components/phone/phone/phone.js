@@ -9,6 +9,7 @@ import {dialTone, setFocus} from "@connect_telnyx/js/utils"
 import {Component, useState, useRef, onWillStart, onMounted} from "@odoo/owl"
 import {useDebounced} from "@web/core/utils/timing"
 import {user} from "@web/core/user"
+import {_t} from "@web/core/l10n/translation"
 
 const uid = user.userId
 
@@ -196,6 +197,13 @@ export class Phone extends Component {
             if (this.call_popup_is_enabled) {
                 this.notification.add(message, {title, sticky, type})
             }
+        }
+
+        // Errors are shown even when call popups are switched off: a call
+        // that fails silently looks like a broken phone.
+        this.notifyError = (message) => {
+            this.notification.add(message, {
+                title: 'Connect', sticky: true, type: 'danger'})
         }
 
         this.debounceEnterPhoneNumber = useDebounced((ev) => {
@@ -451,11 +459,14 @@ export class Phone extends Component {
         const {token} = await this.orm.call('connect.user', 'get_telnyx_client_token')
         if (token) {
             this.token = token
-            try {
-                this.userAgent.disconnect()
-            } catch (e) {
-                console.warn(e)
+            if (this.userAgent) {
+                try {
+                    await this.userAgent.disconnect()
+                } catch (error) {
+                    console.warn('Telnyx client disconnect failed:', error)
+                }
             }
+            this.sipRegistered = false
             this.initUserAgent()
         }
     }
@@ -482,15 +493,29 @@ export class Phone extends Component {
         })
 
         self.userAgent.on('telnyx.error', (error) => {
-            console.log(error)
-            self.updateToken().then()
+            console.error('Telnyx client error:', error)
+            const message = self.getTelnyxErrorMessage(error)
+            if (message) {
+                self.notifyError(message)
+            }
+            if (self.state.inCall && !self.session) {
+                self.endCall()
+            }
+            // An unusable microphone is not fixed by a fresh token.
+            if (error && error.recoverable !== false) {
+                self.updateToken().catch((refreshError) => {
+                    console.error('Telnyx token refresh failed:', refreshError)
+                })
+            }
         })
 
         self.userAgent.on('telnyx.notification', (notification) => {
             self._onTelnyxNotification(notification)
         })
 
-        self.userAgent.connect()
+        self.userAgent.connect().catch((error) => {
+            console.error('Telnyx client connect failed:', error)
+        })
     }
 
     _onTelnyxNotification(notification) {
@@ -679,6 +704,29 @@ export class Phone extends Component {
         }
     }
 
+    getTelnyxErrorMessage(error) {
+        // The client reports call failures wrapped in an envelope:
+        // {error, callId, sessionId, recoverable}.
+        while (error && error.error) {
+            error = error.error
+        }
+        const name = error && (error.name || error.code)
+        if (name === 'MEDIA_MICROPHONE_PERMISSION_DENIED' || name === 42001
+                || name === 'NotAllowedError') {
+            return _t(
+                "The browser did not grant access to the microphone. Allow it " +
+                "for this site (an insecure http:// page never gets it) and " +
+                "call again.")
+        }
+        if (name === 'NotFoundError') {
+            return _t("No microphone was found on this device.")
+        }
+        const description = error && (error.description || error.message)
+        return description
+            ? _t("Phone error: %s", description)
+            : _t("The phone call could not be started.")
+    }
+
     async makeCall(props) {
         const self = this
         let phoneNumber = props.phone
@@ -696,11 +744,22 @@ export class Phone extends Component {
         if (self.sipDomain && !phoneNumber.startsWith('sip:')) {
             destination = `sip:${phoneNumber}@${self.sipDomain}`
         }
-        const call = self.userAgent.newCall({
-            destinationNumber: destination,
-            audio: true,
-            video: false,
-        })
+        let call
+        try {
+            call = self.userAgent.newCall({
+                destinationNumber: destination,
+                audio: true,
+                video: false,
+            })
+        } catch (error) {
+            // Without this the widget stays stuck in the "in call" state
+            // and the user sees nothing at all — the usual case being a
+            // microphone the browser refuses to hand over.
+            console.error('Telnyx call could not be started:', error)
+            self.notifyError(self.getTelnyxErrorMessage(error))
+            await self.endCall()
+            return
+        }
         self.session = new TelnyxSession(call)
         self.telnyxSessions[call.id] = self.session
 
