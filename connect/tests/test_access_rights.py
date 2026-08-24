@@ -198,3 +198,24 @@ class TestAccessRights(ConnectTestCommon):
         })
         fav.with_user(self.connect_user_user).write({'name': 'Updated'})
         fav.with_user(self.connect_user_user).unlink()
+
+    # --- partner form stat buttons ---
+    # The Calls / Messages counts are computed with sudo(), so the buttons
+    # would otherwise render for every internal user and only fail with an
+    # AccessError once clicked. They must be filtered out of the arch.
+
+    def _partner_form_arch(self, user):
+        return self.env['res.partner'].with_user(user).get_view(
+            self.env.ref('base.view_partner_form').id, 'form')['arch']
+
+    def test_partner_form_hides_stat_buttons_from_plain_user(self):
+        """A user outside the Connect groups is not served the stat buttons."""
+        arch = self._partner_form_arch(self.basic_user)
+        self.assertNotIn('connect_calls_count', arch)
+        self.assertNotIn('connect_messages_count', arch)
+
+    def test_partner_form_shows_stat_buttons_to_connect_user(self):
+        """A Connect user still gets both stat buttons."""
+        arch = self._partner_form_arch(self.connect_user_user)
+        self.assertIn('connect_calls_count', arch)
+        self.assertIn('connect_messages_count', arch)
