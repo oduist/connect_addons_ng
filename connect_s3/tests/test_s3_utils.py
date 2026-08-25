@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 import json
-import unittest
 from datetime import datetime
+
+from odoo.tests import tagged
+from odoo.tests.common import TransactionCase
 
 from odoo.addons.connect_s3.models import s3_utils
 
 
-class TestS3Utils(unittest.TestCase):
+@tagged("post_install", "-at_install")
+class TestS3Utils(TransactionCase):
     # ---- build_s3_url ----
     def test_build_s3_url_with_prefix(self):
         url = s3_utils.build_s3_url("my-bucket", "eu-central-1", "recordings")
