@@ -66,3 +66,46 @@ class TestS3Settings(TransactionCase):
         self.assertEqual(
             settings.display_aws_secret_access_key, "*" * len("SECRETVALUE")
         )
+
+    def test_unrelated_write_keeps_the_stored_secret(self):
+        settings = self._settings()
+        settings.write({"display_aws_secret_access_key": "SECRETVALUE"})
+        # A later write that does not mention the secret must not clobber it
+        # with the masked display value.
+        settings.write({"aws_s3_prefix": "recordings"})
+        self.assertEqual(settings.aws_secret_access_key, "SECRETVALUE")
+        self.assertEqual(
+            settings.display_aws_secret_access_key, "*" * len("SECRETVALUE")
+        )
+
+    # ---- provisioning guards (the happy paths need live AWS/Twilio) ----
+
+    def test_provision_requires_bucket(self):
+        from odoo.exceptions import ValidationError
+        settings = self._settings()
+        settings.write({"aws_s3_bucket": False, "aws_region": "eu-central-1"})
+        with self.assertRaises(ValidationError):
+            settings.action_provision_s3_bucket()
+
+    def test_create_twilio_credential_requires_aws_keys(self):
+        from odoo.exceptions import ValidationError
+        settings = self._settings()
+        settings.write({
+            "aws_access_key_id": False,
+            "display_aws_secret_access_key": False,
+        })
+        settings.with_context(skip_protected_fields=True).sudo().write(
+            {"aws_secret_access_key": False}
+        )
+        with self.assertRaises(ValidationError):
+            settings.action_create_twilio_aws_credential()
+
+    def test_recreate_twilio_credential_requires_aws_keys(self):
+        from odoo.exceptions import ValidationError
+        settings = self._settings()
+        settings.write({"aws_access_key_id": False})
+        settings.with_context(skip_protected_fields=True).sudo().write(
+            {"aws_secret_access_key": False}
+        )
+        with self.assertRaises(ValidationError):
+            settings.action_recreate_twilio_aws_credential()

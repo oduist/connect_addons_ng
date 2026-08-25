@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import logging
 
+import requests
 from odoo import fields, models, api, release
+from odoo.exceptions import ValidationError
 
 from odoo.addons.connect.models.license import ODUIST_MODULES
 
@@ -116,6 +118,191 @@ class Settings(models.Model):
             "view_id": self.env.ref("connect_s3.connect_s3_settings_form").id,
             "target": "current",
         }
+
+    # Friendly name of the credential this module manages on the Twilio side.
+    # Used to look one up before creating a duplicate.
+    _TWILIO_CREDENTIAL_NAME = "connect-s3-recordings"
+    _TWILIO_CREDENTIALS_URL = "https://accounts.twilio.com/v1/Credentials/AWS"
+
+    def _get_s3_client(self):
+        """boto3 S3 client built from the singleton settings.
+
+        Imported lazily so the module still loads when boto3 is missing; the
+        manifest declares it, but a stale environment should fail at the button
+        rather than at registry load.
+        """
+        import boto3
+        rec = self.env["connect.settings"].sudo().search([], limit=1)
+        return boto3.client(
+            "s3",
+            aws_access_key_id=rec.aws_access_key_id,
+            aws_secret_access_key=rec.aws_secret_access_key,
+            region_name=rec.aws_region,
+        )
+
+    def action_provision_s3_bucket(self):
+        """Create and configure the bucket: private, SSE-S3, optional lifecycle.
+
+        Idempotent — re-running it on an existing bucket re-applies the
+        configuration instead of failing.
+        """
+        from botocore.exceptions import ClientError
+        self.ensure_one()
+        if not (self.aws_s3_bucket and self.aws_region):
+            raise ValidationError("Set S3 bucket name and region first.")
+        s3 = self._get_s3_client()
+        prefix = self._effective_s3_prefix()
+        bucket = self.aws_s3_bucket_name
+        try:
+            if self.aws_region == "us-east-1":
+                # us-east-1 rejects an explicit LocationConstraint.
+                s3.create_bucket(Bucket=bucket)
+            else:
+                s3.create_bucket(
+                    Bucket=bucket,
+                    CreateBucketConfiguration={"LocationConstraint": self.aws_region},
+                )
+        except ClientError as e:
+            code = e.response["Error"]["Code"]
+            if code == "AccessDenied":
+                # By far the most common failure: the IAM policy's Resource ARN
+                # does not match the auto-added prefix. Say so explicitly.
+                raise ValidationError(
+                    "AWS denied s3:CreateBucket for '%s'. The '%s' prefix is added "
+                    "automatically, so this usually means the IAM policy is not "
+                    "attached to this key, or its Resource ARN uses a different "
+                    "prefix. Allow s3:CreateBucket on 'arn:aws:s3:::%s*'.\n\n%s"
+                    % (bucket, prefix, prefix, e)
+                )
+            if code not in ("BucketAlreadyOwnedByYou", "BucketAlreadyExists"):
+                raise ValidationError("S3 create_bucket failed: %s" % e)
+        s3.put_public_access_block(
+            Bucket=bucket,
+            PublicAccessBlockConfiguration={
+                "BlockPublicAcls": True, "IgnorePublicAcls": True,
+                "BlockPublicPolicy": True, "RestrictPublicBuckets": True,
+            },
+        )
+        s3.put_bucket_encryption(
+            Bucket=bucket,
+            ServerSideEncryptionConfiguration={
+                "Rules": [
+                    {"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}
+                ]
+            },
+        )
+        if self.s3_retention_days and self.s3_retention_days > 0:
+            s3.put_bucket_lifecycle_configuration(
+                Bucket=bucket,
+                LifecycleConfiguration=s3_utils.build_lifecycle_config(
+                    self.aws_s3_prefix, self.s3_retention_days
+                ),
+            )
+        self.connect_notify(
+            "S3 bucket '%s' provisioned." % bucket, notify_uid=self.env.uid
+        )
+        return True
+
+    def _twilio_auth(self):
+        """(account_sid, auth_token) for the Twilio accounts API.
+
+        Both fields are added to connect.settings by connect_twilio, which is a
+        hard dependency of this module.
+        """
+        settings = self.env["connect.settings"].sudo()
+        return settings.get_param("account_sid"), settings.get_param("auth_token")
+
+    def _aws_credentials_or_raise(self):
+        """Return (access_key, secret) or raise if either is missing."""
+        self.ensure_one()
+        settings = self.env["connect.settings"].sudo()
+        access_key = self.aws_access_key_id
+        secret = settings.get_param("aws_secret_access_key")
+        if not (access_key and secret):
+            raise ValidationError("Set AWS access key and secret first.")
+        return access_key, secret
+
+    def _create_twilio_credential(self, access_key, secret):
+        """POST a new AWS credential to Twilio, store and return its SID."""
+        sid, token = self._twilio_auth()
+        try:
+            resp = requests.post(
+                self._TWILIO_CREDENTIALS_URL, auth=(sid, token), timeout=30,
+                data={
+                    "Credentials": "%s:%s" % (access_key, secret),
+                    "FriendlyName": self._TWILIO_CREDENTIAL_NAME,
+                },
+            )
+            resp.raise_for_status()
+        except requests.RequestException as e:
+            raise ValidationError("Twilio AWS credential request failed: %s" % e)
+        self.twilio_aws_credential_sid = resp.json()["sid"]
+        return self.twilio_aws_credential_sid
+
+    def _list_twilio_credentials(self):
+        """Return the account's AWS credentials, or raise on a transport error."""
+        sid, token = self._twilio_auth()
+        try:
+            existing = requests.get(
+                self._TWILIO_CREDENTIALS_URL, auth=(sid, token), timeout=30
+            )
+            existing.raise_for_status()
+        except requests.RequestException as e:
+            raise ValidationError("Twilio AWS credential request failed: %s" % e)
+        return existing.json().get("credentials", [])
+
+    def action_create_twilio_aws_credential(self):
+        """Create the Twilio-side AWS credential, or adopt an existing one.
+
+        Keeps the AWS keys out of the Twilio Console: the admin only selects
+        the resulting credential there.
+        """
+        self.ensure_one()
+        access_key, secret = self._aws_credentials_or_raise()
+        for cred in self._list_twilio_credentials():
+            if cred.get("friendly_name") == self._TWILIO_CREDENTIAL_NAME:
+                self.twilio_aws_credential_sid = cred["sid"]
+                self.connect_notify(
+                    "Twilio AWS credential '%s' already exists: %s"
+                    % (self._TWILIO_CREDENTIAL_NAME, cred["sid"]),
+                    notify_uid=self.env.uid,
+                )
+                return True
+        new_sid = self._create_twilio_credential(access_key, secret)
+        self.connect_notify(
+            "Twilio AWS credential created: %s" % new_sid, notify_uid=self.env.uid
+        )
+        return True
+
+    def action_recreate_twilio_aws_credential(self):
+        """Delete the managed credential and create a fresh one.
+
+        Twilio cannot update a credential's key in place, so rotating the AWS
+        keys means replacing the credential. The new SID must be re-selected in
+        the Console, hence the sticky notification.
+        """
+        self.ensure_one()
+        access_key, secret = self._aws_credentials_or_raise()
+        sid, token = self._twilio_auth()
+        for cred in self._list_twilio_credentials():
+            if cred.get("friendly_name") == self._TWILIO_CREDENTIAL_NAME:
+                try:
+                    deleted = requests.delete(
+                        "%s/%s" % (self._TWILIO_CREDENTIALS_URL, cred["sid"]),
+                        auth=(sid, token), timeout=30,
+                    )
+                    deleted.raise_for_status()
+                except requests.RequestException as e:
+                    raise ValidationError(
+                        "Twilio AWS credential request failed: %s" % e
+                    )
+        new_sid = self._create_twilio_credential(access_key, secret)
+        self.connect_notify(
+            "Twilio AWS credential recreated: %s. Re-select it in Twilio Console "
+            "-> Voice -> Recordings -> Settings." % new_sid,
+            notify_uid=self.env.uid, sticky=True,
+        )
+        return True
 
     def write(self, vals):
         # Mirror-and-mask the AWS secret, same pattern as core PROTECTED_FIELDS
