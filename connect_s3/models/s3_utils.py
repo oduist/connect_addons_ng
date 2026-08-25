@@ -77,11 +77,25 @@ def build_s3_url(bucket, region, prefix):
 
 
 def is_s3_media_url(media_url, bucket):
-    """True if media_url points at our S3 bucket (any AWS S3 host style)."""
+    """True if media_url points at our S3 bucket (any AWS S3 host style).
+
+    The bucket must match a whole host label or a whole leading path segment,
+    never a bare substring: buckets that share a prefix ("acme" / "acme2") are
+    different buckets, and a bucket name appearing inside an object key does not
+    make the URL ours.
+    """
     if not media_url or not bucket:
         return False
-    host = urlparse(media_url).hostname or ""
-    return host.endswith("amazonaws.com") and bucket in media_url
+    parsed = urlparse(media_url)
+    host = parsed.hostname or ""
+    if not host.endswith("amazonaws.com"):
+        return False
+    # Virtual-hosted style: <bucket>.s3.<region>.amazonaws.com/<key>
+    if host.startswith("{}.".format(bucket)):
+        return True
+    # Path style: s3.<region>.amazonaws.com/<bucket>/<key>
+    path = (parsed.path or "").lstrip("/")
+    return path.startswith("{}/".format(bucket))
 
 
 def parse_s3_key(media_url, bucket):

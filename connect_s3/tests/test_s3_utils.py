@@ -39,6 +39,25 @@ class TestS3Utils(TransactionCase):
         url = "https://my-bucket.s3.eu-central-1.amazonaws.com/recordings/RE1"
         self.assertFalse(s3_utils.is_s3_media_url(url, ""))
 
+    def test_is_s3_media_url_true_path_style(self):
+        url = "https://s3.eu-central-1.amazonaws.com/my-bucket/recordings/RE1.mp3"
+        self.assertTrue(s3_utils.is_s3_media_url(url, "my-bucket"))
+
+    def test_is_s3_media_url_false_for_prefix_sharing_bucket(self):
+        # "my-bucket2" is a different bucket that merely starts with our name.
+        url = "https://my-bucket2.s3.eu-central-1.amazonaws.com/recordings/RE1.mp3"
+        self.assertFalse(s3_utils.is_s3_media_url(url, "my-bucket"))
+
+    def test_is_s3_media_url_false_when_name_only_in_key(self):
+        # The bucket name appears in the object key, not as the bucket.
+        url = "https://other-bucket.s3.eu-central-1.amazonaws.com/recordings/my-bucket/RE1.mp3"
+        self.assertFalse(s3_utils.is_s3_media_url(url, "my-bucket"))
+
+    def test_is_s3_media_url_false_for_bucket_root_without_key(self):
+        # Our bucket, but no object — not a media URL.
+        url = "https://s3.eu-central-1.amazonaws.com/my-bucket"
+        self.assertFalse(s3_utils.is_s3_media_url(url, "my-bucket"))
+
     # ---- parse_s3_key ----
     def test_parse_s3_key_virtual_hosted(self):
         url = "https://my-bucket.s3.eu-central-1.amazonaws.com/recordings/AC1/RE1.mp3"
