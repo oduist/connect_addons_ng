@@ -251,6 +251,18 @@ class Settings(models.Model):
             raise ValidationError("Twilio AWS credential request failed: %s" % e)
         return existing.json().get("credentials", [])
 
+    def _delete_twilio_credential(self, cred_sid):
+        """Delete one AWS credential on the Twilio side."""
+        sid, token = self._twilio_auth()
+        try:
+            deleted = requests.delete(
+                "%s/%s" % (self._TWILIO_CREDENTIALS_URL, cred_sid),
+                auth=(sid, token), timeout=30,
+            )
+            deleted.raise_for_status()
+        except requests.RequestException as e:
+            raise ValidationError("Twilio AWS credential request failed: %s" % e)
+
     def action_create_twilio_aws_credential(self):
         """Create the Twilio-side AWS credential, or adopt an existing one.
 
@@ -283,20 +295,28 @@ class Settings(models.Model):
         """
         self.ensure_one()
         access_key, secret = self._aws_credentials_or_raise()
-        sid, token = self._twilio_auth()
+        deleted_sids = []
         for cred in self._list_twilio_credentials():
             if cred.get("friendly_name") == self._TWILIO_CREDENTIAL_NAME:
-                try:
-                    deleted = requests.delete(
-                        "%s/%s" % (self._TWILIO_CREDENTIALS_URL, cred["sid"]),
-                        auth=(sid, token), timeout=30,
-                    )
-                    deleted.raise_for_status()
-                except requests.RequestException as e:
-                    raise ValidationError(
-                        "Twilio AWS credential request failed: %s" % e
-                    )
-        new_sid = self._create_twilio_credential(access_key, secret)
+                self._delete_twilio_credential(cred["sid"])
+                deleted_sids.append(cred["sid"])
+        try:
+            new_sid = self._create_twilio_credential(access_key, secret)
+        except Exception as e:
+            if not deleted_sids:
+                raise
+            # Twilio has already committed the deletion; rolling back this
+            # transaction cannot undo it, so the stored SID is now stale and
+            # Twilio can no longer write recordings to S3. Say so plainly
+            # instead of leaving a dead SID on screen looking current.
+            raise ValidationError(
+                "The old Twilio AWS credential (%s) was DELETED, but creating the "
+                "replacement failed: %s\n\nThe SID shown in settings is now stale "
+                "and Twilio can no longer upload recordings to S3. Press RECREATE "
+                "TWILIO CREDENTIAL again to finish creating a new one, then "
+                "re-select it in Twilio Console -> Voice -> Recordings -> Settings."
+                % (", ".join(deleted_sids), e)
+            )
         self.connect_notify(
             "Twilio AWS credential recreated: %s. Re-select it in Twilio Console "
             "-> Voice -> Recordings -> Settings." % new_sid,

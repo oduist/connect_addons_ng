@@ -109,3 +109,29 @@ class TestS3Settings(TransactionCase):
         )
         with self.assertRaises(ValidationError):
             settings.action_recreate_twilio_aws_credential()
+
+    def test_recreate_reports_the_deleted_credential_when_create_fails(self):
+        from odoo.exceptions import ValidationError
+        settings = self._settings()
+        settings.write({"aws_access_key_id": "AKIATEST"})
+        settings.write({"display_aws_secret_access_key": "SECRETVALUE"})
+        model = type(settings)
+        self.patch(
+            model, "_list_twilio_credentials",
+            lambda records: [
+                {"sid": "CRdead", "friendly_name": "connect-s3-recordings"}
+            ],
+        )
+        self.patch(model, "_delete_twilio_credential", lambda records, cred_sid: None)
+
+        def _boom(records, access_key, secret):
+            raise ValidationError("Twilio AWS credential request failed: boom")
+
+        self.patch(model, "_create_twilio_credential", _boom)
+        with self.assertRaises(ValidationError) as caught:
+            settings.action_recreate_twilio_aws_credential()
+        message = str(caught.exception)
+        # The user must learn the old credential is gone, not just that
+        # something failed.
+        self.assertIn("CRdead", message)
+        self.assertIn("DELETED", message)
