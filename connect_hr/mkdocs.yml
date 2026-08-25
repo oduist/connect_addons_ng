@@ -1,0 +1,5 @@
+site_name: HR
+nav:
+  - Overview: index.md
+  - Configuration & Usage: configuration.md
+  - Security: security.md

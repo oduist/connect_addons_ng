@@ -26,6 +26,7 @@ class Exten(models.Model):
             ('connect.user', 'User'),
             ('connect.telnyx.callflow', 'Call Flow'),
             ('connect.telnyx.texml', 'TeXML'),
+            ('connect.telnyx.ai_assistant', 'AI Assistant'),
         ],
         compute='_get_dst', inverse='_set_dst')
     dst_name = fields.Char(compute='_get_dst')

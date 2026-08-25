@@ -17,11 +17,12 @@ class TelnyxAICallWizard(models.TransientModel):
     partner = fields.Many2one('res.partner', ondelete='set null')
 
     def _texml_connection_id(self):
-        domain = self.env['connect.telnyx.domain'].search([], limit=1)
-        connection_id = domain.application.sid if domain else False
+        # Outbound AI calls run through the number application, the same
+        # one click-to-call uses; a SIP domain is not required for them.
+        connection_id = self.env['connect.telnyx.number'].get_number_app().sid
         if not connection_id:
             raise ValidationError(
-                'Synchronize the Telnyx routing TeXML application first.'
+                'Synchronize the Telnyx TeXML applications first.'
             )
         return connection_id
 
@@ -34,14 +35,10 @@ class TelnyxAICallWizard(models.TransientModel):
         number = self.to_number.strip()
         if not number.startswith('+'):
             number = '+{}'.format(number)
-        dynamic_variables = {}
-        if self.partner:
-            dynamic_variables = {
-                'customer_name': self.partner.display_name,
-                'odoo_partner_id': str(self.partner.id),
-                'customer_email': self.partner.email or '',
-                'customer_language': self.partner.lang or '',
-            }
+        dynamic_variables = self.assistant.sudo()._partner_values(
+            self.partner, match_count=1 if self.partner else 0)
+        dynamic_variables['odoo_partner_id'] = (
+            str(self.partner.id) if self.partner else '')
         response = self.env['connect.settings'].telnyx_api_request(
             'POST', 'texml/ai_calls/{}'.format(self._texml_connection_id()),
             payload={

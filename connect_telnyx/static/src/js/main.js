@@ -10,6 +10,25 @@ const sysTrayRegistry = registry.category("systray")
 const mainComponents = registry.category("main_components")
 import {EventBus} from "@odoo/owl"
 
+export function isTelnyxStaleRequestError(error) {
+    return Boolean(error && error.name === "StaleRequestError" &&
+        error.message && error.message.startsWith("Stale request cancelled"))
+}
+
+export function telnyxStaleRequestErrorHandler(_env, error, originalError) {
+    if (!error.unhandledRejectionEvent || !isTelnyxStaleRequestError(originalError)) {
+        return false
+    }
+    error.unhandledRejectionEvent.preventDefault()
+    return true
+}
+
+registry.category("error_handlers").add(
+    "connectTelnyxStaleRequestErrorHandler",
+    telnyxStaleRequestErrorHandler,
+    {sequence: 96},
+)
+
 export const phoneService = {
     dependencies: ["orm"],
     async start(env, {orm}) {

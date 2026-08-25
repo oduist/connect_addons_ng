@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect
 - **Technical:** `connect`
-- **Version:** 19.0.4.1.0
+- **Version:** 19.0.4.2.2
 - **Depends:** `base`, `mail`, `contacts`, `sms`, `resource`
 - **Python deps:** `phonenumbers`, `jinja2`, `openai` (for transcription - not Twilio-specific), `PyJWT`
 - **Application:** True
@@ -46,7 +46,9 @@ for easy access from other models.
 | `number_search_operation` | Selection | `=` or `like` |
 | `proxy_recordings` | Boolean | Default: True |
 | `transcript_calls` | Boolean | Enable automatic transcription |
+| `delete_recording_after_transcription` | Boolean | Default: False; delete successfully processed recording rows after preserving analysis on the linked call |
 | `transcript_provider` | Selection | `openai` |
+| `openai_summary_model` | Selection | `gpt-5.4-mini` (default) or `gpt-4o` |
 | `summary_prompt` | Text | GPT prompt for call summaries |
 | `register_summary` | Boolean | Default: True - post summary to chatter |
 | `instance_uid` | Char | Computed UUID |
@@ -101,7 +103,7 @@ Order: `id desc`
 | `name` | Char | Computed |
 | `channels` | One2many | `connect.channel` |
 | `recording` | Many2one | `connect.recording`, computed |
-| `transcript` | Text | Computed from recording |
+| `transcript` | Text | Stored durable call transcript |
 | `recording_widget` | Html | Computed audio player |
 | `recording_icon` | Html | Computed |
 | `summary` | Html | |
@@ -140,7 +142,7 @@ Order: `id desc`
 |--------|-------------|
 | `_get_name()` | Compute display name from caller/called |
 | `_get_ref()` | Compute reference to linked record |
-| `_get_recording_data()` | Compute recording/transcript/widget fields |
+| `_get_recording_data()` | Compute recording/widget fields |
 | `_get_voicemail_widget()` | HTML audio player for voicemail |
 | `_get_voicemail_icon()` | Voicemail indicator icon |
 | `_get_duration_human()` | Human-readable duration string |
@@ -195,7 +197,7 @@ Order: `id desc`
 
 | Method | Description |
 |--------|-------------|
-| `_get_channel_numbers()` | Generic regex-based number parsing. Handles: phone numbers, whatsapp: prefix stripping, SIP/client URI parsing via `connect.user.get_user_by_uri`. |
+| `_get_channel_numbers()` | Generic regex-based number parsing. Handles phone numbers, `whatsapp:` prefix stripping, and SIP/client URIs with or without a URI scheme via `connect.user.get_user_by_uri` (ADR-051). |
 | `_get_duration_human()` | Human-readable duration |
 | `get_softphone_recording_state(payload)` | Provider-dispatched RPC returning runtime recording support/state for the active softphone call. |
 | `start_softphone_recording(payload)` | Provider-dispatched RPC to start recording the active softphone call. |
@@ -279,6 +281,7 @@ Order: `id desc`
 | `partner` | Many2one | `res.partner` |
 | `caller_user` | Many2one | Related via `call.caller_user` |
 | `called_user` | Many2one | `res.users` |
+| `users` | Many2many | Computed union of recording and linked-call Odoo users |
 | `caller_number` | Char | |
 | `called_number` | Char | |
 | `media_url` | Char | |
@@ -290,12 +293,12 @@ Order: `id desc`
 | `start_time` | Datetime | |
 | `status` | Char | |
 | `recording_widget` | Html | Computed audio player |
-| `transcript` | Text | |
+| `transcript` | Text | Provider-compatible copy synchronized to `call.transcript` |
 | `transcription_token` | Char | |
 | `transcription_error` | Char | |
-| `transcription_price` | Char | |
-| `transcription_pending` | Boolean | Work-queue flag; set on create when `transcript_calls` is on, cleared by the transcription cron |
-| `summary` | Html | |
+| `transcription_price` | Char | Estimated Whisper cost in USD, stored with up to six decimal places |
+| `transcription_pending` | Boolean | Work-queue flag; set on create when `transcript_calls` is on, cleared after manual, callback, or cron processing |
+| `summary` | Html | Provider-compatible copy synchronized to `call.summary` |
 | `list_view_summary` | Html | Computed truncated version |
 
 **Methods:**
@@ -303,12 +306,17 @@ Order: `id desc`
 | Method | Description |
 |--------|-------------|
 | `_get_recording_widget()` | HTML audio player with proxy URL |
+| `_compute_users()` | Combine caller, called, and answered Odoo users for list display |
 | `_get_list_view_summary()` | Truncated summary for list views |
 | `_get_duration_human()` | Human-readable duration |
-| `_sync_summary()` | Constrains: sync summary to call record |
+| `_sync_analysis_to_call()` | Constrains: sync transcript and summary to the call ledger |
+| `unlink()` | Preserve the latest recording analysis on its call before deletion |
+| `_delete_after_successful_transcription()` | Delete a successfully processed linked recording when automatic deletion is enabled |
+| `_format_transcription_price()` | Normalize estimated or callback-provided prices without losing sub-cent values |
+| `_get_transcription_price()` | Calculate the Whisper estimate from OpenAI usage seconds or response duration |
 | `get_transcript()` | Trigger transcription workflow |
 | `transcribe_recording()` | Call OpenAI Whisper API for speech-to-text |
-| `make_summary()` | Call OpenAI GPT-4o for call summary generation |
+| `make_summary()` | Call the configured OpenAI model for call summary generation |
 | `update_transcript()` | Async callback handler for transcript updates |
 | `_cron_transcribe_recordings()` | Cron: transcribe `transcription_pending` recordings out of the request path (replaces the old inline transcription + `cr.commit()` in `create()`) |
 
@@ -316,18 +324,37 @@ Order: `id desc`
 `_cron_transcribe_recordings()`. Transcription is asynchronous: `create()`
 only flags the recording (`transcription_pending`) so the provider webhook
 that created it returns immediately and the request transaction stays
-atomic.
+atomic. A completed manual or callback-driven transcription clears the same
+flag. The cron also clears stale pending flags on recordings that already have
+a transcript without sending the audio to OpenAI again (ADR-050). When
+`delete_recording_after_transcription` is enabled, successful processing stores
+the transcript and summary on the linked call before deleting the recording
+row. Failed and unlinked recordings are retained (ADR-050).
 
 **Notes:**
 - Transcription and summary methods use OpenAI directly (not Twilio), so they belong
   in core. The `openai` Python package is a core dependency.
 - `create()` override auto-triggers transcription if `transcript_calls` setting is enabled.
+- A transcription attempt clears `transcription_pending` after success or a
+  stored error. This preserves the queue's single-attempt behavior and prevents
+  duplicate OpenAI requests after a manual transcription.
+- `connect.call.transcript` and `connect.call.summary` are the durable analysis
+  fields. Recording values remain compatible with provider adapters and are
+  synchronized from the latest analyzed recording whenever their values or call
+  link changes.
+- Automatic deletion removes the Odoo recording row and Odoo-managed attachment;
+  it does not change retention in the telephony provider's storage.
 - `transcribe_recording()` prefers the stored `recording_attachment` bytes
   (providers whose downloads require API auth store the file on the record,
   e.g. connect_infobip — ADR-036) and only falls back to downloading
   `media_url` (which may be proxied) before sending the audio to OpenAI
   Whisper. `get_transcript()` accepts either source.
-- `make_summary()` uses the `summary_prompt` from settings with GPT-4o.
+- Direct Whisper transcription stores an estimated USD price from OpenAI usage
+  seconds (or response duration) at the published USD 0.006/minute rate
+  (ADR-050). Callback-provided prices use the same six-decimal precision
+  instead of cent rounding.
+- `make_summary()` uses the `summary_prompt` and `openai_summary_model` from
+  settings. `OPENAI_COMPLETION_MODEL` remains a deployment-level override.
 
 ---
 
@@ -666,10 +693,10 @@ All models get list (tree) and form views. Key view details:
 
 | View | Notes |
 |------|-------|
-| `call_views.xml` | Plain caller/called values in lists; form phone widgets, recording widget, partner button, chatter |
+| `call_views.xml` | Plain caller/called values in lists; form phone widgets, recording widget, durable transcript/summary, partner button, chatter |
 | `channel_views.xml` | Plain caller/called values in the list; form phone widgets for caller/called and computed numbers (admin menu entry) |
 | `message_views.xml` | Plain from/to values in the list; form phone widgets, media widget, direction/status icons (menu entry lives in connect_twilio) |
-| `recording_views.xml` | Plain caller/called values in the list; form phone widgets, audio player, transcript, summary |
+| `recording_views.xml` | Plain caller/called values in the list; form phone widgets, audio player, transcript, summary, and optional Partner and Users list columns |
 | `user_views.xml` | List + form with voicemail, summary prompt, originate provider |
 | `debug_views.xml` | List (read-only) |
 | `settings.xml` | Core settings form (general, registration, transcription/OpenAI). Provider settings forms live in their own modules and open the same singleton via the parametrized `open_settings_form()`. |

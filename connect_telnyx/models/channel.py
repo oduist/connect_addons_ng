@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
 import logging
 
 from markupsafe import escape
@@ -7,6 +6,8 @@ from markupsafe import escape
 from odoo import models, api, release
 
 from odoo.addons.connect.models.settings import debug
+
+from .utils import format_telnyx_debug_payload
 
 logger = logging.getLogger(__name__)
 
@@ -17,23 +18,47 @@ class Channel(models.Model):
     @api.model
     def on_telnyx_call_status(self, params):
         """Telnyx TeXML webhook adapter: map params and delegate to core."""
-        debug(self, 'On channel status: %s' % json.dumps(params, indent=2))
+        debug(
+            self,
+            'On channel status: %s' % format_telnyx_debug_payload(params),
+        )
         generic = self._map_telnyx_params(params)
         return self.process_channel_event(generic)
 
     def _map_telnyx_params(self, params):
         """Map Telnyx TeXML webhook params (Twilio-compatible) to the
-        generic channel event dict."""
+        generic channel event dict.
+
+        Only the application webhook carries `Caller`/`Called`; the
+        call-progress callbacks that follow report the same parties as
+        `From`/`To` (plus `CallerId`). Without the fallbacks every event
+        after the first one stored an empty number, leaving calls in the
+        history with no caller and no callee.
+        """
+        existing = self.sudo().search(
+            [('sid', '=', params['CallSid'])], limit=1)
+        caller = (params.get('Caller') or params.get('From')
+                  or params.get('CallerId') or existing.caller)
+        called = params.get('Called') or params.get('To') or existing.called
+        if caller and '@' in caller:
+            # A SIP credential URI means nothing in the call history;
+            # store the extension of the user it belongs to instead.
+            caller_user = self.env['connect.user'].sudo(
+            ).get_user_by_telnyx_uri(caller)
+            if caller_user and caller_user.telnyx_exten.number:
+                caller = caller_user.telnyx_exten.number
         return {
             'sid': params['CallSid'],
-            'caller': params.get('Caller'),
-            'called': params.get('Called'),
-            'to': params.get('To'),
-            'technical_direction': params.get('Direction'),
-            'status': params.get('CallStatus'),
-            'duration': int(params.get('CallDuration', 0)),
+            'caller': caller,
+            'called': called,
+            'to': params.get('To') or existing.to or called,
+            'technical_direction': (
+                params.get('Direction') or existing.technical_direction),
+            'status': params.get('CallStatus') or existing.status,
+            'duration': int(
+                params.get('CallDuration') or existing.duration or 0),
             'call_type': 'phone',
-            'parent_sid': params.get('ParentCallSid'),
+            'parent_sid': params.get('ParentCallSid') or existing.parent_sid,
         }
 
     def telnyx_connect_notify(

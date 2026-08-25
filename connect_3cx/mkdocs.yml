@@ -1,0 +1,4 @@
+# Per-module docs config, aggregated by root mkdocs.yml via mkdocs-monorepo-plugin.
+site_name: 3CX
+nav:
+  - 3CX Integration: admin/3cx-setup.md

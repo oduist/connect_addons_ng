@@ -41,7 +41,7 @@ class TeXMLApp(models.Model):
 
     def _texml_app_params(self):
         self.ensure_one()
-        return {
+        params = {
             'friendly_name': self.name,
             'voice_url': self.voice_url,
             'voice_fallback_url': self.voice_fallback_url or '',
@@ -49,6 +49,13 @@ class TeXMLApp(models.Model):
             'status_callback': self.voice_status_url,
             'status_callback_method': 'post',
         }
+        # Without an outbound voice profile Telnyx rejects every call this
+        # application places towards the PSTN.
+        profile_id = self.env[
+            'connect.settings']._ensure_telnyx_outbound_voice_profile()
+        if profile_id:
+            params['outbound'] = {'outbound_voice_profile_id': profile_id}
+        return params
 
     def _find_telnyx_app_by_name(self, client):
         """Return the remote TeXML app matching this record's friendly_name."""
@@ -167,7 +174,9 @@ class TeXMLApp(models.Model):
         self = self.sudo()
         api_url_check = self.env['connect.settings'].check_api_url()
         if api_url_check:
-            return '<Response><Say>{}</Say></Response>'.format(api_url_check)
+            return self.env[
+                'connect.settings'].telnyx_apply_system_voice(
+                    '<Response><Say>{}</Say></Response>'.format(api_url_check))
         self.ensure_one()
         api_url = self.env['connect.settings'].sudo().get_param('api_url')
         recording_voice_status_url = urljoin(api_url, 'telnyx/webhook/recordingstatus')
@@ -182,6 +191,8 @@ class TeXMLApp(models.Model):
             res = self.render_python(request=request, params=params)
         elif self.code_type == 'model_method':
             res = str(getattr(self.env[self.model], self.method)(request=request, params=params))
+        res = self.env[
+            'connect.settings'].sudo().telnyx_apply_system_voice(res)
         debug(self, 'TeXML render result: %s' % pretty_xml(res))
         return res
 

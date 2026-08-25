@@ -92,7 +92,7 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_project.md` — Project bridge module spec (models, security, views)
 - `specs/connect_memory.md` — Memory base module spec (outbox/inbox contract, capture, backfill, controllers, deploy sidecar)
 - `specs/connect_memory_sale.md` — Memory Sale domain module spec (sale/invoice/payment events, payment digest)
-- `docs/` — User and admin documentation (MkDocs Material), see `mkdocs.yml` for structure
+- `docs/` — User and admin documentation (MkDocs; the Aurora theme installs from `docs/requirements.txt`, see `specs/docs_site.md`)
 
 ## Development Commands
 Use oduflow to manage module development and deployment.
@@ -311,7 +311,19 @@ Architecture Decision Records are stored in `specs/decisions/`. Each file docume
 
 **Format:** `NNN-short-title.md` (e.g. `001-freeswitch-log-levels.md`)
 
-**Workflow:** Every development session must start in plan mode. The plan produces an ADR entry before implementation begins. This ensures design decisions are captured with their context while it's fresh.
+**Workflow:** Every development session must start in plan mode. When the plan contains a decision worth recording (see below), it produces an ADR entry before implementation begins, so the context is captured while it's fresh.
+
+**Write an ADR only for decisions with architectural weight**, i.e. work a future reader could not reconstruct from the code and the commit message alone:
+
+- a new module or model, or a change to module boundaries and dependencies;
+- a change to an external contract — webhook routes, sidecar/agent protocol, payload shape, authentication;
+- a security or access-rights model decision;
+- a non-obvious trade-off between real alternatives, especially a deliberate duplication or a rejected option someone will otherwise "fix" later;
+- a data or migration decision that is hard to reverse.
+
+**Do not write an ADR** for a bug fix, a validation range or other guard, help/label wording, documentation-only work, test changes, dependency bumps, or a provider quirk discovered while debugging. Those belong in the commit message, the field help, and the user/admin docs.
+
+**Refining an existing decision amends its ADR** — add a short section to that file instead of allocating a new number. A new number means a new decision, not a new detail.
 
 ## Documentation & Specs Maintenance
 

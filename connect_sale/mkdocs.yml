@@ -1,0 +1,5 @@
+site_name: Sales
+nav:
+  - Overview: index.md
+  - Configuration & Usage: configuration.md
+  - Security: security.md
