@@ -1,3 +1,107 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+
+  <record model="ir.actions.server" id="s3_settings_action">
+      <field name="type">ir.actions.server</field>
+      <field name="name">S3 Storage</field>
+      <field name="state">code</field>
+      <field name="model_id" ref="model_connect_settings"/>
+      <field name="code">action = model.open_s3_form()</field>
+  </record>
+
+  <menuitem id="s3_settings_menu" parent="connect.menu_connect_settings"
+      groups="connect.group_admin"
+      action="s3_settings_action" name="S3 Storage" sequence="1200"/>
+
+  <record id="connect_s3_settings_form" model="ir.ui.view">
+    <field name="name">connect_s3_settings_form</field>
+    <field name="model">connect.settings</field>
+    <field name="type">form</field>
+    <field name="arch" type="xml">
+      <form create="false" delete="false">
+      <sheet>
+        <notebook>
+          <page name="s3_storage" string="S3 Storage">
+            <group>
+              <group string="AWS S3" name="aws_s3">
+                <field name="s3_recordings_enabled"/>
+
+                <separator string="1. Choose a bucket prefix (the IAM policy below is scoped to it)"
+                           colspan="2" invisible="not s3_recordings_enabled"/>
+                <field name="aws_s3_bucket_prefix" invisible="not s3_recordings_enabled"/>
+
+                <separator string="2. Create an AWS IAM user with this least-privilege policy"
+                           colspan="2" invisible="not s3_recordings_enabled"/>
+                <field name="aws_iam_policy" nolabel="1" colspan="2" widget="ace"
+                       options="{'mode': 'javascript'}" readonly="1"
+                       invisible="not s3_recordings_enabled"/>
+                <div colspan="2" class="text-muted" invisible="not s3_recordings_enabled">
+                  <small>
+                    <ol>
+                      <li>AWS Console → <strong>IAM → Users → Create user</strong> (e.g. <code>connect-s3</code>).</li>
+                      <li>On <strong>Set permissions</strong> pick <strong>Attach policies directly</strong> →
+                          <strong>Create policy</strong> → <strong>JSON</strong> tab → paste the policy above →
+                          name it (e.g. <code>connect-s3-recordings</code>) → create, then attach it to the user.</li>
+                      <li>Open the user → <strong>Security credentials</strong> → <strong>Create access key</strong>
+                          → choose <strong>Application running outside AWS</strong> → copy the key and secret below.</li>
+                    </ol>
+                  </small>
+                </div>
+
+                <separator string="3. Paste the IAM user's access key"
+                           colspan="2" invisible="not s3_recordings_enabled"/>
+                <field name="aws_access_key_id" invisible="not s3_recordings_enabled"/>
+                <field name="display_aws_secret_access_key" string="AWS Secret Access Key"
+                       password="1" invisible="not s3_recordings_enabled"/>
+                <field name="aws_region" invisible="not s3_recordings_enabled"/>
+                <field name="aws_s3_bucket" placeholder="recordings-acme"
+                       invisible="not s3_recordings_enabled"/>
+                <field name="aws_s3_bucket_name" readonly="1" invisible="not s3_recordings_enabled"/>
+                <field name="aws_s3_prefix" invisible="not s3_recordings_enabled"/>
+                <field name="s3_retention_days" invisible="not s3_recordings_enabled"/>
+
+                <separator string="4. Provision" colspan="2" invisible="not s3_recordings_enabled"/>
+                <button colspan="2" name="action_provision_s3_bucket" type="object"
+                        string="CREATE / CONFIGURE S3 BUCKET" class="btn btn-primary"
+                        invisible="not s3_recordings_enabled"/>
+                <div colspan="2" invisible="not s3_recordings_enabled">
+                  <button name="action_create_twilio_aws_credential" type="object"
+                          string="CREATE TWILIO AWS CREDENTIAL" class="btn btn-secondary me-2"/>
+                  <button name="action_recreate_twilio_aws_credential" type="object"
+                          string="RECREATE TWILIO CREDENTIAL" class="btn btn-secondary"
+                          confirm="Delete the existing 'connect-s3-recordings' Twilio credential and create a new one with the current AWS keys? The new SID must be re-selected in the Twilio Console."/>
+                </div>
+
+                <separator string="5. Values to paste into Twilio" colspan="2"
+                           invisible="not s3_recordings_enabled"/>
+                <field name="twilio_aws_credential_sid" readonly="1" invisible="not s3_recordings_enabled"/>
+                <field name="aws_s3_url" readonly="1" invisible="not s3_recordings_enabled"/>
+              </group>
+
+              <group string="Twilio Console (final step)" name="s3_instructions"
+                     invisible="not s3_recordings_enabled">
+                <div colspan="2" class="text-muted">
+                  <small>
+                    Twilio exposes voice recording settings in the Console only — there is no
+                    public API for them, so this step is manual and one-off.
+                    <ol>
+                      <li>Twilio Console → <strong>Voice → Recordings → Settings</strong>.</li>
+                      <li>Enable external S3 storage.</li>
+                      <li>Pick AWS credential <em>connect-s3-recordings</em> (SID shown on the left).</li>
+                      <li>Paste the <strong>S3 URL</strong> shown on the left.</li>
+                      <li>Save.</li>
+                      <li>Then tick <em>Store recordings in S3</em> here.</li>
+                    </ol>
+                    Recordings made before this switch stay on Twilio and keep playing normally.
+                  </small>
+                </div>
+              </group>
+            </group>
+          </page>
+        </notebook>
+      </sheet>
+      </form>
+    </field>
+  </record>
+
 </odoo>
