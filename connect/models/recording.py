@@ -77,6 +77,29 @@ class Recording(models.Model):
                 )
             rec.users = users
 
+    def _fetch_media_to(self, temp_file):
+        """Write this recording's audio into an open binary file object.
+
+        Seam: storage add-ons (connect_s3) override this to read the audio
+        from their own backend instead of the provider's URL.
+        """
+        self.ensure_one()
+        if self.recording_attachment:
+            # Providers whose recording downloads require API auth
+            # store the audio bytes on the record instead of
+            # exposing a public media_url (e.g. connect_infobip,
+            # Asterisk or LiveKit sidecars).
+            temp_file.write(base64.b64decode(self.recording_attachment))
+            return
+        # Bounded download: media_url points at the provider's
+        # recording store; without a timeout a hung endpoint
+        # pins the worker.
+        response = requests.get(self.media_url, stream=True, timeout=30)
+        response.raise_for_status()
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:
+                temp_file.write(chunk)
+
     def transcribe_recording(self, openai_api_key, summary_prompt):
         result = {}
         temp_file_path = None
@@ -86,21 +109,7 @@ class Recording(models.Model):
             # keep the original one when the filename is known.
             suffix = os.path.splitext(self.recording_filename or '')[1] or '.mp3'
             with NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-                if self.recording_attachment:
-                    # Providers whose recording downloads require API auth
-                    # store the audio bytes on the record instead of
-                    # exposing a public media_url (e.g. connect_infobip,
-                    # Asterisk or LiveKit sidecars).
-                    temp_file.write(base64.b64decode(self.recording_attachment))
-                else:
-                    # Bounded download: media_url points at the provider's
-                    # recording store; without a timeout a hung endpoint
-                    # pins the worker.
-                    response = requests.get(self.media_url, stream=True, timeout=30)
-                    response.raise_for_status()
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:
-                            temp_file.write(chunk)
+                self._fetch_media_to(temp_file)
                 temp_file_path = temp_file.name
             with open(temp_file_path, 'rb') as audio_file:
                 transcript = client.audio.transcriptions.create(
@@ -260,14 +269,8 @@ class Recording(models.Model):
     def _get_recording_widget(self):
         proxy_recordings = self.env['connect.settings'].sudo().get_param('proxy_recordings')
         for rec in self:
-            if rec.recording_attachment:
-                media_url = rec.get_attachment_media_url()
-            elif rec.media_url:
-                if proxy_recordings:
-                    media_url = '/connect/recording/{}'.format(rec.id)
-                else:
-                    media_url = rec.media_url
-            else:
+            media_url = rec._get_media_src(proxy_recordings)
+            if not media_url:
                 rec.recording_widget = ''
                 continue
             # media_url may be a raw, webhook-supplied URL when
@@ -277,6 +280,21 @@ class Recording(models.Model):
                 'controls="controls"> ' \
                 '<source src="{}"/>' \
                 '</audio>'.format(escape(media_url))
+
+    def _get_media_src(self, proxy_recordings):
+        """Return the URL the player should point at, '' when there is none.
+
+        Seam: storage add-ons (connect_s3) override this to hand out a
+        backend-specific URL, e.g. an S3 presigned URL.
+        """
+        self.ensure_one()
+        if self.recording_attachment:
+            return self.get_attachment_media_url()
+        if self.media_url:
+            if proxy_recordings:
+                return '/connect/recording/{}'.format(self.id)
+            return self.media_url
+        return ''
 
     def get_attachment_media_url(self):
         self.ensure_one()
