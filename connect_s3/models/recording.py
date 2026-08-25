@@ -21,6 +21,13 @@ class Recording(models.Model):
         days = self.env['connect.settings'].sudo().get_param('s3_retention_days')
         now = fields.Datetime.now()
         for rec in self:
+            # Only audio that actually lives in our bucket is subject to the
+            # lifecycle rule. A provider-hosted recording (pre-switch Twilio, or
+            # another provider's attachment) never had one applied, so retention
+            # being configured must not mark it expired and hide a working player.
+            if not rec._s3_object():
+                rec.recording_expired = False
+                continue
             rec.recording_expired = s3_utils.is_recording_expired(
                 rec.start_time, days, now
             )

@@ -117,3 +117,43 @@ class TestS3Recording(TransactionCase):
             self.fake_s3.downloaded,
             [("oduist-connect-testbucket", "recordings/AC1/RE1.mp3")],
         )
+
+    def test_twilio_recording_never_expires_from_s3_retention(self):
+        self.settings.write({"s3_retention_days": 30})
+        twilio_url = "https://api.twilio.com/2010-04-01/Accounts/AC1/Recordings/RE1"
+        rec = self.env["connect.recording"].create({
+            "media_url": twilio_url,
+            "start_time": datetime.now() - timedelta(days=40),
+        })
+        # Old, but hosted at Twilio: no S3 lifecycle rule ever applied to it.
+        self.assertFalse(rec.recording_expired)
+        self.assertIn("<audio", rec.recording_widget)
+
+    def test_s3_recording_not_expired_when_s3_disabled(self):
+        self.settings.write({"s3_retention_days": 30, "s3_recordings_enabled": False})
+        rec = self.env["connect.recording"].create({
+            "media_url": self.S3_URL,
+            "start_time": datetime.now() - timedelta(days=40),
+        })
+        self.assertFalse(rec.recording_expired)
+
+    def test_attachment_recording_never_goes_to_s3(self):
+        import base64
+        from tempfile import NamedTemporaryFile
+        self.settings.write({"s3_retention_days": 30})
+        rec = self.env["connect.recording"].create({
+            "media_url": self.S3_URL,
+            "recording_attachment": base64.b64encode(b"local-audio"),
+            "recording_filename": "RE1.wav",
+            "start_time": datetime.now() - timedelta(days=40),
+        })
+        # The attachment wins over an S3-shaped media_url, on every path.
+        self.assertEqual(rec._get_media_src(False), rec.get_attachment_media_url())
+        with NamedTemporaryFile() as temp_file:
+            rec._fetch_media_to(temp_file)
+            temp_file.flush()
+            temp_file.seek(0)
+            self.assertEqual(temp_file.read(), b"local-audio")
+        self.assertFalse(rec.recording_expired)
+        self.assertFalse(self.fake_s3.presigned_calls)
+        self.assertFalse(self.fake_s3.downloaded)
