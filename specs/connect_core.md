@@ -4,9 +4,9 @@
 
 - **Name:** Oduist Connect
 - **Technical:** `connect`
-- **Version:** 19.0.4.2.2
+- **Version:** 19.0.4.3.0
 - **Depends:** `base`, `mail`, `contacts`, `sms`, `resource`
-- **Python deps:** `phonenumbers`, `jinja2`, `openai` (for transcription - not Twilio-specific), `PyJWT`
+- **Python deps:** `phonenumbers`, `jinja2`, `httpx` (HTTP client used by settings), `openai` (for transcription - not Twilio-specific), `PyJWT`
 - **Application:** True
 - **License:** LGPL-3
 
@@ -763,5 +763,5 @@ sharing.
 ```
 connect (core)
   depends: ['base', 'mail', 'contacts', 'sms', 'resource']
-  python:  ['phonenumbers', 'jinja2', 'openai', 'PyJWT']
+  python:  ['phonenumbers', 'jinja2', 'httpx', 'openai', 'PyJWT']
 ```
