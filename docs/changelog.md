@@ -22,7 +22,7 @@ from the changes themselves rather than from commit subjects. Work nobody
 outside the repository would notice — refactoring, formatting, tests, CI,
 version bumps, repository moves — is deliberately left out.
 
-## [Unreleased]
+## 2026-08
 
 ### Added
 - **connect_book** — New module: read this documentation inside Odoo, under
@@ -30,16 +30,6 @@ version bumps, repository moves — is deliberately left out.
   actually have installed, split into a
   [User Guide](Book/user/reading-the-docs.md) for everyone with a Connect role
   and an Admin Guide for Connect administrators.
-
-### Changed
-- Every module's Apps Store page was rebuilt in the Aurora house style, and the
-  Accounting, HR, Project and Sales bridges got one for the first time.
-
----
-
-## 2026-08
-
-### Added
 - **connect_telnyx** — AI receptionist routing, with voice controls for the
   assistant.
 - **connect_freeswitch** — The browser softphone speaks German, French, Italian
@@ -49,6 +39,8 @@ version bumps, repository moves — is deliberately left out.
   answers hands the call on instead of dropping it.
 
 ### Changed
+- Every module's Apps Store page was rebuilt in the Aurora house style, and the
+  Accounting, HR, Project and Sales bridges got one for the first time.
 - The documentation moved into each module's own folder, and the site was
   rebuilt on an in-house theme.
 
@@ -237,8 +229,9 @@ model separation that lets them run side by side.
 
 ## How to add an entry
 
-Add a bullet under **Unreleased** in the same pull request that makes the
-change, then move the block under a new dated heading when it ships.
+Add a bullet under the heading for the current month, in the same pull request
+that makes the change. Create that heading if this is the month's first entry.
+There is no holding area: a change is recorded against the month it ships in.
 
 - Write for the reader of the docs, not the reviewer of the diff: say what
   changed for an administrator or user, not which function was refactored.
