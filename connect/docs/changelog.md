@@ -45,6 +45,11 @@ version bumps, repository moves — is deliberately left out.
   English.
 - **connect_freeswitch** — Fallback routing for call queues, so a queue nobody
   answers hands the call on instead of dropping it.
+- Recordings can be deleted automatically once they are transcribed and
+  summarised. The transcript and the summary stay on the call, so the history
+  survives without the audio taking up space.
+- The model used to summarise a call is now a setting (GPT-5.4 mini or GPT-4o)
+  rather than fixed.
 
 ### Changed
 - The documentation moved into each module's own folder, and the site was
@@ -53,8 +58,10 @@ version bumps, repository moves — is deliberately left out.
 ### Fixed
 - **connect_telnyx** — Inbound number routing, click-to-call and the WhatsApp
   transport were all broken and have been repaired.
-- **connect_telnyx** — Account synchronisation, SIP domain and extension
-  creation are hardened against partial or failed setup.
+- **connect_telnyx** — Account synchronisation and SIP domain creation are
+  hardened against partial or failed setup. Extension creation was fixed here
+  and in **connect_twilio**, **connect_freeswitch** and **connect_infobip**,
+  which carry copies of the same logic.
 - **connect_telnyx** — An account not authorised for Voice/TeXML now reports a
   clear error instead of a bare HTTP 403.
 - **connect_telnyx** — TeXML and call-recording fixes.
@@ -113,16 +120,22 @@ model separation that lets them run side by side.
   can be installed in one database, with each user choosing which one places
   their calls and which one sends their messages.
 - All Connect modules moved to the Business Source License 1.1.
+- **connect_freeswitch** — The deployment is split into separate compose files
+  instead of one, so the telephony stack and the TLS edge are brought up and
+  updated independently.
 - The active-calls and Calls widgets moved into core, so every provider shows
   the same thing.
 
 ### Fixed
-- **connect_twilio** — Speech call flows lost their recognition hints.
-- **connect_twilio** — Call-flow voicemail behaved incorrectly.
+- Speech call flows lost their recognition hints, on every provider that has
+  call flows (**connect_twilio**, **connect_freeswitch**, **connect_telnyx**).
+- Call-flow voicemail behaved incorrectly, in the core and in all three
+  providers above.
 - **connect_freeswitch** — A user's voicemail fallback did not trigger.
 - **connect_freeswitch** — The firewall service shuts down gracefully instead of
   dropping its state.
-- A dead "default" checkbox was removed from the Numbers form.
+- A dead "default" checkbox was removed from the Numbers form of
+  **connect_twilio**, **connect_freeswitch** and **connect_telnyx**.
 
 ### Security
 - FreeSWITCH → Odoo endpoints are authenticated, and the webhook grant was
@@ -201,8 +214,22 @@ model separation that lets them run side by side.
   a timeout fallback.
 - **connect_freeswitch** — Call recording, Piper text-to-speech voices, gateway
   access lists, click-to-call, auto-answer over WebRTC, and generated dialplans.
+- **connect_freeswitch** — Reusable configuration templates, so a dialplan or a
+  profile is edited in one place rather than per record.
 - A migration path from the old monolithic `connect` to the split
   `connect` + `connect_twilio`.
+
+### Changed
+- The old instance-registration system was removed. Licensing, registration
+  numbers and instance identity are handled by the license record alone, and
+  the Registration and System tabs are gone from Settings.
+- Buying a licence happens through the built-in licence screen rather than on
+  the website; the LICENSE files say so.
+- **connect_freeswitch** — One global FreeSWITCH domain in Settings replaces the
+  per-endpoint domain field, and registrations are tied to it. An endpoint no
+  longer carries a domain of its own.
+- **connect_freeswitch** — Log levels for the server and for SIP are set on the
+  service rather than baked into the image.
 
 ### Fixed
 - **connect_freeswitch** — SIP phones behind NAT are handled correctly.
@@ -211,7 +238,21 @@ model separation that lets them run side by side.
 
 ## 2026-03
 
+The month the 19.0 line took its shape: the core was carved out of the old
+monolith and arrived with the whole feature set below.
+
 ### Added
+- Call flows (IVR): a menu that answers, plays a prompt, reads the caller's
+  choice and routes on it — with a per-user call flow for personal routing.
+- Extensions, phone numbers and outgoing caller IDs as records you maintain in
+  Odoo.
+- Call recordings, listed on their own and attached to the call.
+- Messages, with an SMS composer you open from a contact or a record.
+- Call transfer from the call form.
+- Calls, messages and recordings on the contact, so a partner's whole
+  communication history is on one form.
+- Favourite numbers for quick dialling.
+- A debug log for troubleshooting, with a daily cleanup.
 - **connect_twilio** — The Twilio integration became a module of its own.
 - **connect_freeswitch** — Call detail records are read from FreeSWITCH.
 
