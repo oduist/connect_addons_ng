@@ -2,7 +2,7 @@
 
 import { registry } from "@web/core/registry";
 import { rpc } from "@web/core/network/rpc";
-import { Component, useState, onWillStart, markup } from "@odoo/owl";
+import { Component, useState, useRef, onWillStart, markup } from "@odoo/owl";
 
 /**
  * The "Book" client action: a two-pane documentation viewer.
@@ -23,6 +23,7 @@ export class BookApp extends Component {
             search: "",
             loaded: false,
         });
+        this.contentRef = useRef("content");
 
         onWillStart(async () => {
             const data = await rpc(this.constructor.endpoint);
@@ -83,8 +84,14 @@ export class BookApp extends Component {
         const known = this.state.modules.some((mod) =>
             mod.pages.some((page) => page.id === id)
         );
-        if (known) {
-            this.state.activeId = id;
+        if (!known) {
+            return;
+        }
+        this.state.activeId = id;
+        // A new page starts at its own beginning: carrying the previous page's
+        // scroll position over drops the reader into the middle of the text.
+        if (this.contentRef.el) {
+            this.contentRef.el.scrollTop = 0;
         }
     }
 
