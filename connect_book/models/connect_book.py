@@ -23,6 +23,12 @@ DOCS_DIRNAME = "docs"
 MKDOCS_FILENAME = "mkdocs.yml"
 #: Folder inside ``docs`` holding translated mirrors: ``docs/i18n/<lang>/<page>``.
 I18N_DIRNAME = "i18n"
+#: Folder inside ``docs`` holding the module's own change archive: one Markdown
+#: file per calendar day. These files are deliberately outside the ``nav`` --
+#: they are a timeline, not a manual, and the site excludes them.
+CHANGES_DIRNAME = "changes"
+#: A change file is named after its day: ``YYYY-MM-DD.md``.
+CHANGE_FILE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})\.md$")
 #: Leading provenance marker a translated file carries; stripped before render.
 I18N_MARKER_RE = re.compile(r"\A<!--\s*i18n\b[^>]*-->[ \t]*\r?\n?")
 #: MkDocs page metadata (``---`` … ``---``) is for the site, not for the Book.
@@ -145,6 +151,82 @@ class ConnectBook(models.AbstractModel):
                 )
             )
         return {"modules": self._collect_modules(AUDIENCE_ADMIN, self._doc_lang())}
+
+    @api.model
+    def get_changes(self):
+        """Assemble the day-by-day change archive across installed modules.
+
+        Every ``connect*`` module may keep an append-only timeline of its own
+        changes under ``docs/changes/``: one Markdown file per calendar day,
+        named ``YYYY-MM-DD.md``. A change belongs to the module it happened in,
+        so the archive is assembled at read time from whatever is installed --
+        a database without Telnyx never sees a Telnyx entry.
+
+        The timeline is not translated: it is a record of what happened, and a
+        stale translation of it would be worse than the source.
+
+        :raise AccessError: when the caller has no Connect role.
+        :return: ``{"days": [{"date": "YYYY-MM-DD", "entries": [{"module",
+            "title", "html"}, ...]}, ...]}`` -- days most recent first, entries
+            within a day ordered by module name.
+        """
+        if not self.env.user.has_group(USER_GROUP):
+            raise AccessError(
+                self.env._("A Connect role is required to read the Changelog.")
+            )
+        modules = self.env["ir.module.module"].sudo().search(
+            [
+                ("state", "=", "installed"),
+                ("name", "=like", MODULE_PREFIX + "%"),
+            ],
+            order="name",
+        )
+        days = {}
+        for module in modules:
+            module_path = get_module_path(module.name)
+            if not module_path:
+                continue
+            site_name, _entries = self._read_nav(module_path)
+            title = site_name or module.shortdesc or module.name
+            for date_str, html in self._read_module_changes(module_path):
+                days.setdefault(date_str, []).append(
+                    {
+                        "module": module.name,
+                        "title": title,
+                        "html": html,
+                    }
+                )
+        return {
+            "days": [
+                {"date": date_str, "entries": days[date_str]}
+                for date_str in sorted(days, reverse=True)
+            ]
+        }
+
+    def _read_module_changes(self, module_path):
+        """Return ``[(date_str, html), ...]`` for ``docs/changes/*.md``.
+
+        Only files named ``YYYY-MM-DD.md`` are considered; anything else in the
+        folder is ignored, so a README or a draft can sit there harmlessly.
+        """
+        changes_dir = os.path.join(module_path, DOCS_DIRNAME, CHANGES_DIRNAME)
+        if not os.path.isdir(changes_dir):
+            return []
+        result = []
+        try:
+            filenames = sorted(os.listdir(changes_dir))
+        except OSError:
+            _logger.warning("connect_book: failed to list %s", changes_dir)
+            return []
+        for filename in filenames:
+            match = CHANGE_FILE_RE.match(filename)
+            if not match:
+                continue
+            html = self._render_doc_html(os.path.join(changes_dir, filename))
+            if html is None:
+                continue
+            result.append((match.group(1), html))
+        return result
 
     def _doc_lang(self):
         """Short documentation-language code for the current request.

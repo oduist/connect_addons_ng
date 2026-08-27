@@ -19,7 +19,6 @@ hide:
     </p>
     <div class="hero-actions">
       <a class="docs-button docs-button--primary" href="Core/admin/installation/">Installation</a>
-      <a class="docs-button" href="Core/changelog/">Changelog</a>
       <a class="docs-button" href="https://github.com/oduist/connect_addons_ng" target="_blank" rel="noopener">View on GitHub</a>
     </div>
   </div>

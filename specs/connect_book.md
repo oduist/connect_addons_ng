@@ -252,12 +252,11 @@ The read path is exercised against a temporary module directory, with
 
 ## Not ported from `connect_addons`
 
-- **The Changes archive.** The source module collected
-  `doc/changes/YYYY-MM-DD.md` per module into a day-by-day timeline. This
-  repository keeps one Keep-a-Changelog file at `connect/docs/changelog.md`
-  instead, so the client action, its endpoint and the collector are left out
-  rather than shipped reading nothing. That file is a page of the core module
-  precisely so the Book serves it like any other page — see
-  [ADR-059](decisions/059-connect-book-reads-the-mkdocs-tree.md).
+- **The Changelog archive** is ported: every module keeps
+  `docs/changes/YYYY-MM-DD.md`, one file per day, and `get_changes()` merges
+  them across installed modules into a day-by-day feed behind its own menu
+  item. The files sit outside the `nav` and the site excludes them (`changes/`
+  in the root `exclude_docs`) — a timeline is not a chapter of the manual, and
+  60+ nav entries would drown it.
 - **`doc/tech_spec.md`.** The technical layer lives in `specs/` here, and was
   deliberately hidden from the Book there too.

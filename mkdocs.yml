@@ -30,6 +30,11 @@ docs_dir: docs
 # future module's own docs/README.md.
 exclude_docs: |
   /README.md
+  # Each module's docs/changes/YYYY-MM-DD.md is read by connect_book to
+  # build the in-Odoo Changelog. The files are a day-by-day timeline, not
+  # pages of the manual, and listing 60+ of them in the nav would drown
+  # it. Unanchored, so it matches at any depth in the aggregated tree.
+  changes/
 
 theme:
   # Aurora lives in its own repository and installs from docs/requirements.txt;

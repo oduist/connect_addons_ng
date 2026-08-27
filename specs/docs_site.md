@@ -189,8 +189,7 @@ MkDocs supports `template:` in a page's front matter
 (`mkdocs/commands/build.py:210`) if one is ever needed.
 
 `page.meta.hide` is honoured for `navigation` and `toc`, which is what
-`docs/index.md` and `connect/docs/changelog.md` already declare — their front
-matter stays untouched.
+`docs/index.md` already declares — its front matter stays untouched.
 
 ### `partials/header.html`
 

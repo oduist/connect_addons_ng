@@ -15,3 +15,8 @@ class ConnectBookController(http.Controller):
     def admin_book(self):
         # get_admin_book enforces the Connect admin group itself.
         return request.env["connect.book"].get_admin_book()
+
+    @http.route("/connect_book/changes", type="jsonrpc", auth="user")
+    def changes(self):
+        # get_changes enforces the Connect user group itself.
+        return request.env["connect.book"].get_changes()

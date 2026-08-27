@@ -10,6 +10,11 @@
         <field name="tag">connect_book.admin</field>
     </record>
 
+    <record id="action_connect_book_changes" model="ir.actions.client">
+        <field name="name">Changelog</field>
+        <field name="tag">connect_book.changes</field>
+    </record>
+
     <!-- The Documentation section is owned by this module: core Connect has no
          such menu, and nothing else needs one.
 
@@ -36,4 +41,11 @@
               action="action_connect_book_admin"
               groups="connect.group_admin"
               sequence="10"/>
+
+    <menuitem id="menu_connect_book_changes"
+              name="Changelog"
+              parent="menu_connect_documentation"
+              action="action_connect_book_changes"
+              groups="connect.group_user"
+              sequence="30"/>
 </odoo>

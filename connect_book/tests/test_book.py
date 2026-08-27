@@ -40,6 +40,13 @@ class TestConnectBook(TransactionCase):
         with open(path, "w", encoding="utf-8") as handle:
             handle.write(content)
 
+    def _write_change(self, filename, content):
+        """Write a day file into the fake module's change archive."""
+        path = os.path.join(self.module_path, "docs", "changes", filename)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(content)
+
     def _write_mkdocs(self, content):
         with open(
             os.path.join(self.module_path, "mkdocs.yml"), "w", encoding="utf-8"
@@ -288,3 +295,59 @@ class TestConnectBook(TransactionCase):
         self._write_doc("index.md", "# Orphan\n")
         with self._patch_path():
             self.assertEqual(self.book._collect_modules(AUDIENCE_ADMIN, "en"), [])
+
+    # -- the changelog archive ---------------------------------------------
+
+    def test_read_module_changes_returns_day_files_in_order(self):
+        self._write_change("2026-08-18.md", "### Added\n\n- Later.\n")
+        self._write_change("2026-08-03.md", "### Fixed\n\n- Earlier.\n")
+        with self._patch_path():
+            result = self.book._read_module_changes(self.module_path)
+        self.assertEqual([date for date, _ in result], ["2026-08-03", "2026-08-18"])
+        self.assertIn("Later.", result[1][1])
+
+    def test_read_module_changes_ignores_a_file_that_is_not_a_day(self):
+        self._write_change("2026-08-18.md", "### Added\n\n- Real.\n")
+        self._write_change("README.md", "# Not a day\n")
+        self._write_change("2026-8-3.md", "### Added\n\n- Malformed date.\n")
+        with self._patch_path():
+            result = self.book._read_module_changes(self.module_path)
+        self.assertEqual([date for date, _ in result], ["2026-08-18"])
+
+    def test_read_module_changes_without_the_folder_is_empty(self):
+        with self._patch_path():
+            self.assertEqual(self.book._read_module_changes(self.module_path), [])
+
+    def test_get_changes_groups_by_day_most_recent_first(self):
+        self._write_mkdocs("site_name: Fake\nnav:\n  - Overview: index.md\n")
+        self._write_change("2026-08-03.md", "### Fixed\n\n- Earlier.\n")
+        self._write_change("2026-08-18.md", "### Added\n\n- Later.\n")
+        with self._patch_path():
+            result = self.book.get_changes()
+        dates = [day["date"] for day in result["days"]]
+        self.assertEqual(dates, sorted(dates, reverse=True))
+        self.assertIn("2026-08-18", dates)
+        entry = result["days"][dates.index("2026-08-18")]["entries"][0]
+        self.assertEqual(entry["title"], "Fake")
+        self.assertIn("Later.", entry["html"])
+
+    def test_get_changes_requires_connect_role(self):
+        user = self.env["res.users"].create({
+            "name": "No Connect Role",
+            "login": "no.role.changes@example.com",
+            "group_ids": [(6, 0, [self.env.ref("base.group_user").id])],
+        })
+        with self.assertRaises(AccessError):
+            self.env["connect.book"].with_user(user).get_changes()
+
+    def test_get_changes_allows_connect_user_group(self):
+        user = self.env["res.users"].create({
+            "name": "Connect User",
+            "login": "connect.user.changes@example.com",
+            "group_ids": [(6, 0, [
+                self.env.ref("base.group_user").id,
+                self.env.ref("connect.group_user").id,
+            ])],
+        })
+        result = self.env["connect.book"].with_user(user).get_changes()
+        self.assertIn("days", result)
