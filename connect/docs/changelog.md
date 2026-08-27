@@ -1,7 +1,5 @@
 ---
 title: Changelog
-hide:
-  - navigation
 ---
 
 # Changelog
