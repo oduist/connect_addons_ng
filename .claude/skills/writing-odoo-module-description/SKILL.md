@@ -58,8 +58,8 @@ element carries its own inline `style=""`.
    **title** (benefit slogan, ends `!`), a **sub** line, the shared `icon.png`
    in a raised badge, and one blurred **aurora bloom** (`aria-hidden`).
 2. **Trial note** — one slim cyan-tinted strip: "30-day free trial …". Keep it
-   for every standalone, purchasable module; **delete** it only for an
-   `auto_install` bridge (e.g. `connect_crm_twilio`).
+   for every module that is sold; **delete** it for an `auto_install` bridge
+   (e.g. `connect_crm_twilio`) and for a free module (e.g. `connect_book`).
 3. **Features** — a cyan mono "What's inside" kicker + a heading + a
    `repeat(auto-fit,minmax(288px,1fr))` grid of cards. Each card is an icon
    chip (a `fa-*` icon in cyan on `#14161f`) + a title + a one-line
@@ -102,8 +102,12 @@ block with `{{PLACEHOLDER}}`s.
      `fa-plug` / "Built for Connect" / "An extension of the Connect
      communication platform." (for modules that also need FreeSWITCH, say
      "Built for Connect & FreeSWITCH").
-   - `auto_install: True` (a bridge) → **delete** the `.ocx-note` trial strip.
-     Every other standalone module keeps it.
+   - **Delete** the `.ocx-note` trial strip when the module is not sold: an
+     `auto_install: True` bridge (e.g. `connect_crm_twilio`), or a free module
+     (e.g. `connect_book`). A module is free when it is absent from
+     `ODUIST_MODULES` in `connect/models/license.py` **by design** — check
+     there, and if it is missing but ought to be sold, ask rather than assume.
+     Every module that is sold keeps the strip.
 2. **Derive the feature cards from the code**, in user-facing terms — not model
    names. Each card is `(fa-icon, short title, one-line description)`. Scan:
    - `models/` — new business capabilities (a `connect.agent` model → `fa-microchip`
@@ -153,7 +157,9 @@ block with `{{PLACEHOLDER}}`s.
   ships FA **4.7**; stick to 4.7 names.
 - Listing model/technical names instead of user benefits.
 - Forgetting the `ocx-card--cta` modifier on the last (call-to-action) card.
-- Keeping the `.ocx-note` trial strip on an `auto_install` bridge module.
+- Keeping the `.ocx-note` trial strip on a module that is not sold — an
+  `auto_install` bridge, or a free module such as `connect_book`. Promising a
+  trial and a purchase for something given away is worse than a styling slip.
 - Regenerating `doc/index.rst` (that's the changelog) when asked for the
   description.
 - Using a per-module or fabricated `icon.png` — always copy the canonical

@@ -29,9 +29,13 @@ Responsibilities:
 - Serve translated pages when a mirror exists, the source page otherwise
 - Enforce the reading group server-side on every call
 
-Non-responsibilities: it has **no settings**, stores **nothing**, writes
-nothing to the database, and does not register in `ODUIST_MODULES` (there is
-no per-module license behavior to gate).
+Non-responsibilities: it has **no settings**, stores **nothing** and writes
+nothing to the database.
+
+**Connect Book is free.** It is deliberately absent from `ODUIST_MODULES`
+(`connect/models/license.py`) — do not add it — and its Apps Store page carries
+no trial strip. Nothing about reading the documentation is gated on a
+purchase.
 
 ---
 
