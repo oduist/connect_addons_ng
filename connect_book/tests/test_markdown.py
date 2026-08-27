@@ -65,6 +65,45 @@ class TestMarkdown(BaseCase):
         self.assertIn("<li>d</li>", html)
         self.assertEqual(html.count("<ul>"), 2)
 
+    def test_blank_lines_between_items_keep_one_list(self):
+        # The documentation writes its procedures this way. Splitting here
+        # would restart an ordered list at 1 on every step.
+        html = md_to_html("1. one\n\n2. two\n\n3. three\n")
+        self.assertEqual(html.count("<ol>"), 1)
+        self.assertEqual(html.count("<li>"), 3)
+
+    def test_indented_code_block_stays_inside_its_item(self):
+        html = md_to_html(
+            "1. Install it:\n"
+            "\n"
+            "    ```bash\n"
+            "    pip install odoo\n"
+            "    ```\n"
+            "\n"
+            "2. Restart.\n"
+        )
+        self.assertEqual(html.count("<ol>"), 1)
+        self.assertIn("<pre><code", html)
+        # Dedented by one level, so the snippet is not shown indented.
+        self.assertIn(">pip install odoo\n", html)
+        self.assertIn("</pre></li>", html)
+
+    def test_list_ends_at_a_following_paragraph(self):
+        html = md_to_html("- a\n\n- b\n\nSomething else.\n")
+        self.assertEqual(html.count("<ul>"), 1)
+        self.assertTrue(html.rstrip().endswith("<p>Something else.</p>"))
+
+    def test_list_ends_at_an_unindented_block_construct(self):
+        for tail, marker in (("```\ncode\n```\n", "<pre>"), ("## Next\n", "<h2")):
+            html = md_to_html("- a\n" + tail)
+            self.assertIn("<ul><li>a</li></ul>", html)
+            self.assertIn(marker, html)
+
+    def test_single_line_item_stays_tight(self):
+        html = md_to_html("- plain\n")
+        self.assertIn("<li>plain</li>", html)
+        self.assertNotIn("<p>plain</p>", html)
+
     # -- MkDocs constructs -------------------------------------------------
 
     def test_admonition_with_title(self):

@@ -43,9 +43,16 @@ _ADMONITION_KINDS = frozenset(
 _URL_SCHEME_RE = re.compile(r"^\s*([a-z][a-z0-9+.\-]*):", re.I)
 _SAFE_URL_SCHEMES = frozenset({"http", "https", "mailto"})
 
-#: Cap on nested-list recursion, a backstop against pathological/deep input
-#: overflowing the Python stack. Real documentation never nests this deep.
-_MAX_LIST_DEPTH = 12
+#: Cap on block recursion. Every construct whose body is Markdown of its own --
+#: a list item, a blockquote, an admonition, a tab -- renders it by calling back
+#: into :func:`md_to_html`, so one cap covers them all. It is a backstop against
+#: pathological input overflowing the Python stack; real documentation never
+#: nests anywhere near this deep.
+_MAX_BLOCK_DEPTH = 12
+#: Block constructs that end a list when they appear at or left of its indent.
+#: Without this, a fenced block or heading following a list with no blank line
+#: would be swallowed as a lazy continuation of the last item.
+_BLOCK_STARTERS = (_FENCE_RE, _HEADING_RE, _HR_RE, _ADMONITION_RE, _TAB_RE)
 
 
 def _safe_url(url):
@@ -56,10 +63,17 @@ def _safe_url(url):
     return url
 
 
-def md_to_html(text):
-    """Convert a Markdown string into an HTML string."""
+def md_to_html(text, depth=0):
+    """Convert a Markdown string into an HTML string.
+
+    ``depth`` is the block-recursion level, passed by the constructs that render
+    a nested body of their own; callers outside this module leave it alone.
+    """
     if not text:
         return ""
+    if depth > _MAX_BLOCK_DEPTH:
+        # Too deeply nested to keep parsing; hand the text back escaped.
+        return "<p>%s</p>" % escape(text)
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     lines = text.split("\n")
     out = []
@@ -90,13 +104,13 @@ def md_to_html(text):
         admonition = _ADMONITION_RE.match(line)
         if admonition:
             flush_para()
-            block, i = _consume_admonition(lines, i, n, admonition)
+            block, i = _consume_admonition(lines, i, n, admonition, depth)
             out.append(block)
             continue
 
         if _TAB_RE.match(line):
             flush_para()
-            block, i = _consume_tabs(lines, i, n)
+            block, i = _consume_tabs(lines, i, n, depth)
             out.append(block)
             continue
 
@@ -123,13 +137,13 @@ def md_to_html(text):
 
         if line.lstrip().startswith(">"):
             flush_para()
-            block, i = _consume_quote(lines, i, n)
+            block, i = _consume_quote(lines, i, n, depth)
             out.append(block)
             continue
 
         if _UL_RE.match(line) or _OL_RE.match(line):
             flush_para()
-            block, i = _consume_list(lines, i, n)
+            block, i = _consume_list(lines, i, n, depth)
             out.append(block)
             continue
 
@@ -164,7 +178,7 @@ def _consume_indented_body(lines, i, n, marker_indent):
     return body, i
 
 
-def _consume_admonition(lines, i, n, match):
+def _consume_admonition(lines, i, n, match, depth=0):
     """Render a ``!!! kind "Title"`` block and its indented body."""
     marker_indent = len(match.group(1))
     kind = match.group(2).lower()
@@ -177,12 +191,12 @@ def _consume_admonition(lines, i, n, match):
     html = (
         '<div class="o_book_admonition o_book_admonition_%s">'
         '<p class="o_book_admonition_title">%s</p>%s</div>'
-        % (kind, _inline(title), md_to_html("\n".join(body)))
+        % (kind, _inline(title), md_to_html("\n".join(body), depth + 1))
     )
     return html, i
 
 
-def _consume_tabs(lines, i, n):
+def _consume_tabs(lines, i, n, depth=0):
     """Render a run of ``=== "Label"`` tabs as one labelled group.
 
     There is no JavaScript in the rendered documentation, so the tabs are laid
@@ -199,7 +213,7 @@ def _consume_tabs(lines, i, n):
         panels.append(
             '<div class="o_book_tab">'
             '<p class="o_book_tab_label">%s</p>%s</div>'
-            % (_inline(match.group(2)), md_to_html("\n".join(body)))
+            % (_inline(match.group(2)), md_to_html("\n".join(body), depth + 1))
         )
         # Blank lines between two tabs of the same group are not a separator.
         skip = i
@@ -243,12 +257,12 @@ def _render_diff(body):
     return "\n".join(rendered)
 
 
-def _consume_quote(lines, i, n):
+def _consume_quote(lines, i, n, depth=0):
     quoted = []
     while i < n and lines[i].lstrip().startswith(">"):
         quoted.append(re.sub(r"^\s*>\s?", "", lines[i]))
         i += 1
-    return "<blockquote>%s</blockquote>" % md_to_html("\n".join(quoted)), i
+    return "<blockquote>%s</blockquote>" % md_to_html("\n".join(quoted), depth + 1), i
 
 
 def _consume_table(lines, i, n):
@@ -278,70 +292,101 @@ def _split_row(row):
     return [cell.strip() for cell in row.split("|")]
 
 
-def _consume_list(lines, i, n):
+def _consume_list(lines, i, n, depth=0):
+    """Consume one list and render it, items and all.
+
+    An item owns everything that belongs to it: its own text, its wrapped
+    continuation lines, a nested list, an indented code block, a further
+    paragraph. Those lines are collected verbatim (dedented by one level) and
+    rendered by calling back into :func:`md_to_html`, so an item can hold any
+    block construct without this function having to know about it.
+
+    Blank lines do **not** end a list. A blank line followed by another marker,
+    or by indented content, is an item separator inside the same list -- which
+    is how nearly every list in the documentation is written, and what keeps an
+    ordered list numbering 1, 2, 3 instead of restarting at 1 on every item.
+    """
+    base_indent = _indent_of(lines[i])
+    ordered = bool(_OL_RE.match(lines[i]))
     items = []
     while i < n:
-        m_ul = _UL_RE.match(lines[i])
-        m_ol = _OL_RE.match(lines[i])
-        if m_ul:
-            indent = len(m_ul.group(1).replace("\t", "    "))
-            items.append((indent, False, m_ul.group(2)))
+        line = lines[i]
+
+        if not line.strip():
+            # A blank line belongs to the list only if the list continues after
+            # it; otherwise it is the end of the list.
+            skip = i
+            while skip < n and not lines[skip].strip():
+                skip += 1
+            if skip >= n or not _continues_list(lines[skip], base_indent):
+                break
+            if items:
+                items[-1].append("")
+            i = skip
+            continue
+
+        indent = _indent_of(line)
+        marker = _UL_RE.match(line) or _OL_RE.match(line)
+
+        if marker and indent <= base_indent:
+            if bool(_OL_RE.match(line)) != ordered:
+                # The kind flips: this is a new list, not another item.
+                break
+            items.append([marker.group(2)])
             i += 1
-        elif m_ol:
-            indent = len(m_ol.group(1).replace("\t", "    "))
-            items.append((indent, True, m_ol.group(2)))
+            continue
+
+        if indent > base_indent:
+            # Content belonging to the current item: dedent one level and keep
+            # it verbatim for the recursive render.
+            if not items:
+                break
+            items[-1].append(
+                line[base_indent + 4:] if indent >= base_indent + 4 else line.lstrip()
+            )
             i += 1
-        elif items and lines[i][:1] in (" ", "\t") and lines[i].strip():
-            # "Lazy continuation": an indented line without a marker is a
-            # wrapped continuation of the previous item's text (nested lists
-            # are already caught by the branches above, since their line
-            # contains a marker).
-            indent, ordered, content = items[-1]
-            items[-1] = (indent, ordered, "%s %s" % (content, lines[i].strip()))
-            i += 1
-        else:
+            continue
+
+        # Unindented and not a marker. A plain paragraph line is a lazy
+        # continuation of the last item; any other block construct ends the list.
+        if not items or any(rx.match(line) for rx in _BLOCK_STARTERS):
             break
+        items[-1].append(line.strip())
+        i += 1
+
     if not items:
         return "", i
-    # A single block can contain several runs of the same kind (a run ends
-    # when the kind flips at the same indent -- see _render_list). Keep
-    # rendering runs from wherever the previous one stopped until every
-    # collected item has been placed, so a kind switch mid-block no longer
-    # drops the rest of the items that the scanner already consumed.
-    htmls = []
-    pos = 0
-    while pos < len(items):
-        run_html, pos = _render_list(items, pos, items[pos][0])
-        htmls.append(run_html)
-    return "\n".join(htmls), i
-
-
-def _render_list(items, pos, base_indent, depth=0):
-    ordered = items[pos][1]
     tag = "ol" if ordered else "ul"
-    html = ["<%s>" % tag]
-    while pos < len(items):
-        indent, is_ordered, content = items[pos]
-        if indent < base_indent:
-            break
-        if indent > base_indent:
-            if depth >= _MAX_LIST_DEPTH:
-                # Too deep: render as a flat item instead of recursing further.
-                html.append("<li>%s</li>" % _inline(content))
-                pos += 1
-                continue
-            sub_html, pos = _render_list(items, pos, indent, depth + 1)
-            if len(html) > 1 and html[-1].endswith("</li>"):
-                html[-1] = html[-1][:-len("</li>")] + sub_html + "</li>"
-            else:
-                html.append("<li>%s</li>" % sub_html)
-            continue
-        if is_ordered != ordered:
-            break
-        html.append("<li>%s</li>" % _inline(content))
-        pos += 1
-    html.append("</%s>" % tag)
-    return "".join(html), pos
+    rendered = "".join(
+        "<li>%s</li>" % _render_item(item, depth) for item in items
+    )
+    return "<%s>%s</%s>" % (tag, rendered, tag), i
+
+
+def _indent_of(line):
+    """Indentation width of ``line``, counting a tab as four spaces."""
+    stripped = line.lstrip(" \t")
+    return len(line[: len(line) - len(stripped)].replace("\t", "    "))
+
+
+def _continues_list(line, base_indent):
+    """Does ``line``, the first non-blank after a gap, continue the list?"""
+    if _UL_RE.match(line) or _OL_RE.match(line):
+        return _indent_of(line) >= base_indent
+    return _indent_of(line) > base_indent
+
+
+def _render_item(item_lines, depth):
+    """Render one list item's collected lines.
+
+    A single-line item stays "tight" -- inline markup only, no wrapping
+    paragraph -- which is what a plain bullet list should look like. An item
+    carrying more than that is rendered as full Markdown.
+    """
+    content = [line for line in item_lines if line.strip()]
+    if len(content) == 1:
+        return _inline(content[0])
+    return md_to_html("\n".join(item_lines), depth + 1)
 
 
 def _inline(text):

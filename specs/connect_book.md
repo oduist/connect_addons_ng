@@ -145,6 +145,20 @@ Covers: headings (with `id` slugs), paragraphs, nested ordered/unordered lists,
 fenced code (including a coloured `diff` lexer), blockquotes, tables, horizontal
 rules, and inline bold/italic/code/link/image.
 
+**Lists carry blocks.** A list item owns its wrapped continuation lines, a
+nested list, an indented code block, a further paragraph — the lines are
+collected verbatim, dedented one level, and rendered by calling back into
+`md_to_html`. Blank lines between items do **not** end the list, which is how
+nearly every procedure in this documentation is written and what keeps an
+ordered list numbering 1, 2, 3 instead of restarting at 1 on each step. A list
+ends at a paragraph, a heading, a fence or another block construct at or left of
+its indent, or at a flip between ordered and unordered. A single-line item stays
+tight (no wrapping `<p>`).
+
+Every construct with a Markdown body of its own — list item, blockquote,
+admonition, tab — recurses through `md_to_html`, so one `_MAX_BLOCK_DEPTH`
+guard (12) covers them all.
+
 Plus the two MkDocs constructs this repository uses:
 
 | Construct | Source | Rendered as |
