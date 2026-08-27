@@ -23,16 +23,6 @@ DOCS_DIRNAME = "docs"
 MKDOCS_FILENAME = "mkdocs.yml"
 #: Folder inside ``docs`` holding translated mirrors: ``docs/i18n/<lang>/<page>``.
 I18N_DIRNAME = "i18n"
-#: The changelog is a single repository-wide file kept in the core module, which
-#: every installation has. It is served by its own client action rather than as
-#: a page of a guide, so :meth:`_collect_modules` skips it -- otherwise it would
-#: show up twice, once behind the Changelog menu and once inside the Admin Guide.
-CHANGELOG_MODULE = "connect"
-CHANGELOG_RELPATH = "changelog.md"
-#: Second-level headings of the rendered changelog become its table of contents.
-_H2_RE = re.compile(r'<h2 id="([^"]+)">(.*?)</h2>', re.S)
-#: Inline markup is fine inside a heading, but the contents list wants plain text.
-_TAG_RE = re.compile(r"<[^>]+>")
 #: Leading provenance marker a translated file carries; stripped before render.
 I18N_MARKER_RE = re.compile(r"\A<!--\s*i18n\b[^>]*-->[ \t]*\r?\n?")
 #: MkDocs page metadata (``---`` … ``---``) is for the site, not for the Book.
@@ -156,44 +146,6 @@ class ConnectBook(models.AbstractModel):
             )
         return {"modules": self._collect_modules(AUDIENCE_ADMIN, self._doc_lang())}
 
-    @api.model
-    def get_changes(self):
-        """Return the changelog, rendered, with its table of contents.
-
-        One file for the whole repository, kept in the core module. It is
-        served whole rather than sliced: a changelog is read by scrolling and
-        by jumping to a release, which is what the contents list is for.
-
-        Served in the reader's documentation language when a mirror exists.
-
-        :raise AccessError: when the caller has no Connect role.
-        :return: ``{"html": "<h1>…", "sections": [{"id", "title"}, ...]}`` --
-            one section per second-level heading, in document order. Both are
-            empty when the core module ships no changelog.
-        """
-        if not self.env.user.has_group(USER_GROUP):
-            raise AccessError(
-                self.env._("A Connect role is required to read the Changelog.")
-            )
-        module_path = get_module_path(CHANGELOG_MODULE)
-        if not module_path:
-            return {"html": "", "sections": []}
-        html = self._read_module_doc(module_path, CHANGELOG_RELPATH, self._doc_lang())
-        if html is None:
-            return {"html": "", "sections": []}
-        return {"html": html, "sections": self._changelog_sections(html)}
-
-    def _changelog_sections(self, html):
-        """Build the contents list from the rendered changelog's ``<h2>``s.
-
-        The ids come from the renderer's own heading slugs, so a contents entry
-        always points at a heading that exists on the page.
-        """
-        return [
-            {"id": anchor, "title": _TAG_RE.sub("", title).strip()}
-            for anchor, title in _H2_RE.findall(html)
-        ]
-
     def _doc_lang(self):
         """Short documentation-language code for the current request.
 
@@ -235,9 +187,6 @@ class ConnectBook(models.AbstractModel):
             pages = []
             for title, relpath, page_audience in entries:
                 if page_audience != audience:
-                    continue
-                if module.name == CHANGELOG_MODULE and relpath == CHANGELOG_RELPATH:
-                    # Served by its own client action; see CHANGELOG_RELPATH.
                     continue
                 html = self._read_module_doc(module_path, relpath, lang)
                 if html is None:

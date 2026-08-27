@@ -1,5 +1,7 @@
 ---
 title: Changelog
+hide:
+  - navigation
 ---
 
 # Changelog
@@ -20,24 +22,14 @@ from the changes themselves rather than from commit subjects. Work nobody
 outside the repository would notice — refactoring, formatting, tests, CI,
 version bumps, repository moves — is deliberately left out.
 
-## [Unreleased]
+## 2026-08
 
 ### Added
 - **connect_book** — New module: read this documentation inside Odoo, under
   **Connect ▸ Documentation**. It serves the pages of the Connect modules you
   actually have installed, split into a
-  [User Guide](../Book/user/reading-the-docs.md) for everyone with a Connect role
+  [User Guide](Book/user/reading-the-docs.md) for everyone with a Connect role
   and an Admin Guide for Connect administrators.
-
-### Changed
-- Every module's Apps Store page was rebuilt in the Aurora house style, and the
-  Accounting, HR, Project and Sales bridges got one for the first time.
-
----
-
-## 2026-08
-
-### Added
 - **connect_telnyx** — AI receptionist routing, with voice controls for the
   assistant.
 - **connect_freeswitch** — The browser softphone speaks German, French, Italian
@@ -45,23 +37,18 @@ version bumps, repository moves — is deliberately left out.
   English.
 - **connect_freeswitch** — Fallback routing for call queues, so a queue nobody
   answers hands the call on instead of dropping it.
-- Recordings can be deleted automatically once they are transcribed and
-  summarised. The transcript and the summary stay on the call, so the history
-  survives without the audio taking up space.
-- The model used to summarise a call is now a setting (GPT-5.4 mini or GPT-4o)
-  rather than fixed.
 
 ### Changed
+- Every module's Apps Store page was rebuilt in the Aurora house style, and the
+  Accounting, HR, Project and Sales bridges got one for the first time.
 - The documentation moved into each module's own folder, and the site was
   rebuilt on an in-house theme.
 
 ### Fixed
 - **connect_telnyx** — Inbound number routing, click-to-call and the WhatsApp
   transport were all broken and have been repaired.
-- **connect_telnyx** — Account synchronisation and SIP domain creation are
-  hardened against partial or failed setup. Extension creation was fixed here
-  and in **connect_twilio**, **connect_freeswitch** and **connect_infobip**,
-  which carry copies of the same logic.
+- **connect_telnyx** — Account synchronisation, SIP domain and extension
+  creation are hardened against partial or failed setup.
 - **connect_telnyx** — An account not authorised for Voice/TeXML now reports a
   clear error instead of a bare HTTP 403.
 - **connect_telnyx** — TeXML and call-recording fixes.
@@ -120,22 +107,16 @@ model separation that lets them run side by side.
   can be installed in one database, with each user choosing which one places
   their calls and which one sends their messages.
 - All Connect modules moved to the Business Source License 1.1.
-- **connect_freeswitch** — The deployment is split into separate compose files
-  instead of one, so the telephony stack and the TLS edge are brought up and
-  updated independently.
 - The active-calls and Calls widgets moved into core, so every provider shows
   the same thing.
 
 ### Fixed
-- Speech call flows lost their recognition hints, on every provider that has
-  call flows (**connect_twilio**, **connect_freeswitch**, **connect_telnyx**).
-- Call-flow voicemail behaved incorrectly, in the core and in all three
-  providers above.
+- **connect_twilio** — Speech call flows lost their recognition hints.
+- **connect_twilio** — Call-flow voicemail behaved incorrectly.
 - **connect_freeswitch** — A user's voicemail fallback did not trigger.
 - **connect_freeswitch** — The firewall service shuts down gracefully instead of
   dropping its state.
-- A dead "default" checkbox was removed from the Numbers form of
-  **connect_twilio**, **connect_freeswitch** and **connect_telnyx**.
+- A dead "default" checkbox was removed from the Numbers form.
 
 ### Security
 - FreeSWITCH → Odoo endpoints are authenticated, and the webhook grant was
@@ -214,22 +195,8 @@ model separation that lets them run side by side.
   a timeout fallback.
 - **connect_freeswitch** — Call recording, Piper text-to-speech voices, gateway
   access lists, click-to-call, auto-answer over WebRTC, and generated dialplans.
-- **connect_freeswitch** — Reusable configuration templates, so a dialplan or a
-  profile is edited in one place rather than per record.
 - A migration path from the old monolithic `connect` to the split
   `connect` + `connect_twilio`.
-
-### Changed
-- The old instance-registration system was removed. Licensing, registration
-  numbers and instance identity are handled by the license record alone, and
-  the Registration and System tabs are gone from Settings.
-- Buying a licence happens through the built-in licence screen rather than on
-  the website; the LICENSE files say so.
-- **connect_freeswitch** — One global FreeSWITCH domain in Settings replaces the
-  per-endpoint domain field, and registrations are tied to it. An endpoint no
-  longer carries a domain of its own.
-- **connect_freeswitch** — Log levels for the server and for SIP are set on the
-  service rather than baked into the image.
 
 ### Fixed
 - **connect_freeswitch** — SIP phones behind NAT are handled correctly.
@@ -238,21 +205,7 @@ model separation that lets them run side by side.
 
 ## 2026-03
 
-The month the 19.0 line took its shape: the core was carved out of the old
-monolith and arrived with the whole feature set below.
-
 ### Added
-- Call flows (IVR): a menu that answers, plays a prompt, reads the caller's
-  choice and routes on it — with a per-user call flow for personal routing.
-- Extensions, phone numbers and outgoing caller IDs as records you maintain in
-  Odoo.
-- Call recordings, listed on their own and attached to the call.
-- Messages, with an SMS composer you open from a contact or a record.
-- Call transfer from the call form.
-- Calls, messages and recordings on the contact, so a partner's whole
-  communication history is on one form.
-- Favourite numbers for quick dialling.
-- A debug log for troubleshooting, with a daily cleanup.
 - **connect_twilio** — The Twilio integration became a module of its own.
 - **connect_freeswitch** — Call detail records are read from FreeSWITCH.
 
@@ -276,8 +229,9 @@ monolith and arrived with the whole feature set below.
 
 ## How to add an entry
 
-Add a bullet under **Unreleased** in the same pull request that makes the
-change, then move the block under a new dated heading when it ships.
+Add a bullet under the heading for the current month, in the same pull request
+that makes the change. Create that heading if this is the month's first entry.
+There is no holding area: a change is recorded against the month it ships in.
 
 - Write for the reader of the docs, not the reviewer of the diff: say what
   changed for an administrator or user, not which function was refactored.
