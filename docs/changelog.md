@@ -22,8 +22,15 @@ series, so entries below are written against the product version (`2.2.0`).
 ## [Unreleased]
 
 ### Added
+- **connect_book** — New module: read this documentation inside Odoo, under
+  **Connect ▸ Documentation**. It serves the pages of the Connect modules you
+  actually have installed, split into a
+  [User Guide](Book/user/reading-the-docs.md) for everyone with a Connect role
+  and an Admin Guide for Connect administrators.
 
 ### Changed
+- Every module's Apps Store page was rebuilt in the Aurora house style, and the
+  Accounting, HR, Project and Sales bridges got one for the first time.
 
 ### Fixed
 
