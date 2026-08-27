@@ -21,6 +21,7 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 # One representative page per template path through the site.
 HOME = SITE / "index.html"
 MODULE_PAGE = SITE / "Twilio" / "configuration" / "index.html"
+CHANGELOG = SITE / "Core" / "changelog" / "index.html"
 # Carries both a code block and a tabbed set; the Twilio page has neither.
 CODE_PAGE = SITE / "Core" / "admin" / "installation" / "index.html"
 NOT_FOUND = SITE / "404.html"
@@ -50,7 +51,7 @@ def read(path):
 
 @check("every representative page was built")
 def _pages_exist():
-    for path in (HOME, MODULE_PAGE, NOT_FOUND):
+    for path in (HOME, MODULE_PAGE, CHANGELOG, NOT_FOUND):
         if not path.exists():
             return f"{path} is missing"
 
@@ -79,7 +80,7 @@ def _skeleton():
 
 @check("no Material markup survives")
 def _no_material():
-    for path in (HOME, MODULE_PAGE, CODE_PAGE):
+    for path in (HOME, MODULE_PAGE, CHANGELOG):
         html = read(path)
         if "md-header" in html or "data-md-color-scheme" in html:
             return f"{path} still contains Material markup"

@@ -23,12 +23,16 @@ DOCS_DIRNAME = "docs"
 MKDOCS_FILENAME = "mkdocs.yml"
 #: Folder inside ``docs`` holding translated mirrors: ``docs/i18n/<lang>/<page>``.
 I18N_DIRNAME = "i18n"
-#: Folder inside ``docs`` holding the module's own change archive: one Markdown
-#: file per calendar day. These files are deliberately outside the ``nav`` --
-#: they are a timeline, not a manual, and the site excludes them.
-CHANGES_DIRNAME = "changes"
-#: A change file is named after its day: ``YYYY-MM-DD.md``.
-CHANGE_FILE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})\.md$")
+#: The changelog is a single repository-wide file kept in the core module, which
+#: every installation has. It is served by its own client action rather than as
+#: a page of a guide, so :meth:`_collect_modules` skips it -- otherwise it would
+#: show up twice, once behind the Changelog menu and once inside the Admin Guide.
+CHANGELOG_MODULE = "connect"
+CHANGELOG_RELPATH = "changelog.md"
+#: Second-level headings of the rendered changelog become its table of contents.
+_H2_RE = re.compile(r'<h2 id="([^"]+)">(.*?)</h2>', re.S)
+#: Inline markup is fine inside a heading, but the contents list wants plain text.
+_TAG_RE = re.compile(r"<[^>]+>")
 #: Leading provenance marker a translated file carries; stripped before render.
 I18N_MARKER_RE = re.compile(r"\A<!--\s*i18n\b[^>]*-->[ \t]*\r?\n?")
 #: MkDocs page metadata (``---`` … ``---``) is for the site, not for the Book.
@@ -154,79 +158,41 @@ class ConnectBook(models.AbstractModel):
 
     @api.model
     def get_changes(self):
-        """Assemble the day-by-day change archive across installed modules.
+        """Return the changelog, rendered, with its table of contents.
 
-        Every ``connect*`` module may keep an append-only timeline of its own
-        changes under ``docs/changes/``: one Markdown file per calendar day,
-        named ``YYYY-MM-DD.md``. A change belongs to the module it happened in,
-        so the archive is assembled at read time from whatever is installed --
-        a database without Telnyx never sees a Telnyx entry.
+        One file for the whole repository, kept in the core module. It is
+        served whole rather than sliced: a changelog is read by scrolling and
+        by jumping to a release, which is what the contents list is for.
 
-        The timeline is not translated: it is a record of what happened, and a
-        stale translation of it would be worse than the source.
+        Served in the reader's documentation language when a mirror exists.
 
         :raise AccessError: when the caller has no Connect role.
-        :return: ``{"days": [{"date": "YYYY-MM-DD", "entries": [{"module",
-            "title", "html"}, ...]}, ...]}`` -- days most recent first, entries
-            within a day ordered by module name.
+        :return: ``{"html": "<h1>…", "sections": [{"id", "title"}, ...]}`` --
+            one section per second-level heading, in document order. Both are
+            empty when the core module ships no changelog.
         """
         if not self.env.user.has_group(USER_GROUP):
             raise AccessError(
                 self.env._("A Connect role is required to read the Changelog.")
             )
-        modules = self.env["ir.module.module"].sudo().search(
-            [
-                ("state", "=", "installed"),
-                ("name", "=like", MODULE_PREFIX + "%"),
-            ],
-            order="name",
-        )
-        days = {}
-        for module in modules:
-            module_path = get_module_path(module.name)
-            if not module_path:
-                continue
-            site_name, _entries = self._read_nav(module_path)
-            title = site_name or module.shortdesc or module.name
-            for date_str, html in self._read_module_changes(module_path):
-                days.setdefault(date_str, []).append(
-                    {
-                        "module": module.name,
-                        "title": title,
-                        "html": html,
-                    }
-                )
-        return {
-            "days": [
-                {"date": date_str, "entries": days[date_str]}
-                for date_str in sorted(days, reverse=True)
-            ]
-        }
+        module_path = get_module_path(CHANGELOG_MODULE)
+        if not module_path:
+            return {"html": "", "sections": []}
+        html = self._read_module_doc(module_path, CHANGELOG_RELPATH, self._doc_lang())
+        if html is None:
+            return {"html": "", "sections": []}
+        return {"html": html, "sections": self._changelog_sections(html)}
 
-    def _read_module_changes(self, module_path):
-        """Return ``[(date_str, html), ...]`` for ``docs/changes/*.md``.
+    def _changelog_sections(self, html):
+        """Build the contents list from the rendered changelog's ``<h2>``s.
 
-        Only files named ``YYYY-MM-DD.md`` are considered; anything else in the
-        folder is ignored, so a README or a draft can sit there harmlessly.
+        The ids come from the renderer's own heading slugs, so a contents entry
+        always points at a heading that exists on the page.
         """
-        changes_dir = os.path.join(module_path, DOCS_DIRNAME, CHANGES_DIRNAME)
-        if not os.path.isdir(changes_dir):
-            return []
-        result = []
-        try:
-            filenames = sorted(os.listdir(changes_dir))
-        except OSError:
-            _logger.warning("connect_book: failed to list %s", changes_dir)
-            return []
-        for filename in filenames:
-            match = CHANGE_FILE_RE.match(filename)
-            if not match:
-                continue
-            html = self._render_doc_html(os.path.join(changes_dir, filename))
-            if html is None:
-                continue
-            result.append((match.group(1), html))
-        return result
+        return [
+            {"id": anchor, "title": _TAG_RE.sub("", title).strip()}
+            for anchor, title in _H2_RE.findall(html)
+        ]
 
     def _doc_lang(self):
         """Short documentation-language code for the current request.
@@ -269,6 +235,9 @@ class ConnectBook(models.AbstractModel):
             pages = []
             for title, relpath, page_audience in entries:
                 if page_audience != audience:
+                    continue
+                if module.name == CHANGELOG_MODULE and relpath == CHANGELOG_RELPATH:
+                    # Served by its own client action; see CHANGELOG_RELPATH.
                     continue
                 html = self._read_module_doc(module_path, relpath, lang)
                 if html is None:

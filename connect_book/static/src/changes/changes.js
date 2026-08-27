@@ -2,88 +2,55 @@
 
 import { registry } from "@web/core/registry";
 import { rpc } from "@web/core/network/rpc";
-import { Component, useState, onWillStart, markup } from "@odoo/owl";
-
-const MONTHS = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
-];
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+import { Component, useState, onWillStart, useRef, markup } from "@odoo/owl";
 
 /**
- * The "Changelog" client action: a day-by-day archive of what changed.
- * On the left -- the timeline of days grouped by month (like a blog archive),
- * on the right -- every module's entry for the selected day. Only the modules
- * installed on this database contribute, so the archive describes this
- * installation rather than the product in the abstract.
+ * The "Changelog" client action.
+ * On the left -- the contents, one line per release; on the right -- the
+ * changelog itself. It is one document rather than a page per release, so
+ * reading straight down works and the contents are for jumping, not paging.
  */
-export class ChangesApp extends Component {
-    static template = "connect_book.ChangesApp";
+export class ChangelogApp extends Component {
+    static template = "connect_book.ChangelogApp";
     static props = { "*": true };
 
     setup() {
         this.state = useState({
-            days: [],
-            activeDate: null,
+            html: "",
+            sections: [],
+            activeId: null,
             loaded: false,
         });
+        this.content = useRef("content");
 
         onWillStart(async () => {
             const data = await rpc("/connect_book/changes");
-            this.state.days = data.days || [];
+            this.state.html = data.html || "";
+            this.state.sections = data.sections || [];
             this.state.loaded = true;
-            if (this.state.days.length) {
-                this.state.activeDate = this.state.days[0].date;
-            }
         });
     }
 
-    /** Group the (already date-descending) days under "Month Year" headers. */
-    get archive() {
-        const groups = [];
-        let current = null;
-        for (const day of this.state.days) {
-            const key = day.date.slice(0, 7);
-            if (!current || current.key !== key) {
-                current = { key, label: this.formatMonth(key), days: [] };
-                groups.push(current);
-            }
-            current.days.push({ ...day, label: this.formatDayShort(day.date) });
+    get body() {
+        return markup(this.state.html);
+    }
+
+    /**
+     * Scroll a release into view. The ids come from the server, which read
+     * them back off the rendered headings, so the target is always there --
+     * but guard anyway rather than throw inside a click handler.
+     */
+    jumpTo(id) {
+        this.state.activeId = id;
+        const root = this.content.el;
+        if (!root) {
+            return;
         }
-        return groups;
-    }
-
-    get activeDay() {
-        const day = this.state.days.find((d) => d.date === this.state.activeDate);
-        if (!day) {
-            return null;
+        const heading = root.querySelector(`[id="${CSS.escape(id)}"]`);
+        if (heading) {
+            heading.scrollIntoView({ behavior: "smooth", block: "start" });
         }
-        return {
-            ...day,
-            label: this.formatDayFull(day.date),
-            entries: day.entries.map((e) => ({ ...e, body: markup(e.html) })),
-        };
-    }
-
-    selectDay(date) {
-        this.state.activeDate = date;
-    }
-
-    formatMonth(key) {
-        const [year, month] = key.split("-").map(Number);
-        return `${MONTHS[month - 1]} ${year}`;
-    }
-
-    formatDayShort(date) {
-        const [year, month, day] = date.split("-").map(Number);
-        const weekday = WEEKDAYS[new Date(year, month - 1, day).getDay()];
-        return `${weekday}, ${day}`;
-    }
-
-    formatDayFull(date) {
-        const [year, month, day] = date.split("-").map(Number);
-        return `${day} ${MONTHS[month - 1]} ${year}`;
     }
 }
 
-registry.category("actions").add("connect_book.changes", ChangesApp);
+registry.category("actions").add("connect_book.changes", ChangelogApp);

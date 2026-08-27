@@ -71,22 +71,24 @@ Two further departures from the source module:
   `connect.group_admin` (the latter implies the former), so those are what the
   two books check. A Connect administrator, not an Odoo system administrator,
   is the person these admin pages are written for.
-- **The Changelog archive is ported as-is.** Every module keeps
-  `docs/changes/YYYY-MM-DD.md` and `get_changes()` merges them across
-  installed modules into a day-by-day feed, behind its own **Changelog** item
-  in the Documentation menu.
+- **The Changelog is one file, behind its own menu item.** It lives at
+  `connect/docs/changelog.md` — in the core module, which every installation
+  has, because the Book resolves a module directory through
+  `get_module_path()` and never reads the repository root, which is not there
+  at all when a module is installed from the Apps Store.
 
-  A single repository-wide file was tried first and rejected. It cannot say
-  what a given database actually runs: a customer without Telnyx would still
-  read the Telnyx entries. Per-module files are assembled at read time from
-  what is installed, so the archive describes that installation. They also put
-  the record next to the code it describes, which is the same reason the
-  guides live in the modules.
+  The source module's per-module `doc/changes/YYYY-MM-DD.md` timeline was
+  built here and then withdrawn. It buys one real thing — the archive would
+  describe the installation, so a database without Telnyx would show no Telnyx
+  entries — and costs a file per module per day (64 files across 27 modules
+  for seven months of history), a second place to write release notes, and a
+  changelog the public site cannot show without drowning its navigation. One
+  file is what gets kept up to date, and it serves both readers.
 
-  The day files are deliberately outside every `nav`, and the root
-  `exclude_docs` keeps them out of the site: a timeline is not a chapter of
-  the manual, and listing 60+ of them would drown the navigation. The public
-  site therefore has no changelog page; the archive is a Book feature.
+  Serving it through `get_changes()` rather than as a nav page is what keeps
+  it out of the Admin Guide; `_collect_modules` skips exactly that one page.
+  The action renders the document whole and lists its `<h2>`s as contents, so
+  a reader scrolls the history or jumps to a release.
 
 ## Consequences
 

@@ -205,56 +205,12 @@
     }
 }
 
-// Changelog archive (the "Changes" client action). Reuses the .o_connect_book shell.
+// Changelog (the "Changelog" client action). Reuses the .o_connect_book shell.
 .o_connect_book_changes {
     .o_connect_book_changes_title {
         font-weight: 600;
         font-size: 13px;
         color: #495057;
         border-bottom: 1px solid #dee2e6;
-    }
-
-    .o_connect_book_changes_month {
-        padding: 0.6rem 0.75rem 0.25rem;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #868e96;
-    }
-
-    .o_connect_book_changes_day {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .o_connect_book_changes_count {
-        background: rgba(13, 110, 253, 0.12);
-        color: #0d6efd;
-        border-radius: 10px;
-        font-size: 11px;
-        padding: 0 0.4rem;
-        min-width: 1.25rem;
-        text-align: center;
-    }
-
-    .o_connect_book_changes_date {
-        margin: 0 0 1.5rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .o_connect_book_changes_entry {
-        margin-bottom: 2rem;
-    }
-
-    .o_connect_book_changes_entry_module {
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #0d6efd;
-        margin-bottom: 0.5rem;
     }
 }

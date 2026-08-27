@@ -252,11 +252,14 @@ The read path is exercised against a temporary module directory, with
 
 ## Not ported from `connect_addons`
 
-- **The Changelog archive** is ported: every module keeps
-  `docs/changes/YYYY-MM-DD.md`, one file per day, and `get_changes()` merges
-  them across installed modules into a day-by-day feed behind its own menu
-  item. The files sit outside the `nav` and the site excludes them (`changes/`
-  in the root `exclude_docs`) — a timeline is not a chapter of the manual, and
-  60+ nav entries would drown it.
+- **The Changelog** is one repository-wide file, `connect/docs/changelog.md`,
+  served whole by `get_changes()` behind its own **Changelog** item in the
+  Documentation menu. The per-module `doc/changes/YYYY-MM-DD.md` timeline of
+  the source module is **not** ported: one file is what this repository
+  maintains, and it doubles as the site's changelog page.
+
+  Because it is served by its own action, `_collect_modules` skips it
+  (`CHANGELOG_MODULE` / `CHANGELOG_RELPATH`) — otherwise it would appear twice,
+  once behind the menu item and once as a Core page inside the Admin Guide.
 - **`doc/tech_spec.md`.** The technical layer lives in `specs/` here, and was
   deliberately hidden from the Book there too.
