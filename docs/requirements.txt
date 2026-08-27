@@ -14,3 +14,7 @@ pymdown-extensions==11.0.1
 
 # Aggregates each module's docs/ folder into one site (see root mkdocs.yml).
 mkdocs-monorepo-plugin==1.1.2
+
+# Keeps old page addresses working after a page moves. Currently one entry: the
+# changelog used to sit at the site root and is now a page of the Core module.
+mkdocs-redirects==1.2.3
