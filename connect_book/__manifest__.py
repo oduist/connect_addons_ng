@@ -30,8 +30,6 @@ matches what you run. No separate wiki, nothing to keep in sync by hand.
             '/connect_book/static/src/book/book.js',
             '/connect_book/static/src/book/book.xml',
             '/connect_book/static/src/admin/adminbook.js',
-            '/connect_book/static/src/changes/changes.js',
-            '/connect_book/static/src/changes/changes.xml',
         ],
     },
     'images': ['static/description/icon.png'],
