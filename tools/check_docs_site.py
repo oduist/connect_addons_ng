@@ -21,7 +21,7 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 # One representative page per template path through the site.
 HOME = SITE / "index.html"
 MODULE_PAGE = SITE / "Twilio" / "configuration" / "index.html"
-CHANGELOG = SITE / "changelog" / "index.html"
+CHANGELOG = SITE / "Core" / "changelog" / "index.html"
 # Carries both a code block and a tabbed set; the Twilio page has neither.
 CODE_PAGE = SITE / "Core" / "admin" / "installation" / "index.html"
 NOT_FOUND = SITE / "404.html"

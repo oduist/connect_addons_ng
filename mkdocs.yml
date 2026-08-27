@@ -47,10 +47,17 @@ theme:
 plugins:
   - search
   - monorepo
+  # Runs after monorepo so it resolves against the aggregated tree, where a
+  # module's pages live under its section name. Each entry leaves a stub at the
+  # old address that forwards to the new one; add one whenever a page moves.
+  - redirects:
+      redirect_maps:
+        # The changelog was a root page until it moved into the core module, so
+        # that connect_book could serve it inside Odoo (see connect/mkdocs.yml).
+        changelog.md: Core/changelog.md
 
 nav:
   - Home: index.md
-  - Changelog: changelog.md
   - Core: '!include ./connect/mkdocs.yml'
   - Twilio: '!include ./connect_twilio/mkdocs.yml'
   - FreeSWITCH: '!include ./connect_freeswitch/mkdocs.yml'
@@ -71,6 +78,7 @@ nav:
   - CRM: '!include ./connect_crm/mkdocs.yml'
   - CRM Twilio Bridge: '!include ./connect_crm_twilio/mkdocs.yml'
   - Helpdesk: '!include ./connect_helpdesk/mkdocs.yml'
+  - Book: '!include ./connect_book/mkdocs.yml'
 
 markdown_extensions:
   - admonition

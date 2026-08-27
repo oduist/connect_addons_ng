@@ -45,7 +45,7 @@ What this repository holds:
 ```
 mkdocs.yml                      # theme: name: aurora, nav, plugins, extensions
 docs/
-  index.md  changelog.md        # the only pages outside the modules
+  index.md                      # the only page outside the modules
   README.md                     # how to build the site (excluded from it)
   requirements.txt              # mkdocs, the theme pin, monorepo plugin
   stylesheets/home.css          # the home page's own components — plain CSS
@@ -63,6 +63,23 @@ What the theme holds (`oduist/mkdocs-theme-aurora`): `base.html`, `main.html`,
 `assets/theme.js` plus the five behaviour modules under `assets/js/`, the
 vendored lunr, and the Tailwind source in `theme-src/`. That repository carries
 the Node toolchain; this one does not.
+
+### The site is not the only reader of `<module>/docs/`
+
+`connect_book` reads the same folders to serve the documentation inside Odoo
+(ADR-059, `specs/connect_book.md`). It takes page titles and page order from
+each module's `mkdocs.yml` `nav`, and it derives **who may read a page** from
+that nav: a top-level `Admin Guide:` / `User Guide:` section, else the
+`docs/admin/` or `docs/user/` path prefix, else administrator-only.
+
+Two consequences for anyone editing the site:
+
+- A module nav is a contract beyond navigation. Renaming a top-level section
+  from `User Guide` to something else moves its pages into the Admin Guide
+  inside Odoo, with no effect on the built site — nothing here would catch it.
+- Keep module navs to the plain `- Title: path.md` form. The Book parses them
+  with a small purpose-built parser rather than PyYAML; YAML features outside
+  that shape build fine on the site and are silently skipped in the Book.
 
 ### Why the home page's styling lives here
 
@@ -172,8 +189,9 @@ MkDocs supports `template:` in a page's front matter
 (`mkdocs/commands/build.py:210`) if one is ever needed.
 
 `page.meta.hide` is honoured for `navigation` and `toc`, which is what
-`docs/index.md` and `docs/changelog.md` already declare — their front matter
-stays untouched.
+`docs/index.md` already declares — its front matter stays untouched. A page
+inside a module must **not** hide its navigation: the sidebar is that
+module's own, and hiding it strands the reader on the page.
 
 ### `partials/header.html`
 
