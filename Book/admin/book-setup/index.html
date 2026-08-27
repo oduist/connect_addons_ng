@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-base="../../../">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>How the Book Finds Documentation — Oduist Connect Documentation</title>
+    
+      <meta name="description" content="Telephony integration platform for Odoo">
+    
+      <link rel="icon" href="../../../assets/img/logo.png">
+    <script>
+      (function () {
+        var stored = null;
+        try { stored = localStorage.getItem("docs-scheme"); } catch (e) {}
+        var prefersLight =
+          window.matchMedia("(prefers-color-scheme: light)").matches;
+        document.documentElement.dataset.theme =
+          stored || (prefersLight ? "light" : "dark");
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+    
+      <link rel="stylesheet" href="../../../assets/app.css">
+    
+  </head>
+  <body>
+    <a class="skip-link" href="#docs-main">Skip to content</a><div class="docs-topbar">
+      <header class="docs-header">
+  <div class="docs-header__inner">
+      <button class="docs-header__burger" type="button" data-drawer-open
+              aria-label="Open navigation">☰</button>
+    
+
+    <a class="docs-header__brand" href="../../..">
+      
+        <img src="../../../assets/img/logo.png" alt="" width="24" height="24">
+      
+      <span>Oduist Connect Documentation</span>
+    </a>
+
+    <div class="docs-header__spacer"></div>
+      <a class="docs-header__icon docs-header__repo" href="https://github.com/oduist/connect_addons_ng"
+         rel="noopener" target="_blank" title="Go to repository"
+         aria-label="Go to repository">
+        <svg viewBox="0 0 512 512" aria-hidden="true"><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+      </a>
+    <button class="docs-header__icon docs-header__toggle" type="button"
+            data-scheme-toggle aria-pressed="true"
+            title="Switch to light mode" aria-label="Switch to light mode">
+      <svg class="docs-header__toggle-dark" viewBox="0 0 24 24"
+           aria-hidden="true"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      <svg class="docs-header__toggle-light" viewBox="0 0 24 24"
+           aria-hidden="true"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+    </button><button class="docs-header__search" type="button" data-search-open>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      <span>Search</span>
+    </button>
+  </div>
+</header>
+
+<dialog class="docs-drawer" data-drawer aria-label="Navigation">
+  <button class="docs-drawer__close" type="button" data-drawer-close
+          aria-label="Close navigation">×</button>
+  <div data-drawer-body></div>
+</dialog>
+      
+
+  <nav class="docs-crumbs" aria-label="Breadcrumb">
+    <div class="docs-crumbs__inner">
+      <ol class="docs-crumbs__list">
+        
+          <li><a href="../../..">Home</a></li>
+        
+        
+          <li>
+            
+              <a href="./">Book</a>
+            
+          </li>
+        
+          <li>
+            
+              <a href="./">Admin Guide</a>
+            
+          </li>
+        
+      </ol>
+    </div>
+  </nav>
+
+    </div>
+
+    <div class="docs-shell">
+        
+
+<nav class="docs-nav" aria-label="Module navigation">
+  <ul class="docs-nav__list">
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+  
+    <li class="docs-nav__item">
+      <details open>
+        <summary class="docs-nav__section">Book</summary>
+        <ul class="docs-nav__list">
+          
+            
+  
+    <li class="docs-nav__item">
+      <details open>
+        <summary class="docs-nav__section">Admin Guide</summary>
+        <ul class="docs-nav__list">
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link docs-nav__link--active"
+         href="./"
+         aria-current="page">
+        How the Book Finds Documentation
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </details>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <details >
+        <summary class="docs-nav__section">User Guide</summary>
+        <ul class="docs-nav__list">
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../../user/reading-the-docs/"
+         >
+        Reading the Documentation
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </details>
+    </li>
+  
+
+          
+        </ul>
+      </details>
+    </li>
+  
+
+      
+    
+  </ul>
+</nav>
+      
+
+      <main id="docs-main" class="docs-content">
+        
+  <article class="prose max-w-none">
+    <h1 id="how-the-book-finds-documentation">How the Book Finds Documentation</h1>
+<p><code>connect_book</code> serves this documentation inside Odoo. It has no configuration
+and no settings page: install it, and the <strong>Connect ▸ Documentation</strong> menu
+appears. What follows is the contract it reads, so that a module you write or
+change shows up in the Book the way you expect.</p>
+<h2 id="one-source-two-readers">One source, two readers</h2>
+<p>Documentation lives in each module's own <code>docs/</code> folder. Two things read it:</p>
+<table>
+<thead>
+<tr>
+<th>Reader</th>
+<th>What it produces</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MkDocs (root <code>mkdocs.yml</code>, <code>mkdocs-monorepo-plugin</code>)</td>
+<td>the public documentation site</td>
+</tr>
+<tr>
+<td><code>connect.book</code> (this module)</td>
+<td>the User Guide and Admin Guide inside Odoo</td>
+</tr>
+</tbody>
+</table>
+<p>There is no second copy of the documentation for the Book, and no export step.
+Both readers open the same Markdown files, and both take their page titles and
+page order from the same per-module <code>mkdocs.yml</code>.</p>
+<div class="admonition info">
+<p class="admonition-title">Only installed modules</p>
+<p>The Book lists the modules whose name starts with <code>connect</code> <strong>and</strong> whose
+state is <code>installed</code>. A module present on disk but not installed on this
+database contributes nothing.</p>
+</div>
+<h2 id="what-a-module-must-ship">What a module must ship</h2>
+<p>Two things, both of which it already needs for the documentation site:</p>
+<ol>
+<li><code>&lt;module&gt;/mkdocs.yml</code> with a <code>site_name</code> and a <code>nav</code>.</li>
+<li><code>&lt;module&gt;/docs/&lt;page&gt;.md</code> for every page the <code>nav</code> lists.</li>
+</ol>
+<p><code>site_name</code> is the name shown above the module's pages in the Book's table of
+contents; the module's technical name is the fallback if it is missing.</p>
+<p>A module with no <code>mkdocs.yml</code>, or whose <code>nav</code> lists no readable page for an
+audience, simply does not appear in that book.</p>
+<h2 id="which-book-a-page-lands-in">Which book a page lands in</h2>
+<p>Every page belongs to exactly one audience. The rule is applied in this order,
+first match wins:</p>
+<ol>
+<li><strong>The <code>nav</code> section.</strong> A top-level section named <code>Admin Guide</code> or
+   <code>User Guide</code> sets the audience of every page under it. This is the explicit
+   form and it overrides everything else.</li>
+<li><strong>The path prefix.</strong> A page under <code>docs/admin/</code> is administrator
+   documentation; a page under <code>docs/user/</code> is user documentation.</li>
+<li><strong>The default: administrator.</strong> A page that declares neither — a flat
+   <code>index.md</code>, <code>configuration.md</code> — is treated as administrator documentation.</li>
+</ol>
+<p>The default errs on the side of the narrower audience: a page never becomes
+readable to more people because someone forgot to classify it.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Explicit sections</label><label for="__tabbed_1_2">Path prefixes</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<pre class="highlight"><code class="language-yaml">site_name: Core
+nav:
+  - Admin Guide:
+      - Installation: admin/installation.md
+  - User Guide:
+      - Getting Started: user/getting-started.md</code></pre>
+</div>
+<div class="tabbed-block">
+<pre class="highlight"><code class="language-yaml">site_name: FreeSWITCH
+nav:
+  - SIP Firewall: admin/firewall.md
+  - Call Parking: user/parking.md</code></pre>
+</div>
+</div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Writing a page for end users</p>
+<p>Put it under <code>docs/user/</code>, or list it under a <code>User Guide:</code> section. Those
+are the only two ways a page reaches someone who is not a Connect
+administrator.</p>
+</div>
+<h2 id="cross-references-between-pages">Cross-references between pages</h2>
+<p>Pages link to each other by file name, the way MkDocs expects:
+<code>[Security](security.md)</code>, <code>[Firewall](admin/firewall.md#troubleshooting)</code>. The
+site resolves those into URLs; the Book resolves them into page jumps within
+the right-hand pane.</p>
+<p>A link that resolves outside the module's <code>docs/</code> folder is rendered inert
+rather than followed, and a link to a page the reader's book does not hold does
+nothing. Links to external addresses are left untouched and open in a new tab.</p>
+<h2 id="markdown-support">Markdown support</h2>
+<p>The Book renders Markdown itself, with no third-party package, so it works in
+any Odoo image. It covers headings, paragraphs, nested lists, fenced code,
+blockquotes, tables, horizontal rules and inline formatting, plus the two
+MkDocs constructs this repository uses:</p>
+<ul>
+<li><strong>Admonitions</strong> — <code>!!! note "Title"</code> and the <code>info</code>, <code>tip</code>, <code>warning</code>,
+  <code>danger</code>, <code>example</code> kinds, with a four-space-indented body.</li>
+<li><strong>Content tabs</strong> — <code>=== "Label"</code> blocks. The site renders them as a
+  switcher; the Book stacks them as labelled panels, so every variant stays
+  readable.</li>
+</ul>
+<p>Anything outside that subset degrades to plain text rather than breaking the
+page. A page's YAML front matter is stripped before rendering — it configures
+the site, not the Book.</p>
+<div class="admonition warning">
+<p class="admonition-title">One oversized page is skipped, not truncated</p>
+<p>A Markdown file larger than 1 MB is left out of the book, with a warning in
+the server log. A page that fails to render is dropped the same way, so a
+single bad file never takes the whole book down with it.</p>
+</div>
+<h2 id="access">Access</h2>
+<table>
+<thead>
+<tr>
+<th>Menu</th>
+<th>Group required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Connect ▸ Documentation ▸ User Guide</td>
+<td><strong>Connect / User</strong> (<code>connect.group_user</code>)</td>
+</tr>
+<tr>
+<td>Connect ▸ Documentation ▸ Admin Guide</td>
+<td><strong>Connect / Admin</strong> (<code>connect.group_admin</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The menus are hidden from anyone without the group, and the model checks the
+group again on every call — a hidden menu is a convenience, not the access
+control. <code>connect.group_admin</code> implies <code>connect.group_user</code>, so an
+administrator sees both books.</p>
+<p><code>connect.book</code> is an abstract model: it stores nothing and has no table, so
+there are no access rules to grant on it.</p>
+<h2 id="translations">Translations</h2>
+<p>A translated page lives at <code>docs/i18n/&lt;lang&gt;/&lt;same relative path&gt;</code> — for
+example <code>docs/i18n/fr/user/getting-started.md</code> mirrors
+<code>docs/user/getting-started.md</code>. The Book prefers the translation matching the
+reader's Odoo language and falls back to the source page when there is none, so
+a partially translated module is served page by page rather than all-or-nothing.</p>
+<p>Only the short language tag is used: <code>fr_BE</code> reads <code>docs/i18n/fr/</code>.</p>
+<h2 id="performance">Performance</h2>
+<p>Rendered pages are cached per worker, keyed by file path and modification time,
+as are the parsed <code>mkdocs.yml</code> files. Editing a file invalidates its entry on
+the next read, so a redeploy needs no cache flush and no server restart to show
+new documentation — only an Odoo module upgrade if the module itself is new.</p>
+  </article>
+
+      </main>
+
+      
+        
+
+
+  
+
+
+  <aside class="docs-toc" aria-label="On this page">
+    <p class="docs-toc__title">On this page</p>
+    <ul class="docs-toc__list">
+      
+        <li>
+          <a class="docs-toc__link" href="#one-source-two-readers">One source, two readers</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#what-a-module-must-ship">What a module must ship</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#which-book-a-page-lands-in">Which book a page lands in</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#cross-references-between-pages">Cross-references between pages</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#markdown-support">Markdown support</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#access">Access</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#translations">Translations</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#performance">Performance</a>
+          
+        </li>
+      
+    </ul>
+  </aside>
+
+      
+    </div>
+
+    <dialog class="docs-search" data-search aria-label="Search"><form class="docs-search__form" data-search-form>
+    <input class="docs-search__input" data-search-input type="search"
+           placeholder="Search the documentation" autocomplete="off">
+    <button class="docs-search__close" type="button" data-search-close
+            aria-label="Close">×</button>
+  </form>
+  <ul class="docs-search__results" data-search-results></ul>
+</dialog>
+    <footer class="docs-footer">
+  
+    <nav class="docs-pager" aria-label="Page navigation">
+      
+        <a class="docs-pager__link" href="../../../Project/security/">
+          <span class="docs-pager__label">Previous</span>
+          <span>Security</span>
+        </a>
+      
+      
+        <a class="docs-pager__link docs-pager__link--next"
+           href="../../user/reading-the-docs/">
+          <span class="docs-pager__label">Next</span>
+          <span>Reading the Documentation</span>
+        </a>
+      
+    </nav>
+  
+
+  <div class="docs-footer__meta">
+    <span>Copyright &copy; Oduist OÜ</span>
+    
+      <a href="https://github.com/oduist/connect_addons_ng/edit/19.0/connect_book/docs/admin/book-setup.md" rel="noopener" target="_blank">Edit on GitHub</a>
+    
+  </div>
+</footer>
+
+    
+      <script src="../../../assets/vendor/lunr.min.js"></script>
+      <script type="module" src="../../../assets/theme.js"></script>
+      
+        <script src="../../../search/main.js"></script>
+      
+    
+  </body>
+</html>
