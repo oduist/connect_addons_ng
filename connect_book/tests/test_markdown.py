@@ -85,7 +85,7 @@ class TestMarkdown(BaseCase):
         self.assertEqual(html.count("<ol>"), 1)
         self.assertIn("<pre><code", html)
         # Dedented by one level, so the snippet is not shown indented.
-        self.assertIn(">pip install odoo\n", html)
+        self.assertIn(">pip install odoo<", html)
         self.assertIn("</pre></li>", html)
 
     def test_list_ends_at_a_following_paragraph(self):
