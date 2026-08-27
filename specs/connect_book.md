@@ -254,8 +254,10 @@ The read path is exercised against a temporary module directory, with
 
 - **The Changes archive.** The source module collected
   `doc/changes/YYYY-MM-DD.md` per module into a day-by-day timeline. This
-  repository keeps one Keep-a-Changelog file at `docs/changelog.md` instead, so
-  the client action, its endpoint and the collector are left out rather than
-  shipped reading nothing.
+  repository keeps one Keep-a-Changelog file at `connect/docs/changelog.md`
+  instead, so the client action, its endpoint and the collector are left out
+  rather than shipped reading nothing. That file is a page of the core module
+  precisely so the Book serves it like any other page — see
+  [ADR-059](decisions/059-connect-book-reads-the-mkdocs-tree.md).
 - **`doc/tech_spec.md`.** The technical layer lives in `specs/` here, and was
   deliberately hidden from the Book there too.

@@ -1,6 +1,11 @@
 # Per-module docs config, aggregated by root mkdocs.yml via mkdocs-monorepo-plugin.
 site_name: Core
 nav:
+  # Repository-wide release history. It lives here, rather than in the root
+  # docs/, so that connect_book can serve it inside Odoo: the Book reads a
+  # module's own docs/ folder and never the repository root, which does not
+  # ship when a module is installed from the Apps Store.
+  - Changelog: changelog.md
   - Admin Guide:
       - Installation: admin/installation.md
       - Licensing & Trial: admin/licensing.md

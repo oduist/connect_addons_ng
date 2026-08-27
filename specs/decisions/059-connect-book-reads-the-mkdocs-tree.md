@@ -72,9 +72,16 @@ Two further departures from the source module:
   two books check. A Connect administrator, not an Odoo system administrator,
   is the person these admin pages are written for.
 - **The Changes archive is not ported.** `doc/changes/YYYY-MM-DD.md` has no
-  counterpart here; this repository keeps one Keep-a-Changelog file at
-  `docs/changelog.md`. The client action, its endpoint and the per-day
-  collector are left out rather than shipped reading nothing.
+  counterpart here; this repository keeps one Keep-a-Changelog file. The
+  client action, its endpoint and the per-day collector are left out rather
+  than shipped reading nothing.
+
+  That file lives at `connect/docs/changelog.md`, not in the root `docs/`,
+  so the Book can serve it. The Book resolves a module directory through
+  `get_module_path()` and never reads the repository root — which is not
+  there at all when a module is installed from the Apps Store. Making the
+  changelog a page of the core module, which every installation has, is what
+  puts release history in front of an administrator inside Odoo.
 
 ## Consequences
 
