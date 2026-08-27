@@ -210,7 +210,7 @@ delegated on the content pane and acts only on `[data-book-page]`.
 |--------|-------|
 | `action_connect_book` | `ir.actions.client`, tag `connect_book.book`, name "User Guide" |
 | `action_connect_book_admin` | `ir.actions.client`, tag `connect_book.admin`, name "Admin Guide" |
-| `menu_connect_documentation` | **Documentation** submenu under `connect.menu_connect_root`, sequence 90, `groups="connect.group_user"` — owned by this module, core has no such menu |
+| `menu_connect_documentation` | **Documentation** submenu under `connect.menu_connect_root`, sequence **200**, `groups="connect.group_user"` — owned by this module, core has no such menu. 200 keeps it last in the Connect menu, behind Configuration (100) and every provider/add-on entry (highest today: Memory at 160) |
 | `menu_connect_book_doc` | User Guide, sequence 5, `groups="connect.group_user"` |
 | `menu_connect_book_admin` | Admin Guide, sequence 10, `groups="connect.group_admin"` |
 

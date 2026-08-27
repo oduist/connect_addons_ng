@@ -11,12 +11,17 @@
     </record>
 
     <!-- The Documentation section is owned by this module: core Connect has no
-         such menu, and nothing else needs one. -->
+         such menu, and nothing else needs one.
+
+         Sequence 200 keeps it last in the Connect menu, behind everything a
+         provider or an add-on puts there (the highest today is Memory at 160)
+         and behind Configuration at 100. The manual belongs after the work, not
+         in the middle of it, and the gap leaves room for menus added later. -->
     <menuitem id="menu_connect_documentation"
               name="Documentation"
               parent="connect.menu_connect_root"
               groups="connect.group_user"
-              sequence="90"/>
+              sequence="200"/>
 
     <menuitem id="menu_connect_book_doc"
               name="User Guide"
