@@ -45,7 +45,7 @@ What this repository holds:
 ```
 mkdocs.yml                      # theme: name: aurora, nav, plugins, extensions
 docs/
-  index.md                      # the only page outside the modules
+  index.md  changelog.md        # the only pages outside the modules
   README.md                     # how to build the site (excluded from it)
   requirements.txt              # mkdocs, the theme pin, monorepo plugin
   stylesheets/home.css          # the home page's own components — plain CSS
@@ -189,9 +189,8 @@ MkDocs supports `template:` in a page's front matter
 (`mkdocs/commands/build.py:210`) if one is ever needed.
 
 `page.meta.hide` is honoured for `navigation` and `toc`, which is what
-`docs/index.md` already declares — its front matter stays untouched. A page
-inside a module must **not** hide its navigation: the sidebar is that
-module's own, and hiding it strands the reader on the page.
+`docs/index.md` and `docs/changelog.md` already declare — their front matter
+stays untouched.
 
 ### `partials/header.html`
 

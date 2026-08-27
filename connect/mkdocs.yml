@@ -1,13 +1,6 @@
 # Per-module docs config, aggregated by root mkdocs.yml via mkdocs-monorepo-plugin.
 site_name: Core
 nav:
-  # Repository-wide release history. It lives in the core module, not the
-  # root docs/, so connect_book can serve it: the Book reads a module's own
-  # docs/ folder through get_module_path() and never the repository root,
-  # which is not there when a module is installed from the Apps Store.
-  # In the Book it is reached through Documentation > Changelog, and
-  # _collect_modules skips it so it does not also appear in the Admin Guide.
-  - Changelog: changelog.md
   - Admin Guide:
       - Installation: admin/installation.md
       - Licensing & Trial: admin/licensing.md
