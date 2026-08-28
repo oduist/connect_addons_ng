@@ -9,6 +9,7 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 ## Modules
 
 - **`connect`** — Technology-agnostic core: the shared call/message ledger (`connect.call`, `connect.channel`, `connect.recording`, `connect.message`), PBX people (`connect.user`), common settings, OpenAI transcription/summarization, partner integration. **Never imports provider-specific code and holds NO PBX-configuration models.**
+- **`connect_book`** — the documentation, served inside Odoo (ADR-059). `connect.book` is an abstract model that reads every installed `connect*` module's own `docs/` folder and its `mkdocs.yml` `nav` — the same source the documentation site is built from — and assembles two client actions: **User Guide** (`connect.group_user`) and **Admin Guide** (`connect.group_admin`). A page's audience comes from an explicit `Admin Guide:`/`User Guide:` nav section, else the `docs/admin/` or `docs/user/` path prefix, else admin. Ships a dependency-free Markdown renderer covering the MkDocs subset in use (`!!!` admonitions, `=== "tabs"`). **Documentation** submenu under the Connect app. Depends `['connect', 'web']`.
 - **`connect_twilio`** — Twilio integration. Owns its PBX configuration: `connect.twilio.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,twiml,domain}`, WhatsApp, sms.composer, webhook handlers, Twilio Voice JS SDK phone widget. **Twilio** submenu under the Connect app (incl. Messages).
 - **`connect_s3`** — Twilio External S3 recording storage. Owns **no** models; extends `connect.settings` (AWS config, bucket provisioning via boto3, Twilio AWS credential management) and `connect.recording` (read media back from S3, `recording_expired`), and subclasses the core media controller. Twilio writes recordings into the customer's bucket itself; Odoo only configures and reads. Mixed mode: pre-switch recordings stay on Twilio. Menu under Connect → Configuration → **S3 Storage**. Depends `['connect', 'connect_twilio']`. See ADR-060.
 - **`connect_freeswitch`** — FreeSWITCH integration. Owns `connect.freeswitch.{exten,callflow,callflow_choice,number,endpoint,outgoing_callerid}` plus gateways/routes/FIFO/parking/firewall, Verto WebRTC client, XML dialplan generation. **FreeSWITCH** submenu under the Connect app.
@@ -93,6 +94,7 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_project.md` — Project bridge module spec (models, security, views)
 - `specs/connect_memory.md` — Memory base module spec (outbox/inbox contract, capture, backfill, controllers, deploy sidecar)
 - `specs/connect_memory_sale.md` — Memory Sale domain module spec (sale/invoice/payment events, payment digest)
+- `specs/connect_book.md` — Book module spec (docs discovery, nav contract, audiences, client actions)
 - `docs/` — User and admin documentation (MkDocs; the Aurora theme installs from `docs/requirements.txt`, see `specs/docs_site.md`)
 
 ## Development Commands
@@ -360,6 +362,7 @@ connect_addons_ng/
 ├── connect_project/tests/test_*.py
 ├── connect_memory/tests/test_*.py
 ├── connect_memory_sale/tests/test_*.py
+├── connect_book/tests/test_*.py
 └── connect_helpdesk/tests/
 ```
 
@@ -414,6 +417,7 @@ oduflow run_odoo_tests connect_account
 oduflow run_odoo_tests connect_project
 oduflow run_odoo_tests connect_memory
 oduflow run_odoo_tests connect_memory_sale
+oduflow run_odoo_tests connect_book
 oduflow run_odoo_tests connect_helpdesk
 ```
 

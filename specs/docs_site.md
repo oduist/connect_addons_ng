@@ -64,6 +64,23 @@ What the theme holds (`oduist/mkdocs-theme-aurora`): `base.html`, `main.html`,
 vendored lunr, and the Tailwind source in `theme-src/`. That repository carries
 the Node toolchain; this one does not.
 
+### The site is not the only reader of `<module>/docs/`
+
+`connect_book` reads the same folders to serve the documentation inside Odoo
+(ADR-059, `specs/connect_book.md`). It takes page titles and page order from
+each module's `mkdocs.yml` `nav`, and it derives **who may read a page** from
+that nav: a top-level `Admin Guide:` / `User Guide:` section, else the
+`docs/admin/` or `docs/user/` path prefix, else administrator-only.
+
+Two consequences for anyone editing the site:
+
+- A module nav is a contract beyond navigation. Renaming a top-level section
+  from `User Guide` to something else moves its pages into the Admin Guide
+  inside Odoo, with no effect on the built site — nothing here would catch it.
+- Keep module navs to the plain `- Title: path.md` form. The Book parses them
+  with a small purpose-built parser rather than PyYAML; YAML features outside
+  that shape build fine on the site and are silently skipped in the Book.
+
 ### Why the home page's styling lives here
 
 `docs/index.md` is hand-written HTML — a hero with a zoomable screenshot and a

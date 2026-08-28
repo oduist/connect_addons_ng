@@ -15,6 +15,12 @@ aggregated by `mkdocs-monorepo-plugin`. To preview:
 That is the whole toolchain — no Node, no build step. The theme arrives with its
 stylesheet already compiled.
 
+The same folders are read a second time by the `connect_book` module, which
+serves them inside Odoo. A page's `mkdocs.yml` nav entry decides its title, its
+order and — through the `Admin Guide:` / `User Guide:` section names or the
+`docs/admin/` / `docs/user/` path prefix — which of the two in-app books it
+appears in. See `connect_book/docs/admin/book-setup.md`.
+
 ## Changing how the site looks
 
 Everything visual belongs to the theme — the page skeleton, header, navigation,
