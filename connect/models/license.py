@@ -433,6 +433,49 @@ class OduistLicense(models.Model):
             if raise_exc:
                 raise ValidationError(error_msg)
 
+    def action_update_license_status(self):
+        """Button wrapper around update_license_status.
+
+        The bare method returns nothing, so the form just reloaded and the
+        click looked like a no-op even when the refresh succeeded. Report the
+        outcome instead. Failures still surface as a ValidationError dialog.
+        """
+        self.update_license_status()
+        registration_number = self.sudo().get_param("registration_number")
+        installed = (
+            self.env["ir.module.module"]
+            .sudo()
+            .search([("name", "in", ODUIST_MODULES), ("state", "=", "installed")])
+        )
+        purchased = len(installed.filtered("oduist_module_purchased"))
+        message = "{} module(s) checked, {} licensed.".format(len(installed), purchased)
+        if registration_number:
+            message += " Registration number: {}.".format(registration_number)
+        # Re-open the form client-side rather than chaining tag="reload": a hard
+        # reload tears the page down and the notification never becomes visible.
+        # This re-reads the record, so refreshed prices and versions show up.
+        next_action = {
+            "type": "ir.actions.act_window",
+            "res_model": "oduist.license",
+            "res_id": self.id,
+            "view_mode": "form",
+            "views": [[False, "form"]],
+            # "main" replaces the current action; "current" would push a second
+            # copy of this record onto the breadcrumb on every click.
+            "target": "main",
+        }
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": "License and pricing updated",
+                "message": message,
+                "type": "success",
+                "sticky": False,
+                "next": next_action if self.id else None,
+            },
+        }
+
     def buy_all_licenses(self):
         """Initiate purchase process for all Oduist modules (excluding already purchased)."""
         token = self.sudo().get_param("license_token")
