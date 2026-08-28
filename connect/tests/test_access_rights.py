@@ -235,3 +235,23 @@ class TestAccessRights(ConnectTestCommon):
         arch = self._partner_form_arch(self.connect_user_user)
         self.assertIn('connect_calls_count', arch)
         self.assertIn('connect_messages_count', arch)
+
+    # --- res.users.connect_user ---
+    # The field is computed by searching connect.user, which only the Connect
+    # groups may read. It must resolve with compute_sudo, otherwise every
+    # internal user outside those groups hits an AccessError just reading
+    # their own record (own preferences, or any read() covering the field).
+
+    def test_connect_user_field_readable_by_plain_user(self):
+        """A user outside the Connect groups can read res.users.connect_user."""
+        user = self.basic_user
+        self.assertFalse(
+            user.has_group('connect.group_user'),
+            'basic_user must stay outside the Connect groups for this test')
+        user.with_user(user).read(['name', 'connect_user'])
+
+    def test_connect_user_field_resolves_for_connect_user(self):
+        """The field still points at the caller's own connect.user record."""
+        owner = self.connect_user_user
+        self.assertEqual(
+            owner.with_user(owner).connect_user, self.connect_user_own)
