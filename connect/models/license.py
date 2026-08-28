@@ -236,8 +236,13 @@ class OduistLicense(models.Model):
         )
         if not module:
             return False, 0
-        install_date = module.create_date or datetime.now() - timedelta(days=30)
         now = datetime.now()
+        # A missing create_date means the install date is unknown, not that the
+        # trial is over: ir_module_module rows written outside create() (module
+        # list scans, restores) can carry a NULL create_date. Falling back to
+        # "installed 30 days ago" expired those modules the moment they were
+        # installed, so fall back to a full trial instead.
+        install_date = module.create_date or now
         days_passed = (now - install_date).days
         days_left = 30 - days_passed
         is_valid = days_left > 0

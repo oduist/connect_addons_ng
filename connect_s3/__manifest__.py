@@ -37,6 +37,7 @@ and the two values to paste.
     'data': [
         'views/settings.xml',
     ],
+    'post_init_hook': 'post_init_hook',
     'installable': True,
     'application': False,
     'auto_install': False,
