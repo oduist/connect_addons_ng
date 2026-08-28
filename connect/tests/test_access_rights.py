@@ -255,3 +255,23 @@ class TestAccessRights(ConnectTestCommon):
         owner = self.connect_user_user
         self.assertEqual(
             owner.with_user(owner).connect_user, self.connect_user_own)
+
+    # --- Connect app menu ---
+    # The root menu gates the whole app (connect_addons does the same on its
+    # connect_top_menu). Child menus stay ungated and inherit it.
+
+    def _sees_connect_app(self, user):
+        menus = self.env['ir.ui.menu'].with_user(user).load_menus(False)
+        return any(
+            menus.get(str(child), menus.get(child, {})).get('name') == 'Connect'
+            for child in menus['root']['children'])
+
+    def test_connect_app_hidden_from_plain_user(self):
+        """An internal user outside the Connect groups gets no Connect app."""
+        self.assertFalse(self._sees_connect_app(self.basic_user))
+
+    def test_connect_app_visible_to_connect_user(self):
+        self.assertTrue(self._sees_connect_app(self.connect_user_user))
+
+    def test_connect_app_visible_to_connect_admin(self):
+        self.assertTrue(self._sees_connect_app(self.connect_admin))
