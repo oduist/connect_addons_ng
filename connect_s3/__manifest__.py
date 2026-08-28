@@ -26,7 +26,8 @@ storage is a one-off manual step — the settings page shows the exact checklist
 and the two values to paste.
     """,
     'author': 'Oduist',
-    'website': 'https://oduist.com',
+    'price': 99,
+    'currency': 'EUR',
     'license': 'Other proprietary',
     'images': ['static/description/icon.png'],
     'external_dependencies': {'python': ['boto3']},
