@@ -2,7 +2,7 @@
     'name': 'Oduist Connect S3 Recording Storage',
     'version': '19.0.1.0.0',
     'category': 'Phone',
-    'summary': 'Store Twilio call recordings in a customer-owned AWS S3 bucket.',
+    'summary': 'Store Twilio recordings in your own S3 bucket',
     'description': """
 Connect S3 Recording Storage
 ============================
