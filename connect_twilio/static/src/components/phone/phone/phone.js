@@ -484,7 +484,16 @@ export class Phone extends Component {
                 )
                 this._applyRecordingResult(result)
                 this._broadcastRecordingState()
-                return
+                // A recording started by a callflow or by the Record Calls
+                // option is only listed by the Twilio API a moment after
+                // answer, and _softphone_recording_state_twilio reports "off"
+                // until it is. Settling on that first sample left the button
+                // offering "Start Recording" for a call that was already being
+                // recorded. Only "off" with no reference is still unsettled;
+                // anything else is a real answer from Twilio.
+                if (this.state.recordingState !== 'off' || this.state.recordingRef) {
+                    return
+                }
             } catch (error) {
                 // "Active call was not found" just means the webhook has not
                 // landed yet, so keep trying and only surface the last failure.
@@ -501,9 +510,15 @@ export class Phone extends Component {
         if (this.state.phone_status !== this.status.accepted) {
             return
         }
-        this.state.recordingState = 'off'
-        this.state.recordingError = 'Call SID unavailable'
-        this._broadcastRecordingState()
+        // Out of attempts. If we never got a CallSid there is nothing to
+        // report against; if we did, the last answer was a genuine "off"
+        // (a call nobody is recording) and must be left alone rather than
+        // overwritten with an error.
+        if (!this.getRecordingChannelSid()) {
+            this.state.recordingState = 'off'
+            this.state.recordingError = 'Call SID unavailable'
+            this._broadcastRecordingState()
+        }
     }
 
     isRecordingOn() {
