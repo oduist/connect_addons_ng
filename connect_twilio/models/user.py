@@ -766,6 +766,15 @@ class User(models.Model):
                     .sudo()
                     .get_param('twilio_edge')
                 ),
+                # The softphone shows the recording state from this the moment
+                # a call is answered. Twilio only lists the recording once the
+                # far end picks up, so asking the API is always late; this flag
+                # is what decides recording in every path the web phone uses --
+                # outgoing (connect.settings.originate_call), the user's own
+                # dial TwiML and the SIP domain handler -- so it is the right
+                # answer to show immediately. The Twilio sync still runs and
+                # corrects it if recording did not actually start.
+                'record_calls': bool(user.record_calls),
             }
         except Exception as e:
             logger.exception('Error getting Twilio JWT:')

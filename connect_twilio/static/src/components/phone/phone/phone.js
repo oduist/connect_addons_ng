@@ -54,6 +54,10 @@ export class Phone extends Component {
         this.bus = this.props.bus
         this.token = this.props.token_data.token
         this.edge = this.props.token_data.edge
+        // Whether this user's calls are recorded by configuration. Used to
+        // show the recording state as soon as a call is answered instead of
+        // waiting for Twilio to list it (see applyExpectedRecordingState).
+        this.recordCalls = !!this.props.token_data.record_calls
         this.callStatus = {
             NoAnswer: 'noanswer',
             Busy: 'busy',
@@ -463,12 +467,26 @@ export class Phone extends Component {
     // no CallSid isRecordingButtonDisabled() is true, so the button sits greyed
     // out through a call that the Record Calls option is recording. Retry until
     // the answer is real, and give up only once the call is over.
+    // Show what the configuration says straight away, so the button is right
+    // from the first frame of the call rather than after a round trip. Twilio
+    // cannot answer this early: with <Dial record="record-from-answer"> the
+    // recording does not exist until the far end picks up, so the API would
+    // report "off" for the whole ring. syncRecordingState() then confirms it,
+    // or corrects it if recording never actually started.
+    applyExpectedRecordingState() {
+        this.state.recordingState = this.recordCalls ? 'on' : 'off'
+        this.state.recordingBusy = false
+        this.state.recordingError = ''
+        this._broadcastRecordingState()
+    }
+
     // The "accept" event fires when THIS leg reaches Twilio, not when the far
     // end picks up (a call that rings out unanswered still reports accepted).
     // With <Dial record="record-from-answer"> the recording only starts once
     // the callee answers, so the wait is however long the phone rings -- no
     // short fixed window can cover it. Poll at a low rate for the first
-    // minute instead, and stop the moment there is an answer either way.
+    // minute, and only overwrite the configured state once Twilio has a real
+    // answer, so the button never flickers back to idle during the ring.
     async syncRecordingState({attempts = 40, delay = 1500} = {}) {
         for (let attempt = 0; attempt < attempts; attempt++) {
             if (attempt) {
@@ -488,18 +506,19 @@ export class Phone extends Component {
                     'get_softphone_recording_state',
                     [this._recordingPayload()]
                 )
+                // "off" with no reference is not an answer yet, it is Twilio
+                // saying the recording has not appeared -- which is the normal
+                // case for the whole ring. Applying it would undo the
+                // configured state we showed at accept, so keep looking
+                // instead; the tail below corrects it if it never shows up.
+                const serverState = (result && result.state) || 'off'
+                const settled = serverState !== 'off' || (result && result.recording_ref)
+                if (!settled) {
+                    continue
+                }
                 this._applyRecordingResult(result)
                 this._broadcastRecordingState()
-                // A recording started by a callflow or by the Record Calls
-                // option is only listed by the Twilio API a moment after
-                // answer, and _softphone_recording_state_twilio reports "off"
-                // until it is. Settling on that first sample left the button
-                // offering "Start Recording" for a call that was already being
-                // recorded. Only "off" with no reference is still unsettled;
-                // anything else is a real answer from Twilio.
-                if (this.state.recordingState !== 'off' || this.state.recordingRef) {
-                    return
-                }
+                return
             } catch (error) {
                 // "Active call was not found" just means the webhook has not
                 // landed yet, so keep trying and only surface the last failure.
@@ -516,13 +535,18 @@ export class Phone extends Component {
         if (this.state.phone_status !== this.status.accepted) {
             return
         }
-        // Out of attempts. If we never got a CallSid there is nothing to
-        // report against; if we did, the last answer was a genuine "off"
-        // (a call nobody is recording) and must be left alone rather than
-        // overwritten with an error.
+        // Out of attempts without Twilio ever reporting a recording.
         if (!this.getRecordingChannelSid()) {
             this.state.recordingState = 'off'
             this.state.recordingError = 'Call SID unavailable'
+            this._broadcastRecordingState()
+            return
+        }
+        // We had a CallSid and Twilio consistently said nothing is recording,
+        // so if we optimistically showed "on" from the configuration, that
+        // guess was wrong (recording never started) -- correct it now.
+        if (this.state.recordingState === 'on' && !this.state.recordingRef) {
+            this.state.recordingState = 'off'
             this._broadcastRecordingState()
         }
     }
@@ -718,7 +742,10 @@ export class Phone extends Component {
                 self.createCallCounter(phoneNumber)
                 self.state.phone_status = self.status.accepted
                 await self.setCallStatus("Answered")
-                // Not awaited: it retries for a few seconds and must not hold up
+                // Show the configured recording state immediately, then let the
+                // Twilio sync confirm or correct it in the background.
+                self.applyExpectedRecordingState()
+                // Not awaited: it polls for up to a minute and must not hold up
                 // the rest of the accept handler; it updates state reactively.
                 self.syncRecordingState()
             })
@@ -849,7 +876,10 @@ export class Phone extends Component {
             self.createCallCounter(phoneNumber)
             self.state.phone_status = self.status.accepted
             await self.setCallStatus("Answered")
-            // Not awaited: it retries for a few seconds and must not hold up
+            // Show the configured recording state immediately, then let the
+            // Twilio sync confirm or correct it in the background.
+            self.applyExpectedRecordingState()
+            // Not awaited: it polls for up to a minute and must not hold up
             // the rest of the accept handler; it updates state reactively.
             self.syncRecordingState()
             const params = self.getJsonCallData()
