@@ -1,5 +1,0 @@
-site_name: Project
-nav:
-  - Overview: index.md
-  - Configuration & Usage: configuration.md
-  - Security: security.md

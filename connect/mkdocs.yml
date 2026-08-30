@@ -12,5 +12,4 @@ nav:
       - Messages (SMS & WhatsApp): user/messages.md
       - Recordings & Transcriptions: user/recordings.md
       - Call Flows (IVR): user/callflows.md
-      - Calls and Business Records: user/business-records.md
       - AI Voice Agents: user/ai-agents.md

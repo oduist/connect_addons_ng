@@ -37,7 +37,6 @@ hide:
     <button type="button" class="mod-leg" data-cat="provider" style="--c:#3987e5"><span class="mod-dot"></span>Providers</button>
     <button type="button" class="mod-leg" data-cat="agent" style="--c:#9085e9"><span class="mod-dot"></span>AI agents</button>
     <button type="button" class="mod-leg" data-cat="app" style="--c:#199e70"><span class="mod-dot"></span>Odoo apps</button>
-    <button type="button" class="mod-leg" data-cat="memory" style="--c:#c98500"><span class="mod-dot"></span>Memory</button>
   </div>
   <div class="mod-grid">
     <a href="Core/admin/installation/" class="mod-tile" data-cat="core" style="--c:#e66767" data-code="connect" data-label="Core" data-tip="One data model for calls, messages, recordings, users and numbers. Providers plug in underneath."><span class="mod-sym">Core</span><span class="mod-nm">Agnostic core</span><span class="mod-code">connect</span></a>
@@ -59,12 +58,6 @@ hide:
     <a href="Pipecat/admin/pipecat-setup/" class="mod-tile" data-cat="agent" style="--c:#9085e9" data-code="connect_pipecat" data-label="AI agents" data-tip="Open-source voice agent pipeline, bridged via FreeSWITCH."><span class="mod-sym">Pc</span><span class="mod-nm">Pipecat</span><span class="mod-code">connect_<wbr>pipecat</span></a>
     <a href="CRM/" class="mod-tile" data-cat="app" style="--c:#199e70" data-code="connect_crm" data-label="Odoo apps" data-tip="Calls link to leads; summaries land in the chatter."><span class="mod-sym">CRM</span><span class="mod-nm">CRM</span><span class="mod-code">connect_<wbr>crm</span></a>
     <a href="Helpdesk/" class="mod-tile" data-cat="app" style="--c:#199e70" data-code="connect_helpdesk" data-label="Odoo apps" data-tip="Match or create tickets by phone number."><span class="mod-sym">HD</span><span class="mod-nm">Helpdesk</span><span class="mod-code">connect_<wbr>helpdesk</span></a>
-    <a href="Sales/" class="mod-tile" data-cat="app" style="--c:#199e70" data-code="connect_sale" data-label="Odoo apps" data-tip="Turn a conversation into a quotation or order."><span class="mod-sym">Sal</span><span class="mod-nm">Sales</span><span class="mod-code">connect_<wbr>sale</span></a>
-    <a href="Project/" class="mod-tile" data-cat="app" style="--c:#199e70" data-code="connect_project" data-label="Odoo apps" data-tip="Attach conversations to project tasks."><span class="mod-sym">Prj</span><span class="mod-nm">Project</span><span class="mod-code">connect_<wbr>project</span></a>
-    <a href="HR/" class="mod-tile" data-cat="app" style="--c:#199e70" data-code="connect_hr" data-label="Odoo apps" data-tip="Employee directory and internal calling."><span class="mod-sym">HR</span><span class="mod-nm">HR</span><span class="mod-code">connect_<wbr>hr</span></a>
-    <a href="Accounting/" class="mod-tile" data-cat="app" style="--c:#199e70" data-code="connect_account" data-label="Odoo apps" data-tip="Payment reminders and finance context on the line."><span class="mod-sym">Acc</span><span class="mod-nm">Accounting</span><span class="mod-code">connect_<wbr>account</span></a>
-    <a href="customer-memory/admin/memory-setup/" class="mod-tile" data-cat="memory" style="--c:#c98500" data-code="connect_memory" data-label="Memory" data-tip="Hindsight builds durable, long-term memory from every interaction."><span class="mod-sym">Mem</span><span class="mod-nm">Customer Memory</span><span class="mod-code">connect_<wbr>memory</span></a>
-    <a href="memory-sales/" class="mod-tile" data-cat="memory" style="--c:#c98500" data-code="connect_memory_sale" data-label="Memory" data-tip="Feeds orders, invoices and payment behaviour into memory."><span class="mod-sym">Ms</span><span class="mod-nm">Memory · Sales</span><span class="mod-code">connect_<wbr>memory_<wbr>sale</span></a>
   </div>
   <div class="mod-tip" id="mod-tip" role="status" aria-live="polite"></div>
 </section>

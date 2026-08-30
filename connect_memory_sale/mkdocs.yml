@@ -1,5 +1,0 @@
-site_name: Memory Sales
-nav:
-  - Overview: index.md
-  - Captured Events: events.md
-  - Payment-Behavior Digest: payment-digest.md
