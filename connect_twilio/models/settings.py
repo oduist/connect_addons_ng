@@ -271,11 +271,27 @@ class Settings(models.Model):
         record_status_url = urljoin(
             api_url, "twilio/webhook/recordingstatus#e={}".format(edge)
         )
+        # The leg created here is an ordinary voice call to the agent's
+        # browser client; only the TwiML it executes talks WhatsApp. A
+        # "whatsapp:" caller ID is meaningless as the From of that voice leg
+        # -- Twilio accepted the create but reported From=None and killed the
+        # call as busy in the same second, so the <WhatsApp> verb never ran
+        # and a WhatsApp click-to-call silently did nothing. Keep the
+        # whatsapp: identity inside <Dial callerId="...">, and present a real
+        # voice caller ID on the outer leg.
+        client_leg_caller_id = callerId
+        if whatsapp_call and str(callerId or '').startswith('whatsapp:'):
+            client_leg_caller_id = (
+                user.connect_user.twilio_outgoing_callerid.number
+                or self.env['connect.twilio.outgoing_callerid'].search(
+                    [('is_default', '=', True)], limit=1).number
+                or user.connect_user.twilio_caller_id()
+            )
         debug(self, 'Originate destination TwiML: {}'.format(twiml))
         channel = client.calls.create(
             twiml=twiml,
             to=to,
-            from_=callerId,
+            from_=client_leg_caller_id,
             status_callback=status_url,
             record=record,
             recording_channels="dual",
