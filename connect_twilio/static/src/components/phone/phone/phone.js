@@ -455,26 +455,55 @@ export class Phone extends Component {
         })
     }
 
-    async syncRecordingState() {
-        const channelSid = this.getRecordingChannelSid()
-        if (!channelSid) {
-            this.state.recordingState = 'off'
-            this.state.recordingError = 'Call SID unavailable'
+    // Both inputs this needs arrive after "accept", not with it: the Twilio SDK
+    // fills in the CallSid asynchronously, and the connect.channel row is
+    // created by the Twilio webhook, which races the event. A single attempt
+    // therefore samples a state that is legitimately not ready yet, and because
+    // nothing re-syncs afterwards the result sticks for the whole call -- with
+    // no CallSid isRecordingButtonDisabled() is true, so the button sits greyed
+    // out through a call that the Record Calls option is recording. Retry until
+    // the answer is real, and give up only once the call is over.
+    async syncRecordingState({attempts = 6, delay = 500} = {}) {
+        for (let attempt = 0; attempt < attempts; attempt++) {
+            if (attempt) {
+                await new Promise((resolve) => setTimeout(resolve, delay))
+            }
+            // The call may have ended while we were waiting; endCall() owns the
+            // reset in that case, so leave its state alone.
+            if (this.state.phone_status !== this.status.accepted) {
+                return
+            }
+            if (!this.getRecordingChannelSid()) {
+                continue
+            }
+            try {
+                const result = await this.orm.call(
+                    'connect.channel',
+                    'get_softphone_recording_state',
+                    [this._recordingPayload()]
+                )
+                this._applyRecordingResult(result)
+                this._broadcastRecordingState()
+                return
+            } catch (error) {
+                // "Active call was not found" just means the webhook has not
+                // landed yet, so keep trying and only surface the last failure.
+                if (attempt < attempts - 1) {
+                    continue
+                }
+                console.warn('Recording state sync failed:', error)
+                this.state.recordingState = 'error'
+                this.state.recordingError = error.message || String(error)
+                this._broadcastRecordingState()
+                return
+            }
+        }
+        if (this.state.phone_status !== this.status.accepted) {
             return
         }
-        try {
-            const result = await this.orm.call(
-                'connect.channel',
-                'get_softphone_recording_state',
-                [this._recordingPayload()]
-            )
-            this._applyRecordingResult(result)
-            this._broadcastRecordingState()
-        } catch (error) {
-            console.warn('Recording state sync failed:', error)
-            this.state.recordingState = 'error'
-            this.state.recordingError = error.message || String(error)
-        }
+        this.state.recordingState = 'off'
+        this.state.recordingError = 'Call SID unavailable'
+        this._broadcastRecordingState()
     }
 
     isRecordingOn() {
@@ -668,7 +697,9 @@ export class Phone extends Component {
                 self.createCallCounter(phoneNumber)
                 self.state.phone_status = self.status.accepted
                 await self.setCallStatus("Answered")
-                await self.syncRecordingState()
+                // Not awaited: it retries for a few seconds and must not hold up
+                // the rest of the accept handler; it updates state reactively.
+                self.syncRecordingState()
             })
             session.on("disconnect", async function (data) {
                 // console.log('incoming -> ended: ', data)
@@ -797,7 +828,9 @@ export class Phone extends Component {
             self.createCallCounter(phoneNumber)
             self.state.phone_status = self.status.accepted
             await self.setCallStatus("Answered")
-            await self.syncRecordingState()
+            // Not awaited: it retries for a few seconds and must not hold up
+            // the rest of the accept handler; it updates state reactively.
+            self.syncRecordingState()
             const params = self.getJsonCallData()
             self.bc.postMessage({event: "tbcAnswerCall", params})
         })
