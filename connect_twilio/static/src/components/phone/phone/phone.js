@@ -463,7 +463,11 @@ export class Phone extends Component {
     // no CallSid isRecordingButtonDisabled() is true, so the button sits greyed
     // out through a call that the Record Calls option is recording. Retry until
     // the answer is real, and give up only once the call is over.
-    async syncRecordingState({attempts = 6, delay = 500} = {}) {
+    // Window sized from real calls: with <Dial record="record-from-answer">
+    // the recording starts about a second after the leg is answered (measured:
+    // answer 21:25:51, recording start 21:25:52), and the API needs a moment
+    // more to list it. 8 x 600ms covers that with margin.
+    async syncRecordingState({attempts = 8, delay = 600} = {}) {
         for (let attempt = 0; attempt < attempts; attempt++) {
             if (attempt) {
                 await new Promise((resolve) => setTimeout(resolve, delay))
