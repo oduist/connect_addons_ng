@@ -9,8 +9,20 @@ from odoo.addons.connect.models.settings import debug
 from odoo.addons.connect.models.call import CALL_END_STATUSES
 
 from .texml_response import VoiceResponse
+from .utils import format_telnyx_debug_payload
 
 logger = logging.getLogger(__name__)
+
+# Telnyx ends an AI conversation with a reason instead of an error code, and
+# a failed conversation still reports the call itself as completed. Without
+# this mapping such a call is only a suspiciously short entry in the history.
+AI_CONVERSATION_ERROR_MESSAGES = {
+    'greeting_error': (
+        'The AI assistant could not generate its greeting audio, so the call '
+        'ended immediately. Telnyx usually rejects the configured voice or a '
+        'speaking speed the voice does not support.'
+    ),
+}
 
 
 class Call(models.Model):
@@ -27,7 +39,10 @@ class Call(models.Model):
 
     @api.model
     def telnyx_on_call_action(self, params):
-        debug(self, 'On call action: %s' % params)
+        debug(
+            self,
+            'On call action: %s' % format_telnyx_debug_payload(params),
+        )
         response = VoiceResponse()
         response.hangup()
         return response.to_xml()
@@ -65,9 +80,18 @@ class Call(models.Model):
                 'error_code': params.get('ErrorCode'),
                 'error_message': params.get('ErrorMessage'),
             }
+        else:
+            error_data = self._telnyx_ai_conversation_error(params)
 
         # Core call processing
         call_id = self.process_call_event(channel, error_data)
+
+        conversation_id = params.get('ConversationId')
+        if channel.call and conversation_id:
+            channel.call.write({
+                'telnyx_ai_conversation_id': conversation_id,
+                'telnyx_ai_last_sync_at': fields.Datetime.now(),
+            })
 
         # Desktop notification for incoming SIP calls
         if (channel.call
@@ -90,17 +114,50 @@ class Call(models.Model):
                 self.env['connect.settings'].connect_notify(
                     notify_uid=user.id,
                     title="Call Error",
-                    message=params.get('ErrorMessage', ''),
+                    message=error_data.get('error_message') or '',
                     warning=True,
                 )
 
         return call_id
 
     @api.model
+    def _telnyx_ai_conversation_error(self, params):
+        """Turn a failed AI conversation into call error data.
+
+        Telnyx reports the outcome of an assistant conversation as
+        `CallStatus=conversation_ended` with a `Reason`, and reports the
+        call leg itself as a normal `completed` afterwards. Only failure
+        reasons become call errors; a caller who simply hung up is not an
+        error. The reason list is not documented, so unknown failures are
+        recognized by their name and reported verbatim rather than
+        silently dropped.
+        """
+        if params.get('CallStatus') != 'conversation_ended':
+            return None
+        reason = (params.get('Reason') or '').strip()
+        if not reason:
+            return None
+        if not (reason.endswith('_error') or reason.startswith('error')
+                or 'fail' in reason):
+            return None
+        message = AI_CONVERSATION_ERROR_MESSAGES.get(
+            reason,
+            "The AI conversation ended with '{}'.".format(reason),
+        )
+        voice = ' '.join(part for part in (
+            params.get('TtsProvider'),
+            params.get('TtsModelId'),
+            params.get('TtsVoiceId'),
+        ) if part)
+        if voice:
+            message = '{} Voice: {}.'.format(message, voice)
+        return {'error_code': reason, 'error_message': message}
+
+    @api.model
     def on_telnyx_vm_recording_status(self, params):
         debug(
             self.sudo(),
-            'On recording status: %s' % json.dumps(params, indent=2),
+            'On recording status: %s' % format_telnyx_debug_payload(params),
         )
         channel = self.sudo().env['connect.channel'].search(
             [('sid', '=', params['CallSid'])]
@@ -340,6 +397,7 @@ class Call(models.Model):
             'status': 'completed',
             'transcript': transcript,
             'summary': summary or '',
+            'transcription_pending': False,
         }
         recording = self.env['connect.recording'].sudo().search(
             [('sid', '=', conversation_id), ('source', '=', 'telnyx-ai')],
@@ -351,6 +409,14 @@ class Call(models.Model):
             recording = self.env['connect.recording'].sudo().with_context(
                 skip_transcription=True
             ).create(vals)
+        call_control_id = metadata.get('call_control_id') or channel.sid
+        try:
+            recording.telnyx_attach_ai_audio(call_control_id)
+        except Exception:
+            logger.exception(
+                'Cannot attach Telnyx AI audio for conversation %s',
+                conversation_id,
+            )
         call.write({
             'telnyx_ai_assistant': assistant.id,
             'telnyx_ai_conversation_id': conversation_id,
@@ -361,14 +427,31 @@ class Call(models.Model):
 
     @api.model
     def telnyx_apply_ai_insights(self, payload):
+        data = payload.get('data') or payload
+        event_payload = data.get('payload') or data
         conversation_id = (
-            payload.get('conversation_id')
-            or (payload.get('data') or {}).get('conversation_id')
+            event_payload.get('conversation_id')
+            or data.get('conversation_id')
+            or payload.get('conversation_id')
         )
+        call_control_id = event_payload.get('call_control_id')
+        if not conversation_id and call_control_id:
+            channel = self.env['connect.channel'].sudo().search(
+                [('sid', '=', call_control_id)], limit=1)
+            conversation_id = channel.call.telnyx_ai_conversation_id
         if not conversation_id:
+            logger.warning(
+                'Cannot match Telnyx AI insight event to a conversation '
+                '(call_control_id=%s).', call_control_id or '',
+            )
             return False
-        insight_items = payload.get('insights') or (
-            payload.get('data') or {}).get('insights') or []
+        insight_items = (
+            event_payload.get('results')
+            or event_payload.get('insights')
+            or data.get('insights')
+            or payload.get('insights')
+            or []
+        )
         summary = ''
         for item in insight_items:
             if item.get('result'):
