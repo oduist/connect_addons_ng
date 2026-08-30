@@ -463,11 +463,13 @@ export class Phone extends Component {
     // no CallSid isRecordingButtonDisabled() is true, so the button sits greyed
     // out through a call that the Record Calls option is recording. Retry until
     // the answer is real, and give up only once the call is over.
-    // Window sized from real calls: with <Dial record="record-from-answer">
-    // the recording starts about a second after the leg is answered (measured:
-    // answer 21:25:51, recording start 21:25:52), and the API needs a moment
-    // more to list it. 8 x 600ms covers that with margin.
-    async syncRecordingState({attempts = 8, delay = 600} = {}) {
+    // The "accept" event fires when THIS leg reaches Twilio, not when the far
+    // end picks up (a call that rings out unanswered still reports accepted).
+    // With <Dial record="record-from-answer"> the recording only starts once
+    // the callee answers, so the wait is however long the phone rings -- no
+    // short fixed window can cover it. Poll at a low rate for the first
+    // minute instead, and stop the moment there is an answer either way.
+    async syncRecordingState({attempts = 40, delay = 1500} = {}) {
         for (let attempt = 0; attempt < attempts; attempt++) {
             if (attempt) {
                 await new Promise((resolve) => setTimeout(resolve, delay))
