@@ -9,6 +9,7 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 ## Modules
 
 - **`connect`** — Technology-agnostic core: the shared call/message ledger (`connect.call`, `connect.channel`, `connect.recording`, `connect.message`), PBX people (`connect.user`), common settings, OpenAI transcription/summarization, partner integration. **Never imports provider-specific code and holds NO PBX-configuration models.**
+- **`connect_book`** — the documentation, served inside Odoo (ADR-059). `connect.book` is an abstract model that reads every installed `connect*` module's own `docs/` folder and its `mkdocs.yml` `nav` — the same source the documentation site is built from — and assembles two client actions: **User Guide** (`connect.group_user`) and **Admin Guide** (`connect.group_admin`). A page's audience comes from an explicit `Admin Guide:`/`User Guide:` nav section, else the `docs/admin/` or `docs/user/` path prefix, else admin. Ships a dependency-free Markdown renderer covering the MkDocs subset in use (`!!!` admonitions, `=== "tabs"`). **Documentation** submenu under the Connect app. Depends `['connect', 'web']`.
 - **`connect_twilio`** — Twilio integration. Owns its PBX configuration: `connect.twilio.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,twiml,domain}`, WhatsApp, sms.composer, webhook handlers, Twilio Voice JS SDK phone widget. **Twilio** submenu under the Connect app (incl. Messages).
 - **`connect_freeswitch`** — FreeSWITCH integration. Owns `connect.freeswitch.{exten,callflow,callflow_choice,number,endpoint,outgoing_callerid}` plus gateways/routes/FIFO/parking/firewall, Verto WebRTC client, XML dialplan generation. **FreeSWITCH** submenu under the Connect app.
 - **`connect_freeswitch_website`** — website widgets for FreeSWITCH number working schedules (ADR-037): Phone Status and Phone Opening Hours snippets + public JSON endpoints under `/freeswitch/schedule/*`. The only module that may depend on `website`; not auto-installed. Core `connect` owns the schedule engine (`connect.schedule` on top of `resource.calendar`).
@@ -80,7 +81,8 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_freeswitch_website.md` — Website widgets module spec (snippets, public endpoints)
 - `specs/connect_bird.md` — Bird module spec (models, webhooks, controllers, wizards)
 - `specs/connect_3cx.md` — 3CX module spec (settings/user/channel extensions, webhook controllers, CRM template, sidecar agent)
-- `docs/` — User and admin documentation (MkDocs Material), see `mkdocs.yml` for structure
+- `specs/connect_book.md` — Book module spec (docs discovery, nav contract, audiences, client actions)
+- `docs/` — User and admin documentation (MkDocs; the Aurora theme installs from `docs/requirements.txt`, see `specs/docs_site.md`)
 
 ## Development Commands
 Use oduflow to manage module development and deployment.
@@ -341,6 +343,7 @@ connect_addons_ng/
 ├── connect_infobip/tests/test_*.py
 ├── connect_bird/tests/test_*.py
 ├── connect_dograh/tests/test_*.py
+├── connect_book/tests/test_*.py
 └── connect_helpdesk/tests/
 ```
 
@@ -388,6 +391,7 @@ oduflow run_odoo_tests connect_telnyx
 oduflow run_odoo_tests connect_3cx
 oduflow run_odoo_tests connect_infobip
 oduflow run_odoo_tests connect_dograh
+oduflow run_odoo_tests connect_book
 oduflow run_odoo_tests connect_helpdesk
 ```
 
