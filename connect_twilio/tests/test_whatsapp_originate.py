@@ -70,3 +70,21 @@ class TestWhatsappOriginate(TwilioTestCommon):
         kwargs = self._originate('+37360681783', False)
         self.assertFalse(str(kwargs['from_']).startswith('whatsapp:'))
         self.assertNotIn('<WhatsApp', kwargs['twiml'])
+
+    # --- the ledger has to know it was WhatsApp ---
+    # Nothing on the outer leg says so: its From is a plain voice caller
+    # ID and its To is the agent's client: URI, so the status webhook
+    # reports call_type 'phone'. Only originate_call knows, and the call
+    # record takes its type from this first leg.
+
+    def _originated_channel(self):
+        return self.env['connect.channel'].sudo().search(
+            [('sid', '=', 'CAtest0000000000000000000000000001')], limit=1)
+
+    def test_originate_marks_the_leg_as_whatsapp(self):
+        self._originate('+37360681783', True)
+        self.assertEqual(self._originated_channel().call_type, 'whatsapp')
+
+    def test_originate_marks_a_plain_call_as_phone(self):
+        self._originate('+37360681783', False)
+        self.assertEqual(self._originated_channel().call_type, 'phone')
