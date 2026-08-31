@@ -131,6 +131,16 @@ class Channel(models.Model):
                     and isinstance(new_called, str)
                     and new_called.startswith(('client:', 'sip:'))):
                 del data['called']
+            # Same asymmetry for the call type. A WhatsApp click-to-call
+            # rings the agent over ordinary voice -- the outer leg must not
+            # carry a "whatsapp:" identity, or Twilio ends the call before
+            # the WhatsApp verb runs -- so its status events describe a
+            # plain phone leg. The originator is the only party that knows
+            # better, so let it win: an upgrade to whatsapp still applies,
+            # a downgrade back to phone does not.
+            if (channel.call_type == 'whatsapp'
+                    and data.get('call_type') != 'whatsapp'):
+                del data['call_type']
             # Link parent if not yet linked
             if not channel.parent_channel:
                 parent_sid = channel.parent_sid or params.get('parent_sid')

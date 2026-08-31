@@ -303,6 +303,11 @@ class Settings(models.Model):
             {
                 "sid": channel.sid,
                 "technical_direction": "outbound-api",
+                # Only this leg knows the call is WhatsApp: its From is a
+                # plain voice caller ID and its To is the agent's client:
+                # URI, so the status webhook can only report a phone leg.
+                # The ledger takes the call's type from here.
+                "call_type": 'whatsapp' if whatsapp_call else 'phone',
                 "caller_user": user.id,
                 "caller_pbx_user": user.connect_user.id,
                 "partner": partner_id,
