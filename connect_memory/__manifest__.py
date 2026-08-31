@@ -2,9 +2,7 @@
     'name': 'Connect Memory',
     'version': '19.0.1.0.2',
     'category': 'Phone',
-    'summary': 'External AI memory for Odoo (provider-neutral: Hindsight, Cognee). '
-               'Base module: connect.memory.outbox/inbox contract + customer '
-               'correspondence capture.',
+    'summary': 'External AI memory (Hindsight, Cognee)',
     'description': """
 Connect Memory — base module
 ============================

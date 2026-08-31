@@ -236,8 +236,13 @@ class OduistLicense(models.Model):
         )
         if not module:
             return False, 0
-        install_date = module.create_date or datetime.now() - timedelta(days=30)
         now = datetime.now()
+        # A missing create_date means the install date is unknown, not that the
+        # trial is over: ir_module_module rows written outside create() (module
+        # list scans, restores) can carry a NULL create_date. Falling back to
+        # "installed 30 days ago" expired those modules the moment they were
+        # installed, so fall back to a full trial instead.
+        install_date = module.create_date or now
         days_passed = (now - install_date).days
         days_left = 30 - days_passed
         is_valid = days_left > 0
@@ -427,6 +432,49 @@ class OduistLicense(models.Model):
             _logger.warning(error_msg)
             if raise_exc:
                 raise ValidationError(error_msg)
+
+    def action_update_license_status(self):
+        """Button wrapper around update_license_status.
+
+        The bare method returns nothing, so the form just reloaded and the
+        click looked like a no-op even when the refresh succeeded. Report the
+        outcome instead. Failures still surface as a ValidationError dialog.
+        """
+        self.update_license_status()
+        registration_number = self.sudo().get_param("registration_number")
+        installed = (
+            self.env["ir.module.module"]
+            .sudo()
+            .search([("name", "in", ODUIST_MODULES), ("state", "=", "installed")])
+        )
+        purchased = len(installed.filtered("oduist_module_purchased"))
+        message = "{} module(s) checked, {} licensed.".format(len(installed), purchased)
+        if registration_number:
+            message += " Registration number: {}.".format(registration_number)
+        # Re-open the form client-side rather than chaining tag="reload": a hard
+        # reload tears the page down and the notification never becomes visible.
+        # This re-reads the record, so refreshed prices and versions show up.
+        next_action = {
+            "type": "ir.actions.act_window",
+            "res_model": "oduist.license",
+            "res_id": self.id,
+            "view_mode": "form",
+            "views": [[False, "form"]],
+            # "main" replaces the current action; "current" would push a second
+            # copy of this record onto the breadcrumb on every click.
+            "target": "main",
+        }
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": "License and pricing updated",
+                "message": message,
+                "type": "success",
+                "sticky": False,
+                "next": next_action if self.id else None,
+            },
+        }
 
     def buy_all_licenses(self):
         """Initiate purchase process for all Oduist modules (excluding already purchased)."""

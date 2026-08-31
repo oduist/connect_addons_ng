@@ -175,6 +175,37 @@ class TestChannel(ConnectTestCommon):
         self.assertEqual(self.channel.call_type, 'phone')
 
 
+
+    # --- process_channel_event: originate destination survives the webhook ---
+    # Click-to-call creates the channel with the dialed number as "called",
+    # then the first status event for that same leg reports the agent's
+    # client:/sip: URI as Called. That must not clobber the destination
+    # (the URI stays available in "to").
+
+    def test_event_keeps_originate_destination_over_client_uri(self):
+        ch = self._create_channel(
+            'orig_sid_1', caller='+15550001111', called='+37360681783')
+        self.env['connect.channel'].process_channel_event({
+            'sid': 'orig_sid_1',
+            'caller': '+15550001111',
+            'called': 'client:agent@example.sip.twilio.com',
+            'to': 'client:agent@example.sip.twilio.com',
+            'status': 'ringing',
+        })
+        self.assertEqual(ch.called, '+37360681783')
+        self.assertEqual(ch.to, 'client:agent@example.sip.twilio.com')
+
+    def test_event_still_updates_called_for_real_numbers(self):
+        ch = self._create_channel(
+            'orig_sid_2', caller='+15550001111', called='+37360681783')
+        self.env['connect.channel'].process_channel_event({
+            'sid': 'orig_sid_2',
+            'caller': '+15550001111',
+            'called': '+15559998888',
+            'status': 'ringing',
+        })
+        self.assertEqual(ch.called, '+15559998888')
+
 @tagged('at_install', '-post_install')
 class TestFindPartnerNormalization(ConnectTestCommon):
     """_find_partner reaches the matcher for local-format numbers (ADR-024).

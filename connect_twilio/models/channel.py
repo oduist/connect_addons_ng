@@ -13,6 +13,12 @@ from .settings import MAX_EXTEN_LEN
 
 logger = logging.getLogger(__name__)
 
+# Recording statuses that mean "audio is still being captured". Twilio's
+# terminal states are 'completed', 'absent', 'deleted' and 'stopped'; a
+# running recording shows up as 'processing' (or 'in-progress'/'paused'
+# depending on how it was started), so all three count as live.
+TWILIO_LIVE_RECORDING_STATUSES = ('in-progress', 'processing', 'paused')
+
 
 class Channel(models.Model):
     _inherit = 'connect.channel'
@@ -117,11 +123,20 @@ class Channel(models.Model):
                 # swallowed it -- so a recording running on the call was never
                 # seen and the softphone button stayed idle through a call the
                 # Record Calls option was recording.
+                # ...and matching only 'in-progress' was still wrong: Twilio
+                # reports a recording that is still running as 'processing'
+                # (duration -1). Measured on a live call — recording
+                # RE4df4b06d on an in-progress call came back 'processing',
+                # and across 50 recordings on the account only 'processing'
+                # (live) and 'completed' (finished) ever appeared, so the
+                # 'in-progress' test never matched and the button stayed on
+                # "Start Recording" for the whole call.
                 recordings = [
                     recording
                     for recording in client.calls(call_sid).recordings.list(
                         limit=20)
-                    if getattr(recording, 'status', '') == 'in-progress'
+                    if getattr(recording, 'status', '')
+                    in TWILIO_LIVE_RECORDING_STATUSES
                 ]
             except Exception:
                 logger.exception(

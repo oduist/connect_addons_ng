@@ -2,7 +2,7 @@
     "name": "Connect Memory — Sale & Payment Behavior",
     "version": "19.0.1.0.0",
     "category": "Phone",
-    "summary": "Memory events for sale orders, invoices, payments and payment-behavior digest.",
+    "summary": 'Memory events for sales, invoices, payments',
     "author": "Oduist",
     "website": "https://oduist.com",
     "depends": ["connect_memory", "sale", "account"],

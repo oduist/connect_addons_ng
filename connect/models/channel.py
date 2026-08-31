@@ -119,6 +119,18 @@ class Channel(models.Model):
                 'caller': params.get('caller'),
                 'call_type': params.get('call_type', 'phone'),
             }
+            # Click-to-call stores the real destination on the channel it
+            # creates, then the first status event for that same leg reports
+            # the transport-level target -- the agent's client:/sip: URI --
+            # as Called, and the ledger ends up showing the agent's own
+            # extension instead of the number that was dialed. The URI is
+            # already preserved in "to", so keep the dialed destination.
+            new_called = params.get('called')
+            if (channel.called
+                    and not channel.called.startswith(('client:', 'sip:'))
+                    and isinstance(new_called, str)
+                    and new_called.startswith(('client:', 'sip:'))):
+                del data['called']
             # Link parent if not yet linked
             if not channel.parent_channel:
                 parent_sid = channel.parent_sid or params.get('parent_sid')

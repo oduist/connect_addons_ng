@@ -3,6 +3,7 @@
     'version': '19.0.1.0.1',
     'category': 'Phone',
     'summary': 'Helpdesk integration for Oduist Connect',
+    'author': 'Oduist',
     'depends': ['connect', 'helpdesk'],
     'data': [
         'security/webhook.xml',

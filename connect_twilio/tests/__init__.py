@@ -11,3 +11,5 @@ from . import test_user_caller_id
 from . import test_user_prompts
 from . import test_webhook_signature
 from . import test_whatsapp_sender
+from . import test_inbound_message_routing
+from . import test_whatsapp_originate

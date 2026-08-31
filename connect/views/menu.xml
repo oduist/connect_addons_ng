@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Gate the whole app on the Connect groups. Child menus stay ungated and
+         inherit this; without it an internal user outside the groups can reach
+         Connect pages (by URL, bookmark or a restored last action) and only
+         finds out via an AccessError dialog. Matches connect_addons. -->
     <menuitem id="menu_connect_root"
               name="Connect"
               sequence="10"
+              groups="connect.group_user,connect.group_admin"
               web_icon="connect,static/description/icon.png"/>
 
     <menuitem id="menu_connect_calls"

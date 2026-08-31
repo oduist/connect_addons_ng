@@ -3,6 +3,7 @@
     'version': '19.0.1.0.1',
     'category': 'Phone',
     'summary': 'CRM integration for Oduist Connect',
+    'author': 'Oduist',
     'depends': ['connect', 'crm', 'utm'],
     'data': [
         'security/webhook.xml',
