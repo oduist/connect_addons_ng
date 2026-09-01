@@ -68,7 +68,7 @@ are posted to the partner's chatter and stored in the `connect.message` ledger.
 
 A WhatsApp sender with a **Voice Application** also carries WhatsApp calling.
 Users place one with the **WhatsApp Call** action next to any phone number
-(see [Making and Receiving Calls](../../Core/user/calls.md)).
+(see [Making and Receiving Calls](../Core/user/calls.md)).
 
 How the call is placed:
 
