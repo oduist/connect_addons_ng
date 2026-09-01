@@ -37,6 +37,15 @@ the per-user **Record Calls** option, or manually from the phone all show the
 same active state, and stopping the recording stops whichever of them is
 running.
 
+The button is usable from the moment the call is answered. Because an
+automatic recording only starts when the far end picks up — and the provider
+needs a further moment to report it — the button first shows the state your
+configuration implies, then corrects itself as soon as the provider gives a
+real answer. In practice: if **Record Calls** is on for you, the button shows
+*Stop Recording* immediately rather than sitting on *Start Recording* for the
+first several seconds; if a call turns out not to be recorded after all, the
+button settles back to *Start Recording* on its own.
+
 A purple circular badge with a white dot and **REC** means nothing is being
 recorded and the button will **start** a manual recording. A purple stop icon
 appears only while a recording is actually running and will **stop** it. The

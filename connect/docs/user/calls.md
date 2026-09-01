@@ -1,12 +1,24 @@
 # Making and Receiving Calls
 
-## Call Types
+## Direction
 
-| Type | Description |
-|------|-------------|
+| Direction | Description |
+|-----------|-------------|
 | **Incoming** | A call from an external number to your DID/extension. |
 | **Outgoing** | A call you initiate to an external number. |
 | **Internal** | A call between two PBX users (extension-to-extension). |
+
+## Call Type
+
+Separately from the direction, each call records the medium it travelled over:
+
+| Call type | Description |
+|-----------|-------------|
+| **Phone** | An ordinary voice call over the telephone network or SIP. |
+| **WhatsApp** | A WhatsApp voice call, in either direction. |
+
+The call type is shown on the call form and is available as an optional
+**Call Type** column in the call list — see [Call History](#call-history).
 
 ## Making Calls
 
@@ -22,6 +34,21 @@ Click any phone number field on a partner form, lead, call, channel, or other
 record to dial it directly. Caller and called numbers on individual Connect
 forms use the same standard phone control. Connect list rows keep phone numbers
 as plain text.
+
+### WhatsApp Calls
+
+Where WhatsApp calling is configured, a number also offers a **WhatsApp Call**
+action next to the ordinary **Call**. It rings your own web phone first and
+then places the WhatsApp leg to the destination, so the call appears in the
+history with call type **WhatsApp**.
+
+!!! note "Business-initiated WhatsApp calling is not available everywhere"
+    WhatsApp restricts business-initiated calls by destination country. Where
+    it is not permitted the call fails immediately and the call record's
+    **Error** tab carries the provider's reason, for example *"WhatsApp Voice:
+    Business-initiated calling is not available in the country"*. Nothing in
+    Connect can lift that restriction. Calls **received** over WhatsApp are
+    unaffected.
 
 ### Extension Dialing
 
@@ -66,7 +93,8 @@ Each call record shows:
 | Field | Description |
 |-------|-------------|
 | **Direction** | Incoming, outgoing, or internal. |
-| **Caller / Called** | Phone numbers or extension names. |
+| **Call Type** | Phone or WhatsApp. Hidden by default in the list — switch it on from the column picker at the right end of the header row; the choice is remembered. |
+| **Caller / Called** | Phone numbers or extension names. On an outgoing click-to-call, **Called** is the number you dialed, not the extension the system rang to reach you. |
 | **Status** | Completed, busy, failed, no-answer, canceled. |
 | **Duration** | Call length in human-readable format (e.g., "2m 30s"). |
 | **Partner** | Linked contact, if recognized. |

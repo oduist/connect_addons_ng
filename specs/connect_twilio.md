@@ -68,7 +68,7 @@ Extends core settings with Twilio API credentials, client management, and sync.
 | `get_client()` | Create and return Twilio REST client instance |
 | `sync()` | Full sync of all Twilio resources (numbers, callerIDs, domains, etc.) |
 | `get_media_auth(media_url)` | `(account_sid, auth_token)` for `*.twilio.com` media, `None` for anything else — an External Storage bucket must not receive the Twilio token (ADR-060) |
-| `originate_call()` | Override of the core dispatcher: when `_get_originate_provider(user)` is not `'twilio'`, falls through to `super()`; otherwise initiates the outbound call via the Twilio API. The `From` of an internal originate comes from `connect.user.twilio_caller_id()` (ADR-058) |
+| `originate_call()` | Override of the core dispatcher: when `_get_originate_provider(user)` is not `'twilio'`, falls through to `super()`; otherwise initiates the outbound call via the Twilio API. The `From` of an internal originate comes from `connect.user.twilio_caller_id()` (ADR-058). With `whatsapp_call=True` the WhatsApp identity goes on the inner `<Dial callerId="whatsapp:…"><WhatsApp>`, never on the outer leg's `From` — Twilio accepts the create, reports `From=None` and ends the call as busy in the same second, so the `<WhatsApp>` verb never runs. The channel it creates records `call_type` (`whatsapp`/`phone`) explicitly, because nothing on that leg lets the status webhook infer it |
 | `get_external_call_route()` | Return TwiML route for external calls |
 | `get_twilio_balance()` | Fetch account balance from Twilio API |
 | `_reset_twilio_edge()` | Onchange: reset edge when region changes |
@@ -146,7 +146,7 @@ Extends core message with Twilio message handling - implements the abstract `sen
 
 | Method | Description |
 |--------|-------------|
-| `receive()` | Twilio webhook: process incoming SMS/WhatsApp messages |
+| `receive()` | Twilio webhook: process incoming SMS/WhatsApp messages. Runs as the webhook user, so the `connect.twilio.message_configuration` lookup is `sudo()`d — that model is admin-only by design, and reading it unprivileged raised an `AccessError` the handler's own `except` swallowed, silently discarding the message while still answering 200 (so Twilio never retried) |
 | `send()` | **Implements abstract:** Send message via Twilio API. Dispatch guard: when `connect.settings._get_message_provider()` is not `'twilio'`, falls through to `super()` (co-installation with other messaging providers, e.g. `connect_bird`). |
 | `client_send()` | Low-level: `client.messages.create()` wrapper |
 | `_compute_direction()` | Override: check against Twilio-owned numbers to determine direction |
@@ -209,6 +209,31 @@ spinner. The button exposes a dynamic accessible label and `aria-pressed`.
 `connect.user.record_calls=False` keeps automatic recording off but does not
 hide the manual start action, and it no longer influences the reported state.
 
+**Painting the state before Twilio can answer.** With
+`<Dial record="record-from-answer">` the recording does not exist until the far
+end picks up, and the API needs a further moment to list it, so a single sample
+at `accept` always landed in the gap and left the button offering *Start
+Recording* for a call that was being recorded. Two mechanisms cover the window:
+
+- `applyExpectedRecordingState()` paints the button at `accept` from the
+  `record_calls` value returned by `get_client_token()`. That flag is what
+  actually decides recording in every path the web phone uses — the caller's own
+  `connect.user.record_calls` for outgoing (`connect.settings.originate_call`)
+  and the callee's for incoming (the user dial TwiML and the SIP domain
+  handler) — so the widget owner's own flag governs both directions.
+- `syncRecordingState()` then polls (1.5s interval, up to a minute — `accept`
+  fires when the leg reaches Twilio, not when the far end answers, so the wait
+  is however long the phone rings) and overwrites that optimistic state only
+  once Twilio gives a real answer. An `off` with no recording reference counts
+  as *not yet settled* and keeps polling; anything else ends the loop. The
+  error state is reported only when no CallSid ever arrived.
+
+`_twilio_active_recording()` accepts the three non-terminal statuses, not just
+`in-progress`: on a live call Twilio reports a running recording as
+`processing` with `duration -1`. Twilio remains the sole authority on recording
+state — the expected state only decides what is painted before the API can
+answer.
+
 ---
 
 ### 6. user.py - `_inherit = 'connect.user'`
@@ -254,7 +279,7 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `render_sip()` | Generate TwiML `<Dial><Sip>` |
 | `render_voicemail()` | Generate TwiML `<Record>` for voicemail |
 | `get_greeting_message()` / `get_voicemail_prompt()` | `<Say>` the user prompts with `language`/`voice` from `connect.user` (fallbacks `en-US` / `Woman`, ADR-037) |
-| `get_client_token()` | Generate JWT for Twilio Voice SDK |
+| `get_client_token()` | Generate JWT for Twilio Voice SDK. Returns `record_calls` alongside the token so the widget can paint the expected recording state at answer with no extra round trip (see *Runtime recording control* below); returns `{'token': False}` for a user outside the Connect groups |
 | `get_client_identity()` | Return SIP identity string |
 | `twilio_caller_id()` | Caller ID for calls this user places: the extension, else `twilio_outgoing_callerid`, else the default outgoing caller ID, else the client identity `client:<username>@<domain>` — an empty caller ID makes Twilio substitute an arbitrary number (ADR-058) |
 | `_get_sip_uri()` | Compute SIP URI |

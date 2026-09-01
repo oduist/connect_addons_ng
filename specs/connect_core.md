@@ -198,12 +198,28 @@ Order: `id desc`
 | Method | Description |
 |--------|-------------|
 | `_get_channel_numbers()` | Generic regex-based number parsing. Handles phone numbers, `whatsapp:` prefix stripping, and SIP/client URIs with or without a URI scheme via `connect.user.get_user_by_uri` (ADR-051). |
+| `process_channel_event(params)` | Create or update a channel from a normalized provider event, link its parent and resolve PBX users. On **update** it protects two values the originator knows better than the webhook does — see below. |
 | `_get_duration_human()` | Human-readable duration |
 | `get_softphone_recording_state(payload)` | Provider-dispatched RPC returning runtime recording support/state for the active softphone call. |
 | `start_softphone_recording(payload)` | Provider-dispatched RPC to start recording the active softphone call. |
 | `stop_softphone_recording(payload)` | Provider-dispatched RPC to stop recording the active softphone call. |
 | `_softphone_recording_channel(payload)` | Resolve a provider channel SID and verify the requester is a participant or Connect admin. |
 | `_check_softphone_recording_active()` | Reject runtime controls for completed/busy/failed/no-answer/canceled channels. |
+
+**What `process_channel_event()` refuses to overwrite.** Click-to-call creates
+the outgoing leg itself and knows two things the provider's status callback for
+that same leg cannot report, because the leg is an ordinary voice call to the
+agent's browser:
+
+| Value | Webhook reports | Kept because |
+|-------|-----------------|--------------|
+| `called` | the transport target — the agent's `client:`/`sip:` URI | the dialed destination would be replaced by the agent's own extension. The URI is preserved verbatim in `to`, so nothing is lost. Updates carrying a real number still overwrite. |
+| `call_type` | `phone` | the leg carries no `whatsapp:` identity **by design** — a `whatsapp:` `From` makes Twilio report `From=None` and kill the call before the `<WhatsApp>` verb runs — so the event describes the transport, not the call. An upgrade to `whatsapp` still applies; a downgrade back to `phone` does not. |
+
+`connect.call.call_type` is taken from the **first** leg and never revisited, so
+without the second guard every outgoing WhatsApp call was recorded as an
+ordinary phone call. Inbound WhatsApp was never affected: its first leg carries
+`whatsapp:` in `Caller`.
 
 ---
 
@@ -469,7 +485,7 @@ Order: `id desc`
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `connect_user` | Many2one | Computed |
+| `connect_user` | Many2one | Computed, `compute_sudo=True`. The compute searches `connect.user`, which only the Connect groups may read; without `compute_sudo` any internal user outside those groups hit an `AccessError` merely reading their own `res.users` record. Resolving the link is not privileged — the value is the reader's own PBX user — and `connect.user` itself stays unreadable to them |
 | `pin_code` | Char | Auto-generated on create |
 
 **Constraints:**
@@ -700,7 +716,7 @@ All models get list (tree) and form views. Key view details:
 | `user_views.xml` | List + form with voicemail, summary prompt, originate provider |
 | `debug_views.xml` | List (read-only) |
 | `settings.xml` | Core settings form (general, registration, transcription/OpenAI). Provider settings forms live in their own modules and open the same singleton via the parametrized `open_settings_form()`. |
-| `res_partner_views.xml` | Inherit partner form: add call/message count smart buttons |
+| `res_partner_views.xml` | Inherit partner form: add call/message count smart buttons, gated on `connect.group_user` |
 | `favorite_views.xml` | List + form |
 | `license.xml` | License form + menu |
 
@@ -711,6 +727,16 @@ configuration; each provider module plugs its own submenu (**Twilio**,
 **FreeSWITCH**, **Asterisk**) under `menu_connect_root` at sequence 50, so
 providers appear after Calls/Users in installation order and Configuration
 (seq 100) always stays last — see `specs/architecture.md`.
+
+`menu_connect_root` is gated on `connect.group_user,connect.group_admin`
+(`group_admin` implies `group_user`; both are listed to mirror
+`connect_addons`). Children stay ungated and inherit the gate. Odoo's
+`load_menus` already pruned the app for users who can read none of the child
+actions, but that is implicit filtering, not a gate — it left Connect pages
+reachable by URL, bookmark or a restored last action. The gate does not
+suppress the `AccessError` a user without the groups gets by navigating
+straight to a Connect URL: the ACL is what answers there, and granting
+`connect.group_user` is the fix for a user who is meant to have access.
 
 ```
 Connect (root, seq 10)
