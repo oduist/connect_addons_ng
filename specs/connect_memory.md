@@ -4,7 +4,7 @@
 
 - **Name:** Connect Memory
 - **Technical:** `connect_memory`
-- **Version:** 19.0.1.0.1
+- **Version:** 19.0.1.0.3
 - **Depends:** `connect`
 - **Python deps:** none
 - **Application:** True
@@ -205,6 +205,7 @@ computes via `sudo()`, so the field is safe for any internal user.
 
 - `views/memory_outbox_views.xml`, `views/memory_inbox_views.xml`,
   `views/memory_backfill_views.xml` — list/form views for the three models.
+  `memory_backfill_views.xml` also defines the **Backfill** submenu (see below).
 - `views/res_partner_views.xml` — memory smart button + header actions on the
   partner form.
 - `views/settings.xml` — standalone **Memory** settings form + **Settings** menu
@@ -213,7 +214,9 @@ computes via `sudo()`, so the field is safe for any internal user.
   Connect > Configuration menu. Loaded after `memory_menus.xml`, which defines
   that parent.
 - `views/memory_menus.xml` — **Memory** root menu (`connect.menu_connect_root`,
-  `connect.group_user`, sequence 160) with **Outbox** / **Inbox** submenus and a
+  `connect.group_user`, sequence 160) with **Outbox** / **Inbox** submenus, a
+  **Backfill** submenu (sequence 30, `action_memory_backfill_jobs`,
+  `connect.group_admin`, defined in `memory_backfill_views.xml`), and a
   **Configuration** child (`connect.group_admin`, sequence 100) holding Settings.
 
 ## Data / crons — data/memory_data.xml

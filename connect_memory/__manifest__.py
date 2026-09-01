@@ -1,6 +1,6 @@
 {
     'name': 'Connect Memory',
-    'version': '19.0.1.0.2',
+    'version': '19.0.1.0.3',
     'category': 'Phone',
     'summary': 'External AI memory (Hindsight, Cognee)',
     'description': """
