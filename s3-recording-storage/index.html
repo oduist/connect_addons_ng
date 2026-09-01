@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" data-base="../../../">
+<html lang="en" data-theme="dark" data-base="../">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pipecat AI Agents — Oduist Connect Documentation</title>
+    <title>Overview — Oduist Connect Documentation</title>
     
       <meta name="description" content="Telephony integration platform for Odoo">
     
-      <link rel="icon" href="../../../assets/img/logo.png">
+      <link rel="icon" href="../assets/img/logo.png">
     <script>
       (function () {
         var stored = null;
@@ -22,7 +22,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
     
-      <link rel="stylesheet" href="../../../assets/app.css">
+      <link rel="stylesheet" href="../assets/app.css">
     
   </head>
   <body>
@@ -33,9 +33,9 @@
               aria-label="Open navigation">☰</button>
     
 
-    <a class="docs-header__brand" href="../../..">
+    <a class="docs-header__brand" href="..">
       
-        <img src="../../../assets/img/logo.png" alt="" width="24" height="24">
+        <img src="../assets/img/logo.png" alt="" width="24" height="24">
       
       <span>Oduist Connect Documentation</span>
     </a>
@@ -71,12 +71,12 @@
     <div class="docs-crumbs__inner">
       <ol class="docs-crumbs__list">
         
-          <li><a href="../../..">Home</a></li>
+          <li><a href="..">Home</a></li>
         
         
           <li>
             
-              <a href="./">Pipecat</a>
+              <a href="./">S3 Recording Storage</a>
             
           </li>
         
@@ -107,11 +107,53 @@
       
     
       
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
         
   
     <li class="docs-nav__item">
       <details open>
-        <summary class="docs-nav__section">Pipecat</summary>
+        <summary class="docs-nav__section">S3 Recording Storage</summary>
         <ul class="docs-nav__list">
           
             
@@ -120,7 +162,19 @@
       <a class="docs-nav__link docs-nav__link--active"
          href="./"
          aria-current="page">
-        Pipecat AI Agents
+        Overview
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="setup/"
+         >
+        Setup
       </a>
     </li>
   
@@ -135,48 +189,6 @@
     
       
     
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
   </ul>
 </nav>
       
@@ -184,61 +196,48 @@
       <main id="docs-main" class="docs-content">
         
   <article class="prose max-w-none">
-    <h1 id="pipecat-ai-agent-setup">Pipecat AI Agent Setup</h1>
-<p>The Pipecat integration requires the <code>connect_pipecat</code> addon, a FreeSWITCH
-image containing <code>mod_audio_fork</code>, and the <code>oduist/pipecat-agent:1.0.0</code>
-sidecar. Pipecat does not run inside Odoo.</p>
-<h2 id="1-build-the-images">1. Build the images</h2>
-<p>Build the FreeSWITCH image after the <code>connect_freeswitch</code> 19.0.2.1.0 update:</p>
-<pre class="highlight"><code class="language-bash">docker build --platform linux/amd64 --provenance=false --sbom=false \
-  -t oduist/freeswitch:2.1.0 connect_freeswitch/deploy</code></pre>
-<p>Build the sidecar:</p>
-<pre class="highlight"><code class="language-bash">docker build --platform linux/amd64 --provenance=false --sbom=false \
-  -t oduist/pipecat-agent:1.0.0 connect_pipecat/deploy</code></pre>
-<p><code>connect_pipecat/deploy/oduflow-preset.yaml</code> contains the service variables and
-WSS routing shape.</p>
-<h2 id="2-pair-odoo-and-the-sidecar">2. Pair Odoo and the sidecar</h2>
-<p>Open <strong>Connect → FreeSWITCH → Configuration → Settings → Pipecat AI</strong>.</p>
-<ol>
-<li>Set <strong>Pipecat Sidecar URL</strong> to its externally reachable base URL, for
-   example <code>wss://voice.example.com</code>. Do not append <code>/ws</code>.</li>
-<li>Generate a URL-safe token of at least 24 characters and enter it as the
-   Pipecat service token.</li>
-<li>Set exactly the same value as <code>PIPECAT_SERVICE_TOKEN</code> in the sidecar.</li>
-<li>Set <code>ODOO_URL</code> in the sidecar to Odoo's HTTPS base URL.</li>
-<li>Enter API keys for every provider used by an agent.</li>
-<li>Restart the sidecar and click <strong>CHECK STATUS</strong>. A healthy service reports
-   <code>UP (1.0.0)</code>.</li>
-</ol>
-<p>The token authenticates both directions: FreeSWITCH uses Basic auth to open
-the media WebSocket; the sidecar uses Bearer auth for Odoo and <code>/health</code>.</p>
-<h2 id="3-configure-an-agent">3. Configure an agent</h2>
-<p>Go to <strong>Connect → FreeSWITCH → AI Agents</strong>, create an agent, and configure:</p>
+    <h1 id="s3-recording-storage">S3 Recording Storage</h1>
+<p>Store Twilio call recordings in your own AWS S3 bucket instead of Twilio's
+cloud. You own the retention policy, and Twilio stops billing you for storage.</p>
+<h2 id="how-it-works">How it works</h2>
+<p>This builds on Twilio's <strong>External S3 Storage</strong> feature. Once it is switched on,
+Twilio writes each recording straight into your bucket and the URL it sends Odoo
+points at S3. Odoo never uploads anything — it provisions the bucket, creates
+the credential Twilio uses, and reads the audio back for playback, proxy
+download and transcription.</p>
+<p>Two consequences worth knowing before you start:</p>
 <ul>
-<li>system prompt and optional greeting;</li>
-<li>STT, LLM and TTS providers/models;</li>
-<li>language, voice and maximum duration;</li>
-<li>optional human transfer extension;</li>
-<li>call recording if transcript audio should also be retained.</li>
+<li><strong>Recordings made before the switch stay on Twilio.</strong> They keep playing
+  normally; there is no migration. Both kinds coexist indefinitely.</li>
+<li><strong>Once external storage is on, the audio is no longer fetchable from Twilio.</strong>
+  If the AWS credentials in Odoo stop working, playback stops working.</li>
 </ul>
-<p>Use the <strong>Extension</strong> button to assign a unique extension number. A DID may then
-route to that extension using the normal Connect routing controls.</p>
-<h2 id="verification">Verification</h2>
-<p>Call the extension and confirm the greeting is heard. Speak over a long agent
-reply: playback should stop immediately (<code>killAudio</code>) and the caller's new turn
-should be processed. Ask for a human and verify the configured extension rings.
-After hangup, open the call in Connect and verify summary and transcript.</p>
-<p>Check these logs when diagnosing failures:</p>
-<ul>
-<li><code>mod_audio_fork::connect_failed</code> in FreeSWITCH: WSS, certificate or Basic
-  token mismatch;</li>
-<li>sidecar <code>401</code>: Odoo/service token mismatch;</li>
-<li>provider initialization error: missing key or unsupported model/voice;</li>
-<li>call result <code>404</code>: CDR creation was delayed beyond the sidecar retry window.</li>
-</ul>
-<p>The acceptance target is first agent audio in under 1.4 seconds with working
-barge-in. Measure this in the deployment because provider and network latency
-dominate the result.</p>
+<h2 id="what-it-adds">What it adds</h2>
+<table>
+<thead>
+<tr>
+<th>Where</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Connect → Configuration → S3 Storage</strong></td>
+<td>The whole setup: bucket prefix, generated IAM policy, AWS keys, provisioning buttons, and the two values to paste into the Twilio Console.</td>
+</tr>
+<tr>
+<td>Recording player</td>
+<td>Audio streams from your bucket. Once a lifecycle rule deletes a file, the player says <strong>Recording expired</strong> and the transcript and summary are kept.</td>
+</tr>
+<tr>
+<td>Transcription</td>
+<td>OpenAI transcription reads the audio from S3, so summaries keep working after the switch.</td>
+</tr>
+</tbody>
+</table>
+<p>It owns no models of its own: it extends <code>connect.settings</code> and
+<code>connect.recording</code>, and subclasses the core media controller.</p>
+<p>See <a href="setup/">Setup</a> for the step-by-step, and ADR-060 for the design.</p>
   </article>
 
       </main>
@@ -255,22 +254,12 @@ dominate the result.</p>
     <ul class="docs-toc__list">
       
         <li>
-          <a class="docs-toc__link" href="#1-build-the-images">1. Build the images</a>
+          <a class="docs-toc__link" href="#how-it-works">How it works</a>
           
         </li>
       
         <li>
-          <a class="docs-toc__link" href="#2-pair-odoo-and-the-sidecar">2. Pair Odoo and the sidecar</a>
-          
-        </li>
-      
-        <li>
-          <a class="docs-toc__link" href="#3-configure-an-agent">3. Configure an agent</a>
-          
-        </li>
-      
-        <li>
-          <a class="docs-toc__link" href="#verification">Verification</a>
+          <a class="docs-toc__link" href="#what-it-adds">What it adds</a>
           
         </li>
       
@@ -292,16 +281,16 @@ dominate the result.</p>
   
     <nav class="docs-pager" aria-label="Page navigation">
       
-        <a class="docs-pager__link" href="../../../Vonage/admin/vonage-setup/">
+        <a class="docs-pager__link" href="../Project/security/">
           <span class="docs-pager__label">Previous</span>
-          <span>Vonage Integration</span>
+          <span>Security</span>
         </a>
       
       
         <a class="docs-pager__link docs-pager__link--next"
-           href="../../../Asterisk/admin/asterisk-setup/">
+           href="setup/">
           <span class="docs-pager__label">Next</span>
-          <span>Asterisk Integration</span>
+          <span>Setup</span>
         </a>
       
     </nav>
@@ -310,16 +299,16 @@ dominate the result.</p>
   <div class="docs-footer__meta">
     <span>Copyright &copy; Oduist OÜ</span>
     
-      <a href="https://github.com/oduist/connect_addons_ng/edit/19.0/connect_pipecat/docs/admin/pipecat-setup.md" rel="noopener" target="_blank">Edit on GitHub</a>
+      <a href="https://github.com/oduist/connect_addons_ng/edit/19.0/connect_s3/docs/index.md" rel="noopener" target="_blank">Edit on GitHub</a>
     
   </div>
 </footer>
 
     
-      <script src="../../../assets/vendor/lunr.min.js"></script>
-      <script type="module" src="../../../assets/theme.js"></script>
+      <script src="../assets/vendor/lunr.min.js"></script>
+      <script type="module" src="../assets/theme.js"></script>
       
-        <script src="../../../search/main.js"></script>
+        <script src="../search/main.js"></script>
       
     
   </body>

@@ -271,6 +271,8 @@
     
       
     
+      
+    
   </ul>
 </nav>
       
@@ -336,6 +338,14 @@ sync rather than recreated.</p>
 <p><img alt="User Twilio Phone tab" src="../images/user-twilio-tab.png" /></p>
 <p><em>The </em><em>Twilio Phone</em><em> tab on a PBX user: SIP phone and web phone (Twilio Client),
 each with its own enable switch, ring priority and timeout.</em></p>
+<h3 id="extension">Extension</h3>
+<p>Give every PBX user an extension: open the user and press <strong>Extension</strong>, then
+enter the number (100, 101, ...). Nothing assigns one automatically.</p>
+<p>The extension is what colleagues dial to reach the user, and it is the caller
+ID the user's own calls present — the number that shows on the callee's phone
+and in the call history. A user without one falls back to their own outgoing
+caller ID, then the default outgoing caller ID, and only then to their client
+identity (ADR-058).</p>
 <h3 id="web-phone-twilio-client">Web phone (Twilio Client)</h3>
 <table>
 <thead>
@@ -475,6 +485,10 @@ users cannot register, verify those two credentials are set and correct.</p>
           <a class="docs-toc__link" href="#per-user-telephony-setup">Per-user telephony setup</a>
           
             <ul class="docs-toc__list docs-toc__list--nested">
+              
+                <li>
+                  <a class="docs-toc__link" href="#extension">Extension</a>
+                </li>
               
                 <li>
                   <a class="docs-toc__link" href="#web-phone-twilio-client">Web phone (Twilio Client)</a>

@@ -175,6 +175,8 @@
     
       
     
+      
+    
   </ul>
 </nav>
       
@@ -270,7 +272,9 @@ show the agent version and <em>AMI connected</em>.</p>
 <h2 id="5-map-users-and-endpoints">5. Map users and endpoints</h2>
 <p>For each Odoo user create a <strong>Connect User</strong> (<strong>Connect &gt; Users</strong>) and
 add an <strong>Endpoint</strong> under <strong>Connect &gt; Asterisk &gt; Endpoints</strong> with the <em>Asterisk
-Channel</em> of their phone (e.g. <code>PJSIP/101</code>). The endpoint matches AMI
+Channel</em> of their phone (e.g. <code>PJSIP/101</code>). When adding an endpoint inline
+from the Connect User form, the row shows <code>Endpoint Name</code> and <code>PJSIP/101</code> as
+input placeholders. The endpoint matches AMI
 events to the user and is dialed first on click-to-call. Optional
 per-endpoint settings: originate context, auto-answer SIP header, SIP
 transport. To let the dialplan route a DID to a user, map it under

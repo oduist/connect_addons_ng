@@ -327,6 +327,8 @@
     
       
     
+      
+    
   </ul>
 </nav>
       
@@ -365,6 +367,32 @@
 </table>
 <h3 id="assigning-groups">Assigning Groups</h3>
 <p>When you create a PBX user and link it to an Odoo user, the Connect User group is automatically assigned. Admins must be assigned the Connect Admin group manually via Odoo user settings.</p>
+<h3 id="users-without-a-connect-group">Users without a Connect group</h3>
+<p>An internal Odoo user who belongs to none of the Connect groups sees no trace
+of Connect:</p>
+<ul>
+<li><strong>The Connect app is hidden.</strong> <code>menu_connect_root</code> is gated on Connect User /
+  Connect Admin, so the app and every provider submenu under it are absent from
+  the apps menu.</li>
+<li><strong>The Calls / Messages smart buttons are hidden</strong> on partners, leads,
+  employees, sale orders, invoices, tasks, projects and helpdesk tickets. Their
+  counts are computed with <code>sudo()</code>, so before the gate the buttons rendered for
+  everyone and only failed on click.</li>
+<li><strong>The web phone does not load.</strong> The provider bootstrap RPCs answer "not
+  enabled" for such a user, so no softphone widget registers and the browser
+  does no PBX lookups on page load.</li>
+</ul>
+<p>Two things this deliberately does <strong>not</strong> do:</p>
+<ul>
+<li><strong>A direct URL still returns an <code>AccessError</code>.</strong> Hiding the menu is not a
+  permission; the access rules are what answer for a user who navigates to a
+  Connect page by URL, bookmark or a restored last action. Grant Connect User
+  to a user who is meant to have access.</li>
+<li><strong>It does not restrict their own user record.</strong> Reading <code>res.users</code> —
+  their own preferences, or any read whose field list covers the PBX-user link —
+  works normally for every internal user. The PBX user records themselves stay
+  unreadable to them.</li>
+</ul>
 <h2 id="access-control-matrix">Access Control Matrix</h2>
 <table>
 <thead>
@@ -404,7 +432,7 @@
 <td>PBX Users</td>
 <td>Read</td>
 <td>Full</td>
-<td>—</td>
+<td>Read</td>
 </tr>
 <tr>
 <td>Numbers (per provider)</td>
@@ -476,7 +504,7 @@ their access rules ship with those modules and follow the same pattern.</p>
 <h3 id="freeswitch">FreeSWITCH</h3>
 <p>FreeSWITCH webhooks (<code>/freeswitch/xml</code>, <code>/freeswitch/webhook/*</code>) do not have signature verification. Ensure FreeSWITCH and Odoo communicate over a trusted network or use firewall rules to restrict access.</p>
 <h3 id="webhook-user">Webhook User</h3>
-<p>A special inactive Odoo user (<code>connect.user_connect_webhook</code>) is defined in core data. All webhook handlers use this user's context (via <code>sudo()</code>) to create and update records with proper permissions. This user belongs to the Connect Webhook group.</p>
+<p>A special inactive Odoo user (<code>connect.user_connect_webhook</code>) is defined in core data. All webhook handlers use this user's context to process provider events with explicit model permissions. This user belongs to the Connect Webhook group and has read-only access to PBX users so routing callbacks can resolve their destination.</p>
 <h2 id="record-rules">Record Rules</h2>
 <ul>
 <li><strong>Users</strong> see only calls, messages, and recordings associated with their PBX user account</li>
@@ -517,6 +545,10 @@ their access rules ship with those modules and follow the same pattern.</p>
               
                 <li>
                   <a class="docs-toc__link" href="#assigning-groups">Assigning Groups</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#users-without-a-connect-group">Users without a Connect group</a>
                 </li>
               
             </ul>

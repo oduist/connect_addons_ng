@@ -327,6 +327,8 @@
     
       
     
+      
+    
   </ul>
 </nav>
       
@@ -391,6 +393,18 @@ produces a new UID and requires the license to be re-issued for it.</p>
 </ul>
 <p>To resolve it, either <strong>buy a license</strong> for the module or <strong>uninstall</strong> the
 module from the instance.</p>
+<h2 id="refreshing-license-and-pricing">Refreshing license and pricing</h2>
+<p>The <em>License Configuration</em> form has an <strong>Update License / Pricing</strong> button. It
+re-checks every installed Oduist module against the licensing service and
+reports the outcome in a notification — modules checked, modules licensed, and
+the instance registration number — then re-reads the record so refreshed prices
+and versions are visible. A failed check surfaces as an error dialog instead.</p>
+<div class="admonition note">
+<p class="admonition-title">A freshly installed module is on trial, not expired</p>
+<p>Each module stamps its own install date and starts a 30-day trial from it.
+A module whose install date cannot be determined is treated as a full
+trial, never as an elapsed one.</p>
+</div>
 <h2 id="license-banner-and-status">License banner and status</h2>
 <p>A systray banner surfaces the most important licensing state across installed
 Oduist modules, with priority <em>trial expired → trial active → demo</em>:</p>
@@ -437,6 +451,11 @@ notification email with Oduist.</p>
       
         <li>
           <a class="docs-toc__link" href="#when-a-trial-expires">When a trial expires</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#refreshing-license-and-pricing">Refreshing license and pricing</a>
           
         </li>
       

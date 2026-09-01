@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" data-base="../">
+<html lang="en" data-theme="dark" data-base="../../">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Overview — Oduist Connect Documentation</title>
+    <title>Setup — Oduist Connect Documentation</title>
     
       <meta name="description" content="Telephony integration platform for Odoo">
     
-      <link rel="icon" href="../assets/img/logo.png">
+      <link rel="icon" href="../../assets/img/logo.png">
     <script>
       (function () {
         var stored = null;
@@ -22,7 +22,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
     
-      <link rel="stylesheet" href="../assets/app.css">
+      <link rel="stylesheet" href="../../assets/app.css">
     
   </head>
   <body>
@@ -33,9 +33,9 @@
               aria-label="Open navigation">☰</button>
     
 
-    <a class="docs-header__brand" href="..">
+    <a class="docs-header__brand" href="../..">
       
-        <img src="../assets/img/logo.png" alt="" width="24" height="24">
+        <img src="../../assets/img/logo.png" alt="" width="24" height="24">
       
       <span>Oduist Connect Documentation</span>
     </a>
@@ -71,12 +71,12 @@
     <div class="docs-crumbs__inner">
       <ol class="docs-crumbs__list">
         
-          <li><a href="..">Home</a></li>
+          <li><a href="../..">Home</a></li>
         
         
           <li>
             
-              <a href="./">CRM Twilio Bridge</a>
+              <a href="../">S3 Recording Storage</a>
             
           </li>
         
@@ -137,12 +137,36 @@
       
     
       
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
         
   
     <li class="docs-nav__item">
       <details open>
-        <summary class="docs-nav__section">CRM Twilio Bridge</summary>
+        <summary class="docs-nav__section">S3 Recording Storage</summary>
         <ul class="docs-nav__list">
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../"
+         >
+        Overview
+      </a>
+    </li>
+  
+
           
             
   
@@ -150,7 +174,7 @@
       <a class="docs-nav__link docs-nav__link--active"
          href="./"
          aria-current="page">
-        Overview
+        Setup
       </a>
     </li>
   
@@ -165,18 +189,6 @@
     
       
     
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
   </ul>
 </nav>
       
@@ -184,48 +196,130 @@
       <main id="docs-main" class="docs-content">
         
   <article class="prose max-w-none">
-    <h1 id="oduist-connect-crm-twilio-bridge-administrator-guide">Oduist Connect CRM Twilio Bridge — Administrator Guide</h1>
-<p><code>connect_crm_twilio</code> is a tiny <strong>glue module</strong> between the Connect CRM bridge and
-the Twilio integration. It exists so that Twilio's inbound message routing can
-target CRM leads while keeping <code>connect_crm</code> itself provider-agnostic (ADR-031).</p>
-<p>There is nothing to configure in this module — it is installed automatically and
-simply adds one routing option.</p>
-<h2 id="what-it-does">What it does</h2>
-<p>The module contributes a single model extension: it adds <strong>CRM Lead</strong> as a
-destination on Twilio's message-configuration model.</p>
-<ul>
-<li><code>_inherit = 'connect.twilio.message_configuration'</code></li>
-<li>Adds <code>('crm.lead', 'CRM Lead')</code> to the <code>destination</code> selection (with
-  <code>ondelete = 'set default'</code>).</li>
-</ul>
-<p>With the bridge installed, a Twilio message configuration can route an inbound
-SMS/WhatsApp message to a <strong>CRM Lead</strong> — creating or matching a lead by the
-sender's phone number via the lead-lookup logic provided by <code>connect_crm</code>
-(<code>crm.lead.create_record_from_message()</code> / <code>get_lead_by_number()</code>).</p>
-<h2 id="dependencies">Dependencies</h2>
-<p>From <code>__manifest__.py</code>:</p>
-<ul>
-<li><strong><code>connect_crm</code></strong> — the CRM bridge that owns the <code>crm.lead</code> linking and
-  lookup logic.</li>
-<li><strong><code>connect_twilio</code></strong> — the Twilio integration that owns
-  <code>connect.twilio.message_configuration</code>.</li>
-</ul>
-<h2 id="installation">Installation</h2>
-<div class="admonition info">
-<p class="admonition-title">Auto-installed</p>
-<p><code>auto_install: True</code> — this module installs itself automatically as soon as
-<strong>both</strong> <code>connect_crm</code> and <code>connect_twilio</code> are present in the database. You
-do not install or upgrade it directly; it follows its two parents.</p>
-</div>
-<p>It ships no data, no views, no security rules and no menus of its own. The <strong>CRM
-Lead</strong> routing option appears wherever Twilio message configurations are
-edited (under the <strong>Connect ▸ Twilio ▸ Messages</strong> configuration screens).</p>
-<h2 id="prerequisites">Prerequisites</h2>
-<ul>
-<li>Both <code>connect_crm</code> and <code>connect_twilio</code> installed and configured.</li>
-<li>A configured Twilio number/messaging setup so that inbound messages reach a
-  Twilio message configuration to route.</li>
-</ul>
+    <h1 id="setup">Setup</h1>
+<p>Everything below happens on one page: <strong>Connect → Configuration → S3 Storage</strong>.
+Tick <em>Store recordings in S3</em> to reveal the settings.</p>
+<h2 id="1-create-the-aws-iam-user">1. Create the AWS IAM user</h2>
+<ol>
+<li>Decide on the <strong>S3 Bucket Prefix</strong>. The default <code>oduist-connect-</code> is fine;
+   change it only to match an existing naming convention. Every bucket name you
+   type is forced to start with it, and the IAM policy is scoped to it.</li>
+<li>Copy the <strong>AWS IAM Policy</strong> shown on the page.</li>
+<li>In the AWS Console go to <strong>IAM → Users → Create user</strong> (e.g. <code>connect-s3</code>).</li>
+<li>On <strong>Set permissions</strong> choose <strong>Attach policies directly → Create policy →
+   JSON</strong>, paste the policy, name it (e.g. <code>connect-s3-recordings</code>), create it,
+   and attach it to the user.</li>
+<li>Open the user → <strong>Security credentials → Create access key</strong> → choose
+   <strong>Application running outside AWS</strong>. Copy the access key ID and the secret.</li>
+</ol>
+<p>The policy grants only bucket create/configure and object read/write under your
+prefix. It contains no <code>iam:*</code> permissions.</p>
+<h2 id="2-fill-in-the-odoo-settings">2. Fill in the Odoo settings</h2>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>What to enter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AWS Access Key ID</td>
+<td>from step 1</td>
+</tr>
+<tr>
+<td>AWS Secret Access Key</td>
+<td>from step 1 (stored masked, visible only to system administrators)</td>
+</tr>
+<tr>
+<td>AWS Region</td>
+<td>where the bucket should live</td>
+</tr>
+<tr>
+<td>S3 Bucket Name</td>
+<td>a name or bare suffix; the prefix is prepended automatically</td>
+</tr>
+<tr>
+<td>Full Bucket Name</td>
+<td>read-only, this is the bucket that actually gets created</td>
+</tr>
+<tr>
+<td>S3 Folder (prefix)</td>
+<td>folder inside the bucket, default <code>recordings</code></td>
+</tr>
+<tr>
+<td>Retention (days)</td>
+<td><code>0</code> keeps audio forever; any other value installs an S3 lifecycle rule</td>
+</tr>
+</tbody>
+</table>
+<p>Then press <strong>CREATE / CONFIGURE S3 BUCKET</strong>. This creates the bucket, blocks all
+public access, turns on SSE-S3 encryption at rest, and installs the lifecycle
+rule if you set a retention. It is safe to press again — re-running re-applies
+the configuration to an existing bucket.</p>
+<p>If AWS answers <em>AccessDenied</em>, the IAM policy's <code>Resource</code> ARN does not match
+your prefix. The error message names the exact ARN to allow.</p>
+<p>Next press <strong>CREATE TWILIO AWS CREDENTIAL</strong>. Odoo registers your AWS key with
+Twilio under the name <code>connect-s3-recordings</code> and shows the resulting SID, so
+you never paste AWS keys into the Twilio Console. Pressing it again adopts the
+existing credential rather than creating a duplicate.</p>
+<h2 id="3-switch-it-on-in-the-twilio-console">3. Switch it on in the Twilio Console</h2>
+<p>Twilio exposes voice recording settings in the Console only — there is no public
+API for them, so this step is manual and one-off.</p>
+<ol>
+<li>Twilio Console → <strong>Voice → Recordings → Settings</strong></li>
+<li>Enable external S3 storage</li>
+<li>Pick the AWS credential <strong>connect-s3-recordings</strong> (the SID is shown in Odoo)</li>
+<li>Paste the <strong>S3 URL</strong> shown in Odoo</li>
+<li>Save</li>
+<li>Back in Odoo, tick <strong>Store recordings in S3</strong></li>
+</ol>
+<p>Place a test call and confirm the recording plays back from the call record.</p>
+<h2 id="retention-and-expired-recordings">Retention and expired recordings</h2>
+<p>With a retention of N days, the S3 lifecycle rule deletes the audio file N days
+after the recording started. Odoo shows <strong>Recording expired</strong> in the player from
+that moment. The recording row itself, along with its transcript and summary, is
+kept — only the audio goes.</p>
+<p>If a recording's audio is already gone when someone tries to play it, the
+download returns HTTP 410 rather than an error page.</p>
+<h2 id="rotating-the-aws-keys">Rotating the AWS keys</h2>
+<p>Twilio cannot update a stored credential's key. To rotate:</p>
+<ol>
+<li>Create a new access key for the IAM user in AWS.</li>
+<li>Enter it in Odoo.</li>
+<li>Press <strong>RECREATE TWILIO CREDENTIAL</strong>. The old credential is deleted and a new
+   one created.</li>
+<li><strong>Re-select the new credential in the Twilio Console</strong> (Voice → Recordings →
+   Settings). Twilio keeps pointing at the old SID until you do — recordings
+   will fail to upload in the meantime.</li>
+</ol>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Likely cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>AccessDenied</em> on provisioning</td>
+<td>IAM policy not attached, or its ARN prefix differs from the bucket prefix</td>
+</tr>
+<tr>
+<td>Playback 404s on new recordings</td>
+<td>The S3 key layout differs from what the module expects — see the note in <code>specs/decisions/060-s3-recording-storage.md</code></td>
+</tr>
+<tr>
+<td>Playback 410s</td>
+<td>The lifecycle rule already deleted that audio</td>
+</tr>
+<tr>
+<td>Old recordings stopped playing</td>
+<td>Those are Twilio-hosted; check <code>account_sid</code> / <code>auth_token</code> in the Twilio settings</td>
+</tr>
+</tbody>
+</table>
   </article>
 
       </main>
@@ -242,22 +336,32 @@ edited (under the <strong>Connect ▸ Twilio ▸ Messages</strong> configuration
     <ul class="docs-toc__list">
       
         <li>
-          <a class="docs-toc__link" href="#what-it-does">What it does</a>
+          <a class="docs-toc__link" href="#1-create-the-aws-iam-user">1. Create the AWS IAM user</a>
           
         </li>
       
         <li>
-          <a class="docs-toc__link" href="#dependencies">Dependencies</a>
+          <a class="docs-toc__link" href="#2-fill-in-the-odoo-settings">2. Fill in the Odoo settings</a>
           
         </li>
       
         <li>
-          <a class="docs-toc__link" href="#installation">Installation</a>
+          <a class="docs-toc__link" href="#3-switch-it-on-in-the-twilio-console">3. Switch it on in the Twilio Console</a>
           
         </li>
       
         <li>
-          <a class="docs-toc__link" href="#prerequisites">Prerequisites</a>
+          <a class="docs-toc__link" href="#retention-and-expired-recordings">Retention and expired recordings</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#rotating-the-aws-keys">Rotating the AWS keys</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#troubleshooting">Troubleshooting</a>
           
         </li>
       
@@ -279,16 +383,16 @@ edited (under the <strong>Connect ▸ Twilio ▸ Messages</strong> configuration
   
     <nav class="docs-pager" aria-label="Page navigation">
       
-        <a class="docs-pager__link" href="../CRM/security/">
+        <a class="docs-pager__link" href="../">
           <span class="docs-pager__label">Previous</span>
-          <span>Security</span>
+          <span>Overview</span>
         </a>
       
       
         <a class="docs-pager__link docs-pager__link--next"
-           href="../Helpdesk/">
+           href="../../Book/admin/book-setup/">
           <span class="docs-pager__label">Next</span>
-          <span>Overview</span>
+          <span>How the Book Finds Documentation</span>
         </a>
       
     </nav>
@@ -297,16 +401,16 @@ edited (under the <strong>Connect ▸ Twilio ▸ Messages</strong> configuration
   <div class="docs-footer__meta">
     <span>Copyright &copy; Oduist OÜ</span>
     
-      <a href="https://github.com/oduist/connect_addons_ng/edit/19.0/connect_crm_twilio/docs/index.md" rel="noopener" target="_blank">Edit on GitHub</a>
+      <a href="https://github.com/oduist/connect_addons_ng/edit/19.0/connect_s3/docs/setup.md" rel="noopener" target="_blank">Edit on GitHub</a>
     
   </div>
 </footer>
 
     
-      <script src="../assets/vendor/lunr.min.js"></script>
-      <script type="module" src="../assets/theme.js"></script>
+      <script src="../../assets/vendor/lunr.min.js"></script>
+      <script type="module" src="../../assets/theme.js"></script>
       
-        <script src="../search/main.js"></script>
+        <script src="../../search/main.js"></script>
       
     
   </body>

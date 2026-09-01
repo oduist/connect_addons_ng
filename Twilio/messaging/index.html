@@ -271,6 +271,8 @@
     
       
     
+      
+    
   </ul>
 </nav>
       
@@ -385,6 +387,30 @@ Use <strong>Sync</strong> to import them from Twilio.</p>
 <code>whatsapp_sender.send_whatsapp()</code>. Pick a <strong>sender</strong>, a <strong>partner / phone
 number</strong>, optionally a <strong>template</strong>, and a <strong>body</strong>. Sent and received messages
 are posted to the partner's chatter and stored in the <code>connect.message</code> ledger.</p>
+<h3 id="whatsapp-voice-calls">WhatsApp voice calls</h3>
+<p>A WhatsApp sender with a <strong>Voice Application</strong> also carries WhatsApp calling.
+Users place one with the <strong>WhatsApp Call</strong> action next to any phone number
+(see <a href="../../Core/user/calls/">Making and Receiving Calls</a>).</p>
+<p>How the call is placed:</p>
+<ol>
+<li>Connect rings the user's own web phone over ordinary voice. This leg
+   presents a <strong>normal voice caller ID</strong>, never the <code>whatsapp:</code> identity — with
+   a <code>whatsapp:</code> <code>From</code> Twilio accepts the request, reports <code>From=None</code> and
+   ends the call in the same second, so the WhatsApp leg never runs.</li>
+<li>The TwiML that leg executes carries the WhatsApp identity on
+   <code>&lt;Dial callerId="whatsapp:…"&gt;&lt;WhatsApp&gt;</code>, which places the leg to the
+   destination.</li>
+</ol>
+<p>Both legs land in the ledger and the call is recorded with call type
+<strong>WhatsApp</strong>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Business-initiated calling is restricted by country</p>
+<p>WhatsApp does not allow business-initiated calls to every destination. Where
+it is not permitted Twilio rejects the WhatsApp leg with error <strong>37007</strong>
+(<em>"WhatsApp Voice: Business-initiated calling is not available in the
+country"</em>), visible on the call record's <strong>Error</strong> tab. Inbound WhatsApp
+calls from those countries still work.</p>
+</div>
 <h2 id="message-configuration-inbound-routing">Message configuration (inbound routing)</h2>
 <p>Manage under <strong>Connect ▸ Twilio ▸ Messages ▸ Message Configuration</strong>
 (<code>connect.twilio.message_configuration</code>, admin-only). It routes incoming messages
@@ -431,6 +457,10 @@ bridge module <code>connect_crm_twilio</code> (installed when both <code>connect
               
                 <li>
                   <a class="docs-toc__link" href="#sending-whatsapp-messages">Sending WhatsApp messages</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#whatsapp-voice-calls">WhatsApp voice calls</a>
                 </li>
               
             </ul>

@@ -327,6 +327,8 @@
     
       
     
+      
+    
   </ul>
 </nav>
       
@@ -335,11 +337,11 @@
         
   <article class="prose max-w-none">
     <h1 id="making-and-receiving-calls">Making and Receiving Calls</h1>
-<h2 id="call-types">Call Types</h2>
+<h2 id="direction">Direction</h2>
 <table>
 <thead>
 <tr>
-<th>Type</th>
+<th>Direction</th>
 <th>Description</th>
 </tr>
 </thead>
@@ -358,6 +360,28 @@
 </tr>
 </tbody>
 </table>
+<h2 id="call-type">Call Type</h2>
+<p>Separately from the direction, each call records the medium it travelled over:</p>
+<table>
+<thead>
+<tr>
+<th>Call type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Phone</strong></td>
+<td>An ordinary voice call over the telephone network or SIP.</td>
+</tr>
+<tr>
+<td><strong>WhatsApp</strong></td>
+<td>A WhatsApp voice call, in either direction.</td>
+</tr>
+</tbody>
+</table>
+<p>The call type is shown on the call form and is available as an optional
+<strong>Call Type</strong> column in the call list — see <a href="#call-history">Call History</a>.</p>
 <h2 id="making-calls">Making Calls</h2>
 <h3 id="from-the-phone-widget">From the Phone Widget</h3>
 <ol>
@@ -366,7 +390,24 @@
 <li>Click <strong>Call</strong></li>
 </ol>
 <h3 id="click-to-call">Click-to-Call</h3>
-<p>Click any phone number field on a partner form, lead, or other record to dial it directly.</p>
+<p>Click any phone number field on a partner form, lead, call, channel, or other
+record to dial it directly. Caller and called numbers on individual Connect
+forms use the same standard phone control. Connect list rows keep phone numbers
+as plain text.</p>
+<h3 id="whatsapp-calls">WhatsApp Calls</h3>
+<p>Where WhatsApp calling is configured, a number also offers a <strong>WhatsApp Call</strong>
+action next to the ordinary <strong>Call</strong>. It rings your own web phone first and
+then places the WhatsApp leg to the destination, so the call appears in the
+history with call type <strong>WhatsApp</strong>.</p>
+<div class="admonition note">
+<p class="admonition-title">Business-initiated WhatsApp calling is not available everywhere</p>
+<p>WhatsApp restricts business-initiated calls by destination country. Where
+it is not permitted the call fails immediately and the call record's
+<strong>Error</strong> tab carries the provider's reason, for example <em>"WhatsApp Voice:
+Business-initiated calling is not available in the country"</em>. Nothing in
+Connect can lift that restriction. Calls <strong>received</strong> over WhatsApp are
+unaffected.</p>
+</div>
 <h3 id="extension-dialing">Extension Dialing</h3>
 <p>Dial another user's extension number to make an internal call.</p>
 <h3 id="failed-calls">Failed Calls</h3>
@@ -399,7 +440,7 @@ Telnyx account to restore calling.</p>
 </tr>
 <tr>
 <td><strong>Recording</strong></td>
-<td>Start or stop recording for the active call when the provider supports runtime recording control.</td>
+<td>A purple badge with a white dot and <strong>REC</strong> starts recording; a purple stop icon means recording is active and stops it.</td>
 </tr>
 <tr>
 <td><strong>Hang Up</strong></td>
@@ -414,7 +455,8 @@ Telnyx account to restore calling.</p>
 <li>Enter the destination number or extension</li>
 <li>Confirm the transfer</li>
 </ol>
-<p>The call is handed off to the new destination.</p>
+<p>The destination uses the standard phone control. The call is handed off to the
+new destination after confirmation.</p>
 <h2 id="call-history">Call History</h2>
 <p>Navigate to <strong>Connect &gt; Calls &gt; Calls</strong> to view all calls.</p>
 <p>Each call record shows:</p>
@@ -431,8 +473,12 @@ Telnyx account to restore calling.</p>
 <td>Incoming, outgoing, or internal.</td>
 </tr>
 <tr>
+<td><strong>Call Type</strong></td>
+<td>Phone or WhatsApp. Hidden by default in the list — switch it on from the column picker at the right end of the header row; the choice is remembered.</td>
+</tr>
+<tr>
 <td><strong>Caller / Called</strong></td>
-<td>Phone numbers or extension names.</td>
+<td>Phone numbers or extension names. On an outgoing click-to-call, <strong>Called</strong> is the number you dialed, not the extension the system rang to reach you.</td>
 </tr>
 <tr>
 <td><strong>Status</strong></td>
@@ -522,7 +568,12 @@ Use the search filters to toggle the layers or focus on one schedule.</p>
     <ul class="docs-toc__list">
       
         <li>
-          <a class="docs-toc__link" href="#call-types">Call Types</a>
+          <a class="docs-toc__link" href="#direction">Direction</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#call-type">Call Type</a>
           
         </li>
       
@@ -537,6 +588,10 @@ Use the search filters to toggle the layers or focus on one schedule.</p>
               
                 <li>
                   <a class="docs-toc__link" href="#click-to-call">Click-to-Call</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#whatsapp-calls">WhatsApp Calls</a>
                 </li>
               
                 <li>
