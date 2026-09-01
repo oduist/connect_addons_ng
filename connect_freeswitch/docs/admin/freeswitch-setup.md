@@ -420,14 +420,20 @@ Odoo generates FreeSWITCH XML dynamically using Jinja2 templates. Each template 
 | `directory_full` | Directory | Full directory with all endpoints |
 | `dialplan_user_bridge` | Dialplan | Bridge call to user endpoints |
 | `dialplan_ivr` | Dialplan | IVR with digit collection and choices |
+| `dialplan_callflow_voicemail` | Dialplan | Standalone callflow voicemail recorder |
+| `dialplan_ivr_choice` | Dialplan | Landing extension for user-typed IVR choices |
+| `dialplan_ivr_invalid` | Dialplan | Catch-all extension for invalid IVR input |
 | `dialplan_ring_group` | Dialplan | Ring group bridging to multiple users |
 | `dialplan_inbound_did` | Dialplan | Inbound DID routing |
 | `dialplan_outgoing_route` | Dialplan | Outbound call routing via gateway |
+| `dialplan_fs_fifo` | Dialplan | FS Queue dialplan based on mod_fifo |
+| `dialplan_valet_parking` | Dialplan | Valet parking extensions (park/retrieve calls in slots) |
 | `dialplan_system` | Dialplan | System extensions (echo test) |
 | `config_sofia` | Configuration | Sofia SIP profile with gateways |
 | `config_sofia_gateway` | Configuration | Single SIP gateway element |
 | `config_acl` | Configuration | ACL for gateway IP whitelisting |
 | `config_xml_rpc` | Configuration | XML-RPC server settings |
+| `config_fifo` | Configuration | fifo.conf.xml with static outbound consumers for every FS Queue |
 
 ### Customizing Templates
 
@@ -453,7 +459,8 @@ FreeSWITCH fetches dynamic configuration from Odoo via HTTP:
 | `POST /freeswitch/xml` (dialplan binding) | Call routing. Odoo generates XML extensions based on DIDs, extensions, callflows, and outgoing routes. |
 | `POST /freeswitch/xml` (configuration binding) | Sofia gateway configuration. Returns active SIP gateways. |
 | `POST /freeswitch/webhook/cdr` | Call detail records. FreeSWITCH sends CDR XML after each call. |
-| `PUT /freeswitch/webhook/recording/<uuid>.wav` | Call recordings. FreeSWITCH uploads recorded audio files. |
+| `PUT /freeswitch/webhook/recording/<token>/<filename>` | Call recordings. FreeSWITCH uploads recorded audio files (`<uuid>.wav`); the webhook token travels as a path segment. |
+| `PUT /freeswitch/webhook/voicemail/<token>/<filename>` | Voicemail recordings. The dialplan `record` application uploads callflow/user voicemail files; same token-in-path scheme. |
 
 ## Testing
 
@@ -506,7 +513,7 @@ The expected registration gap after the Odoo save is a few seconds.
 
 1. Obtain (or generate and set) the new trunk password in the
    provider's portal.
-2. In Odoo open **Connect → FreeSWITCH → Gateways**, open the trunk
+2. In Odoo open **Connect → FreeSWITCH → Configuration → SIP Gateways**, open the trunk
    gateway and paste the new value into **Password** (the field is
    visible to Connect admins only), then **Save**. The save schedules a
    post-commit `sofia profile external restart reloadxml`, so the new
@@ -573,8 +580,6 @@ not match. Check the `destination_number` the trunk actually sends (Odoo debug
 log, or `fs_cli` console at debug level) and make sure the stored DID's digits
 match it — differences beyond a leading `+` (e.g. an extra national prefix) are
 not normalized and require the stored number to match the delivered digits.
-
-## Troubleshooting
 
 ### No audio on calls
 

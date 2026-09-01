@@ -4,10 +4,11 @@
 
 - **Name:** Oduist Connect Project
 - **Technical:** `connect_project`
-- **Version:** 19.0.1.0.0
+- **Version:** 19.0.1.0.1
 - **Depends:** `connect`, `project`
 - **Application:** False
 - **License:** Other proprietary
+- **Post-init hook:** `post_init_hook` — stamps the module install date and refreshes the Oduist license status
 
 ## Overview
 

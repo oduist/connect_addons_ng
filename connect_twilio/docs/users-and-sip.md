@@ -44,8 +44,9 @@ each with its own enable switch, ring priority and timeout.*
 
 ### Extension
 
-Give every PBX user an extension: open the user and press **Extension**, then
-enter the number (100, 101, ...). Nothing assigns one automatically.
+Give every PBX user an extension: open the user and press the **Twilio
+Extension** button, then enter the number (100, 101, ...). Nothing assigns one
+automatically — creating a user does **not** create an extension.
 
 The extension is what colleagues dial to reach the user, and it is the caller
 ID the user's own calls present — the number that shows on the callee's phone
@@ -60,7 +61,6 @@ identity (ADR-058).
 | **Web Phone Enabled** (`client_enabled`) | Allow this user to make/receive calls in the browser. Default: **on only when Twilio is the sole telephony module installed**; enable per user in multi-provider databases. |
 | **Web Phone Priority** (`client_priority`) | Ring order across channels: `1` = first, `2` = second. |
 | **Web Phone Ring Timeout** (`client_ring_timeout`) | Seconds to ring before falling through to the next channel. |
-| **Edge** (`twilio_edge`) | Preferred Twilio edge for this user's web phone. |
 
 ### SIP phone
 
@@ -77,22 +77,27 @@ identity (ADR-058).
 | **Username** | Alphanumeric PBX username, **unique**. Required only when the SIP phone or web phone is enabled — a user with no Twilio phone may leave it empty (relevant when several providers are co-installed). |
 | **Domain** | SIP domain for this user (`connect.twilio.domain`). Same conditional requirement as Username. |
 | **Password** | SIP password. Auto-generated with a strong policy (12+ characters). |
-| **SIP URI** | Computed `username@domain.sip.twilio.com`. |
+| **SIP URI** (`connect_uri`) | Computed `username@subdomain.sip.twilio.com`, or the edge-specific host (`username@subdomain.sip.<edge>.twilio.com`) when the user's **Edge** is not Global Low-latency Roaming. |
 
 !!! info "Automatic credential management"
-    Creating a user (or enabling a Twilio phone on one) automatically creates the
-    matching SIP credential and extension on Twilio. Changing the password
-    updates it on Twilio; deleting the user removes the credential. Existing
-    Twilio credentials are imported rather than duplicated.
+    Creating a user with the SIP phone enabled (or enabling it later) automatically
+    creates the matching SIP **credential** on Twilio — and only the credential;
+    the extension is a separate, manual step (see [Extension](#extension) above).
+    Changing the password updates the credential on Twilio; deleting the user
+    removes it. Existing Twilio credentials are imported rather than duplicated.
 
 ### Other per-user fields
+
+These sit in the user's **User Info** and **Call Settings** groups, not on the
+Twilio Phone tab:
 
 | Field | Description |
 |-------|-------------|
 | **TwiML Application** (`application`) | Override the domain-level TwiML app for this specific user. |
 | **Outgoing Caller ID** (`twilio_outgoing_callerid`) | The caller ID this user presents on outbound external calls; falls back to the global default caller ID. |
 | **WhatsApp Sender** (`whatsapp_sender_id`) | WhatsApp number assigned to this user. |
-| **Extension** (`twilio_exten`) | The user's internal extension (auto-created). |
+| **Edge** (`twilio_edge`) | Preferred Twilio edge for this user (web phone and edge-specific SIP URI). |
+| **Extension** (`twilio_exten`) | The user's internal extension — created manually with the **Twilio Extension** button, never automatically. |
 
 ## Web phone token
 

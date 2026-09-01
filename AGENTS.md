@@ -19,18 +19,22 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_livekit`** — LiveKit integration (self-hosted realtime stack, ADR-036). Owns `connect.livekit.{room,trunk,number,outgoing_callerid,agent}`; three levels: video rooms with public guest links + Egress recording, SIP telephony via the livekit-sip bridge (BYO carrier trunk) with a browser web phone joining rooms by short-TTL JWT, and voice-AI agents served by the `oduist/livekit-agent` sidecar (LiveKit Agents, plugin cascade Deepgram/OpenAI/ElevenLabs). LiveKit webhooks (`/livekit/webhook`) verified with the JWT WebhookReceiver. **LiveKit** submenu under the Connect app; all models admin-only.
 - **`connect_infobip`** — Infobip integration (event-driven Calls API, NO TwiML analog — ADR-036). Owns `connect.infobip.{exten,number,outgoing_callerid,user_callflow,message_configuration,whatsapp_sender,whatsapp_template}`; voice = webhook events → REST actions (Dialog bridges, platform-side `connectTimeout`), per-user WebRTC identities (no per-user SIP), vendored infobip-rtc phone widget, SMS + WhatsApp, recordings downloaded into attachments. No IVR/callflows in v1. **Infobip** submenu under the Connect app.
 - **`connect_dograh`** — Dograh AI voice agents on FreeSWITCH (ADR-041). Owns `connect.dograh.agent`; depends on `connect` AND `connect_freeswitch`. Inbound: per-call dialplan posts Dograh's `/inbound/run` webhook and attaches mod_audio_fork (L16/16 kHz) to the returned media WebSocket; outbound: Dograh calls `/dograh/api/originate`. Ships a vendored freeswitch provider package for Dograh under `connect_dograh/deploy/` (overlay image `oduist/dograh-api`). **Dograh** submenu under the Connect app.
+- **`connect_pipecat`** — Pipecat open-source AI voice agents on FreeSWITCH. Owns `connect.pipecat.agent` (system prompt/greeting, STT `openai|deepgram`, LLM `openai|anthropic`, TTS `openai|elevenlabs|deepgram` + voice, transfer exten, `record_calls`); depends on `connect` AND `connect_freeswitch`. Adds `('connect.pipecat.agent','AI Agent')` to `connect.freeswitch.exten` `dst`; inbound per-call dialplan answers, attaches mod_audio_fork (L16/16 kHz) to the sidecar's WebSocket and parks. Four Bearer-authenticated routes under `/pipecat/*`. Ships the `oduist/pipecat-agent` sidecar (`connect_pipecat/deploy/`, Python 3.12, pinned `pipecat-ai`). Adds an **AI Agents** item under the existing FreeSWITCH submenu and a **Pipecat AI** page on the FreeSWITCH settings form — no submenu of its own. See `specs/connect_pipecat.md`.
 - **`connect_bird`** — Bird.com (ex-MessageBird) integration. Owns `connect.bird.{number,message_template,message_configuration,webhook}`; SMS/WhatsApp send/receive via the Bird developer platform (`{region}.platform.bird.com/v1`, Bearer `bk_...` keys, raw httpx — the official SDK covers only email and is not used), template-first messaging (SMS + WhatsApp templates), voice-call ledger from `voice.*` events, click-to-call via two-leg callback originate (no web phone — Bird has no WebRTC SDK), recordings fetched by cron, delivery statuses polled until the platform ships `sms.*` webhook events. Single `/bird/webhook` endpoint with Standard-Webhooks signature. **Bird** submenu under the Connect app. See ADR-038.
+- **`connect_vonage`** — Vonage (ex-Nexmo) integration on the official `vonage` v4 SDK: NCCO-driven voice (inbound number routing, IVR, sequential ring groups, voicemail), Vonage Client SDK browser web phone, Messages-API SMS with delivery receipts, recordings fetched by cron (Vonage recording URLs need JWT auth). Owns `connect.ncco` (the NCCO counterpart of a TwiML app). Webhook routes under `/vonage/webhook/*` validate the signed-callback JWT (`Authorization: Bearer`, HS256 against `vonage_signature_secret` + SHA-256 `payload_hash`) when enabled. **Vonage** submenu (NCCO only); settings live as a page inside the core Connect settings form. **⚠ Pre-ADR-031 state:** the module still `_inherit`s the removed core PBX-configuration models (`connect.number`, `connect.exten`, `connect.callflow`, `connect.outgoing_callerid`, `connect.user_callflow`) and core views that no longer exist, and bypasses the originate/message provider dispatchers — it does not currently install on this branch and needs a rebase onto per-provider `connect.vonage.*` models (see the status note in `specs/connect_vonage.md`).
 - **`connect_3cx`** — 3CX integration for existing customer 3CX V20 PBXs. Owns **no** PBX-configuration models. Phase 1 (ADR-034, PRO/AI editions): server-side CRM template — `/3cx/webhook/*` controllers (contact lookup at call arrival, call journaling at call end, contact creation) + a generated CRM template downloaded from the settings form; click-to-call opens the 3CX Web Client dial URL (`originate_call` returns an act_url; core `redial()` returns it through). Phase 2 / deep tier (ADR-035, AI 8SC+ only, opt-in, mock-validated): `oduist/3cx-agent` sidecar (`connect_3cx/deploy/agent/`) holding the Call Control WSS — live channel events via `connect.channel.on_threecx_participant_event`, originate through the agent (dial-URL fallback), XAPI recording download; ReportCall then merges into agent-created calls. No web phone (3CX exposes no third-party WebRTC/WSS) and no SMS. **3CX** submenu under the Connect app.
 - **`connect_elevenlabs`** — ElevenLabs Conversational-AI voice agents, as a **Twilio add-on** (ADR-046). Owns `connect.elevenlabs_{agent,agent_tool,agent_prompt,agent_template,agent_transfer,voice,file}` + `connect.agent_tool_params`; retargets the PBX `_inherit`s to `connect.twilio.{callflow,number,exten,outgoing_callerid}` and adds `is_published` to `connect.twilio.exten`; webhook-driven (conversation-initiation + HMAC post-call), agent calling over ElevenLabs native SIP ingress. **ElevenLabs** submenu under the Connect app. Depends `['connect','connect_twilio','calendar']`. Sub-modules: `connect_elevenlabs_helpdesk` (needs Enterprise `helpdesk`), `connect_elevenlabs_knowledge`, `connect_elevenlabs_sale`. See `specs/connect_elevenlabs.md`.
 - **`connect_memory`** — external AI memory base (ADR-043): `connect.memory.{outbox,inbox,mixin,backfill}` outbox/inbox pull contract + `mail.thread` correspondence capture + `res.partner` summary/backfill; provider-neutral (Hindsight/Cognee); Odoo emits events and never calls the engine; external sidecar in `deploy/`. **Memory** submenu under the Connect app. Depends on `connect`.
 - **`connect_memory_sale`** — domain module for memory events on `sale.order`/`account.move`/`account.partial.reconcile` + hourly payment-behavior digest (`connect.memory.sale.mixin`). Depends on `connect_memory`, `sale`, `account`.
+- **`connect_crm`** — provider-agnostic CRM bridge. Extends `connect.call` (`lead` → `crm.lead`, `source` → `utm.source`, `ref` selection_add), `crm.lead` (`connect_calls`, re-adds `mobile`, stored/indexed `phone_normalized`/`mobile_normalized`, `get_lead_by_number()`, `create_record_from_message()`), `utm.source` (`phone`, UNIQUE) and `connect.settings` (the `auto_create_leads_*` toggles). Auto-creates leads/opportunities at call end, matches existing open leads at call start, posts AI summaries to lead chatter. Owns no models and no menu — a **CRM** page on the Connect settings form plus stat buttons on the lead/call forms. Depends `['connect', 'crm', 'utm']`.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
 - **`connect_hr`** — provider-agnostic HR bridge — links `connect.call` to `hr.employee` (by number, no auto-create); depends `connect` + `hr`.
 - **`connect_sale`** — provider-agnostic Sale bridge — links `connect.call` to `sale.order` (by partner, open orders); depends `connect` + `sale`.
 - **`connect_account`** — provider-agnostic Accounting bridge — links `connect.call` to `account.move` (by partner, open customer invoices only); depends `connect` + `account`.
 - **`connect_project`** — provider-agnostic Project bridge — links `connect.call` to `project.task`/`project.project` (by partner, open task first); depends `connect` + `project`.
+- **`connect_helpdesk`** — provider-agnostic Helpdesk bridge (Odoo **Enterprise** `helpdesk`). Extends `connect.call` (`ticket` → `helpdesk.ticket`), `helpdesk.ticket` (`connect_calls`, stored/indexed `phone_normalized`, `get_ticket_by_number()`) and `connect.settings` (the `auto_create_tickets_*` toggles incl. default team/assignee). Matches open tickets by number at call start and auto-creates tickets at call end, mirroring `connect_crm`; posts AI summaries to ticket chatter. Owns no models and no menu — a **Helpdesk** page on the Connect settings form plus stat button/list column on tickets. Depends `['connect', 'helpdesk']`.
 
-Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_3cx` and `connect_dograh` all depend on `connect` but are independent of each other. `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046), as does `connect_s3` (S3 recording storage, ADR-060). `connect_crm`, `connect_hr`, `connect_sale`, `connect_account` and `connect_project` are likewise independent, provider-agnostic bridges that only depend on `connect` plus their respective host app. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module). `connect_memory` depends on `connect`; the domain module `connect_memory_sale` depends on `connect_memory` + `sale` + `account`.
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_vonage` and `connect_3cx` all depend on `connect` but are independent of each other. `connect_dograh` and `connect_pipecat` depend on `connect` + `connect_freeswitch` (FreeSWITCH add-ons). `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046), as does `connect_s3` (S3 recording storage, ADR-060). `connect_crm`, `connect_hr`, `connect_sale`, `connect_account`, `connect_project` and `connect_helpdesk` are likewise independent, provider-agnostic bridges that only depend on `connect` plus their respective host app. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module). `connect_memory` depends on `connect`; the domain module `connect_memory_sale` depends on `connect_memory` + `sale` + `account`.
 
 ## Architecture
 
@@ -80,14 +84,21 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/architecture.md` — Authoritative design specification (boundaries, extension pattern, data flow)
 - `specs/connect_core.md` — Core module spec (models, fields, methods, security, views)
 - `specs/connect_twilio.md` — Twilio module spec (models, webhooks, controllers, frontend)
+- `specs/connect_s3.md` — S3 recording storage module spec (settings extension, media read path, Twilio credentials)
+- `specs/connect_freeswitch.md` — FreeSWITCH module spec (models, dialplan, firewall, controllers, frontend)
 - `specs/connect_asterisk.md` — Asterisk module spec (models, agent contract, controllers, frontend)
 - `specs/connect_telnyx.md` — Telnyx module spec (models, TeXML routing, controllers, frontend)
 - `specs/connect_livekit.md` — LiveKit module spec (rooms, SIP bridge, AI agents, sidecar worker)
 - `specs/connect_infobip.md` — Infobip module spec (models, event-driven voice, controllers, frontend)
 - `specs/connect_dograh.md` — Dograh module spec (models, dialplan flow, controllers, vendored Dograh provider package)
+- `specs/connect_pipecat.md` — Pipecat module spec (agent model, dialplan flow, controllers, sidecar)
 - `specs/connect_freeswitch_website.md` — Website widgets module spec (snippets, public endpoints)
 - `specs/connect_bird.md` — Bird module spec (models, webhooks, controllers, wizards)
+- `specs/connect_vonage.md` — Vonage module spec (NCCO voice, webhooks, web phone; see its pre-ADR-031 status note)
 - `specs/connect_3cx.md` — 3CX module spec (settings/user/channel extensions, webhook controllers, CRM template, sidecar agent)
+- `specs/connect_elevenlabs.md` — ElevenLabs module spec (agents, tools, webhooks, sub-modules)
+- `specs/connect_crm.md` — CRM bridge module spec (call/lead linking, auto-create rules, settings)
+- `specs/connect_helpdesk.md` — Helpdesk bridge module spec (call/ticket linking, auto-create rules, settings)
 - `specs/connect_hr.md` — HR bridge module spec (models, security, views)
 - `specs/connect_sale.md` — Sale bridge module spec (models, security, views)
 - `specs/connect_account.md` — Accounting bridge module spec (models, security, views)
@@ -206,7 +217,9 @@ Specifically:
 - Dograh control routes are all under `/dograh/api/*` and require `Authorization: Bearer <dograh_service_token>` (fail-closed; the same shared secret authenticates Odoo→Dograh inbound webhooks)
 - 3CX webhook routes are all under `/3cx/webhook/*` and require the `X-Connect-Api-Key: <threecx_api_key>` header (`Authorization: Bearer` also accepted); they are additionally gated on `threecx_enabled` (agent routes also on `threecx_agent_enabled`)
 - Bird events arrive on the single `/bird/webhook` route and validate the Standard-Webhooks signature (`webhook-id` / `webhook-timestamp` / `webhook-signature`, `whsec_` secret) when enabled
-- Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`, LiveKit web phone in `connect_livekit/static/src/`, Infobip WebRTC phone in `connect_infobip/static/src/`
+- Vonage webhook routes are all under `/vonage/webhook/*` and validate the signed-callback JWT (`Authorization: Bearer`, HS256 against `vonage_signature_secret` + SHA-256 `payload_hash` body check) when enabled
+- Pipecat control routes are all under `/pipecat/*` and require `Authorization: Bearer <pipecat_service_token>`
+- Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`, LiveKit web phone in `connect_livekit/static/src/`, Infobip WebRTC phone in `connect_infobip/static/src/`, Vonage Client SDK phone in `connect_vonage/static/src/`
 - **Module Apps Store descriptions** (`<module>/static/description/index.html`)
   follow the fixed Oduist house style. To write or regenerate one, use the
   `writing-odoo-module-description` skill (`.claude/skills/`), which carries the
@@ -217,6 +230,8 @@ Specifically:
 - FreeSWITCH image: `oduist/freeswitch` — Dockerfile: `connect_freeswitch/deploy/Dockerfile`, config: `connect_freeswitch/deploy/freeswitch/conf/`
 - Firewall image: `oduist/freeswitch-firewall` — Dockerfile: `connect_freeswitch/deploy/firewall/Dockerfile`, sources: `connect_freeswitch/deploy/firewall/src/`
 - Asterisk agent image: `oduist/asterisk-agent` — Dockerfile: `connect_asterisk/deploy/agent/Dockerfile`, sources: `connect_asterisk/deploy/agent/src/`. Same versioning policy: rebuilt only when a release changes files under `connect_asterisk/deploy/agent/`; tag = short `connect_asterisk` manifest version; build multi-arch (`linux/amd64,linux/arm64`) — the agent runs on customer hardware.
+- Pipecat agent image: `oduist/pipecat-agent` — Dockerfile: `connect_pipecat/deploy/Dockerfile`, sources: `connect_pipecat/deploy/src/`. Same versioning policy: rebuilt only when a release changes files under `connect_pipecat/deploy/`; tag = short `connect_pipecat` manifest version.
+- Dograh overlay image: `oduist/dograh-api` — Dockerfile: `connect_dograh/deploy/Dockerfile` (vendored FreeSWITCH provider package for Dograh). Rebuilt only when a release changes files under `connect_dograh/deploy/`.
 - LiveKit agent image: `oduist/livekit-agent` — Dockerfile: `connect_livekit/deploy/agent/Dockerfile`, sources: `connect_livekit/deploy/agent/src/`. One image, two commands (`run` = LiveKit Agents worker, `upload-recordings` = egress uploader). Same versioning policy: rebuilt only when a release changes files under `connect_livekit/deploy/agent/`; tag = short `connect_livekit` manifest version; build multi-arch (`linux/amd64,linux/arm64`) — the worker runs on customer hardware. The LiveKit server/sip/egress images in `connect_livekit/deploy/docker-compose.yml` are pinned upstream `livekit/*` images.
 
 ### Versioning policy
@@ -349,13 +364,21 @@ committed in the main repository with the implementation they verify.
 connect_addons_ng/
 ├── connect/tests/test_*.py
 ├── connect_twilio/tests/test_*.py
+├── connect_s3/tests/test_*.py
 ├── connect_freeswitch/tests/test_*.py
+├── connect_freeswitch_website/tests/test_*.py
 ├── connect_asterisk/tests/test_*.py
 ├── connect_crm/tests/test_*.py
-├── connect_telnyx/tests/
+├── connect_telnyx/tests/test_*.py
+├── connect_livekit/tests/test_*.py
 ├── connect_infobip/tests/test_*.py
 ├── connect_bird/tests/test_*.py
+├── connect_vonage/tests/test_*.py
+├── connect_3cx/tests/test_*.py
 ├── connect_dograh/tests/test_*.py
+├── connect_pipecat/tests/test_*.py
+├── connect_elevenlabs/tests/test_*.py
+├── connect_elevenlabs_sale/tests/test_*.py
 ├── connect_hr/tests/test_*.py
 ├── connect_sale/tests/test_*.py
 ├── connect_account/tests/test_*.py
@@ -363,7 +386,7 @@ connect_addons_ng/
 ├── connect_memory/tests/test_*.py
 ├── connect_memory_sale/tests/test_*.py
 ├── connect_book/tests/test_*.py
-└── connect_helpdesk/tests/
+└── connect_helpdesk/tests/        (package exists, no tests yet)
 ```
 
 Every populated test package has a plain `tests/__init__.py` with explicit
@@ -406,11 +429,17 @@ oduflow run_odoo_tests connect_twilio
 oduflow run_odoo_tests connect_s3
 oduflow run_odoo_tests connect_freeswitch
 oduflow run_odoo_tests connect_asterisk
+oduflow run_odoo_tests connect_freeswitch_website
 oduflow run_odoo_tests connect_crm
 oduflow run_odoo_tests connect_telnyx
+oduflow run_odoo_tests connect_livekit
 oduflow run_odoo_tests connect_3cx
 oduflow run_odoo_tests connect_infobip
+oduflow run_odoo_tests connect_bird
 oduflow run_odoo_tests connect_dograh
+oduflow run_odoo_tests connect_pipecat
+oduflow run_odoo_tests connect_elevenlabs
+oduflow run_odoo_tests connect_elevenlabs_sale
 oduflow run_odoo_tests connect_hr
 oduflow run_odoo_tests connect_sale
 oduflow run_odoo_tests connect_account
@@ -418,8 +447,11 @@ oduflow run_odoo_tests connect_project
 oduflow run_odoo_tests connect_memory
 oduflow run_odoo_tests connect_memory_sale
 oduflow run_odoo_tests connect_book
-oduflow run_odoo_tests connect_helpdesk
 ```
+
+`connect_helpdesk` ships no tests yet; `connect_vonage` has tests on disk but
+the module does not currently install (see its bullet above), so it is not in
+the list.
 
 `run_odoo_tests` runs tests through Odoo's normal module test discovery, so the
 module must already be installed in the environment. If a module is not

@@ -1,28 +1,36 @@
 # Video Meetings
 
-When the LiveKit integration is installed, you can host video meetings
-straight from Odoo and invite people who do not have an Odoo account.
+When the LiveKit integration is installed, meetings hosted from Odoo run
+right in the browser, and people without an Odoo account can join too.
 
-## Start a meeting
+## Join a meeting
 
-1. Go to **Connect > LiveKit > Rooms** and create a room (or use the **New
-   LiveKit Meeting** action on a contact).
-2. Give it a subject and, if you want a recording, tick **Record Meeting**.
-3. Click **Join Meeting** to open the meeting page in a new tab.
+You join a meeting through its link — there is nothing to install:
 
-## Invite guests
-
-Each room has a **Public URL**. Copy it and send it to anyone — colleagues
-or external participants. Guests open the link, type a display name and
-join; no account or password is needed. The link is unique and unguessable,
-so treat it like the meeting key.
+1. Open the meeting link you received (or click **Join Meeting** on the
+   room form if you have access to it).
+2. Type a display name if asked; no account or password is needed for
+   guests.
+3. Grant the browser access to your microphone and camera when asked.
 
 ## In the meeting
 
-- Grant the browser access to your microphone and camera when asked.
 - Use the on-screen buttons to **mute**, turn the **camera off/on**, and
   **leave**.
-- A recording indicator shows when the meeting is being recorded.
+
+## Meeting links
+
+Each room has a **Public URL**. Anyone with the link — colleagues or
+external participants — can open it and join. The link is unique and
+unguessable, so treat it like the meeting key.
+
+## Setting up a meeting (administrators)
+
+Creating rooms is an administrator task. A Connect admin goes to
+**Connect > LiveKit > Rooms** and creates a room (or uses the **New
+LiveKit Meeting** action on a contact), gives it a subject and, if a
+recording is wanted, ticks **Record Meeting**. The admin then shares the
+room's **Public URL** with the participants.
 
 ## Recordings
 
@@ -36,6 +44,6 @@ automatically.
 - Meetings are audio + video in the browser; nothing to install.
 - The organizer can end the meeting for everyone with **Close Room** on the
   room form.
-- If you don't see the LiveKit menu, ask your administrator — meeting
+- If you don't see the LiveKit menu, that is expected — meeting
   administration is limited to Connect admins, but meeting links work for
   anyone you share them with.

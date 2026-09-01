@@ -8,7 +8,12 @@
 - **Depends:** `base`, `mail`, `contacts`, `sms`, `resource`
 - **Python deps:** `phonenumbers`, `jinja2`, `httpx` (HTTP client used by settings), `openai` (for transcription - not Twilio-specific), `PyJWT`
 - **Application:** True
-- **License:** LGPL-3
+- **License:** Other proprietary
+- **post_init_hook:** `post_init_hook` — stamps the module's `create_date`
+  (trial start) and runs a non-raising `oduist.license.update_license_status()`
+- **Assets:** `web.assets_backend` bundles `static/src/components/license_banner/`,
+  `static/src/components/calls/` and `static/src/services/active_calls/` (see
+  [Frontend](#frontend-connectstaticsrc))
 
 ## Overview
 
@@ -77,6 +82,7 @@ for easy access from other models.
 | `reformat_numbers_button()` | Re-normalize partner phone numbers |
 | `action_open_system_parameters()` | UI action |
 | `get_openai_client()` | Create and return OpenAI client instance |
+| `_require_openai_key()` | Raise `ValidationError` when no OpenAI API key is configured |
 
 **Notes:**
 - `openai_api_key` and `get_openai_client()` live here because transcription is not
@@ -155,7 +161,8 @@ Order: `id desc`
 | `redial()` | Re-initiate call (calls originate on settings) |
 | `get_widget_calls()` | Return data for phone widget |
 | `get_widget_fields()` | Return field list for phone widget |
-| `on_call_action()` | Generic call action handler (abstract) |
+| `process_call_event(channel, error_data=None)` | Called by provider modules after `process_channel_event()`: creates the call from the first leg (direction, numbers, users, call type) or attaches secondary legs to the parent's call, updates status/duration/users as events arrive, records optional error data. Gated on the `connect` license check |
+| `_determine_direction(channel)` | Derive `outgoing`/`incoming` from the channel's `technical_direction` and whether the caller resolves to a PBX user |
 
 ---
 
@@ -169,8 +176,9 @@ Order: `id desc`
 | Field | Type | Notes |
 |-------|------|-------|
 | `call` | Many2one | `connect.call` |
+| `sid` | Char | Provider channel SID; readonly, indexed |
 | `parent_channel` | Many2one | `connect.channel` (self-referential) |
-| `parent_sid` | Char | |
+| `parent_sid` | Char | Readonly |
 | `partner` | Many2one | `res.partner` |
 | `called` | Char | |
 | `to` | Char | |
@@ -203,8 +211,12 @@ Order: `id desc`
 | `get_softphone_recording_state(payload)` | Provider-dispatched RPC returning runtime recording support/state for the active softphone call. |
 | `start_softphone_recording(payload)` | Provider-dispatched RPC to start recording the active softphone call. |
 | `stop_softphone_recording(payload)` | Provider-dispatched RPC to stop recording the active softphone call. |
-| `_softphone_recording_channel(payload)` | Resolve a provider channel SID and verify the requester is a participant or Connect admin. |
+| `_find_partner(caller_pbx_user, called_pbx_user, caller, called, direction)` | Resolve the external party's partner by number for the channel. |
+| `_softphone_recording_channel(payload)` | Resolve a provider channel SID and verify the requester via `_check_softphone_recording_access`. |
+| `_check_softphone_recording_access(user=None)` | Verify the requester is a call participant or Connect admin. |
 | `_check_softphone_recording_active()` | Reject runtime controls for completed/busy/failed/no-answer/canceled channels. |
+| `_dispatch_softphone_recording(payload, action)` | Shared dispatcher behind the three RPCs: routes to the provider hook `_softphone_recording_<action>_<provider>` (from `payload['provider']`), else answers unsupported. |
+| `_softphone_recording_payload(supported=True)` / `_softphone_recording_unsupported()` | Build the normalized state/support payload returned to the softphone. |
 
 **What `process_channel_event()` refuses to overwrite.** Click-to-call creates
 the outgoing leg itself and knows two things the provider's status callback for
@@ -232,6 +244,7 @@ Order: `create_date DESC`
 | Field | Type | Notes |
 |-------|------|-------|
 | `name` | Char | Computed |
+| `message_sid` | Char | Provider message SID |
 | `from_number` | Char | Required; `phone` widget in the message form |
 | `to_number` | Char | Required; `phone` widget in the message form |
 | `body` | Text | |
@@ -294,6 +307,10 @@ Order: `id desc`
 |-------|------|-------|
 | `call` | Many2one | `connect.call` |
 | `channel` | Many2one | `connect.channel` |
+| `sid` | Char | Provider recording SID; readonly |
+| `call_sid` | Char | Provider channel SID the recording belongs to; readonly |
+| `recording_filename` | Char | Readonly; used for the download name and the Whisper file suffix |
+| `recording_attachment` | Binary | Attachment-backed audio stored on the record (providers whose downloads need API auth); readonly |
 | `partner` | Many2one | `res.partner` |
 | `caller_user` | Many2one | Related via `call.caller_user` |
 | `called_user` | Many2one | `res.users` |
@@ -322,6 +339,10 @@ Order: `id desc`
 | Method | Description |
 |--------|-------------|
 | `_get_recording_widget()` | HTML audio player with proxy URL |
+| `_get_media_src(proxy_recordings)` | Audio source for the player: attachment URL when audio is stored on the record, else `/connect/recording/<id>` proxy or the raw `media_url` |
+| `get_attachment_media_url()` | `/web/content` URL for the stored `recording_attachment` (uses `recording_filename`) |
+| `_fetch_media_to(temp_file)` | Write the audio bytes into a temp file: decode `recording_attachment` if present, else download `media_url` |
+| `create()` | Override: flags new recordings `transcription_pending` when `transcript_calls` is enabled (async queue, see Crons) |
 | `_compute_users()` | Combine caller, called, and answered Odoo users for list display |
 | `_get_list_view_summary()` | Truncated summary for list views |
 | `_get_duration_human()` | Human-readable duration |
@@ -425,7 +446,10 @@ links).
 `connect.user_callflow` (+`_call`) and `connect.message_configuration` no longer
 exist in core. See `specs/connect_twilio.md`, `specs/connect_freeswitch.md` and
 `specs/connect_asterisk.md` for their per-provider successors. The
-`connect` 19.0.4.0.0 pre-migration archives the old tables as `_*_legacy`.
+`connect` 19.0.4.0.0 pre-migration archives the old tables as `_*_legacy`,
+and the 19.0.4.2.2 post-migration backfills `connect.call.transcript`/`summary`
+from each call's latest analyzed recording (so analysis survives recording
+deletion).
 
 ---
 
@@ -585,16 +609,66 @@ regeneration hooks.
 
 ---
 
+### 13. license.py - `oduist.license`
+
+Single-record license configuration and validation for Oduist modules
+(JWT tokens issued by the license server at `oduist_license_server`,
+validated RS256 against a public key stored in
+`ir.config_parameter` `oduist_license.public_key`). Uses the same
+`get_param()`/`set_param()` singleton pattern as `connect.settings`.
+
+**Fields:**
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `instance_uid` | Char | Auto-generated UUID on first create; readonly |
+| `license_token` | Text | JWT from oduist.com; Groups: `base.group_erp_manager`. Empty = 30-day trial |
+| `registration_number` | Char | From the license server |
+| `subscribe_email` | Char | |
+| `subscribe_to_security_alerts` / `subscribe_to_onboarding` / `subscribe_to_updates` | Boolean | Subscription preferences; changing them re-checks the license |
+| `name` | Char | Computed ("License Configuration") |
+| `oduist_modules` | Many2many | Computed: installed Oduist modules |
+| `all_modules_purchased` | Boolean | Computed |
+
+**Key methods:**
+
+| Method | Description |
+|--------|-------------|
+| `get_param()` / `set_param()` | Singleton parameter access (creates the record on demand) |
+| `open_license_form()` | UI action opening the singleton form |
+| `validate_token(token)` | RS256-decode the JWT and verify it matches `instance_uid` |
+| `is_trial_valid(module_name)` | 30-day trial from the module's install date (missing `create_date` counts as a full trial) |
+| `get_license_status(module_name)` | `demo` / purchased (`production`) / `trial_active` (+days left) / `trial_expired` |
+| `check_license(module_name, silent=True)` | Boolean gate used by runtime code (e.g. `process_call_event`); raises when not silent |
+| `update_license_status(raise_exc=True)` | Call the license server `/license/v1/check`, store token/registration number and per-module prices/versions |
+| `action_update_license_status()` | Button wrapper reporting the outcome as a notification |
+| `buy_all_licenses()` / `buy_licenses(module_list)` | `/license/v1/buy` — returns an `act_url` to the payment link |
+| `get_oduist_license_banner()` | Banner payload for the frontend systray item (trial_expired > trial_active > demo) |
+
+### 14. ir_module_module.py - inherits `ir.module.module`
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `oduist_license_status` | Char | Computed from `oduist.license.get_license_status()` |
+| `oduist_module_purchased` | Boolean | Computed |
+| `oduist_module_price` | Char | Readonly; written by `update_license_status()` |
+| `oduist_module_show_price` | Char | Computed (empty when purchased/demo) |
+
+`buy_oduist_license()` starts the purchase flow for the single module via
+`oduist.license.buy_licenses()`.
+
+---
+
 ## Controllers (connect/controllers/)
 
 ### main.py
 
 | Route | Method | Auth | Description |
 |-------|--------|------|-------------|
-| `/connect/transcript/<id>` | POST | - | Receive transcript callback |
+| `/connect/transcript/<id>` | POST | public, `csrf=False` | Receive transcript callback; guarded by the recording's `transcription_token` (request rejected with 404 unless the token matches) |
 | `/connect/recording/<id>` | GET | user | Serve proxied recording audio |
 | `/connect/voicemail/<id>` | GET | user | Serve proxied voicemail audio |
-| `/connect/<uid>/` | GET | - | Health check endpoint |
+| `/connect/<uid>/` | GET, POST | public, `csrf=False` | Health check endpoint |
 
 **Notes:**
 - `_serve_media()` fetches the provider's audio and streams it to the browser. It takes
@@ -630,31 +704,38 @@ keeps the abstract `connect.message.send()` contract.
 
 ### Groups
 
+Groups live under the **Connect** category/privilege (`groups.xml` defines
+`module_category_connect` + `module_connect_privilege`), so their display
+names are just "User", "Admin" and "Webhook":
+
 | XML ID | Name | Description |
 |--------|------|-------------|
-| `group_user` | Connect User | Basic access to calls, messages, recordings |
-| `group_admin` | Connect Admin | Full CRUD on all models |
-| `group_webhook` | Connect Webhook | Create+read access for webhook-created records |
+| `group_user` | User | Basic access to calls, messages, recordings |
+| `group_admin` | Admin | Full CRUD on all models; implies `group_user` |
+| `group_webhook` | Webhook | Read/write/create for webhook-created records (no privilege/category — internal use) |
 
 ### Access Rules
 
-All models get access rules for the three groups:
+All models get access rules for the three groups (`security/access_rules.xml`):
 
 | Model | User | Admin | Webhook |
 |-------|------|-------|---------|
-| `connect.call` | Read | Full | Create+Read |
-| `connect.channel` | Read | Full | Create+Read |
-| `connect.message` | Read | Full | Create+Read |
-| `connect.recording` | Read | Full | Create+Read |
+| `connect.call` | Read+Write+Create | Full | Read+Write+Create |
+| `connect.channel` | Read | Full | Read+Write+Create |
+| `connect.message` | Read+Write+Create | Full | Read+Write+Create |
+| `connect.recording` | Read | Full | Read+Write+Create |
 | `connect.user` | Read | Full | Read |
-| `connect.debug` | - | Full | Create |
-| `connect.settings` | - | Full | - |
-| `connect.favorite` | Read+Write | Full | - |
+| `connect.debug` | - | Full | Read+Create |
+| `connect.settings` | - | Read+Write+Create | - |
+| `connect.favorite` | Full | Full | - |
 | `connect.transfer_wizard` | Full | Full | - |
 | `connect.schedule` | Read | Full | Read |
 | `connect.schedule.special_day` | Read | Full | Read |
 | `connect.schedule.slot` | Read | Full | - |
 | `resource.calendar` (+attendance, +leaves) | Read | Full | - |
+
+`security/license.xml` grants `oduist.license` full CRUD to
+`base.group_system` only — no Connect group can access the license model.
 
 Access rules for the PBX configuration models live in the provider modules
 next to the models themselves (ADR-031).
@@ -688,18 +769,23 @@ non-sudo (configuration writes remain manager-only). The `debug()` helper writes
 - `connect.user_connect_webhook` - Special res.users record for webhook processing.
   This user is used by integration modules when creating records from webhook callbacks.
 
-### data/data.xml
+### data/functions.xml
 
-- Default `connect.settings` singleton record
-- Instance UID initialization
+- `<function>` call running `connect.settings.set_defaults()` on install/upgrade
+  (creates the settings singleton and installation defaults)
+
+### data/license.xml
+
+- `ir.config_parameter` `oduist_license_server` (noupdate) — license server
+  base URL, default `https://license.oduist.com`
 
 ### data/ir_cron.xml
 
-| Cron | Interval | Description |
+| Cron (XML ID) | Interval | Description |
 |------|----------|-------------|
-| Debug vacuum | Daily | Delete debug entries older than 24 hours |
-| Usage tracking | Daily | Report usage statistics to API |
-| Schedule slots | Daily | Regenerate working-schedule availability slots over the rolling horizon |
+| `vacuum_debug` | Daily | Delete debug entries older than 24 hours |
+| `cron_transcribe_recordings` | Every 2 min | Transcribe `transcription_pending` recordings |
+| `cron_generate_schedule_slots` | Daily | Regenerate working-schedule availability slots over the rolling horizon |
 
 ---
 
@@ -717,7 +803,9 @@ All models get list (tree) and form views. Key view details:
 | `debug_views.xml` | List (read-only) |
 | `settings.xml` | Core settings form (general, registration, transcription/OpenAI). Provider settings forms live in their own modules and open the same singleton via the parametrized `open_settings_form()`. |
 | `res_partner_views.xml` | Inherit partner form: add call/message count smart buttons, gated on `connect.group_user` |
-| `favorite_views.xml` | List + form |
+| `schedule_views.xml` | Working schedules, special days, slot calendar (Availability) |
+| `menu.xml` | Connect app root and shared menu skeleton |
+| `wizard/transfer_views.xml` | Transfer wizard form |
 | `license.xml` | License form + menu |
 
 ### Menu Structure
@@ -781,6 +869,26 @@ ledger, so they are defined once instead of being copy-pasted per provider
 The provider-specific WebRTC dialer (its own systray icon + `Phone` main
 component per SDK) stays in each provider module and is out of scope for this
 sharing.
+
+---
+
+## Tests (connect/tests/)
+
+| File | Covers |
+|------|--------|
+| `test_call.py` | Call creation, computed name/durations/ref/voicemail widgets, `_determine_direction`, `process_call_event` (create, parent linking, error data), UI button actions |
+| `test_channel.py` | Channel creation, number parsing (E.164, `whatsapp:`, SIP URIs), `process_channel_event` create/update incl. the called/call_type overwrite guards, `_find_partner` resolution |
+| `test_message.py` | Message creation, type/direction/status computation and icons, phone formatting, ref, `get_receive_message_values`, media-widget rendering and URL-scheme safety, retry |
+| `test_recording.py` | Recording lifecycle, users union, widget, analysis sync to the call, transcription (attachment and mock flows, pricing, queue/cron, deletion behavior) |
+| `test_recording_controls.py` | Softphone runtime recording RPCs: dispatch, access and active-call checks |
+| `test_recording_seams.py` | The storage seams `connect_s3` overrides (`_fetch_media_to`, `_get_media_src`, attachment URL) |
+| `test_res_partner.py` | Partner lookup by number, `api_get_partner`, call/message counters, `connect_user` compute |
+| `test_schedule.py` | Working-schedule evaluation engine (special days, leaves, attendances, slots) |
+| `test_settings.py` | Settings singleton `get_param`/`set_param`, defaults, `open_settings_form`, API URL validation, protected-field writes, bus notify |
+| `test_user.py` | `connect.user` creation, unique-user constraint, group management side effects, URI/extension lookups, defaults and language list |
+| `test_access_rights.py` | The User/Admin/Webhook ACLs and own-record rules on the ledger models |
+
+Shared fixtures live in `common.py`.
 
 ---
 

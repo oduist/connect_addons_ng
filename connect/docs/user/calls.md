@@ -106,9 +106,14 @@ Each call record shows:
 
 If a call's number matches a contact in Odoo, the partner is automatically linked. If not, use the **Create Partner** button on the call record to create a new contact from the call.
 
-### Redial
+## Active Calls
 
-Click the **Redial** button on any call record to call that number again.
+Connect users have a **Toggle Calls** icon (a small server icon) in the top
+navbar. Click it to open a panel listing the calls currently in progress —
+caller, called, the users involved, the linked partner and the direction.
+Click a row to open the call record, or the partner name to jump to the
+contact. The panel hides itself again after a few seconds; when nothing is
+ringing or talking it simply says *No active calls*.
 
 ## Call Statuses
 

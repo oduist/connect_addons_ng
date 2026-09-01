@@ -4,7 +4,7 @@
 
 - **Name**: Oduist Connect Infobip
 - **Technical Name**: `connect_infobip`
-- **Version**: 19.0.1.0.0
+- **Version**: 19.0.1.2.0
 - **Depends**: `connect`
 - **Python Dependencies**: none (plain `requests`; the official Infobip
   Python SDK does not cover the Voice/Calls and Numbers APIs — ADR-036)
@@ -116,7 +116,8 @@ Attachment-first (ADR-036): `on_infobip_recording(event)` creates rows
 with `infobip_file_id` + `infobip_download_pending` (created with
 `skip_transcription`); cron `infobip_fetch_pending()` downloads bytes via
 the authorized `GET /calls/1/recordings/files/{id}` into
-`recording_attachment`, then sets `transcription_pending`. Retries capped
+`recording_attachment`, then sets `transcription_pending`. Retries are
+counted in `infobip_download_attempts` (Integer, default 0) and capped
 at `MAX_DOWNLOAD_ATTEMPTS`. Requires the core seam where
 `transcribe_recording()` prefers `recording_attachment` (see
 specs/connect_core.md).
@@ -125,7 +126,10 @@ specs/connect_core.md).
 
 `infobip_bulk_id`; `_compute_direction()` override (Infobip numbers +
 WhatsApp senders; co-installation last-loaded-wins limitation restated,
-ADR-032/ADR-036); `send()` → `infobip_client_send()` =
+ADR-032/ADR-036); `send()` guards on
+`connect.settings._get_message_provider() != 'infobip'` and falls
+through to `super()` (core per-user dispatcher), else →
+`infobip_client_send()` =
 `POST /sms/2/text/advanced` with per-send DLR `notifyUrl` (MSISDNs sent
 without `+`); `infobip_receive()` / `infobip_receive_whatsapp()` (inbound
 `{results: [...]}` envelopes) sharing `_infobip_dispatch_inbound()`
@@ -137,6 +141,7 @@ error fields + WhatsApp chatter note); `action_retry()`.
 ### user.py — `_inherit connect.user`
 
 `originate_provider` `selection_add=[('infobip','Infobip')]`;
+`message_provider` `selection_add=[('infobip','Infobip')]`;
 `_pbx_number_fields() + ['infobip_exten_number']`. No per-user SIP at
 Infobip: the agent endpoints are `infobip_identity` (WebRTC, unique,
 auto-generated from the login when the web phone is enabled) and
@@ -247,9 +252,11 @@ ACL). All HTTP is mocked.
 
 ## Known limitations
 
-- `connect.message.send()` / `_compute_direction()` / `sms.composer`:
-  last-loaded provider wins on co-installation (core dispatcher hook
-  still deferred — ADR-032/ADR-036).
+- `connect.message._compute_direction()` / `sms.composer`: last-loaded
+  provider wins on co-installation (ADR-032/ADR-036). `send()` is no
+  longer affected — it routes through the core
+  `_get_message_provider()` dispatcher (per-user
+  `connect.user.message_provider`).
 - API payload shapes flagged for live confirmation are listed in
   ADR-036 (event envelope, dialog `connectTimeout`, customData
   round-trip, Numbers API config schemas, WhatsApp senders listing,

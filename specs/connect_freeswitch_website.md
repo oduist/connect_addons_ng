@@ -28,11 +28,18 @@ Two snippets (group "content" in the website builder):
   phone number, days ahead (1–60), show holiday/special-day labels, long or
   short date format.
 
-## Models
+## Models (`models/number.py`)
 
-None. `security/access_rules.xml` grants `website.group_website_designer`
+`_inherit = 'connect.freeswitch.number'` — adds
+`name = fields.Char(related='phone_number')`. The website builder record
+picker (`BuilderMany2One`/SelectMany2X) always reads the `name` field of
+the model it browses, but the number model uses `phone_number` as
+`_rec_name` and has no `name` column; the related field mirrors it so the
+snippet options "Phone Number" picker works. No new models are defined.
+
+`security/access_rules.xml` grants `website.group_website_designer`
 read on `connect.freeswitch.number` and `connect.schedule` so the builder's
-record picker (`BuilderMany2One`) can search numbers.
+record picker can search numbers.
 
 ## Controllers (`controllers/main.py`)
 

@@ -9,6 +9,8 @@
 - **Python deps:** `livekit-api`
 - **Application:** False
 - **License:** Other proprietary
+- **post_init_hook:** resets the module `create_date` (trial clock) and
+  refreshes `oduist.license` status
 
 ## Overview
 
@@ -37,8 +39,9 @@ E.164/is_default logic is a deliberate copy of the other providers
 
 **Access rights (owner decision, ADR-036):** all module models are
 admin-only. `connect.group_user` has no ACLs; browser features go through
-model methods with internal sudo. `connect.group_webhook` gets read-only
-rows needed by the webhook controllers.
+model methods with internal sudo. `connect.group_webhook` gets no rows
+either — the webhook handlers run their livekit-model reads/writes under
+sudo.
 
 Room-name prefixes encode the scenario and drive the ledger mapping:
 `meet-` (meeting), `did-<number_id>-` (inbound SIP), `out-`
@@ -64,8 +67,10 @@ secret masked via `display_livekit_api_secret`), `livekit_sip_uri` (info
 for carrier-side trunk config), `livekit_verify_webhooks` (default on),
 `livekit_auto_sync` (default on), `livekit_agent_token` (Bearer secret of
 the worker/uploader sidecar + `action_generate_livekit_agent_token()`),
-`deepgram_api_key`, `elevenlabs_api_key` (masked AI vendor keys, no
-livekit_ prefix on purpose).
+`deepgram_api_key`, `elevenlabs_api_key` (masked via
+`display_deepgram_api_key` / `display_elevenlabs_api_key`; AI vendor
+keys, no livekit_ prefix on purpose), `livekit_worker_last_seen`
+(readonly heartbeat marker written by the worker sidecar).
 
 Methods: `livekit_api_call("<service>.<method>", request)` — sync wrapper
 running one asyncio loop per call around `livekit.api.LiveKitAPI`
@@ -169,34 +174,37 @@ core `transcription_pending`), AI transcripts
 | `POST /livekit/webhook` | public, readonly=False | WebhookReceiver JWT verification → `on_livekit_webhook` as webhook user |
 | `POST /livekit/webhook/agent/<id>/tool/<name>` | public, readonly=False | `X-Odoo-LiveKit-Token` == `agent.tool_token` → `execute_tool` (64KB cap) |
 | `POST /livekit/webhook/agent/<id>/transcript` | public, readonly=False | same token → `livekit_apply_agent_transcript` |
-| `PUT /livekit/webhook/recording/<fname>` | none, readonly=False | Bearer `livekit_agent_token` → `recording_attachment` |
+| `PUT /livekit/webhook/recording/<fname>` | none, readonly=False | Bearer `livekit_agent_token` → `connect.recording.livekit_store_recording_file()` |
 | `GET /livekit/api/agent_config` | none | Bearer → `_agent_config_payload()` |
 | `POST /livekit/api/heartbeat` | none, readonly=False | Bearer → `livekit_worker_last_seen` marker; the worker posts it at startup and on every dispatched job |
 | `GET /livekit/meet/<guest_token>` | public | QWeb meet page |
 | `POST /livekit/meet/<guest_token>/join` | public, readonly=False | guest/internal join token |
 
-## Frontend (connect_livekit/static/src/)
+## Frontend (connect_livekit/static/)
 
-Vendored pinned `livekit-client` UMD build in `lib/`. Web phone: Twilio
+Vendored pinned `livekit-client` UMD build in `static/lib/` (sources in
+`static/src/`). Web phone: Twilio
 main.js layout (service + systray + main_components gated by
 `get_livekit_phone_config`), bus channel `connect_livekit.call`
 (`join`/`ring` actions), lazy SDK load, fresh token per join. Meet page:
 standalone asset bundle, name entry → join → participant tiles,
-mute/camera/leave, recording indicator.
+mute/camera/leave controls.
 
 ## Deploy (connect_livekit/deploy/)
 
 `docker-compose.yml`: pinned `livekit/livekit-server`, `redis:7-alpine`,
 `livekit/sip`, `livekit/egress` (shared egress-out volume),
-`oduist/livekit-agent` (`run` + `upload-recordings` commands), optional
-TLS proxy. `livekit.yaml` carries the webhook URL of the paired Odoo
+`oduist/livekit-agent` (`run` + `upload-recordings` commands); TLS is
+provided by the customer's existing reverse proxy, not by the stack.
+`livekit.yaml` carries the webhook URL of the paired Odoo
 (one stack = one Odoo). Sidecar image versioning: rebuilt only when a
 release changes `deploy/agent/`; tag = short manifest version;
 multi-arch amd64+arm64.
 
 ## Security
 
-All `connect.livekit.*` models: admin full CRUD, webhook read where the
-controllers need it (agent, number, room), **no user-group rows**
-(ADR-036 owner decision). Secrets (`livekit_api_secret`, AI keys,
-`livekit_agent_token`, `tool_token`) never reach the webhook group.
+All `connect.livekit.*` models: admin full CRUD only — **no user-group
+rows and no webhook-group rows** (ADR-036 owner decision); the webhook
+handlers run their livekit-model reads/writes under sudo. Secrets
+(`livekit_api_secret`, AI keys, `livekit_agent_token`, `tool_token`)
+never reach non-admin groups.

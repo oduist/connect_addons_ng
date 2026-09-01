@@ -80,6 +80,11 @@ firewall-related fields:
 dialplan generators; it returns `''` (recording disabled) when the base
 URL or the token is missing.
 
+`get_voicemail_webhook_url()` builds the voicemail upload URL
+(`<web.base.url>/freeswitch/webhook/voicemail/<token>`) used by the
+callflow/user voicemail dialplan generators; same fail-closed behavior
+(returns `''` when the base URL or the token is missing).
+
 XML-RPC connectivity to FreeSWITCH (ADR-004, ADR-027, ADR-030):
 * `_freeswitch_rpc(command, args)` — low-level `mod_xml_rpc` call
   returning a `(result, error)` tuple. `error` is `None` on success or
@@ -156,7 +161,7 @@ Beyond firewall, the module contains:
 | `connect.user` (`_inherit`) | adds `freeswitch_exten` / `freeswitch_exten_number` (registered in `_pbx_number_fields()`), `freeswitch_outgoing_callerid`, `freeswitch_endpoint_ids`, WebRTC fields and dial-string generation; `originate_provider` `selection_add` `'freeswitch'`; the user-bridge voicemail prompt is spoken by Piper with `voicemail_lang = connect.user.language` (ADR-037) |
 | `connect.freeswitch.endpoint` (own model, ADR-031) | SIP endpoint management (formerly `connect.endpoint`). `auth_password` is auto-generated as a typeable passphrase (`models/passphrase.py`, `secrets`-based), `readonly` + `copy=False`, defaulted on create; `action_regenerate_auth_password()` issues a new one. Empty passwords on existing endpoints are backfilled non-destructively by `backfill_endpoint_passwords(env)` (post-migration). UI uses the `endpoint_password` OWL widget (mask + Show/Hide + Copy) — see ADR-022 |
 | `connect.freeswitch.exten` (own model, ADR-031) | extension routing (formerly `connect.exten`); dst Reference → `connect.user` / `connect.freeswitch.callflow` / `connect.freeswitch.endpoint` / `connect.fs_fifo` |
-| `connect.freeswitch.callflow` + `_choice` (own models, ADR-031) | IVR configuration and FreeSWITCH destinations (formerly `connect.callflow`); `_get_piper_language()` returns the BCP-47 code used as the Piper TTS model key (must match a `<model language="...">` entry in `piper_tts.conf.xml`) |
+| `connect.freeswitch.callflow` + `connect.freeswitch.callflow_choice` (own models, ADR-031) | IVR configuration and FreeSWITCH destinations (formerly `connect.callflow`); `_get_piper_language()` returns the BCP-47 code used as the Piper TTS model key (must match a `<model language="...">` entry in `piper_tts.conf.xml`) |
 | `connect.freeswitch.number` (own model, ADR-031) | DID assignment (formerly `connect.number`). Working schedule (issue #57, ADR-037): `schedule_enabled` + `schedule_id` (`connect.schedule`) switch the regular destination fields into the "available" route and add a `closed_destination`/`closed_user`/`closed_callflow`/`closed_fs_fifo_id` after-hours route; `generate_dialplan()` evaluates `schedule_id.get_status()` per call, and a public-holiday `prompt_message` is spoken via piper (`schedule_prompt_language`) before the after-hours transfer (see the `dialplan_inbound_did` template's `schedule_prompt`/`schedule_prompt_lang` vars; with no after-hours destination the call is hung up after the prompt instead of a 404) |
 | `connect.freeswitch.outgoing_callerid` (own model, ADR-031) | outbound caller IDs (formerly `connect.outgoing_callerid`); E.164 `+` constraint, single default |
 | `connect.freeswitch.gateway` | SIP gateway records, rendered into pjsip_wizard XML |
@@ -221,6 +226,7 @@ compares the shared `freeswitch_webhook_token` with
 | `POST /freeswitch/webhook/cdr` | mod_xml_cdr | Basic auth (`cred`) |
 | `GET/POST /freeswitch/webhook/parking` | dialplan `curl` app | `token` query param (Odoo renders the URL) |
 | `PUT/POST /freeswitch/webhook/recording/<token>/<filename>` | `record_session` | path segment (a query string after `.wav` would break format detection) |
+| `PUT/POST /freeswitch/webhook/voicemail/<token>/<filename>` | dialplan `record` app (callflow/user voicemail) | path segment (same reason as recording) |
 
 Recording uploads are additionally capped at 256 MB.
 
@@ -342,8 +348,8 @@ Connect > FreeSWITCH (seq 50)
   +-- Call Flows (seq 30)
   +-- Endpoints (seq 40)
   +-- Outgoing Caller IDs (seq 50)
-  +-- FIFO Queues (seq 60)
-  +-- Parking Slots (seq 70)
+  +-- FIFO Queues (seq 60, admin)
+  +-- Parking Slots (seq 70, admin)
   +-- Firewall (seq 80, admin)
   |   +-- Agent Status / Whitelist / Blacklist / Events
   +-- Configuration (seq 100, admin)
@@ -377,6 +383,10 @@ module with a data migration (connect_twilio / connect_asterisk ship none):
   `connect.freeswitch.callflow`, …), transfers the legacy `connect_user`
   columns (`exten`, `outgoing_callerid`) into the new per-provider columns,
   and restores the stashed fifo FKs.
+* **connect_freeswitch 19.0.2.0.1 post-migration** drops the obsolete
+  `is_default` column from `connect_freeswitch_number` — the field never had
+  behavior; outbound defaults are owned by
+  `connect.freeswitch.outgoing_callerid`.
 * **connect_freeswitch 19.0.2.1.2 post-migration** removes the obsolete
   operator-managed XML-RPC fields, rotates the hidden XML-RPC password once,
   and runs the idempotent deployment bootstrap so both service tokens exist

@@ -6,11 +6,15 @@ sidecar. Pipecat does not run inside Odoo.
 
 ## 1. Build the images
 
-Build the FreeSWITCH image after the `connect_freeswitch` 19.0.2.1.0 update:
+Build the FreeSWITCH image from `connect_freeswitch/deploy` (requires
+`connect_freeswitch` 19.0.2.1.0 or later). Use the image tag pinned in
+`connect_freeswitch/deploy/docker-compose.yml` and
+`docker-compose.full.yml` — `oduist/freeswitch:2.1.2` at the time of
+writing:
 
 ```bash
 docker build --platform linux/amd64 --provenance=false --sbom=false \
-  -t oduist/freeswitch:2.1.0 connect_freeswitch/deploy
+  -t oduist/freeswitch:2.1.2 connect_freeswitch/deploy
 ```
 
 Build the sidecar:

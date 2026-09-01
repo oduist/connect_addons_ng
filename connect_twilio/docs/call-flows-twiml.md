@@ -18,12 +18,13 @@ optional voicemail fallback.*
 | Field | Description |
 |-------|-------------|
 | **Name** | Call-flow label. |
-| **Extension** | Auto-created `connect.twilio.exten` that points at this flow. |
+| **Extension** | The `connect.twilio.exten` that points at this flow — created manually with the **Extension** stat button on the form, not automatically. |
 | **Language** | BCP-47 language for the `<Say>` prompt (e.g. `en-US`). |
 | **Voice** | Twilio voice used to read the prompt. |
 | **Gather config** | Input type (DTMF/speech), number of digits, timeout, etc. |
 | **Choices** | One row per menu option: **digits**, target **extension**, optional **speech** hint. |
 | **Ring Users** | Users to ring for a "reception"-style flow. |
+| **Record Calls** (`record_calls`) | Record the calls this flow delivers. |
 | **Voicemail** | Optional voicemail fallback. |
 
 ### How it runs
@@ -63,8 +64,9 @@ URL / Voice Status URL**, **SID** (Twilio Application SID), and an associated
 
 ### Lifecycle
 
-- Creating a TwiML app creates the corresponding Twilio Application via the API
-  and an extension for direct dialing.
+- Creating a TwiML app creates the corresponding Twilio Application via the API.
+  It does **not** create an extension — use the **Extension** button on the form
+  to add one for direct dialing.
 - Editing pushes updated webhook URLs to Twilio.
 - Deleting removes the Twilio Application.
 - Inbound voice requests hit `/twilio/webhook/twiml/<id>`, which calls

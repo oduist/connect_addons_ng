@@ -63,6 +63,8 @@ Navigate to **Connect > Users** to create PBX user accounts.
 | **Voice** | Provider-specific TTS voice name (e.g. `Woman` for Twilio, `Polly.Joanna` for Twilio/Telnyx). Leave empty to use the provider default. |
 | **Missed Call Notifications** | Send notifications for missed calls. |
 | **Click-to-call Provider** | Which installed telephony module originates calls for this user. Leave empty when only one provider module is installed. |
+| **Messaging Provider** | Which installed messaging module sends SMS/WhatsApp for this user. Leave empty when only one messaging module is installed. |
+| **Summary Prompt** | Per-user prompt for AI call summaries, taking the place of the system-wide **Summary Prompt** from the Transcription settings. |
 
 Provider-specific fields (Twilio username/SIP domain, per-provider extension
 numbers, outgoing caller IDs, endpoints) are added to the user form by the

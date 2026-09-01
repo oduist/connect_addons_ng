@@ -1,5 +1,51 @@
 # connect_vonage — Vonage Integration Module Specification
 
+## Module Info
+
+- **Name:** Oduist Connect Vonage
+- **Technical:** `connect_vonage`
+- **Version:** 19.0.1.0.1
+- **Depends:** `connect`
+- **Python deps:** `vonage`
+- **Application:** False
+- **License:** Other proprietary
+- **Hooks:** `post_init_hook`; migrations: `migrations/19.0.1.0.1/`
+
+## Status (2026-09-01): pre-ADR-031 architecture — pending decision
+
+This module predates the ADR-031 provider-model separation and has not
+been rebased onto it. Factually, as written:
+
+- It `_inherit`s **core PBX-configuration models** — `connect.number`,
+  `connect.exten`, `connect.callflow`, `connect.outgoing_callerid` —
+  and its Python references `connect.user_callflow` /
+  `connect.user_callflow_call`. None of these models exist in core
+  anymore: ADR-031 moved PBX configuration into per-provider models
+  (`connect.<provider>.*`). Its views likewise `inherit_id` core views
+  that no longer exist (`connect.view_connect_number_tree`,
+  `connect.view_connect_number_form`, `connect.view_connect_exten_form`).
+  **The module therefore cannot currently install on this branch.**
+- It bypasses the core provider dispatchers:
+  `connect.settings.originate_call()` and `connect.message.send()` are
+  overridden unconditionally — no
+  `_get_originate_provider()` / `_get_message_provider()` guard, no
+  fall-through to `super()` — and it adds no `selection_add` entries to
+  `connect.user.originate_provider` / `message_provider`, so per-user
+  provider selection cannot route to (or around) Vonage.
+- It defines **unprefixed** `connect.user` fields — `username`
+  (`required=True`), `client_enabled`, `client_ring_timeout` — that
+  collide with connect_twilio, which owns the unprefixed names on the
+  shared ledger models.
+- Menus: `views/menu.xml` defines the **Connect > Vonage** root menu
+  (sequence 60); the **NCCO** child menu (`menu_connect_ncco`, action
+  `ncco_action`, sequence 10) is defined in `views/ncco_views.xml`. The
+  body of this spec omits menus.
+
+The body of this spec below describes the module **as written**. The
+module needs a rebase onto per-provider `connect.vonage.*` models
+(exten, callflow, number, outgoing_callerid, user_callflow) and the
+dispatcher/prefix conventions before this spec is re-baselined.
+
 Vonage (ex-Nexmo) provider module for Oduist Connect. Implements the core
 provider contract (ADR-036) on top of the official `vonage` v4 Python SDK:
 NCCO-driven voice, Client SDK web phone, Messages API SMS, recordings with
