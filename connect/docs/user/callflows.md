@@ -35,6 +35,12 @@ The caller presses a digit, and the call is routed to the corresponding extensio
 
 A ring group rings multiple users simultaneously. The first user to answer gets the call.
 
+The **Prompt Message** remains available when **Gather Input** is disabled. In
+that mode it is played once as a greeting before the users are rung; no keypad
+or speech input is collected. Enabling Gather Input turns the same prompt into
+the introduction to the IVR choices. When enabled, **Gather Settings** and
+**Invalid Input Message** appear together in one row above the prompt.
+
 **Example:**
 
 > Three sales representatives are in a ring group. When a customer calls the sales number, all three phones ring at once. The first rep to pick up handles the call.

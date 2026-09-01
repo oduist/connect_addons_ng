@@ -14,6 +14,33 @@ Connect defines three security groups:
 
 When you create a PBX user and link it to an Odoo user, the Connect User group is automatically assigned. Admins must be assigned the Connect Admin group manually via Odoo user settings.
 
+### Users without a Connect group
+
+An internal Odoo user who belongs to none of the Connect groups sees no trace
+of Connect:
+
+- **The Connect app is hidden.** `menu_connect_root` is gated on Connect User /
+  Connect Admin, so the app and every provider submenu under it are absent from
+  the apps menu.
+- **The Calls / Messages smart buttons are hidden** on partners, leads,
+  employees, sale orders, invoices, tasks, projects and helpdesk tickets. Their
+  counts are computed with `sudo()`, so before the gate the buttons rendered for
+  everyone and only failed on click.
+- **The web phone does not load.** The provider bootstrap RPCs answer "not
+  enabled" for such a user, so no softphone widget registers and the browser
+  does no PBX lookups on page load.
+
+Two things this deliberately does **not** do:
+
+- **A direct URL still returns an `AccessError`.** Hiding the menu is not a
+  permission; the access rules are what answer for a user who navigates to a
+  Connect page by URL, bookmark or a restored last action. Grant Connect User
+  to a user who is meant to have access.
+- **It does not restrict their own user record.** Reading `res.users` —
+  their own preferences, or any read whose field list covers the PBX-user link —
+  works normally for every internal user. The PBX user records themselves stay
+  unreadable to them.
+
 ## Access Control Matrix
 
 | Model | User | Admin | Webhook |
@@ -22,7 +49,7 @@ When you create a PBX user and link it to an Odoo user, the Connect User group i
 | Channels | Read | Full | Read, Write, Create |
 | Messages | Read, Write, Create | Full | Read, Write, Create |
 | Recordings | Read | Full | Read, Write, Create |
-| PBX Users | Read | Full | — |
+| PBX Users | Read | Full | Read |
 | Numbers (per provider) | Read | Full | — |
 | Caller IDs (per provider) | Read | Full | — |
 | Extensions (per provider) | Read | Full | — |
@@ -59,7 +86,7 @@ FreeSWITCH webhooks (`/freeswitch/xml`, `/freeswitch/webhook/*`) do not have sig
 
 ### Webhook User
 
-A special inactive Odoo user (`connect.user_connect_webhook`) is defined in core data. All webhook handlers use this user's context (via `sudo()`) to create and update records with proper permissions. This user belongs to the Connect Webhook group.
+A special inactive Odoo user (`connect.user_connect_webhook`) is defined in core data. All webhook handlers use this user's context to process provider events with explicit model permissions. This user belongs to the Connect Webhook group and has read-only access to PBX users so routing callbacks can resolve their destination.
 
 ## Record Rules
 

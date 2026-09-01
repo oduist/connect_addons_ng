@@ -42,6 +42,17 @@ Editing a PBX user, the Twilio integration adds these fields.
 *The **Twilio Phone** tab on a PBX user: SIP phone and web phone (Twilio Client),
 each with its own enable switch, ring priority and timeout.*
 
+### Extension
+
+Give every PBX user an extension: open the user and press **Extension**, then
+enter the number (100, 101, ...). Nothing assigns one automatically.
+
+The extension is what colleagues dial to reach the user, and it is the caller
+ID the user's own calls present — the number that shows on the callee's phone
+and in the call history. A user without one falls back to their own outgoing
+caller ID, then the default outgoing caller ID, and only then to their client
+identity (ADR-058).
+
 ### Web phone (Twilio Client)
 
 | Field | Description |

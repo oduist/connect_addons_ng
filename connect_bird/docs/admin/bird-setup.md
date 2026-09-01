@@ -84,7 +84,7 @@ On each Connect user (Connect → Users):
 
 | Field | Meaning |
 |-------|---------|
-| Bird Agent Phone | E.164 number Bird dials first on click-to-call |
+| Bird Agent Phone | E.164 number Bird dials first on click-to-call; rendered with the standard phone control |
 | Bird Voice Number | Caller ID for click-to-call (default number when empty) |
 | Bird Message Number | Default sender for outgoing messages |
 | Click-to-call Provider | Set to *Bird* when several telephony modules are installed |

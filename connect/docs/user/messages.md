@@ -17,6 +17,11 @@ Each message shows:
 | **Partner** | Linked contact. |
 | **Media** | Inline image/audio player for MMS content. |
 
+The message list renders **From** and **To** as plain text. On an individual
+message form, those values use the standard phone control. Recipient fields in
+WhatsApp and RCS composers use the same control, allowing click-to-call through
+the configured provider where applicable.
+
 ## Sending SMS
 
 ### From the SMS Composer

@@ -119,6 +119,28 @@ class Channel(models.Model):
                 'caller': params.get('caller'),
                 'call_type': params.get('call_type', 'phone'),
             }
+            # Click-to-call stores the real destination on the channel it
+            # creates, then the first status event for that same leg reports
+            # the transport-level target -- the agent's client:/sip: URI --
+            # as Called, and the ledger ends up showing the agent's own
+            # extension instead of the number that was dialed. The URI is
+            # already preserved in "to", so keep the dialed destination.
+            new_called = params.get('called')
+            if (channel.called
+                    and not channel.called.startswith(('client:', 'sip:'))
+                    and isinstance(new_called, str)
+                    and new_called.startswith(('client:', 'sip:'))):
+                del data['called']
+            # Same asymmetry for the call type. A WhatsApp click-to-call
+            # rings the agent over ordinary voice -- the outer leg must not
+            # carry a "whatsapp:" identity, or Twilio ends the call before
+            # the WhatsApp verb runs -- so its status events describe a
+            # plain phone leg. The originator is the only party that knows
+            # better, so let it win: an upgrade to whatsapp still applies,
+            # a downgrade back to phone does not.
+            if (channel.call_type == 'whatsapp'
+                    and data.get('call_type') != 'whatsapp'):
+                del data['call_type']
             # Link parent if not yet linked
             if not channel.parent_channel:
                 parent_sid = channel.parent_sid or params.get('parent_sid')

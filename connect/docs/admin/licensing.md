@@ -62,6 +62,19 @@ If a module's trial ends and no commercial license is active for the instance:
 To resolve it, either **buy a license** for the module or **uninstall** the
 module from the instance.
 
+## Refreshing license and pricing
+
+The *License Configuration* form has an **Update License / Pricing** button. It
+re-checks every installed Oduist module against the licensing service and
+reports the outcome in a notification — modules checked, modules licensed, and
+the instance registration number — then re-reads the record so refreshed prices
+and versions are visible. A failed check surfaces as an error dialog instead.
+
+!!! note "A freshly installed module is on trial, not expired"
+    Each module stamps its own install date and starts a 30-day trial from it.
+    A module whose install date cannot be determined is treated as a full
+    trial, never as an elapsed one.
+
 ## License banner and status
 
 A systray banner surfaces the most important licensing state across installed

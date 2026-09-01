@@ -1,6 +1,7 @@
 {
     'name': 'Connect Elevenlabs Knowledge',
-    'description': """Integrate Elelvenlabs Knowledge""",
+    'summary': 'AI Knowledge Base Management',
+    'description': """Integrate ElevenLabs Knowledge""",
     'currency': 'EUR',
     'price': '0',
     'version': '19.0.1.0.0',

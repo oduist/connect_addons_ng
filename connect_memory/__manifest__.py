@@ -1,10 +1,8 @@
 {
     'name': 'Connect Memory',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.2',
     'category': 'Phone',
-    'summary': 'External AI memory for Odoo (provider-neutral: Hindsight, Cognee). '
-               'Base module: connect.memory.outbox/inbox contract + customer '
-               'correspondence capture.',
+    'summary': 'External AI memory (Hindsight, Cognee)',
     'description': """
 Connect Memory — base module
 ============================
@@ -39,9 +37,10 @@ their own data.
         'data/memory_data.xml',
         'views/memory_outbox_views.xml',
         'views/memory_inbox_views.xml',
+        # Before settings.xml: it hangs the Settings entry off menu_memory_config.
+        'views/memory_menus.xml',
         'views/settings.xml',
         'views/res_partner_views.xml',
-        'views/memory_menus.xml',
         'views/memory_backfill_views.xml',
     ],
     'post_init_hook': 'post_init_hook',

@@ -1,0 +1,7 @@
+# Per-module documentation config, aggregated by the root mkdocs.yml via the
+# mkdocs-monorepo-plugin (!include). docs_dir defaults to ./docs relative to
+# this file, i.e. connect_s3/docs/.
+site_name: S3 Recording Storage
+nav:
+  - Overview: index.md
+  - Setup: setup.md

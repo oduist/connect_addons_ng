@@ -77,6 +77,7 @@ nav:
   - Sales: '!include ./connect_sale/mkdocs.yml'
   - Accounting: '!include ./connect_account/mkdocs.yml'
   - Project: '!include ./connect_project/mkdocs.yml'
+  - S3 Recording Storage: '!include ./connect_s3/mkdocs.yml'
   - Book: '!include ./connect_book/mkdocs.yml'
 
 markdown_extensions:

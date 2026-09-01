@@ -141,11 +141,19 @@
                         <i t-att-class="state.muted ? 'fa fa-microphone-slash' : 'fa fa-microphone'"/>
                     </button>
                     <button class="btn o_phone_recording_btn"
-                            t-att-class="isRecordingOn() ? 'btn-warning' : 'btn-outline-secondary'"
+                            t-att-class="isRecordingOn() ? 'btn-outline-secondary o_phone_recording_btn_active' : 'btn-outline-secondary o_phone_recording_btn_idle'"
+                            t-att-aria-label="getRecordingTitle()"
+                            t-att-aria-pressed="isRecordingOn() ? 'true' : 'false'"
                             t-att-title="getRecordingTitle()"
                             t-att-disabled="isRecordingButtonDisabled()"
                             t-on-click="onToggleRecording">
-                        <i t-att-class="getRecordingIconClass()"/>
+                        <span t-if="state.recordingState === 'off'"
+                              class="o_phone_recording_idle"
+                              aria-hidden="true">
+                            <span class="o_phone_recording_idle_dot"/>
+                            <span class="o_phone_recording_idle_label">REC</span>
+                        </span>
+                        <i t-else="" t-att-class="getRecordingIconClass()"/>
                     </button>
                     <button class="btn btn-danger o_phone_hangup_btn" t-on-click="onHangup">
                         <i class="fa fa-phone-slash"/> End

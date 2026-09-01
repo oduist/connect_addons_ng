@@ -45,7 +45,7 @@
                         </div>
                         <group col="2">
                             <div colspan="2">
-                                <button name="update_license_status" string="UPDATE LICENSE / PRICING" type="object" class="btn-success me-2"/>
+                                <button name="action_update_license_status" string="UPDATE LICENSE / PRICING" type="object" class="btn-success me-2"/>
                                 <button name="buy_all_licenses" string="BUY ALL MODULES" type="object" class="btn-warning" invisible="all_modules_purchased"/>
                             </div>
                             <field name="oduist_modules" nolabel="1" colspan="2">

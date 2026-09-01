@@ -3,7 +3,7 @@
     'version': '19.0.1.0.0',
     'author': 'Oduist',
     'category': 'Phone',
-    'summary': 'Website widgets for FreeSWITCH phone number working schedules',
+    'summary': 'Website widgets for phone schedules',
     'depends': ['connect_freeswitch', 'website'],
     'data': [
         'security/access_rules.xml',

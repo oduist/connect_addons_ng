@@ -13,7 +13,13 @@ PIN_CODE_RANGE = [100000, 999999]
 class ResUser(models.Model):
     _inherit = 'res.users'
 
-    connect_user = fields.Many2one('connect.user', compute='_get_connect_user')
+    # compute_sudo: every internal user reads their own res.users record (own
+    # preferences, any read() that includes this field), but only Connect
+    # group members may read connect.user. Without it the compute raises
+    # AccessError for everyone outside those groups. Resolving the link is not
+    # privileged — the value is the reader's own PBX user.
+    connect_user = fields.Many2one(
+        'connect.user', compute='_get_connect_user', compute_sudo=True)
     pin_code = fields.Char(string='PIN code')
 
     if release.version_info[0] >= 19:

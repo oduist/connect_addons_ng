@@ -11,6 +11,10 @@ If call recording is enabled for your account, calls are automatically recorded.
 
 Click the play button on any recording to listen in your browser. You can also download recordings for offline access.
 
+Caller and called numbers use the standard phone control on an individual
+recording form, so a dialable number can be used for click-to-call there. The
+recording list shows those numbers as plain text.
+
 ### Recording Settings
 
 Recording can be enabled at multiple levels (configured by your administrator):
@@ -25,9 +29,29 @@ Telnyx web phone or SIP phone.
 
 When runtime recording control is available for your phone provider, the phone
 widget shows a recording button during an active call. Use it to start or stop
-recording for that call. If your administrator enabled automatic recording, the
-button shows the active recording state and can stop the current recording when
-the provider supports it.
+recording for that call.
+
+The button reflects what the phone system reports for the call, not what the
+settings would have done. Recording started automatically by a call flow, by
+the per-user **Record Calls** option, or manually from the phone all show the
+same active state, and stopping the recording stops whichever of them is
+running.
+
+The button is usable from the moment the call is answered. Because an
+automatic recording only starts when the far end picks up — and the provider
+needs a further moment to report it — the button first shows the state your
+configuration implies, then corrects itself as soon as the provider gives a
+real answer. In practice: if **Record Calls** is on for you, the button shows
+*Stop Recording* immediately rather than sitting on *Start Recording* for the
+first several seconds; if a call turns out not to be recorded after all, the
+button settles back to *Start Recording* on its own.
+
+A purple circular badge with a white dot and **REC** means nothing is being
+recorded and the button will **start** a manual recording. A purple stop icon
+appears only while a recording is actually running and will **stop** it. The
+manual button remains available when **Record Calls** is disabled for the user;
+that setting controls automatic recording, not whether a specific call may be
+recorded manually.
 
 ## AI Transcription
 
