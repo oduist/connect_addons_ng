@@ -2,7 +2,7 @@
 
 ## Module Info
 
-- **Name:** Connect Memory — Sale & Payment Behavior
+- **Name:** Oduist Connect Memory — Sale & Payment Behavior
 - **Technical:** `connect_memory_sale`
 - **Version:** 19.0.1.0.0
 - **Depends:** `connect_memory`, `sale`, `account`

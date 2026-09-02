@@ -1,5 +1,5 @@
 {
-    "name": "Connect Memory — Sale & Payment Behavior",
+    "name": "Oduist Connect Memory — Sale & Payment Behavior",
     "version": "19.0.1.0.0",
     "category": "Phone",
     "summary": 'Memory events for sales, invoices, payments',

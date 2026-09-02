@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 
 {
-    'name': 'Connect Elevenlabs Helpdesk',
+    'name': 'Oduist Connect ElevenLabs Helpdesk',
     'version': '19.0.1.0.0',
     'author': 'Oduist',
     'maintainer': 'Oduist',

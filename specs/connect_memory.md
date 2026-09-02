@@ -2,7 +2,7 @@
 
 ## Module Info
 
-- **Name:** Connect Memory
+- **Name:** Oduist Connect Memory
 - **Technical:** `connect_memory`
 - **Version:** 19.0.1.0.3
 - **Depends:** `connect`
