@@ -4,7 +4,7 @@
         <field name="name">connect.telnyx.number.tree</field>
         <field name="model">connect.telnyx.number</field>
         <field name="arch" type="xml">
-            <list>
+            <tree>
                 <field name="phone_number"/>
                 <field name="friendly_name"/>
                 <field name="destination"/>
@@ -13,7 +13,7 @@
                 <field name="texml"/>
                 <field name="ai_assistant"/>
                 <field name="is_ignored"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -31,14 +31,14 @@
                         </group>
                         <group string="Routing">
                             <field name="destination"/>
-                            <field name="user" invisible="destination != 'user'"/>
-                            <field name="callflow" invisible="destination != 'callflow'"/>
+                            <field name="user"
+                   attrs="{'invisible': [('destination', '!=', 'user')]}"/>
+                            <field name="callflow"
+                   attrs="{'invisible': [('destination', '!=', 'callflow')]}"/>
                             <field name="texml"
-                                   invisible="destination != 'texml'"
-                                   required="destination == 'texml'"/>
+                   attrs="{'invisible': [('destination', '!=', 'texml')], 'required': [('destination', '=', 'texml')]}"/>
                             <field name="ai_assistant"
-                                   invisible="destination != 'ai_assistant'"
-                                   required="destination == 'ai_assistant'"/>
+                   attrs="{'invisible': [('destination', '!=', 'ai_assistant')], 'required': [('destination', '=', 'ai_assistant')]}"/>
                         </group>
                     </group>
                 </sheet>
@@ -49,7 +49,7 @@
     <record id="action_telnyx_number" model="ir.actions.act_window">
         <field name="name">Numbers</field>
         <field name="res_model">connect.telnyx.number</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
     <menuitem id="menu_telnyx_numbers"

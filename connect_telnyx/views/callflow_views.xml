@@ -4,10 +4,10 @@
         <field name="name">connect.telnyx.callflow.tree</field>
         <field name="model">connect.telnyx.callflow</field>
         <field name="arch" type="xml">
-            <list>
+            <tree>
                 <field name="name"/>
                 <field name="exten_number" string="Extension"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -34,18 +34,22 @@
                         </group>
                         <group string="Voicemail">
                             <field name="voicemail_enabled"/>
-                            <field name="voicemail_prompt" invisible="not voicemail_enabled"/>
+                            <field name="voicemail_prompt"
+                   attrs="{'invisible': [('voicemail_enabled', '=', False)]}"/>
                         </group>
                     </group>
-                    <group string="Gather Settings" invisible="not gather_input">
+                    <group string="Gather Settings"
+                   attrs="{'invisible': [('gather_input', '=', False)]}">
                         <group>
                             <field name="gather_input_type"/>
                             <field name="gather_timeout"/>
                             <field name="gather_digits"/>
-                            <field name="gather_hints" invisible="gather_input_type == 'dtmf'"/>
+                            <field name="gather_hints"
+                   attrs="{'invisible': [('gather_input_type', '=', 'dtmf')]}"/>
                         </group>
                     </group>
-                    <group invisible="not gather_input">
+                    <group
+                   attrs="{'invisible': [('gather_input', '=', False)]}">
                         <group string="Prompt Message">
                             <field name="prompt_message" nolabel="1" colspan="2"/>
                         </group>
@@ -54,21 +58,22 @@
                         </group>
                     </group>
                     <notebook>
-                        <page name="choices" string="Choices" invisible="not gather_input">
+                        <page name="choices" string="Choices"
+                   attrs="{'invisible': [('gather_input', '=', False)]}">
                             <field name="choices">
-                                <list editable="bottom">
+                                <tree editable="bottom">
                                     <field name="choice_digits"/>
                                     <field name="exten"/>
                                     <field name="speech"/>
-                                </list>
+                                </tree>
                             </field>
                         </page>
                         <page name="ring_users" string="Ring Users">
                             <field name="ring_users">
-                                <list>
+                                <tree>
                                     <field name="user"/>
                                     <field name="telnyx_exten"/>
-                                </list>
+                                </tree>
                             </field>
                         </page>
                     </notebook>
@@ -80,7 +85,7 @@
     <record id="action_telnyx_callflow" model="ir.actions.act_window">
         <field name="name">Call Flows</field>
         <field name="res_model">connect.telnyx.callflow</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
     <menuitem id="menu_telnyx_callflows"

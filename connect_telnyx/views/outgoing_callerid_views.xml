@@ -4,11 +4,11 @@
         <field name="name">connect.telnyx.outgoing_callerid.tree</field>
         <field name="model">connect.telnyx.outgoing_callerid</field>
         <field name="arch" type="xml">
-            <list>
+            <tree>
                 <field name="number"/>
                 <field name="friendly_name"/>
                 <field name="is_default"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -36,7 +36,7 @@
     <record id="action_telnyx_callerid" model="ir.actions.act_window">
         <field name="name">Outgoing Caller IDs</field>
         <field name="res_model">connect.telnyx.outgoing_callerid</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
     <menuitem id="menu_telnyx_callerids"

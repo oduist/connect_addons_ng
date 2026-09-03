@@ -2,14 +2,11 @@
 "use strict"
 import {useService} from "@web/core/utils/hooks"
 import {browser} from "@connect_telnyx/js/utils"
-import {Component, useState, onMounted, onWillStart, markup} from "@odoo/owl"
+
+const {Component} = owl
+const {useState, onMounted, onWillStart} = owl.hooks
 
 export class PhoneSysTray extends Component {
-    static template = 'connect_telnyx.menu'
-    static props = {
-        bus: Object
-    }
-
     constructor() {
         super(...arguments)
         this.bus = this.props.bus
@@ -20,12 +17,12 @@ export class PhoneSysTray extends Component {
         })
         this.sound = false
         this.microphone = false
+        // Odoo 15 notifications render text, not markup: keep it plain.
         this.message = 'For better user experience grant permission for: '
         this.browser = navigator.userAgent.includes("Firefox") ? browser.firefox : browser.chrome
     }
 
     setup() {
-        super.setup()
         this.notification = useService("notification")
         // Disable Permission Check
         // this.permissionsChecked = localStorage.getItem('connect_permissions_checked')
@@ -86,17 +83,17 @@ export class PhoneSysTray extends Component {
     }
 
     notify() {
-        this.message += this.sound ? '' : '<br/>&emsp; - Sound'
-        this.message += this.microphone ? '' : '<br/>&emsp; - Microphone'
-        this.message += 'Sound devices permissions error!</a>'
-        this.notification.add(markup(this.message), {title: 'Connect', sticky: true, type: 'warning'})
+        this.message += this.sound ? '' : ' Sound;'
+        this.message += this.microphone ? '' : ' Microphone;'
+        this.message += ' Sound devices permissions error!'
+        this.notification.add(this.message, {title: 'Connect', sticky: true, type: 'warning'})
     }
 
     _onClick() {
         if (this.state.exception === 'AccessTokenInvalid') {
             this.notification.add('Please reload the page to refresh the Phone!', {title: 'Connect', type: 'warning'})
         } else if (this.state.exception) {
-            this.notification.add(markup(this.state.exception), {title: 'Connect', type: 'warning'})
+            this.notification.add(this.state.exception, {title: 'Connect', type: 'warning'})
         } else {
             this.bus.trigger('busPhoneToggleDisplay')
         }
@@ -107,4 +104,8 @@ export class PhoneSysTray extends Component {
         this.state.isDisplay = false
         this.state.inCall = false
     }
+}
+PhoneSysTray.template = 'connect_telnyx.menu'
+PhoneSysTray.props = {
+    bus: Object
 }

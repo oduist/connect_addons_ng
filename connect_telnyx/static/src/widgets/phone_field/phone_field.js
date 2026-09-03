@@ -1,48 +1,28 @@
 /** @odoo-module **/
 "use strict"
 
-import {patch} from "@web/core/utils/patch"
-import {PhoneField} from "@web/views/fields/phone/phone_field"
-import {useService} from "@web/core/utils/hooks"
+// Odoo 15 variant (ADR-062): the OWL field component API is 16+; on 15 the
+// phone widget is the legacy basic_fields.FieldPhone. Rebind its readonly
+// link so a click originates the call through Odoo instead of tel: — the
+// core connect.settings.originate_call dispatches by the user's
+// click-to-call provider. The inline WhatsApp composer button of the 19.0
+// branch has no clean legacy counterpart and is not ported.
+import basic_fields from "web.basic_fields"
 
-patch(PhoneField.prototype, {
+basic_fields.FieldPhone.include({
+    events: Object.assign({}, basic_fields.FieldPhone.prototype.events, {
+        'click': '_onClickConnectCall',
+    }),
 
-    setup() {
-        super.setup()
-        this.action = useService("action")
-    },
-
-    _onClickCallButton(e) {
-        e.preventDefault()
-        const {resModel, resId} = this.props.record.model.config
-        const args = [this.props.record.data[this.props.name], resModel, resId]
-        // The core connect.settings.originate_call dispatches by the
-        // user's click-to-call provider.
-        this.env.model.orm.call("connect.settings", "originate_call", args, {})
-    },
-
-    async _onClickTelnyxWhatsappMessageButton(e) {
-        e.preventDefault()
-        await this.props.record.save()
-        this.action.doAction(
-            {
-                type: "ir.actions.act_window",
-                target: "new",
-                name: "Send WhatsApp Message",
-                res_model: "connect.telnyx.whatsapp_composer",
-                views: [[false, "form"]],
-                context: {
-                    active_model: this.props.record.resModel,
-                    active_id: this.props.record.resId,
-                    default_phone: this.props.record.data[this.props.name],
-                },
-            },
-            {
-                onClose: () => {
-                    this.props.record.load()
-                    this.props.record.model.notify()
-                },
-            }
-        )
+    _onClickConnectCall(ev) {
+        if (this.mode !== 'readonly' || !this.value) {
+            return
+        }
+        ev.preventDefault()
+        this._rpc({
+            model: 'connect.settings',
+            method: 'originate_call',
+            args: [this.value, this.model, this.res_id],
+        })
     },
 })

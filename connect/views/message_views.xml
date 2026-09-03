@@ -4,7 +4,7 @@
         <field name="name">connect.message.tree</field>
         <field name="model">connect.message</field>
         <field name="arch" type="xml">
-            <list default_order="create_date desc">
+            <tree default_order="create_date desc">
                 <field name="direction_display" string=" " width="30px"/>
                 <field name="status_display" string=" " width="30px"/>
                 <field name="from_number"/>
@@ -13,7 +13,7 @@
                 <field name="message_type"/>
                 <field name="partner"/>
                 <field name="create_date" string="Date"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -24,7 +24,8 @@
             <form>
                 <header>
                     <button name="action_retry" type="object" string="Retry"
-                            class="btn-primary" invisible="status != 'failed'"/>
+                            class="btn-primary"
+                   attrs="{'invisible': [('status', '!=', 'failed')]}"/>
                 </header>
                 <sheet>
                     <group>
@@ -50,12 +51,14 @@
                     <group string="Body">
                         <field name="body" nolabel="1" colspan="2"/>
                     </group>
-                    <group string="Media" invisible="not media_url">
+                    <group string="Media"
+                   attrs="{'invisible': [('media_url', '=', False)]}">
                         <field name="media_widget" nolabel="1" colspan="2"/>
                         <field name="media_url"/>
                         <field name="media_content_type"/>
                     </group>
-                    <group string="Error" invisible="not has_error">
+                    <group string="Error"
+                   attrs="{'invisible': [('has_error', '=', False)]}">
                         <field name="has_error"/>
                         <field name="error_code"/>
                         <field name="error_message"/>
@@ -68,7 +71,7 @@
     <record id="action_connect_message" model="ir.actions.act_window">
         <field name="name">Messages</field>
         <field name="res_model">connect.message</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
 </odoo>

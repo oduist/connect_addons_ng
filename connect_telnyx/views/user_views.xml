@@ -44,11 +44,10 @@
                             <field name="telnyx_sip_enabled" string="Enabled"/>
                             <field name="telnyx_sip_priority" string="Priority"/>
                             <field name="telnyx_sip_ring_timeout" string="Ring Timeout"
-                                   invisible="telnyx_sip_enabled == False"
-                                   required="telnyx_sip_enabled == True"/>
+                   attrs="{'invisible': [('telnyx_sip_enabled', '=', False)], 'required': [('telnyx_sip_enabled', '=', True)]}"/>
                             <field name="telnyx_sip_username" string="SIP Username"
                                    widget="CopyClipboardChar"
-                                   invisible="telnyx_sip_enabled == False"/>
+                   attrs="{'invisible': [('telnyx_sip_enabled', '=', False)]}"/>
                             <!-- Shown in the clear and copyable: it is the
                                  credential the user types into a hardphone,
                                  and Telnyx is the only party that can set
@@ -56,23 +55,23 @@
                                  Connect groups. -->
                             <field name="telnyx_sip_password" string="SIP Password"
                                    widget="CopyClipboardChar"
-                                   invisible="telnyx_sip_enabled == False"/>
+                   attrs="{'invisible': [('telnyx_sip_enabled', '=', False)]}"/>
                             <button name="action_regenerate_telnyx_sip_credential"
                                     type="object" class="btn-link ps-0"
                                     icon="fa-refresh"
                                     colspan="2"
                                     string="Regenerate SIP credential"
-                                    invisible="telnyx_sip_enabled == False"
                                     confirm="Telnyx issues a brand new username and password: the hardphone stops registering until it is configured again. Continue?"
-                                    groups="connect.group_admin"/>
+                                    groups="connect.group_admin"
+                   attrs="{'invisible': [('telnyx_sip_enabled', '=', False)]}"/>
                         </group>
                         <group string="Web Phone">
                             <field name="telnyx_client_enabled" string="Enabled"/>
                             <field name="telnyx_client_priority" string="Priority"/>
                             <field name="telnyx_client_ring_timeout" string="Ring Timeout"
-                                   invisible="telnyx_client_enabled == False"/>
+                   attrs="{'invisible': [('telnyx_client_enabled', '=', False)]}"/>
                             <field name="telnyx_client_username" string="Client Username"
-                                   invisible="telnyx_client_enabled == False"/>
+                   attrs="{'invisible': [('telnyx_client_enabled', '=', False)]}"/>
                         </group>
                     </group>
                 </page>

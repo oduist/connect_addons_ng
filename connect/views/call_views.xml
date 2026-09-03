@@ -4,7 +4,7 @@
         <field name="name">connect.call.tree</field>
         <field name="model">connect.call</field>
         <field name="arch" type="xml">
-            <list default_order="id desc">
+            <tree default_order="id desc">
                 <field name="direction"/>
                 <field name="call_type" optional="hide"/>
                 <field name="caller"/>
@@ -15,7 +15,7 @@
                 <field name="recording_icon" string="Rec"/>
                 <field name="voicemail_icon" string="VM"/>
                 <field name="create_date" string="Date"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -32,11 +32,11 @@
                         <button name="create_partner_button" type="object"
                                 class="oe_stat_button" icon="fa-user-plus"
                                 string="Create Partner"
-                                invisible="partner"/>
+                   attrs="{'invisible': [('partner', '!=', False)]}"/>
                         <button name="transfer_button" type="object"
                                 class="oe_stat_button" icon="fa-exchange"
                                 string="Transfer"
-                                invisible="status == 'completed'"/>
+                   attrs="{'invisible': [('status', '=', 'completed')]}"/>
                     </div>
                     <group>
                         <group string="Call Info">
@@ -54,31 +54,36 @@
                             <field name="answered_user"/>
                         </group>
                     </group>
-                    <group string="Recording" invisible="not recording_widget">
+                    <group string="Recording"
+                   attrs="{'invisible': [('recording_widget', '=', False)]}">
                         <field name="recording_widget" nolabel="1" colspan="2"/>
                     </group>
-                    <group string="Voicemail" invisible="not voicemail_widget">
+                    <group string="Voicemail"
+                   attrs="{'invisible': [('voicemail_widget', '=', False)]}">
                         <field name="voicemail_widget" nolabel="1" colspan="2"/>
                     </group>
-                    <group string="Transcript" invisible="not transcript">
+                    <group string="Transcript"
+                   attrs="{'invisible': [('transcript', '=', False)]}">
                         <field name="transcript" nolabel="1" colspan="2"/>
                     </group>
-                    <group string="Summary" invisible="not summary">
+                    <group string="Summary"
+                   attrs="{'invisible': [('summary', '=', False)]}">
                         <field name="summary" nolabel="1" colspan="2"/>
                     </group>
                     <notebook>
                         <page name="channels" string="Channels">
                             <field name="channels">
-                                <list>
+                                <tree>
                                     <field name="caller"/>
                                     <field name="called"/>
                                     <field name="technical_direction" string="Direction"/>
                                     <field name="status"/>
                                     <field name="duration_human" string="Duration"/>
-                                </list>
+                                </tree>
                             </field>
                         </page>
-                        <page name="error" string="Error" invisible="not has_error">
+                        <page name="error" string="Error"
+                   attrs="{'invisible': [('has_error', '=', False)]}">
                             <group>
                                 <field name="has_error"/>
                                 <field name="error_code"/>
@@ -87,7 +92,11 @@
                         </page>
                     </notebook>
                 </sheet>
-                <chatter/>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
             </form>
         </field>
     </record>
@@ -95,7 +104,7 @@
     <record id="action_connect_call" model="ir.actions.act_window">
         <field name="name">Calls</field>
         <field name="res_model">connect.call</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
         <field name="context">{'search_default_filter_today': 1}</field>
     </record>
 

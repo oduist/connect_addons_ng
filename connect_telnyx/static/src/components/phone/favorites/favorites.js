@@ -1,16 +1,14 @@
 /** @odoo-module **/
 
 import {useService} from "@web/core/utils/hooks"
-import {Component, useState, onWillStart} from "@odoo/owl"
-import {user} from "@web/core/user"
+import session from "web.session"
 
-const uid = user.userId
+const {Component} = owl
+const {useState, onWillStart} = owl.hooks
+
+const uid = session.uid
 
 export class Favorites extends Component {
-    static template = 'connect_telnyx.favorites'
-    static props = {
-        bus: Object,
-    }
 
     constructor() {
         super(...arguments)
@@ -18,7 +16,6 @@ export class Favorites extends Component {
     }
 
     setup() {
-        super.setup()
         this.orm = useService('orm')
         this.action = useService('action')
         this.user = uid
@@ -49,7 +46,8 @@ export class Favorites extends Component {
         this.bus.trigger('busPhoneMakeCall', {phone: phone_number})
     }
 
-    _onClickRemoveFavorite(ev, id) {
+    // Odoo 15 / owl 1: inline handlers receive the event as last argument.
+    _onClickRemoveFavorite(id, ev) {
         ev.stopPropagation()
         this.orm.unlink("connect.favorite", [id], {}).then(() => {
             this.getFavorites()
@@ -57,4 +55,8 @@ export class Favorites extends Component {
         })
 
     }
+}
+Favorites.template = 'connect_telnyx.favorites'
+Favorites.props = {
+    bus: Object,
 }

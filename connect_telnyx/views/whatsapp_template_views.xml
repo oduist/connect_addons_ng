@@ -4,12 +4,12 @@
         <field name="name">connect.telnyx.whatsapp_template.tree</field>
         <field name="model">connect.telnyx.whatsapp_template</field>
         <field name="arch" type="xml">
-            <list>
+            <tree>
                 <field name="name"/>
                 <field name="language"/>
                 <field name="category"/>
                 <field name="display_status" string="Status"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -20,7 +20,8 @@
             <form>
                 <header>
                     <button name="create_in_telnyx" string="Submit for Approval" type="object"
-                            class="btn-primary" invisible="telnyx_id != False"/>
+                            class="btn-primary"
+                   attrs="{'invisible': [('telnyx_id', '!=', False)]}"/>
                     <button name="action_sync" string="Sync" type="object"/>
                 </header>
                 <sheet>
@@ -32,7 +33,8 @@
                             <field name="language"/>
                             <field name="category"/>
                             <field name="display_status" string="Status"/>
-                            <field name="rejection_reason" invisible="not rejection_reason"/>
+                            <field name="rejection_reason"
+                   attrs="{'invisible': [('rejection_reason', '=', False)]}"/>
                         </group>
                         <group string="Identifiers">
                             <field name="telnyx_id"/>
@@ -48,7 +50,8 @@
                         <field name="variables" nolabel="1" colspan="2"
                                placeholder='{"1": "John", "2": "SO0042"}'/>
                     </group>
-                    <group string="Components" invisible="not components">
+                    <group string="Components"
+                   attrs="{'invisible': [('components', '=', False)]}">
                         <field name="components" nolabel="1" colspan="2" readonly="1"/>
                     </group>
                 </sheet>
@@ -59,7 +62,7 @@
     <record id="action_telnyx_whatsapp_template" model="ir.actions.act_window">
         <field name="name">WhatsApp Templates</field>
         <field name="res_model">connect.telnyx.whatsapp_template</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
     <menuitem id="menu_telnyx_whatsapp_templates"

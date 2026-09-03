@@ -1,14 +1,10 @@
 /** @odoo-module **/
 import {useService} from "@web/core/utils/hooks"
 
-import {Component, useState} from "@odoo/owl"
+const {Component} = owl
+const {useState} = owl.hooks
 
 export class ConnectActiveCallsPopup extends Component {
-    static template = 'connect.active_calls_popup'
-    static props = {
-        bus: Object,
-    }
-
     constructor() {
         super(...arguments)
         this.state = useState({
@@ -19,7 +15,6 @@ export class ConnectActiveCallsPopup extends Component {
     }
 
     setup() {
-        super.setup()
         this.orm = useService('orm')
         this.action = useService('action')
         this.props.bus.addEventListener('connect_active_calls_toggle_display', (ev) => this.toggleDisplay(ev))
@@ -62,7 +57,8 @@ export class ConnectActiveCallsPopup extends Component {
         })
     }
 
-    _openPartnerForm(ev, partner) {
+    // Odoo 15 / owl 1: inline handlers receive the event as last argument.
+    _openPartnerForm(partner, ev) {
         if (partner) {
             ev.stopPropagation()
             this.action.doAction({
@@ -75,7 +71,7 @@ export class ConnectActiveCallsPopup extends Component {
         }
     }
 
-    _openReferenceForm(ev, ref) {
+    _openReferenceForm(ref, ev) {
         if (ref) {
             ev.stopPropagation()
             let [res_model, res_id] = ref.split(',')
@@ -98,4 +94,8 @@ export class ConnectActiveCallsPopup extends Component {
         this.setTimer(1000)
     }
 
+}
+ConnectActiveCallsPopup.template = 'connect.active_calls_popup'
+ConnectActiveCallsPopup.props = {
+    bus: Object,
 }

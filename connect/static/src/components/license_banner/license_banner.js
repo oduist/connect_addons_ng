@@ -1,12 +1,12 @@
 /** @odoo-module **/
 
-import { Component, onWillStart, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
-export class LicenseBanner extends Component {
-    static template = "oduist.LicenseBanner";
+const { Component } = owl;
+const { useState, onWillStart } = owl.hooks;
 
+export class LicenseBanner extends Component {
     setup() {
         this.orm = useService("orm");
         this.state = useState({
@@ -54,6 +54,7 @@ export class LicenseBanner extends Component {
         this.env.services.action.doAction(action);
     }
 }
+LicenseBanner.template = "oduist.LicenseBanner";
 
 // Register as a systray item to appear in navbar
 export const systrayItem = {

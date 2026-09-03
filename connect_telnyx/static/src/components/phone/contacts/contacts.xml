@@ -17,22 +17,22 @@
                             </td>
                             <td class="o_contact_info">
                                 <div>
-                                    <span><t t-out="user.name"/></span>
+                                    <span><t t-esc="user.name"/></span>
                                 </div>
                                 <div>
-                                    <span class="icon-dialer_sip o_contact_phone"><t t-out="user.exten_number"/></span>
+                                    <span class="icon-dialer_sip o_contact_phone"><t t-esc="user.exten_number"/></span>
                                 </div>
                             </td>
                             <td class="o_contact_call_button">
                                 <div class="d-flex">
                                     <div style="width: 40px; height: 30px;">
-                                        <button t-if="isTransfer" t-attf-title="Transfer to {{user.exten_number}}" t-on-click="() => this._onClickMakeTransfer(user.exten_number)">
+                                        <button t-if="isTransfer" t-attf-title="Transfer to {{user.exten_number}}" t-on-click="_onClickMakeTransfer(user.exten_number)">
                                             <i class="fa icon-dialer_sip"/>
                                         </button>
-                                        <button t-if="isContact" t-attf-title="Call to {{user.exten_number}}" t-on-click="() => this._onClickMakeCall(user.exten_number)">
+                                        <button t-if="isContact" t-attf-title="Call to {{user.exten_number}}" t-on-click="_onClickMakeCall(user.exten_number)">
                                             <i class="fa icon-dialer_sip"/>
                                         </button>
-                                        <button t-if="isForward" t-attf-title="Forward to {{user.exten_number}}" t-on-click="() => this._onClickMakeForward(user.exten_number)">
+                                        <button t-if="isForward" t-attf-title="Forward to {{user.exten_number}}" t-on-click="_onClickMakeForward(user.exten_number)">
                                             <i class="fa icon-dialer_sip"/>
                                         </button>
                                     </div>
@@ -43,14 +43,14 @@
                     <!-- Partners -->
                     <t t-foreach="state.partners" t-as="partner" t-key="partner.id">
                         <tr>
-                            <td class="o_contact_avatar" t-on-click="() => this._openPartner(partner.id)">
+                            <td class="o_contact_avatar" t-on-click="_openPartner(partner.id)">
                                 <img alt="Avatar" class="o_contact_avatar" t-attf-src="/web/image?model=res.partner&amp;field=avatar_128&amp;id={{ partner.id }}"/>
                             </td>
-                            <td class="o_contact_info" t-on-click="() => this._openPartner(partner.id)">
+                            <td class="o_contact_info" t-on-click="_openPartner(partner.id)">
                                 <div>
-                                    <span><t t-out="partner.name"/></span>
+                                    <span><t t-esc="partner.name"/></span>
                                     <div t-if="partner.phone_sanitized">
-                                        <span class="icon-phone o_contact_phone"><t t-out="partner.phone_sanitized"/></span>
+                                        <span class="icon-phone o_contact_phone"><t t-esc="partner.phone_sanitized"/></span>
                                     </div>
                                 </div>
                             </td>
@@ -58,13 +58,13 @@
                                 <div class="d-flex">
                                     <div style="width: 40px; height: 30px;">
                                         <t t-if="partner.phone_sanitized">
-                                            <button t-if="isTransfer" t-attf-title="Transfer to {{partner.phone_sanitized}}" t-on-click="() => this._onClickMakeTransfer(partner.phone_sanitized)">
+                                            <button t-if="isTransfer" t-attf-title="Transfer to {{partner.phone_sanitized}}" t-on-click="_onClickMakeTransfer(partner.phone_sanitized)">
                                                 <i class="fa icon-phone"/>
                                             </button>
-                                            <button t-if="isContact" t-attf-title="Call to {{partner.phone_sanitized}}" t-on-click="() => this._onClickMakeCall(partner.phone_sanitized)">
+                                            <button t-if="isContact" t-attf-title="Call to {{partner.phone_sanitized}}" t-on-click="_onClickMakeCall(partner.phone_sanitized)">
                                                 <i class="fa icon-phone"/>
                                             </button>
-                                            <button t-if="isForward" t-attf-title="Forward to {{partner.phone_sanitized}}" t-on-click="() => this._onClickMakeForward(partner.phone_sanitized)">
+                                            <button t-if="isForward" t-attf-title="Forward to {{partner.phone_sanitized}}" t-on-click="_onClickMakeForward(partner.phone_sanitized)">
                                                 <i class="fa icon-phone"/>
                                             </button>
                                         </t>

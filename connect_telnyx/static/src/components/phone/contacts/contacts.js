@@ -2,7 +2,8 @@
 
 import {useService} from "@web/core/utils/hooks"
 import {setFocus} from "@connect_telnyx/js/utils"
-import {Component, useState, useRef, onWillStart} from "@odoo/owl"
+const {Component} = owl
+const {useState, useRef, onWillStart} = owl.hooks
 
 const searching = {
     all: 'all',
@@ -11,14 +12,6 @@ const searching = {
 }
 
 export class Contacts extends Component {
-    static template = 'connect_telnyx.contacts'
-    static props = {
-        bus: Object,
-        isTransfer: {type: Boolean, optional: true},
-        isContact: {type: Boolean, optional: true},
-        isForward: {type: Boolean, optional: true},
-        contactSearch: {type: String, optional: true},
-    }
 
     constructor() {
         super(...arguments)
@@ -33,7 +26,6 @@ export class Contacts extends Component {
     }
 
     setup(props) {
-        super.setup()
         this.orm = useService('orm')
         this.action = useService('action')
         this.contactInput = useRef('contact-input')
@@ -174,4 +166,12 @@ export class Contacts extends Component {
             views: [[false, 'form']],
         })
     }
+}
+Contacts.template = 'connect_telnyx.contacts'
+Contacts.props = {
+    bus: Object,
+    isTransfer: {type: Boolean, optional: true},
+    isContact: {type: Boolean, optional: true},
+    isForward: {type: Boolean, optional: true},
+    contactSearch: {type: String, optional: true},
 }

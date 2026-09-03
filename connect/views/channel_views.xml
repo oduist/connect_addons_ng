@@ -4,7 +4,7 @@
         <field name="name">connect.channel.tree</field>
         <field name="model">connect.channel</field>
         <field name="arch" type="xml">
-            <list default_order="id desc">
+            <tree default_order="id desc">
                 <field name="caller"/>
                 <field name="called"/>
                 <field name="technical_direction" string="Direction"/>
@@ -13,7 +13,7 @@
                 <field name="call_type"/>
                 <field name="caller_pbx_user"/>
                 <field name="called_pbx_user"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -54,7 +54,10 @@
                         </group>
                     </group>
                 </sheet>
-                <chatter/>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="message_ids"/>
+                </div>
             </form>
         </field>
     </record>
@@ -62,7 +65,7 @@
     <record id="action_connect_channel" model="ir.actions.act_window">
         <field name="name">Channels</field>
         <field name="res_model">connect.channel</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
     <menuitem id="menu_connect_channels"

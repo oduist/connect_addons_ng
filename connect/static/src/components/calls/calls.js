@@ -1,17 +1,14 @@
 /** @odoo-module **/
 
 import {useService} from "@web/core/utils/hooks"
-import {Component, useState, onWillStart} from "@odoo/owl"
-import {user} from "@web/core/user"
+import session from "web.session"
 
-const uid = user.userId
+const {Component} = owl
+const {useState, onWillStart} = owl.hooks
+
+const uid = session.uid
 
 class CallDetail extends Component {
-    static template = 'connect.call_detail'
-    static props = {
-        call: Object
-    }
-
     constructor() {
         super(...arguments)
         this.user = uid
@@ -21,7 +18,6 @@ class CallDetail extends Component {
     }
 
     setup() {
-        super.setup()
         this.orm = useService('orm')
         this.action = useService('action')
 
@@ -85,21 +81,18 @@ class CallDetail extends Component {
         })
     }
 }
+CallDetail.template = 'connect.call_detail'
+CallDetail.props = {
+    call: Object
+}
 
 export class Calls extends Component {
-    static template = 'connect.calls'
-    static props = {
-        bus: Object,
-    }
-    static components = {CallDetail}
-
     constructor() {
         super(...arguments)
         this.bus = this.props.bus
     }
 
     setup() {
-        super.setup()
         this.orm = useService('orm')
         this.action = useService('action')
         this.notification = useService('notification')
@@ -165,7 +158,8 @@ export class Calls extends Component {
         const getFavorite = await this.orm.search('connect.favorite', domain)
 
         if (getFavorite.length === 0) {
-            await this.orm.create('connect.favorite', [kwargs])
+            // Odoo 15 orm.create takes a single values dict, not a list.
+            await this.orm.create('connect.favorite', kwargs)
             await this._getFavorites()
             this.notification.add('Added to Favorite!', {title: 'Phone', type: 'info'})
         } else {
@@ -184,3 +178,8 @@ export class Calls extends Component {
         this._getCalls()
     }
 }
+Calls.template = 'connect.calls'
+Calls.props = {
+    bus: Object,
+}
+Calls.components = {CallDetail}
