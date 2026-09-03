@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Pipecat
 - **Technical:** `connect_pipecat`
-- **Version:** 18.0.1.0.0
+- **Version:** 19.0.1.0.0
 - **Depends:** `connect`, `connect_freeswitch`
 - **Application:** False
 - **License:** Other proprietary

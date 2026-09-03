@@ -22,6 +22,11 @@ class TestAccessRights(ConnectTestCommon):
             login='ar_connect_admin',
             groups='base.group_user,connect.group_admin',
         )
+        cls.webhook_user = new_test_user(
+            cls.env,
+            login='ar_connect_webhook',
+            groups='base.group_user,connect.group_webhook',
+        )
         # A connect.user owned by the plain Connect User, so the
         # "own records only" record rules let that user see it.
         cls.connect_user_own = cls._create_connect_user(
@@ -114,6 +119,17 @@ class TestAccessRights(ConnectTestCommon):
             no_clear_cache=True,
         ).create({'user': other.id})
 
+    def test_connect_user_webhook_can_read(self):
+        """Webhook user can read PBX users required for call routing."""
+        self.connect_user_own.with_user(self.webhook_user).read(['name'])
+
+    def test_connect_user_webhook_cannot_write(self):
+        """Webhook user cannot modify PBX user configuration."""
+        with self.assertRaises(AccessError):
+            self.connect_user_own.with_user(self.webhook_user).write({
+                'name': 'Not allowed',
+            })
+
     # --- connect.message ---
 
     def test_message_user_can_read(self):
@@ -198,3 +214,64 @@ class TestAccessRights(ConnectTestCommon):
         })
         fav.with_user(self.connect_user_user).write({'name': 'Updated'})
         fav.with_user(self.connect_user_user).unlink()
+
+    # --- partner form stat buttons ---
+    # The Calls / Messages counts are computed with sudo(), so the buttons
+    # would otherwise render for every internal user and only fail with an
+    # AccessError once clicked. They must be filtered out of the arch.
+
+    def _partner_form_arch(self, user):
+        return self.env['res.partner'].with_user(user).get_view(
+            self.env.ref('base.view_partner_form').id, 'form')['arch']
+
+    def test_partner_form_hides_stat_buttons_from_plain_user(self):
+        """A user outside the Connect groups is not served the stat buttons."""
+        arch = self._partner_form_arch(self.basic_user)
+        self.assertNotIn('connect_calls_count', arch)
+        self.assertNotIn('connect_messages_count', arch)
+
+    def test_partner_form_shows_stat_buttons_to_connect_user(self):
+        """A Connect user still gets both stat buttons."""
+        arch = self._partner_form_arch(self.connect_user_user)
+        self.assertIn('connect_calls_count', arch)
+        self.assertIn('connect_messages_count', arch)
+
+    # --- res.users.connect_user ---
+    # The field is computed by searching connect.user, which only the Connect
+    # groups may read. It must resolve with compute_sudo, otherwise every
+    # internal user outside those groups hits an AccessError just reading
+    # their own record (own preferences, or any read() covering the field).
+
+    def test_connect_user_field_readable_by_plain_user(self):
+        """A user outside the Connect groups can read res.users.connect_user."""
+        user = self.basic_user
+        self.assertFalse(
+            user.has_group('connect.group_user'),
+            'basic_user must stay outside the Connect groups for this test')
+        user.with_user(user).read(['name', 'connect_user'])
+
+    def test_connect_user_field_resolves_for_connect_user(self):
+        """The field still points at the caller's own connect.user record."""
+        owner = self.connect_user_user
+        self.assertEqual(
+            owner.with_user(owner).connect_user, self.connect_user_own)
+
+    # --- Connect app menu ---
+    # The root menu gates the whole app (connect_addons does the same on its
+    # connect_top_menu). Child menus stay ungated and inherit it.
+
+    def _sees_connect_app(self, user):
+        menus = self.env['ir.ui.menu'].with_user(user).load_menus(False)
+        return any(
+            menus.get(str(child), menus.get(child, {})).get('name') == 'Connect'
+            for child in menus['root']['children'])
+
+    def test_connect_app_hidden_from_plain_user(self):
+        """An internal user outside the Connect groups gets no Connect app."""
+        self.assertFalse(self._sees_connect_app(self.basic_user))
+
+    def test_connect_app_visible_to_connect_user(self):
+        self.assertTrue(self._sees_connect_app(self.connect_user_user))
+
+    def test_connect_app_visible_to_connect_admin(self):
+        self.assertTrue(self._sees_connect_app(self.connect_admin))

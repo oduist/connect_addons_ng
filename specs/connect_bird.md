@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Bird
 - **Technical:** `connect_bird`
-- **Version:** 18.0.1.0.0
+- **Version:** 19.0.1.0.0
 - **Depends:** `connect`
 - **Python deps:** none (raw HTTP via `httpx`, already required by core)
 - **Application:** False
@@ -137,7 +137,7 @@ Fields: `bird_message_id` (Char, indexed), `bird_number` (M2O).
 | Field | Type | Notes |
 |-------|------|-------|
 | `originate_provider` / `message_provider` | Selection | `selection_add=[('bird', 'Bird')]` |
-| `bird_phone_number` | Char | agent phone for two-leg click-to-call; in `_pbx_number_fields()` |
+| `bird_phone_number` | Char | agent phone for two-leg click-to-call; in `_pbx_number_fields()`; `phone` widget on the user form |
 | `bird_voice_number` | M2O | caller ID for originate |
 | `bird_message_number` | M2O | default sender |
 
@@ -195,7 +195,8 @@ POST /bird/webhook   (type='http', auth='public', csrf=False, readonly=False)
   with Bird numbers; `_action_send_sms()` routes through the dispatching
   `connect.message.send()`.
 - `connect.bird.whatsapp_composer` (wizard/whatsapp_composer.py): sender
-  number + template picker (variables JSON prefilled), free text inside
+  number + recipient rendered with `widget="phone"` + template picker
+  (variables JSON prefilled), free text inside
   the 24-hour window. Calls `send_bird()` / `send_bird_template()`
   **directly** — the composer itself is the explicit provider choice.
   Bound to the res.partner form Action menu.

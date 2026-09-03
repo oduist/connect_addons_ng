@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Helpdesk
 - **Technical:** `connect_helpdesk`
-- **Version:** 18.0.1.0.0
+- **Version:** 19.0.1.0.0
 - **Depends:** `connect`, `helpdesk`
 - **Application:** False
 - **License:** Other proprietary

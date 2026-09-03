@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Read-only: process_call_event() only sets call.task/call.project (fields
+         on connect.call, already writable by the webhook user via core
+         security) — it only LINKS existing task/project records, never
+         creates them. The lookup searches run .sudo(), bypassing ACLs.
+         create_task_button() runs as the interactive Connect user (their own
+         rights), not the webhook user, and is the only path that creates a
+         project.task. The connect.recording create-hook (task/project mapping)
+         writes connect.recording fields, not project.task/project.project.
+         register_summary_to_rec() runs SUPERUSER. So the webhook user never
+         creates, writes or unlinks project.task/project.project directly,
+         only needs read. -->
+    <record id="access_project_task_webhook" model="ir.model.access">
+        <field name="name">project.task webhook</field>
+        <field name="model_id" ref="project.model_project_task"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_project_project_webhook" model="ir.model.access">
+        <field name="name">project.project webhook</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+</odoo>

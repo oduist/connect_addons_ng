@@ -1,0 +1,15 @@
+{
+    "name": "Connect Memory — Sale & Payment Behavior",
+    "version": "19.0.1.0.0",
+    "category": "Phone",
+    "summary": 'Memory events for sales, invoices, payments',
+    "author": "Oduist",
+    "website": "https://oduist.com",
+    "depends": ["connect_memory", "sale", "account"],
+    "data": ["data/memory_sale_data.xml"],
+    "license": "Other proprietary",
+    "images": ["static/description/icon.png"],
+    "post_init_hook": "post_init_hook",
+    "installable": True,
+    "application": False,
+}

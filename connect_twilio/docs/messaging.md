@@ -64,6 +64,32 @@ The **WhatsApp composer** (`connect.whatsapp_composer`) sends a message through
 number**, optionally a **template**, and a **body**. Sent and received messages
 are posted to the partner's chatter and stored in the `connect.message` ledger.
 
+### WhatsApp voice calls
+
+A WhatsApp sender with a **Voice Application** also carries WhatsApp calling.
+Users place one with the **WhatsApp Call** action next to any phone number
+(see [Making and Receiving Calls](../Core/user/calls.md)).
+
+How the call is placed:
+
+1. Connect rings the user's own web phone over ordinary voice. This leg
+   presents a **normal voice caller ID**, never the `whatsapp:` identity — with
+   a `whatsapp:` `From` Twilio accepts the request, reports `From=None` and
+   ends the call in the same second, so the WhatsApp leg never runs.
+2. The TwiML that leg executes carries the WhatsApp identity on
+   `<Dial callerId="whatsapp:…"><WhatsApp>`, which places the leg to the
+   destination.
+
+Both legs land in the ledger and the call is recorded with call type
+**WhatsApp**.
+
+!!! warning "Business-initiated calling is restricted by country"
+    WhatsApp does not allow business-initiated calls to every destination. Where
+    it is not permitted Twilio rejects the WhatsApp leg with error **37007**
+    (*"WhatsApp Voice: Business-initiated calling is not available in the
+    country"*), visible on the call record's **Error** tab. Inbound WhatsApp
+    calls from those countries still work.
+
 ## Message configuration (inbound routing)
 
 Manage under **Connect ▸ Twilio ▸ Messages ▸ Message Configuration**

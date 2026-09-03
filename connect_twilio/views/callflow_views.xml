@@ -37,21 +37,19 @@
                             <field name="voicemail_prompt" invisible="not voicemail_enabled"/>
                         </group>
                     </group>
-                    <group string="Gather Settings" invisible="not gather_input">
-                        <group>
+                    <group invisible="not gather_input">
+                        <group string="Gather Settings">
                             <field name="gather_input_type"/>
                             <field name="gather_timeout"/>
                             <field name="gather_digits"/>
                             <field name="gather_hints" invisible="gather_input_type == 'dtmf'"/>
                         </group>
-                    </group>
-                    <group invisible="not gather_input">
-                        <group string="Prompt Message">
-                            <field name="prompt_message" nolabel="1" colspan="2"/>
-                        </group>
                         <group string="Invalid Input Message">
                             <field name="invalid_input_message" nolabel="1" colspan="2"/>
                         </group>
+                    </group>
+                    <group string="Prompt Message">
+                        <field name="prompt_message" nolabel="1" colspan="2"/>
                     </group>
                     <notebook>
                         <page name="choices" string="Choices" invisible="not gather_input">

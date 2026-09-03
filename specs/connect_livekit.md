@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect LiveKit
 - **Technical:** `connect_livekit`
-- **Version:** 18.0.1.0.0
+- **Version:** 19.0.1.0.0
 - **Depends:** `connect`
 - **Python deps:** `livekit-api`
 - **Application:** False
@@ -85,6 +85,17 @@ id channel to that call, then pushes `connect_livekit.call` over the bus.
 `get_livekit_phone_config()` (systray bootstrap: enabled/ws_url/identity)
 and `get_livekit_room_token(room_name)` (join authorization + short-TTL
 token, sudo inside). Browser identity format: `user-<connect_user_id>`.
+
+All three JS-callable methods are guarded on the Connect groups, in the
+two-tier split the other providers use. `get_livekit_phone_config` is called on
+**every** web client load for every internal user, so it returns the neutral
+`{}` (the JS already reads that as "not enabled" and skips registering the
+widget), matching `connect_twilio.get_client_token` returning
+`{'token': False}`. `get_livekit_room_token` and `livekit_hangup_room` must
+give a definite answer and raise `ValidationError`, matching
+`connect.user.get_user_by_exten_number`. Without the guard a regular user's
+browser did a `connect.user` lookup on every page load; it did not raise only
+because `env.user` is a sudo recordset.
 
 ### room.py — `connect.livekit.room`
 

@@ -15,7 +15,8 @@ from twilio.jwt.access_token.grants import VoiceGrant
 from twilio.twiml.voice_response import Client, Dial, VoiceResponse
 
 from odoo.addons.connect.models.settings import debug
-from .settings import TWILIO_EDGES, strip_number, format_connect_response
+from .settings import (
+    MAX_EXTEN_LEN, TWILIO_EDGES, strip_number, format_connect_response)
 from .twiml import pretty_xml
 
 logger = logging.getLogger(__name__)
@@ -87,6 +88,29 @@ class User(models.Model):
         return self.env['connect.twilio.exten'].create_extension(
             self, 'connect.user', current_exten=self.twilio_exten)
 
+    def twilio_caller_id(self):
+        """Caller ID to present for calls this user places.
+
+        The extension is the identity a colleague should see. Without one,
+        fall back to a real number -- the user's own outgoing caller ID,
+        else the default one -- and only then to the client identity: an empty
+        caller ID makes Twilio substitute an arbitrary number of its own,
+        which reaches the callee's phone and the ledger as a bogus caller.
+        """
+        self.ensure_one()
+        if self.twilio_exten.number:
+            return self.twilio_exten.number
+        callerid = self.twilio_outgoing_callerid.number or self.env[
+            'connect.twilio.outgoing_callerid'
+        ].sudo().search([('is_default', '=', True)], limit=1).number
+        if not callerid and self.username and self.domain:
+            callerid = 'client:{}'.format(self.get_client_identity())
+        logger.warning(
+            'Exten not set for user %s, calling as %s',
+            self.name, callerid or '(no caller ID)',
+        )
+        return callerid or ''
+
     @api.model
     def get_user_by_uri(self, userinfo):
         """Lookup connect.user by SIP/client URI using username."""
@@ -152,6 +176,7 @@ class User(models.Model):
         'connect.whatsapp_sender',
         string='WhatsApp Sender',
         ondelete='set null',
+        domain=[('no_sync', '=', False), ('status', '=', 'ONLINE')],
     )
     twilio_edge = fields.Selection(
         selection=SIP_TWILIO_EDGES,
@@ -422,20 +447,13 @@ class User(models.Model):
             api_url,
             'twilio/webhook/callstatus#e={}'.format(edge),
         )
-        dial_action_url = urljoin(
-            api_url,
-            'twilio/webhook/connect.user/call_action/{}#e={}'.format(
-                self.id, edge
-            ),
-        )
         dial_client_kwargs = {
             'timeout': self.client_ring_timeout,
             'callerId': callerId,
+            'action': (
+                params.get('dial_action_url') or self._get_dial_action_url()
+            ),
         }
-        if params.get('dial_action_url'):
-            dial_client_kwargs['action'] = params['dial_action_url']
-        else:
-            dial_client_kwargs['action'] = dial_action_url
         if self.record_calls:
             dial_client_kwargs.update(
                 {
@@ -449,6 +467,12 @@ class User(models.Model):
             statusCallback=status_url,
         )
         client.identity(self.get_client_identity())
+        # Twilio E.164-prefixes a bare extension used as caller ID, so the
+        # web phone is handed '+101' for a call from extension 101. Only that
+        # case needs a hint -- the widget prefers this parameter over the From
+        # Twilio reports, so every other caller ID is left to arrive as it is.
+        if callerId and callerId.isdigit() and len(callerId) <= MAX_EXTEN_LEN:
+            client.parameter(name='From', value=callerId)
         if caller_name:
             client.parameter(name='CallerName', value=caller_name)
         channel = self.env['connect.channel'].search(
@@ -482,12 +506,6 @@ class User(models.Model):
             .get_param('api_url')
         )
         edge = self.env['connect.settings'].get_param('twilio_edge')
-        dial_action_url = urljoin(
-            api_url,
-            'twilio/webhook/connect.user/call_action/{}#e={}'.format(
-                self.id, edge
-            ),
-        )
         record_status_url = urljoin(
             api_url,
             'twilio/webhook/recordingstatus#e={}'.format(edge),
@@ -499,11 +517,10 @@ class User(models.Model):
         dial_sip_kwargs = {
             'timeout': self.sip_ring_timeout,
             'callerId': callerId,
+            'action': (
+                params.get('dial_action_url') or self._get_dial_action_url()
+            ),
         }
-        if params.get('dial_action_url'):
-            dial_sip_kwargs['action'] = params['dial_action_url']
-        else:
-            dial_sip_kwargs['action'] = dial_action_url
         if self.record_calls:
             dial_sip_kwargs.update(
                 {
@@ -616,16 +633,59 @@ class User(models.Model):
                 response.hangup()
                 return response.to_xml()
         else:
-            all_flows = (
+            # No ledger call to walk against: the click-to-call originate path
+            # builds the dialplan before the channel exists. Only the first
+            # callflow can ever run from here -- Twilio makes every verb after
+            # a <Dial> with an action URL unreachable -- so render just that
+            # one and carry the callflows already dialed in the action URL.
+            # Without that the walk restarts on every action callback and
+            # rings the very same device again.
+            done_ids = self._parse_done_callflows(request)
+            next_flow = (
                 self.env['connect.twilio.user_callflow']
                 .sudo()
                 .search(
-                    [('user', '=', self.id)], order='prio'
+                    [('user', '=', self.id), ('id', 'not in', done_ids)],
+                    order='prio',
+                    limit=1,
                 )
             )
-            for flow in all_flows:
-                getattr(self, flow.method)(response, request, params)
+            if not next_flow:
+                response.hangup()
+                return response.to_xml()
+            params = dict(params or {})
+            params['dial_action_url'] = self._get_dial_action_url(
+                done_ids + [next_flow.id]
+            )
+            getattr(self, next_flow.method)(response, request, params)
+            debug(self, pretty_xml(response.to_xml()))
             return response.to_xml()
+
+    def _get_dial_action_url(self, done_callflows=None):
+        """URL Twilio requests when a <Dial> of this user's callflow ends.
+
+        ``done_callflows`` carries the ids already dialed, so the walk can
+        resume correctly even before the ledger call exists.
+        """
+        self.ensure_one()
+        settings = self.env['connect.settings'].sudo()
+        api_url = settings.get_param('api_url')
+        edge = settings.get_param('twilio_edge')
+        path = 'twilio/webhook/connect.user/call_action/{}'.format(self.id)
+        if done_callflows:
+            path += '?done_callflows={}'.format(
+                ','.join(str(flow_id) for flow_id in done_callflows)
+            )
+        return urljoin(api_url, '{}#e={}'.format(path, edge))
+
+    @api.model
+    def _parse_done_callflows(self, request):
+        """Callflow ids the action URL reports as already dialed."""
+        raw = str((request or {}).get('done_callflows') or '')
+        return [
+            int(chunk) for chunk in raw.split(',')
+            if chunk.strip().isdigit()
+        ]
 
     def get_client_identity(self):
         return '{}@{}'.format(
@@ -706,6 +766,15 @@ class User(models.Model):
                     .sudo()
                     .get_param('twilio_edge')
                 ),
+                # The softphone shows the recording state from this the moment
+                # a call is answered. Twilio only lists the recording once the
+                # far end picks up, so asking the API is always late; this flag
+                # is what decides recording in every path the web phone uses --
+                # outgoing (connect.settings.originate_call), the user's own
+                # dial TwiML and the SIP domain handler -- so it is the right
+                # answer to show immediately. The Twilio sync still runs and
+                # corrects it if recording did not actually start.
+                'record_calls': bool(user.record_calls),
             }
         except Exception as e:
             logger.exception('Error getting Twilio JWT:')
@@ -716,11 +785,7 @@ class User(models.Model):
             request.get('Caller')
         )
         if caller_user:
-            callerId = caller_user.twilio_exten.number or ''
-            if not callerId:
-                logger.warning(
-                    'Exten not set for user %s', caller_user.name
-                )
+            callerId = caller_user.twilio_caller_id()
         else:
             callerId = request.get('Caller')
         return callerId
@@ -814,13 +879,69 @@ class User(models.Model):
     @api.model
     def on_call_action(self, record_id, request):
         user = self.browse(record_id)
-        call_status = request.get('CallStatus')
-        if not call_status:
-            call_status = request.get('DialCallStatus')
-        if call_status != 'completed':
-            dialplan = user.render(request)
-            return dialplan
-        else:
+        user._record_done_callflows(request)
+        if user._is_call_action_final(request):
+            user._clear_done_callflows(request)
             response = VoiceResponse()
             response.hangup()
             return response.to_xml()
+        return user.render(request)
+
+    def _clear_done_callflows(self, request):
+        """Drop the walk bookkeeping once the call stops progressing."""
+        self.ensure_one()
+        channel = self.env['connect.channel'].sudo().search(
+            [('sid', '=', request.get('CallSid'))], order='id desc'
+        )
+        call = channel.call
+        if not call:
+            return
+        self.env['connect.twilio.user_callflow_call'].sudo().search(
+            [('call', '=', call.id)]
+        ).unlink()
+
+    def _record_done_callflows(self, request):
+        """Log the callflows the originate path already dialed.
+
+        connect.settings.originate_call renders the dialplan before the
+        channel exists, so render() cannot log the callflows it used there.
+        The action URL carries the ids instead; folding them into the ledger
+        here keeps the stateful walk from ringing the same device twice.
+        """
+        self.ensure_one()
+        callflow_ids = self._parse_done_callflows(request)
+        if not callflow_ids:
+            return
+        channel = self.env['connect.channel'].sudo().search(
+            [('sid', '=', request.get('CallSid'))], order='id desc'
+        )
+        call = channel.call
+        if not call:
+            return
+        done = self.env['connect.twilio.user_callflow_call'].sudo()
+        already = done.search([('call', '=', call.id)]).mapped('callflow').ids
+        missing = self.env['connect.twilio.user_callflow'].sudo().browse(
+            [i for i in callflow_ids if i not in already]
+        ).exists()
+        if missing:
+            done.create([
+                {'call': call.id, 'callflow': flow.id} for flow in missing
+            ])
+
+    def _is_call_action_final(self, request):
+        """Whether the callflow walk must stop at this <Dial> action callback.
+
+        Twilio reports the parent leg in CallStatus -- still 'in-progress'
+        while the caller is on the line -- and the outcome of the dialed leg
+        in DialCallStatus. Only a leg that was never picked up may move on to
+        the next device: one that was answered and then hung up has to end the
+        call instead of ringing the rest of the callflow.
+        """
+        parent_status = request.get('CallStatus')
+        if parent_status in ('completed', 'canceled', 'busy', 'failed',
+                             'no-answer'):
+            return True
+        dial_status = request.get('DialCallStatus')
+        if dial_status:
+            return dial_status not in ('busy', 'no-answer', 'failed')
+        return False

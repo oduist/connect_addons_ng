@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_connect_call_tree_project" model="ir.ui.view">
+        <field name="name">connect.call.tree.project</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.view_connect_call_tree"/>
+        <field name="arch" type="xml">
+            <field name="partner" position="after">
+                <field name="task" optional="show"/>
+                <field name="project" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_connect_call_form_project" model="ir.ui.view">
+        <field name="name">connect.call.form.project</field>
+        <field name="model">connect.call</field>
+        <field name="inherit_id" ref="connect.view_connect_call_form"/>
+        <field name="arch" type="xml">
+            <button name="create_partner_button" position="after">
+                <button string="Task" name="create_task_button" type="object"
+                        class="oe_stat_button" icon="fa-tasks"/>
+            </button>
+            <notebook position="inside">
+                <page name="project" string="Project">
+                    <group>
+                        <group>
+                            <field name="task"/>
+                            <field name="project"/>
+                        </group>
+                        <group>
+                            <button name="unlink_task" type="object" string="Unlink"
+                                    invisible="not task and not project"/>
+                        </group>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+
+</odoo>

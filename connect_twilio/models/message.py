@@ -151,9 +151,14 @@ class ConnectMessage(models.Model):
                 if not target_msg:
                     target_msg = message
                     valid_target = True
+                    # sudo: this runs as the webhook user, and the routing
+                    # configuration is deliberately admin-only, so an
+                    # unprivileged read raised AccessError and the except
+                    # below swallowed it -- the whole inbound message was
+                    # dropped with only "Error handling incoming SMS" logged.
                     config = self.env[
                         'connect.twilio.message_configuration'
-                    ].search(
+                    ].sudo().search(
                         [('number.phone_number', '=', to_number)], limit=1
                     )
                     dest_model = (

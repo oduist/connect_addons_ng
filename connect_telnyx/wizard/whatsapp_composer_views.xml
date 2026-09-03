@@ -7,7 +7,7 @@
             <form string="Send WhatsApp Message">
                 <group>
                     <field name="whatsapp_sender_id"/>
-                    <field name="phone"/>
+                    <field name="phone" widget="phone"/>
                     <field name="template_id"/>
                     <field name="template_variables" invisible="not template_id"/>
                     <field name="body" readonly="template_id != False"/>

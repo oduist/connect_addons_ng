@@ -32,6 +32,24 @@ status on install. If click-to-call fails with a license error, verify the
   transcription (Whisper + GPT summary) lives in core `connect` because it is
   provider-agnostic. Configure it in the core settings, not here.
 
+### A recording plays as 0 seconds
+
+The metadata (duration, price, caller) comes from the Twilio API and is
+correct; the audio itself never arrived. The Odoo log names the URL and the
+status the store answered.
+
+Playback goes through the media proxy: the player asks Odoo for the file and
+Odoo fetches it, using the account credentials when Twilio requires them
+(`connect.settings.get_media_auth()`, ADR-060). Nothing extra is needed for a
+standard account.
+
+The usual cause is **External Storage** on the Twilio account (Voice >
+Settings > Recording storage): Twilio writes the audio to your own S3 bucket
+and keeps only the metadata, so the Twilio API no longer serves the file and
+the bucket rejects an unauthenticated request. Either turn External Storage
+off so Twilio stores the media, or install **`connect_s3`**, which owns that
+setup and reads the audio back from the bucket.
+
 ## Troubleshooting
 
 | Symptom | Check |

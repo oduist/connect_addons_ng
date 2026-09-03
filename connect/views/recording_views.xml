@@ -39,8 +39,8 @@
                             <field name="partner"/>
                             <field name="caller_user"/>
                             <field name="called_user"/>
-                            <field name="caller_number"/>
-                            <field name="called_number"/>
+                            <field name="caller_number" widget="phone"/>
+                            <field name="called_number" widget="phone"/>
                             <field name="duration_human" string="Duration"/>
                             <field name="status"/>
                             <field name="start_time"/>

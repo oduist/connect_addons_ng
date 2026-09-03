@@ -16,7 +16,7 @@ site_url: ""
 # contain "docs/" as a path segment — "edit/19.0/" alone silently fails to
 # match and every module page falls back to the un-rewritten root edit_uri.
 repo_url: https://github.com/oduist/connect_addons_ng
-edit_uri: edit/18.0/docs/
+edit_uri: edit/19.0/docs/
 copyright: Copyright &copy; Oduist OÜ
 
 docs_dir: docs
@@ -64,6 +64,8 @@ nav:
   - Infobip: '!include ./connect_infobip/mkdocs.yml'
   - Dograh: '!include ./connect_dograh/mkdocs.yml'
   - Bird: '!include ./connect_bird/mkdocs.yml'
+  - Customer Memory: '!include ./connect_memory/mkdocs.yml'
+  - Memory Sales: '!include ./connect_memory_sale/mkdocs.yml'
   - ElevenLabs: '!include ./connect_elevenlabs/mkdocs.yml'
   - ElevenLabs Helpdesk: '!include ./connect_elevenlabs_helpdesk/mkdocs.yml'
   - ElevenLabs Knowledge: '!include ./connect_elevenlabs_knowledge/mkdocs.yml'
@@ -71,6 +73,11 @@ nav:
   - CRM: '!include ./connect_crm/mkdocs.yml'
   - CRM Twilio Bridge: '!include ./connect_crm_twilio/mkdocs.yml'
   - Helpdesk: '!include ./connect_helpdesk/mkdocs.yml'
+  - HR: '!include ./connect_hr/mkdocs.yml'
+  - Sales: '!include ./connect_sale/mkdocs.yml'
+  - Accounting: '!include ./connect_account/mkdocs.yml'
+  - Project: '!include ./connect_project/mkdocs.yml'
+  - S3 Recording Storage: '!include ./connect_s3/mkdocs.yml'
   - Book: '!include ./connect_book/mkdocs.yml'
 
 markdown_extensions:

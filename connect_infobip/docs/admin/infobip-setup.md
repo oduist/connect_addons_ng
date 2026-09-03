@@ -74,7 +74,8 @@ plans differ, so verify in the portal).
 - **Users** (Connect → Users → Infobip Phone tab): enable the **Web
   Phone** (a WebRTC identity is generated automatically) and/or an
   **External Phone** in E.164, each with a priority and ring timeout.
-  Ring timeouts run on the Infobip platform, not in Odoo.
+  The external number uses Odoo's standard phone control. Ring timeouts
+  run on the Infobip platform, not in Odoo.
 - **Extensions** (Connect → Infobip → Extensions): short internal
   numbers pointing at users, used for web-phone dialing and click-to-call
   caller IDs. Call flows (IVR) are not part of v1.

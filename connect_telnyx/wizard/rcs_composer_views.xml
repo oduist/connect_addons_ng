@@ -7,7 +7,7 @@
             <form string="Send RCS Message">
                 <group>
                     <field name="rcs_agent_id"/>
-                    <field name="phone"/>
+                    <field name="phone" widget="phone"/>
                     <field name="body"/>
                     <field name="sms_fallback"/>
                     <field name="sms_fallback_from" invisible="not sms_fallback"
