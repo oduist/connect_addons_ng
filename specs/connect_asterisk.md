@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Asterisk
 - **Technical:** `connect_asterisk`
-- **Version:** 18.0.2.1.0
+- **Version:** 19.0.2.0.0
 - **Depends:** `connect`, `web`
 - **Application:** False
 - **License:** Proprietary
@@ -129,10 +129,13 @@ each builds a generic dict and calls core `process_channel_event` +
 ### `connect.asterisk.endpoint` (`models/endpoint.py`, own model — ADR-031)
 
 Standalone model (formerly a `connect.endpoint` extension): `name`
-(required), `connect_user_id` (Many2one `connect.user`, optional),
+(required; standalone and inline editors show `Endpoint Name` as the
+placeholder), `connect_user_id` (Many2one `connect.user`, optional),
 `active`, `exten_number` (plain Char — Asterisk numbering lives in the
 customer's dialplan; used as caller-id fallback for originate),
-`asterisk_channel` (dial string, format-checked, unique),
+`asterisk_channel` (dial string, format-checked, unique; the endpoint form
+and the inline editor on `connect.user` show `PJSIP/101` as the input
+placeholder),
 `asterisk_sip_user` (computed: `PJSIP/101 → 101`, stored),
 `asterisk_sip_password` (auto passphrase, `groups=connect.group_admin`,
 regenerate button — ADR-022 style), `asterisk_sip_transport`

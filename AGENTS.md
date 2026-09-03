@@ -9,7 +9,9 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 ## Modules
 
 - **`connect`** — Technology-agnostic core: the shared call/message ledger (`connect.call`, `connect.channel`, `connect.recording`, `connect.message`), PBX people (`connect.user`), common settings, OpenAI transcription/summarization, partner integration. **Never imports provider-specific code and holds NO PBX-configuration models.**
+- **`connect_book`** — the documentation, served inside Odoo (ADR-059). `connect.book` is an abstract model that reads every installed `connect*` module's own `docs/` folder and its `mkdocs.yml` `nav` — the same source the documentation site is built from — and assembles two client actions: **User Guide** (`connect.group_user`) and **Admin Guide** (`connect.group_admin`). A page's audience comes from an explicit `Admin Guide:`/`User Guide:` nav section, else the `docs/admin/` or `docs/user/` path prefix, else admin. Ships a dependency-free Markdown renderer covering the MkDocs subset in use (`!!!` admonitions, `=== "tabs"`). **Documentation** submenu under the Connect app. Depends `['connect', 'web']`.
 - **`connect_twilio`** — Twilio integration. Owns its PBX configuration: `connect.twilio.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,twiml,domain}`, WhatsApp, sms.composer, webhook handlers, Twilio Voice JS SDK phone widget. **Twilio** submenu under the Connect app (incl. Messages).
+- **`connect_s3`** — Twilio External S3 recording storage. Owns **no** models; extends `connect.settings` (AWS config, bucket provisioning via boto3, Twilio AWS credential management) and `connect.recording` (read media back from S3, `recording_expired`), and subclasses the core media controller. Twilio writes recordings into the customer's bucket itself; Odoo only configures and reads. Mixed mode: pre-switch recordings stay on Twilio. Menu under Connect → Configuration → **S3 Storage**. Depends `['connect', 'connect_twilio']`. See ADR-060.
 - **`connect_freeswitch`** — FreeSWITCH integration. Owns `connect.freeswitch.{exten,callflow,callflow_choice,number,endpoint,outgoing_callerid}` plus gateways/routes/FIFO/parking/firewall, Verto WebRTC client, XML dialplan generation. **FreeSWITCH** submenu under the Connect app.
 - **`connect_freeswitch_website`** — website widgets for FreeSWITCH number working schedules (ADR-037): Phone Status and Phone Opening Hours snippets + public JSON endpoints under `/freeswitch/schedule/*`. The only module that may depend on `website`; not auto-installed. Core `connect` owns the schedule engine (`connect.schedule` on top of `resource.calendar`).
 - **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). Owns `connect.asterisk.{endpoint,number}`; AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). **Asterisk** submenu under the Connect app. See ADR-026.
@@ -20,9 +22,15 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_bird`** — Bird.com (ex-MessageBird) integration. Owns `connect.bird.{number,message_template,message_configuration,webhook}`; SMS/WhatsApp send/receive via the Bird developer platform (`{region}.platform.bird.com/v1`, Bearer `bk_...` keys, raw httpx — the official SDK covers only email and is not used), template-first messaging (SMS + WhatsApp templates), voice-call ledger from `voice.*` events, click-to-call via two-leg callback originate (no web phone — Bird has no WebRTC SDK), recordings fetched by cron, delivery statuses polled until the platform ships `sms.*` webhook events. Single `/bird/webhook` endpoint with Standard-Webhooks signature. **Bird** submenu under the Connect app. See ADR-038.
 - **`connect_3cx`** — 3CX integration for existing customer 3CX V20 PBXs. Owns **no** PBX-configuration models. Phase 1 (ADR-034, PRO/AI editions): server-side CRM template — `/3cx/webhook/*` controllers (contact lookup at call arrival, call journaling at call end, contact creation) + a generated CRM template downloaded from the settings form; click-to-call opens the 3CX Web Client dial URL (`originate_call` returns an act_url; core `redial()` returns it through). Phase 2 / deep tier (ADR-035, AI 8SC+ only, opt-in, mock-validated): `oduist/3cx-agent` sidecar (`connect_3cx/deploy/agent/`) holding the Call Control WSS — live channel events via `connect.channel.on_threecx_participant_event`, originate through the agent (dial-URL fallback), XAPI recording download; ReportCall then merges into agent-created calls. No web phone (3CX exposes no third-party WebRTC/WSS) and no SMS. **3CX** submenu under the Connect app.
 - **`connect_elevenlabs`** — ElevenLabs Conversational-AI voice agents, as a **Twilio add-on** (ADR-046). Owns `connect.elevenlabs_{agent,agent_tool,agent_prompt,agent_template,agent_transfer,voice,file}` + `connect.agent_tool_params`; retargets the PBX `_inherit`s to `connect.twilio.{callflow,number,exten,outgoing_callerid}` and adds `is_published` to `connect.twilio.exten`; webhook-driven (conversation-initiation + HMAC post-call), agent calling over ElevenLabs native SIP ingress. **ElevenLabs** submenu under the Connect app. Depends `['connect','connect_twilio','calendar']`. Sub-modules: `connect_elevenlabs_helpdesk` (needs Enterprise `helpdesk`), `connect_elevenlabs_knowledge`, `connect_elevenlabs_sale`. See `specs/connect_elevenlabs.md`.
+- **`connect_memory`** — external AI memory base (ADR-043): `connect.memory.{outbox,inbox,mixin,backfill}` outbox/inbox pull contract + `mail.thread` correspondence capture + `res.partner` summary/backfill; provider-neutral (Hindsight/Cognee); Odoo emits events and never calls the engine; external sidecar in `deploy/`. **Memory** submenu under the Connect app. Depends on `connect`.
+- **`connect_memory_sale`** — domain module for memory events on `sale.order`/`account.move`/`account.partial.reconcile` + hourly payment-behavior digest (`connect.memory.sale.mixin`). Depends on `connect_memory`, `sale`, `account`.
 - **`connect_crm_twilio`** — auto-installed bridge (connect_crm + connect_twilio): message routing to CRM leads.
+- **`connect_hr`** — provider-agnostic HR bridge — links `connect.call` to `hr.employee` (by number, no auto-create); depends `connect` + `hr`.
+- **`connect_sale`** — provider-agnostic Sale bridge — links `connect.call` to `sale.order` (by partner, open orders); depends `connect` + `sale`.
+- **`connect_account`** — provider-agnostic Accounting bridge — links `connect.call` to `account.move` (by partner, open customer invoices only); depends `connect` + `account`.
+- **`connect_project`** — provider-agnostic Project bridge — links `connect.call` to `project.task`/`project.project` (by partner, open task first); depends `connect` + `project`.
 
-Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_3cx` and `connect_dograh` all depend on `connect` but are independent of each other. `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046). **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module).
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_3cx` and `connect_dograh` all depend on `connect` but are independent of each other. `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046), as does `connect_s3` (S3 recording storage, ADR-060). `connect_crm`, `connect_hr`, `connect_sale`, `connect_account` and `connect_project` are likewise independent, provider-agnostic bridges that only depend on `connect` plus their respective host app. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module). `connect_memory` depends on `connect`; the domain module `connect_memory_sale` depends on `connect_memory` + `sale` + `account`.
 
 ## Architecture
 
@@ -80,7 +88,14 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_freeswitch_website.md` — Website widgets module spec (snippets, public endpoints)
 - `specs/connect_bird.md` — Bird module spec (models, webhooks, controllers, wizards)
 - `specs/connect_3cx.md` — 3CX module spec (settings/user/channel extensions, webhook controllers, CRM template, sidecar agent)
-- `docs/` — User and admin documentation (MkDocs Material), see `mkdocs.yml` for structure
+- `specs/connect_hr.md` — HR bridge module spec (models, security, views)
+- `specs/connect_sale.md` — Sale bridge module spec (models, security, views)
+- `specs/connect_account.md` — Accounting bridge module spec (models, security, views)
+- `specs/connect_project.md` — Project bridge module spec (models, security, views)
+- `specs/connect_memory.md` — Memory base module spec (outbox/inbox contract, capture, backfill, controllers, deploy sidecar)
+- `specs/connect_memory_sale.md` — Memory Sale domain module spec (sale/invoice/payment events, payment digest)
+- `specs/connect_book.md` — Book module spec (docs discovery, nav contract, audiences, client actions)
+- `docs/` — User and admin documentation (MkDocs; the Aurora theme installs from `docs/requirements.txt`, see `specs/docs_site.md`)
 
 ## Development Commands
 Use oduflow to manage module development and deployment.
@@ -88,8 +103,8 @@ Use oduflow to manage module development and deployment.
 ## Version Compatibility
 
 **Python source is identical across series branches — this is an invariant, not
-a preference.** A module's `.py` files must be byte-for-byte the same on `17.0`,
-`18.0` and `19.0`. This is the whole point: it turns a backport into a
+a preference.** A module's `.py` files must be byte-for-byte the same on `15.0`,
+`17.0`, `18.0` and `19.0`. This is the whole point: it turns a backport into a
 near-empty diff (a clean cherry-pick instead of a manual merge), keeps review
 trivial (only non-Python assets change between branches), and stops the two
 series from silently drifting into two different products. Holding this
@@ -110,8 +125,18 @@ branches internally, and have the business logic call it uniformly — the file
 stays identical across branches.
 
 **Only non-Python assets may differ between branches:** XML views, QWeb/HTML
-templates, and per-series `migrations/` entry points. Everything else — models,
-controllers, wizards, business logic, tests — stays identical across series.
+templates, JS/OWL frontend assets, and per-series `migrations/` entry points.
+Everything else — models, controllers, wizards, business logic, tests — stays
+identical across series.
+
+**The `15.0` branch is special (ADR-062):** it is a verbatim content mirror of
+`19.0` (mirrored modules keep `19.0.x` manifest versions, `19.0.*` migration
+folders and 19-style views — they are not installable on Odoo 15), **except**
+`connect` and `connect_telnyx`, which are really ported: 15-syntax XML
+(`<tree>`, `attrs=`, `oe_chatter`, `category_id`/`users`, cron `numbercall`),
+a maintained OWL 1 fork of the JS frontend, and series-correct `15.0.x`
+manifests + `migrations/15.0.*` entry points. Their Python still matches
+`19.0` byte-for-byte.
 
 ### Cross-branch versioning rules
 
@@ -341,6 +366,13 @@ connect_addons_ng/
 ├── connect_infobip/tests/test_*.py
 ├── connect_bird/tests/test_*.py
 ├── connect_dograh/tests/test_*.py
+├── connect_hr/tests/test_*.py
+├── connect_sale/tests/test_*.py
+├── connect_account/tests/test_*.py
+├── connect_project/tests/test_*.py
+├── connect_memory/tests/test_*.py
+├── connect_memory_sale/tests/test_*.py
+├── connect_book/tests/test_*.py
 └── connect_helpdesk/tests/
 ```
 
@@ -381,6 +413,7 @@ Use oduflow to run Odoo tests in the target environment. In the normal
 ```bash
 oduflow run_odoo_tests connect
 oduflow run_odoo_tests connect_twilio
+oduflow run_odoo_tests connect_s3
 oduflow run_odoo_tests connect_freeswitch
 oduflow run_odoo_tests connect_asterisk
 oduflow run_odoo_tests connect_crm
@@ -388,6 +421,13 @@ oduflow run_odoo_tests connect_telnyx
 oduflow run_odoo_tests connect_3cx
 oduflow run_odoo_tests connect_infobip
 oduflow run_odoo_tests connect_dograh
+oduflow run_odoo_tests connect_hr
+oduflow run_odoo_tests connect_sale
+oduflow run_odoo_tests connect_account
+oduflow run_odoo_tests connect_project
+oduflow run_odoo_tests connect_memory
+oduflow run_odoo_tests connect_memory_sale
+oduflow run_odoo_tests connect_book
 oduflow run_odoo_tests connect_helpdesk
 ```
 

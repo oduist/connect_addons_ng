@@ -22,12 +22,14 @@
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button class="oe_stat_button" icon="fa-phone"
                         invisible="connect_calls_count == 0"
-                        type="action" name="%(action_connect_call_partner)d">
+                        type="action" name="%(action_connect_call_partner)d"
+                        groups="connect.group_user">
                     <field name="connect_calls_count" string="Calls" widget="statinfo"/>
                 </button>
                 <button class="oe_stat_button" icon="fa-envelope"
                         invisible="connect_messages_count == 0"
-                        type="action" name="%(action_connect_message_partner)d">
+                        type="action" name="%(action_connect_message_partner)d"
+                        groups="connect.group_user">
                     <field name="connect_messages_count" string="Messages" widget="statinfo"/>
                 </button>
             </xpath>

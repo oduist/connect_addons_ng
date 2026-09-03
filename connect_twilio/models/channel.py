@@ -9,8 +9,15 @@ from odoo import models, api, release
 from odoo.exceptions import UserError
 
 from odoo.addons.connect.models.settings import debug
+from .settings import MAX_EXTEN_LEN
 
 logger = logging.getLogger(__name__)
+
+# Recording statuses that mean "audio is still being captured". Twilio's
+# terminal states are 'completed', 'absent', 'deleted' and 'stopped'; a
+# running recording shows up as 'processing' (or 'in-progress'/'paused'
+# depending on how it was started), so all three count as live.
+TWILIO_LIVE_RECORDING_STATUSES = ('in-progress', 'processing', 'paused')
 
 
 class Channel(models.Model):
@@ -22,6 +29,24 @@ class Channel(models.Model):
         debug(self, 'On channel status: %s' % json.dumps(params, indent=2))
         generic = self._map_twilio_params(params)
         return self.process_channel_event(generic)
+
+    def _strip_exten_plus(self, number):
+        """Undo the E.164 prefix Twilio puts on an extension used as caller ID.
+
+        Internal calls hand Twilio a bare extension (``100``) as the caller
+        ID, and Twilio echoes it back in its webhooks as ``+100``. Map it back
+        to the extension so the ledger shows ``100`` instead of a bogus
+        phone number.
+        """
+        if not isinstance(number, str) or not number.startswith('+'):
+            return number
+        candidate = number[1:]
+        if not candidate.isdigit() or len(candidate) > MAX_EXTEN_LEN:
+            return number
+        exten = self.env['connect.twilio.exten'].sudo().search(
+            [('number', '=', candidate)], limit=1
+        )
+        return candidate if exten else number
 
     def _map_twilio_params(self, params):
         """Map Twilio webhook params to generic channel event dict."""
@@ -46,8 +71,8 @@ class Channel(models.Model):
 
         return {
             'sid': params['CallSid'],
-            'caller': strip_whatsapp(caller_raw),
-            'called': strip_whatsapp(called_raw),
+            'caller': self._strip_exten_plus(strip_whatsapp(caller_raw)),
+            'called': self._strip_exten_plus(strip_whatsapp(called_raw)),
             'to': strip_whatsapp(to_raw),
             'technical_direction': params['Direction'],
             'status': params['CallStatus'],
@@ -56,14 +81,80 @@ class Channel(models.Model):
             'parent_sid': params.get('ParentCallSid'),
         }
 
+    def _twilio_recording_call_sids(self):
+        """Call SIDs that may carry a recording for this channel.
+
+        A callflow records on the leg that runs ``<Dial record=...>`` — the
+        parent — while manual softphone recording is created on this leg, so
+        both have to be considered before reporting a state.
+        """
+        self.ensure_one()
+        sids = []
+        channel = self
+        while channel:
+            if channel.sid and channel.sid not in sids:
+                sids.append(channel.sid)
+            parent = channel.parent_channel
+            if not parent and channel.parent_sid:
+                parent = self.sudo().search(
+                    [('sid', '=', channel.parent_sid)], limit=1)
+            if not parent or parent.sid in sids:
+                break
+            channel = parent
+        return sids
+
+    def _twilio_active_recording(self):
+        """Return ``(call_sid, recording_sid)`` of a recording running now.
+
+        Twilio is the only authority on this: recording may have been started
+        by a callflow, by the per-user Record Calls option or manually from
+        the softphone, and only the API knows which of them is live.
+        """
+        self.ensure_one()
+        try:
+            client = self.env['connect.settings'].sudo().get_client()
+        except Exception:
+            logger.exception('Twilio client unavailable for %s', self.sid)
+            return '', ''
+        for call_sid in self._twilio_recording_call_sids():
+            try:
+                # CallRecordingList.list() filters by date only. Asking it for
+                # status='in-progress' raises TypeError, and the except below
+                # swallowed it -- so a recording running on the call was never
+                # seen and the softphone button stayed idle through a call the
+                # Record Calls option was recording.
+                # ...and matching only 'in-progress' was still wrong: Twilio
+                # reports a recording that is still running as 'processing'
+                # (duration -1). Measured on a live call — recording
+                # RE4df4b06d on an in-progress call came back 'processing',
+                # and across 50 recordings on the account only 'processing'
+                # (live) and 'completed' (finished) ever appeared, so the
+                # 'in-progress' test never matched and the button stayed on
+                # "Start Recording" for the whole call.
+                recordings = [
+                    recording
+                    for recording in client.calls(call_sid).recordings.list(
+                        limit=20)
+                    if getattr(recording, 'status', '')
+                    in TWILIO_LIVE_RECORDING_STATUSES
+                ]
+            except Exception:
+                logger.exception(
+                    'Twilio recording lookup failed for %s', call_sid)
+                continue
+            if recordings:
+                return call_sid, getattr(recordings[0], 'sid', '') or ''
+        return '', ''
+
     @api.model
     def _softphone_recording_state_twilio(self, payload):
         channel = self._softphone_recording_channel(payload)
         result = channel._softphone_recording_payload()
-        if result['state'] == 'off' and not result['recording_ref']:
-            pbx_user = channel.caller_pbx_user or channel.called_pbx_user
-            if pbx_user and pbx_user.record_calls:
+        if result['state'] in ('off', '') and not result['recording_ref']:
+            call_sid, recording_sid = channel._twilio_active_recording()
+            if call_sid:
                 result['state'] = 'on'
+                result['recording_ref'] = recording_sid
         return result
 
     @api.model
@@ -114,10 +205,13 @@ class Channel(models.Model):
             'recording_state': 'stopping',
             'recording_control_error': False,
         })
-        recording_ref = channel.recording_control_ref or 'Twilio.CURRENT'
+        call_sid, recording_ref = channel._twilio_active_recording()
+        if not call_sid:
+            call_sid = channel.sid
+            recording_ref = channel.recording_control_ref or 'Twilio.CURRENT'
         try:
             self.env['connect.settings'].sudo().get_client().calls(
-                channel.sid).recordings(recording_ref).update(
+                call_sid).recordings(recording_ref).update(
                     status='stopped')
             channel.sudo().write({
                 'recording_state': 'off',

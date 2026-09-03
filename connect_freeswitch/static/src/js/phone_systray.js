@@ -2,6 +2,7 @@
 
 import { Component, useState, useRef, onMounted, onWillUnmount, onWillUpdateProps } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
+import { _t } from "@web/core/l10n/translation";
 
 
 export class PhoneDialpad extends Component {
@@ -159,7 +160,7 @@ export class PhoneDialpad extends Component {
         const callId = this.getRecordingCallId(vertoClient);
         if (!callId) {
             this.state.recordingState = "off";
-            this.state.recordingError = "Call UUID unavailable";
+            this.state.recordingError = _t("Call UUID unavailable");
             return;
         }
         try {
@@ -186,15 +187,15 @@ export class PhoneDialpad extends Component {
 
     getRecordingTitle() {
         if (!this.getRecordingCallId()) {
-            return "Recording unavailable";
+            return _t("Recording unavailable");
         }
         if (this.state.recordingBusy) {
-            return this.state.recordingState === "starting" ? "Starting recording" : "Stopping recording";
+            return this.state.recordingState === "starting" ? _t("Starting recording") : _t("Stopping recording");
         }
         if (this.state.recordingState === "error") {
-            return this.state.recordingError || "Recording error";
+            return this.state.recordingError || _t("Recording error");
         }
-        return this.isRecordingOn() ? "Stop Recording" : "Start Recording";
+        return this.isRecordingOn() ? _t("Stop Recording") : _t("Start Recording");
     }
 
     getRecordingIconClass() {
@@ -204,7 +205,7 @@ export class PhoneDialpad extends Component {
         if (this.state.recordingBusy) {
             return "fa fa-spinner fa-spin";
         }
-        return this.isRecordingOn() ? "fa fa-stop-circle" : "fa fa-circle";
+        return this.isRecordingOn() ? "fa fa-stop-circle" : "fa fa-dot-circle-o";
     }
 
     async onToggleRecording() {
@@ -224,7 +225,7 @@ export class PhoneDialpad extends Component {
             this.state.recordingError = error.message || String(error);
             this.state.recordingBusy = false;
             this.notification.add(this.state.recordingError, {
-                title: "Recording",
+                title: _t("Recording"),
                 type: "danger",
                 sticky: false,
             });
@@ -254,11 +255,11 @@ export class PhoneDialpad extends Component {
 
     getStateText() {
         switch (this.props.state) {
-            case "disconnected": return "Disconnected";
-            case "connecting": return "Connecting...";
-            case "reconnecting": return "Reconnecting...";
-            case "registered": return "Ready";
-            case "error": return "Error";
+            case "disconnected": return _t("Disconnected");
+            case "connecting": return _t("Connecting...");
+            case "reconnecting": return _t("Reconnecting...");
+            case "registered": return _t("Ready");
+            case "error": return _t("Error");
             default: return this.props.state;
         }
     }
@@ -266,12 +267,16 @@ export class PhoneDialpad extends Component {
     getCallStateText() {
         switch (this.props.callState) {
             case "idle": return "";
-            case "calling": return "Calling...";
-            case "ringing": return "Ringing...";
+            case "calling": return _t("Calling...");
+            case "ringing": return _t("Ringing...");
             case "active": return this.formatDuration(this.state.callDuration);
-            case "incoming": return "Incoming call";
+            case "incoming": return _t("Incoming call");
             default: return this.props.callState;
         }
+    }
+
+    get displayCallerName() {
+        return this.props.callerName || _t("Unknown");
     }
 }
 

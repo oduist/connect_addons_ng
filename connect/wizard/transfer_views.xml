@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <form string="Transfer Call">
                 <group>
-                    <field name="phone_number"/>
+                    <field name="phone_number" widget="phone"/>
                 </group>
                 <footer>
                     <button string="Transfer" type="object" name="action_confirm" class="btn-primary"/>

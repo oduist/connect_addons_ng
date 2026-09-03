@@ -78,7 +78,17 @@ class User(models.Model):
     @api.model
     def get_livekit_phone_config(self):
         """Web phone bootstrap for the systray widget (sudo inside:
-        connect_livekit models are admin-only per ADR-036)."""
+        connect_livekit models are admin-only per ADR-036).
+
+        The JS calls this on every web client load, for every internal user.
+        Return the neutral "not enabled" answer for anyone outside the Connect
+        groups instead of doing the lookup, so a regular user never reaches
+        connect.user here.
+        """
+        has_group = self.env.user.has_group
+        if not any([has_group('connect.group_user'),
+                    has_group('connect.group_admin')]):
+            return {}
         settings = self.env['connect.settings'].sudo()
         connect_user = self.env.user.connect_user
         if (not connect_user or not connect_user.sudo().livekit_client_enabled
@@ -95,7 +105,13 @@ class User(models.Model):
     def get_livekit_room_token(self, room_name):
         """Mint a short-TTL join token after checking the room belongs to
         a call this user takes part in. A fresh token per join replaces
-        token-refresh flows."""
+        token-refresh flows. Minting a token has to give a definite answer,
+        so a non-Connect user gets an explicit error rather than a neutral
+        one (same split as connect.user.get_user_by_exten_number)."""
+        has_group = self.env.user.has_group
+        if not any([has_group('connect.group_user'),
+                    has_group('connect.group_admin')]):
+            raise ValidationError('Only Connect users can join a call room!')
         user = self.env.user
         connect_user = user.connect_user
         if not connect_user or not connect_user.sudo().livekit_client_enabled:
@@ -138,7 +154,12 @@ class User(models.Model):
     @api.model
     def livekit_hangup_room(self, room_name):
         """Terminate a call room from the web phone (deletes the LiveKit
-        room, disconnecting all participants)."""
+        room, disconnecting all participants). Destructive, so a non-Connect
+        user gets an explicit error rather than a silent no-op."""
+        has_group = self.env.user.has_group
+        if not any([has_group('connect.group_user'),
+                    has_group('connect.group_admin')]):
+            raise ValidationError('Only Connect users can hang up a call room!')
         user = self.env.user
         connect_user = user.connect_user
         if not connect_user:

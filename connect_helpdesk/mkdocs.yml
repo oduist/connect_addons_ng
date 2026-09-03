@@ -1,0 +1,5 @@
+site_name: Helpdesk
+nav:
+  - Overview: index.md
+  - Configuration: configuration.md
+  - Security: security.md

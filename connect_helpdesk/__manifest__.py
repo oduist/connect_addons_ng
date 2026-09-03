@@ -1,8 +1,9 @@
 {
     'name': 'Oduist Connect Helpdesk',
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.0.1',
     'category': 'Phone',
     'summary': 'Helpdesk integration for Oduist Connect',
+    'author': 'Oduist',
     'depends': ['connect', 'helpdesk'],
     'data': [
         'security/webhook.xml',

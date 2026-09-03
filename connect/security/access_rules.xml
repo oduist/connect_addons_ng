@@ -146,6 +146,16 @@
         <field name="perm_unlink" eval="True"/>
     </record>
 
+    <record id="access_connect_user_webhook" model="ir.model.access">
+        <field name="name">connect.user webhook</field>
+        <field name="model_id" ref="model_connect_user"/>
+        <field name="group_id" ref="group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
     <!-- connect.settings access (admin-only; non-managers reach non-secret
          config only through the sudo-safe get_param method) -->
     <record id="access_connect_settings_admin" model="ir.model.access">

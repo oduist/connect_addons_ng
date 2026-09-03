@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect FreeSWITCH
 - **Technical:** `connect_freeswitch`
-- **Version:** 18.0.2.1.2
+- **Version:** 19.0.2.1.4
 - **Depends:** `connect`, `web`
 - **Application:** False
 - **License:** Proprietary
@@ -34,7 +34,7 @@ It ships **three deliverables**:
 Major features:
 - WebRTC via FreeSWITCH `mod_verto` with a phone widget in the Odoo UI;
 - XML-curl directory + dialplan generation driven by Odoo records;
-- mod_fifo-backed call queues with static dialplan consumers (ADR-013);
+- mod_fifo-backed call queues with static dialplan consumers (ADR-013), reachable as a callflow/IVR fallback without a dedicated extension via the `fs_fifo_<id>` handle (ADR-048) and auto-refreshed in FreeSWITCH on change (ADR-049);
 - call parking with BLF subscriptions (ADR-012);
 - gateway / outgoing route management;
 - piper TTS module embedded in the image;
@@ -162,7 +162,7 @@ Beyond firewall, the module contains:
 | `connect.freeswitch.gateway` | SIP gateway records, rendered into pjsip_wizard XML |
 | `connect.freeswitch.outgoing_route` | outbound routing rules |
 | `connect.freeswitch.template` | Jinja2 templates for dialplan / directory XML |
-| `connect.fs_fifo` | mod_fifo queue records (ADR-013); user agents list resolves via `freeswitch_exten_number` |
+| `connect.fs_fifo` | mod_fifo queue records (ADR-013); user agents list resolves via `freeswitch_exten_number`. `_dialplan_target()` = the queue's extension or, when none, the internal `fs_fifo_<id>` handle that `_route_internal` resolves back to the queue dialplan — so a queue is a routable callflow/IVR fallback without a user-facing extension (ADR-048). `create`/`write(members, max_wait_time)`/`unlink` schedule one post-commit `reload mod_fifo` (`freeswitch_api`) so FreeSWITCH re-reads its consumers (ADR-049) |
 | `connect.freeswitch.parking.slot` | call parking (ADR-012) |
 
 ### Outbound Caller ID resolution
@@ -289,6 +289,11 @@ itself, because Odoo-originated click-to-call legs do not start
 `record_session`. Failed start/stop attempts reset the live state out of
 `starting` / `stopping` so the softphone can retry.
 
+The phone renders `off` as a purple circular badge with a white dot and `REC`
+label, and `on` as a purple `fa-stop-circle` active action; transitions use a
+spinner. The button exposes a dynamic accessible label and `aria-pressed`;
+disabling automatic recording does not remove the manual start action.
+
 ---
 
 ## Crons (`data/ir_cron.xml`)
@@ -355,16 +360,16 @@ Connect > FreeSWITCH (seq 50)
 Production runs FreeSWITCH only, so `connect_freeswitch` is the only provider
 module with a data migration (connect_twilio / connect_asterisk ship none):
 
-* **connect 18.0.4.0.0 pre-migration** (in the core module) renames the moved
+* **connect 19.0.4.0.0 pre-migration** (in the core module) renames the moved
   PBX tables to `_*_legacy` archives so the registry cleanup cannot drop them,
   and removes the sms.composer inherit view (the wizard moved to
   connect_twilio).
-* **connect_freeswitch 18.0.2.0.0 pre-migration** stashes the
+* **connect_freeswitch 19.0.2.0.0 pre-migration** stashes the
   `connect_fs_fifo` exten FKs (`exten`, `fallback_exten_id`) and the
   `fs_fifo_endpoint_rel` M2M rows into temporary `_mig_*` columns/tables and
   drops the stale constraints, so the fresh FK to the still-empty
   `connect_freeswitch_exten` table cannot abort the upgrade.
-* **connect_freeswitch 18.0.2.0.0 post-migration** copies the legacy data
+* **connect_freeswitch 19.0.2.0.0 post-migration** copies the legacy data
   **id-preserving** into the new models
   (`_connect_exten_legacy` → `connect_freeswitch_exten`, callflow(+choice,
   ring-users rel), number, endpoint, outgoing_callerid), remaps the exten
@@ -372,7 +377,7 @@ module with a data migration (connect_twilio / connect_asterisk ship none):
   `connect.freeswitch.callflow`, …), transfers the legacy `connect_user`
   columns (`exten`, `outgoing_callerid`) into the new per-provider columns,
   and restores the stashed fifo FKs.
-* **connect_freeswitch 18.0.2.1.2 post-migration** removes the obsolete
+* **connect_freeswitch 19.0.2.1.2 post-migration** removes the obsolete
   operator-managed XML-RPC fields, rotates the hidden XML-RPC password once,
   and runs the idempotent deployment bootstrap so both service tokens exist
   without changing any value already configured (ADR-044, ADR-045).
@@ -474,7 +479,28 @@ incoming. See **`specs/decisions/028-cdr-direction-from-dialplan-variable.md`**.
 
 ---
 
+## Frontend i18n (ADR-038)
+
+Softphone UI strings (phone systray/dialpad, parking panel,
+endpoint-password widget) go through `_t()` from
+`@web/core/l10n/translation`; string literals inside OWL template
+expressions live in component getters (`displayCallerName`,
+`revealToggleLabel`) so the exporter sees them. The Python parking
+toasts/errors (`fs_parking_slot.py`, park branch of `call.py`) use
+`_()`. The `i18n/` catalog (`connect_freeswitch.pot` + `de.po`,
+`fr.po`, `it.po`, `ru.po`) is hand-maintained and **scoped to the
+softphone UI**; base-language file names cover the Swiss locales via
+Odoo's base-lang fallback. `verto_client.js` is deliberately not
+translated (console-only strings). When adding softphone strings,
+update the catalog in the same commit.
+
+---
+
 ## Tests
+
+`connect_freeswitch/tests/test_i18n.py` covers the i18n catalog: web and
+python code-translation bundles for de_DE/fr_CH/it_CH/ru_RU load and
+contain key softphone terms (proves po validity and base-lang fallback).
 
 `connect_freeswitch/tests/test_firewall.py` covers:
 

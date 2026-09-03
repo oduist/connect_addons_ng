@@ -1,0 +1,385 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* connect_freeswitch
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-12 12:00+0000\n"
+"PO-Revision-Date: 2026-07-12 12:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Disconnected"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Connecting..."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Reconnecting..."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Ready"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Error"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Calling..."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Ringing..."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Incoming call"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Unknown"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Call UUID unavailable"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Recording unavailable"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Starting recording"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Stopping recording"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Recording error"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Stop Recording"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Start Recording"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Recording"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/parking_panel.js:0
+msgid "No active call to park. Connect first, then press Park on a free slot."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/parking_panel.js:0
+msgid "No active call UUID found."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/parking_panel.js:0
+msgid "Operation failed."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/parking_panel.js:0
+msgid "Parked"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/parking_panel.js:0
+msgid "Free"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/endpoint_password/endpoint_password.js:0
+msgid "Password copied to clipboard"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/endpoint_password/endpoint_password.js:0
+msgid "Could not access the clipboard"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/endpoint_password/endpoint_password.js:0
+msgid "Endpoint Password"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/endpoint_password/endpoint_password.js:0
+msgid "Hide password"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/endpoint_password/endpoint_password.js:0
+msgid "Show password"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "Phone"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "Dialer"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "Parking"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "Enter number"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+#: code:addons/connect_freeswitch/static/src/widgets/phone_field/phone_field.xml:0
+msgid "Call"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "Answer"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "Decline"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "End"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/parking_panel.xml:0
+msgid "Click an empty slot to park the current call."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/parking_panel.xml:0
+msgid "No active call. Click an occupied slot to retrieve it."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/parking_panel.xml:0
+msgid "No parking slots configured."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/endpoint_password/endpoint_password.xml:0
+msgid "Copy password"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "Slot %s is already occupied."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "Call not found."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "Cannot find an active channel for this call. Make sure the call is still in progress."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "FreeSWITCH rejected the park: %s"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "Call Parked"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "Call parked on slot %s"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "No channel UUID provided."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "Parking Sync"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "%d stale slot(s) cleared."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "All slots in sync."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "Slot %s is empty."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "You don't have a Connect user configured."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "FreeSWITCH domain is not configured."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "You don't have any ringable endpoints."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "FreeSWITCH rejected the unpark: %s"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "Retrieving Call"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/fs_parking_slot.py:0
+msgid "Ringing your phone to pick up slot %s"
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/call.py:0
+msgid "This call is already ended."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/call.py:0
+msgid "This call is already parked on slot %s."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/call.py:0
+msgid "No free parking slots available. Configure additional slots under Connect → Configuration → Parking Slots."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/call.py:0
+msgid "Selected parking slot is not available."
+msgstr ""
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/call.py:0
+msgid "No free parking slots available."
+msgstr ""

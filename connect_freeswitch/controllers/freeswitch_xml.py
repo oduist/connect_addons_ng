@@ -420,6 +420,16 @@ class FreeSwitchXMLController(http.Controller):
                     parts.append(invalid_xml)
                     return ''.join(parts)
 
+        # FS Queue by internal handle: a callflow / IVR fallback transfers to
+        # fs_fifo_<id> when the queue has no user-facing extension (ADR-048).
+        fifo_handle = re.match(r'^fs_fifo_(\d+)$', destination)
+        if fifo_handle:
+            fifo = request.env['connect.fs_fifo'].sudo().browse(
+                int(fifo_handle.group(1)))
+            if fifo.exists():
+                parts.append(fifo.generate_dialplan(params))
+                return ''.join(parts)
+
         # Try exact extension match
         exten = Exten.search([('number', '=', destination)], limit=1)
         if exten:
@@ -486,14 +496,18 @@ class FreeSwitchXMLController(http.Controller):
         return self._not_found()
 
     def _get_sofia_config(self, params):
-        """Serve sofia.conf with gateways from Odoo."""
+        """Serve sofia.conf with the external profile and any configured gateways.
+
+        The external profile is rendered *unconditionally* — SIP endpoints
+        register against it and calls are bridged via ``sofia/external/...``
+        even when no gateway records exist. Answering "not found" here when
+        there are no gateways left FreeSWITCH without any sofia config, so the
+        profile could not start on a fresh env (ADR-047).
+        """
         Gateway = request.env['connect.freeswitch.gateway'].sudo()
         gateways = Gateway.search([('active', '=', True)])
 
-        if not gateways:
-            return self._not_found()
-
-        # Render each gateway individually
+        # Render each gateway individually (empty string when there are none)
         gateways_xml = '\n'.join(gw.generate_sofia_gateway_xml() for gw in gateways)
 
         sofia_log_level = request.env['connect.settings'].sudo().get_param('freeswitch_sofia_log_level') or '0'

@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect CRM
 - **Technical:** `connect_crm`
-- **Version:** 18.0.1.0.0
+- **Version:** 19.0.1.0.0
 - **Depends:** `connect`, `crm`, `utm`
 - **Application:** False
 - **License:** Other proprietary
@@ -151,8 +151,9 @@ File naming follows the core convention `*_views.xml`.
 - **Search:** core has no standalone search view. A new `connect.view_connect_call_search` record must be added to core `connect` first (prerequisite), then this module extends it to add lead/source search + group-by filters. Until then, search-by-lead is not available.
 
 ### utm_views.xml
-- **List extension** (`utm.utm_source_view_tree`): adds `phone` column
-- **Form extension** (`utm.utm_source_view_form`): adds `phone` field
+- **List extension** (`utm.utm_source_view_tree`): adds a plain `phone` column
+- **Form extension** (`utm.utm_source_view_form`): adds `phone` with
+  `widget="phone"`
 
 ### settings_views.xml
 - **Form extension** (`connect.connect_settings_form`): inserts "CRM" notebook page with incoming/outgoing auto-create toggles and options

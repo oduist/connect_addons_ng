@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect 3CX
 - **Technical:** `connect_3cx`
-- **Version:** 18.0.1.0.0
+- **Version:** 19.0.1.0.0
 - **Depends:** `connect`, `web`
 - **Application:** False
 - **License:** Proprietary

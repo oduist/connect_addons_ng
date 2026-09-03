@@ -50,11 +50,17 @@ class CalendarController(http.Controller):
                 tz = 'UTC'
             user_timezone = ZoneInfo(tz)
         if kwargs.get('start'):
-            date = datetime.strptime(kwargs.get('start'), '%Y-%m-%d').replace(tzinfo=user_timezone)
+            local_midnight = datetime.strptime(kwargs.get('start'), '%Y-%m-%d')
         else:
-            current_date = datetime.now().date() + timedelta(days=1)
-            date = datetime.combine(current_date, datetime.min.time()).replace(tzinfo=user_timezone)
-        date = date.astimezone(ZoneInfo("UTC")).replace(tzinfo=None)
+            current_date = datetime.now(user_timezone).date() + timedelta(days=1)
+            local_midnight = datetime.combine(current_date, datetime.min.time())
+        # The day the caller means, in their own timezone. The search window
+        # below is in UTC, and east of UTC that lands on the previous date --
+        # labelling the free slots with it offered the caller the wrong day.
+        day = local_midnight.date()
+        date = local_midnight.replace(tzinfo=user_timezone) \
+            .astimezone(ZoneInfo("UTC")) \
+            .replace(tzinfo=None)
 
         end_date = date + timedelta(days=1)
 
@@ -62,8 +68,8 @@ class CalendarController(http.Controller):
             [('user_id', '=', user_id), ('start', '>', date), ('start', '<', end_date)], order='start asc').read(
             ['name', 'start', 'stop'])
 
-        day_start = "{} 08:00:00".format(date.date())
-        day_end = "{} 18:00:00".format(date.date())
+        day_start = "{} 08:00:00".format(day)
+        day_end = "{} 18:00:00".format(day)
 
         free_intervals = []
         current_start = day_start
@@ -113,7 +119,14 @@ class CalendarController(http.Controller):
             [('user_id', '=', user_id), ('start', '=', start_date), ('stop', '=', stop_date)])
         if event:
             return http.request.make_json_response({'status': 200, 'detail': 'Event already exist!'})
-        http.request.env['calendar.event'].sudo().with_user(user_id).create({
+        # with_user() after sudo() drops the sudo flag, so the event was
+        # created as the target user *without* elevated rights. The deferred
+        # write of the computed partner_ids is then checked at the end of the
+        # request -- in the public env this route runs under -- and answers
+        # 403 "Public user doesn't have 'read' access to res.partner", which
+        # reaches the agent as a failed tool call. Take the user first, then
+        # sudo, so the event still belongs to the target user.
+        http.request.env['calendar.event'].with_user(user_id).sudo().create({
             'name': kwargs.get('name', 'Unknowns'),
             'start': start_date,
             'stop': stop_date,

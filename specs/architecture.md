@@ -497,7 +497,7 @@ connect/                              # Core (technology-agnostic ledger)
     data.xml
     res_users.xml
     ir_cron.xml
-  migrations/18.0.4.0.0/
+  migrations/19.0.4.0.0/
     pre-migration.py                  # archive moved PBX tables as _*_legacy
   static/src/
     components/license_banner/        # License banner systray
@@ -568,7 +568,7 @@ connect_freeswitch/                   # FreeSWITCH integration
     call.py / settings.py             # _inherit (originate, XML-RPC)
   controllers/
     freeswitch_xml.py / freeswitch_cdr.py / freeswitch_parking.py / firewall_api.py
-  migrations/18.0.2.0.0/
+  migrations/19.0.2.0.0/
     pre-migration.py                  # detach fifo FKs
     post-migration.py                 # id-preserving copy from _*_legacy tables
   static/src/                         # Verto client, parking panel

@@ -6,6 +6,7 @@
         <field name="arch" type="xml">
             <list default_order="id desc">
                 <field name="direction"/>
+                <field name="call_type" optional="hide"/>
                 <field name="caller"/>
                 <field name="called"/>
                 <field name="partner"/>
