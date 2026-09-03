@@ -9,9 +9,9 @@
       <field name="code">action = model.open_memory_form()</field>
   </record>
 
-  <menuitem id="memory_settings_menu" parent="connect.menu_connect_settings"
+  <menuitem id="memory_settings_menu" parent="menu_memory_config"
       groups="connect.group_admin"
-      action="memory_settings_action" name="Memory" sequence="1100"/>
+      action="memory_settings_action" name="Settings" sequence="10"/>
 
   <record id="connect_memory_settings_form" model="ir.ui.view">
     <field name="name">connect_memory_settings_form</field>

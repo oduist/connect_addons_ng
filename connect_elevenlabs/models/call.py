@@ -45,33 +45,51 @@ class Call(models.Model):
         analysis = data.get('analysis', {})
         status = 'completed' if analysis.get('call_successful') == 'success' else 'failed'
 
-        number = False
-        if called:
-            number = self.env['connect.twilio.number'].sudo().search(
-                [('phone_number', '=', called)], limit=1)
-        if not number:
-            logger.warning('EL inbound: connect.number not found for called=%s', called)
-
         partner = self.env['res.partner'].sudo().get_partner_by_number(caller) if caller else False
         agent_id = data.get('agent_id', '')
         agent = self.env['connect.elevenlabs_agent'].sudo().search(
             [('agent_uid', '=', agent_id)], limit=1) if agent_id else False
 
         summary = analysis.get('transcript_summary', '')
-        call = self.sudo().create({
-            'caller': caller,
-            'called': called,
-            'direction': 'incoming',
-            'status': status,
-            'duration': duration,
-            'call_sid': call_sid,
-            'elevenlabs_conversation_id': conversation_id,
-            'elevenlabs_summary': summary,
-            'partner': partner.id if partner else False,
-            'elevenlabs_agent': agent.id if agent else False,
-        })
-        logger.info('EL inbound: created connect.call id=%s for conversation_id=%s caller=%s',
-                    call.id, conversation_id, caller)
+        call = self._elevenlabs_existing_call(data, call_sid)
+        if call:
+            # The call reached the agent through a provider leg, so the ledger
+            # already holds it -- complete that record instead of logging the
+            # same conversation twice. Caller/called/status/duration stay as
+            # the provider reported them: on the SIP-trunk path EL reports the
+            # DID as external_number and its own agent id as agent_number.
+            vals = {
+                'elevenlabs_conversation_id': conversation_id,
+                'elevenlabs_summary': summary,
+            }
+            if agent and not call.elevenlabs_agent:
+                vals['elevenlabs_agent'] = agent.id
+            if partner and not call.partner:
+                vals['partner'] = partner.id
+            call.sudo().write(vals)
+            partner = call.partner or partner
+            caller = call.caller or caller
+            called = call.called or called
+            logger.info('EL inbound: attached conversation_id=%s to existing connect.call id=%s',
+                        conversation_id, call.id)
+        else:
+            if called and not self.env['connect.twilio.number'].sudo().search(
+                    [('phone_number', '=', called)], limit=1):
+                logger.warning('EL inbound: connect.number not found for called=%s', called)
+            call = self.sudo().create({
+                'caller': caller,
+                'called': called,
+                'direction': 'incoming',
+                'status': status,
+                'duration': duration,
+                'call_sid': call_sid,
+                'elevenlabs_conversation_id': conversation_id,
+                'elevenlabs_summary': summary,
+                'partner': partner.id if partner else False,
+                'elevenlabs_agent': agent.id if agent else False,
+            })
+            logger.info('EL inbound: created connect.call id=%s for conversation_id=%s caller=%s',
+                        call.id, conversation_id, caller)
         # Persist the conversation transcript as a connect.recording so it shows
         # on the call form and downstream hooks (e.g. Oduist Memory retain, which
         # observes connect.recording creation) fire. EL already supplies the
@@ -93,6 +111,32 @@ class Call(models.Model):
                     'elevenlabs_summary': summary,
                 })
         return call
+
+    @api.model
+    def _elevenlabs_existing_call(self, data, call_sid=''):
+        """The connect.call this conversation already belongs to, if any.
+
+        `connect.elevenlabs_agent.render()` hands the ledger call id to EL as
+        the ``X-Connect-Call-Ref`` SIP header, and EL echoes it back among the
+        post-call dynamic variables. A call that reached the agent through a
+        provider leg is therefore already logged; only a native EL SIP attach
+        arrives with no record.
+        """
+        init = data.get('conversation_initiation_client_data') or {}
+        dynamic = init.get('dynamic_variables') or {}
+        for key in ('sip_connect_call_ref', 'call_id'):
+            try:
+                call = self.sudo().browse(int(dynamic.get(key))).exists()
+            except (TypeError, ValueError):
+                continue
+            if call:
+                return call
+        if call_sid:
+            channel = self.env['connect.channel'].sudo().search(
+                [('sid', '=', call_sid)], limit=1)
+            if channel.call:
+                return channel.call
+        return self.browse()
 
     @staticmethod
     def _elevenlabs_transcript_text(turns):

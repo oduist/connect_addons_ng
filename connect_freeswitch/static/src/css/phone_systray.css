@@ -165,6 +165,51 @@
     padding: 12px;
 }
 
+.o_phone_recording_btn {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    padding: 4px;
+    width: 50px;
+}
+
+.o_phone_recording_btn_idle {
+    border-color: transparent;
+}
+
+.o_phone_recording_btn.o_phone_recording_btn_active {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--o-brand-odoo, #714b67);
+}
+
+.o_phone_recording_idle {
+    align-items: center;
+    background-color: var(--o-brand-odoo, #714b67);
+    border-radius: 50%;
+    color: #fff;
+    display: inline-flex;
+    gap: 2px;
+    height: 30px;
+    justify-content: center;
+    width: 30px;
+}
+
+.o_phone_recording_idle_dot {
+    background-color: currentColor;
+    border-radius: 50%;
+    flex: 0 0 5px;
+    height: 5px;
+    width: 5px;
+}
+
+.o_phone_recording_idle_label {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.15px;
+    line-height: 1;
+}
+
 .o_phone_dialpad:has(.o_phone_answer_btn) .o_phone_incoming_info {
     background: #d4edda;
 }

@@ -195,13 +195,17 @@ class ConnectWhatsappSender(models.Model):
 
     @api.model
     def get_default_sender(self, user=None):
-        """Return the default WhatsApp sender.
+        """Return the first available WhatsApp sender.
         Preference order:
-        - Given user's connect_user.whatsapp_sender_id
-        - Current env user's connect_user.whatsapp_sender_id
-        - Sender with is_default = True
-        - Any available sender
+        - Given user's online connect_user.whatsapp_sender_id
+        - Current env user's online connect_user.whatsapp_sender_id
+        - Online sender with is_default = True
+        - Any online sender
         """
+        available_domain = [
+            ('no_sync', '=', False),
+            ('status', '=', 'ONLINE'),
+        ]
         connect_user = False
         try:
             if user and getattr(user, '_name', '') == 'connect.user':
@@ -213,15 +217,21 @@ class ConnectWhatsappSender(models.Model):
         except Exception:
             connect_user = False
         # 1) User preference
-        if connect_user and connect_user.whatsapp_sender_id:
-            return connect_user.whatsapp_sender_id
+        preferred = connect_user.whatsapp_sender_id if connect_user else False
+        if (
+            preferred
+            and not preferred.no_sync
+            and preferred.status == 'ONLINE'
+        ):
+            return preferred
         # 2) Default flag
-        default = self.search([('is_default', '=', True)], limit=1)
+        default = self.search(
+            available_domain + [('is_default', '=', True)], limit=1
+        )
         if default:
             return default
         # 3) Any
-        any_sender = self.search([], limit=1)
-        return any_sender
+        return self.search(available_domain, limit=1)
 
     def send_whatsapp(self, recipient, body, res_model=None, res_id=None, raise_on_error=True, content_sid=None, content_variables=None):
         """Send a WhatsApp message using this sender and create connect.message + chatter.

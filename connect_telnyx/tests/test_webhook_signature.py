@@ -20,6 +20,10 @@ class TestTelnyxWebhookSignature(HttpCase):
         settings.set_param('telnyx_verify_requests', True)
         settings.set_param('telnyx_public_key', base64.b64encode(
             bytes(cls.signing_key.verify_key)).decode())
+        # api_url is a non-stored compute; write the backing config
+        # parameter so the value survives cache invalidation.
+        cls.env['ir.config_parameter'].sudo().set_param(
+            'connect.api_url', 'https://odoo.example.test/')
         cls.texml = cls.env['connect.telnyx.texml'].with_context(
             install_mode=True).create({
                 'name': 'Signed Reject',

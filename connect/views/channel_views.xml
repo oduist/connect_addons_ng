@@ -28,8 +28,8 @@
                             <field name="call"/>
                             <field name="parent_channel"/>
                             <field name="parent_sid"/>
-                            <field name="caller"/>
-                            <field name="called"/>
+                            <field name="caller" widget="phone"/>
+                            <field name="called" widget="phone"/>
                             <field name="to"/>
                             <field name="technical_direction" string="Direction"/>
                             <field name="status"/>
@@ -49,8 +49,8 @@
                     </group>
                     <group>
                         <group string="Computed Numbers">
-                            <field name="caller_number"/>
-                            <field name="called_number"/>
+                            <field name="caller_number" widget="phone"/>
+                            <field name="called_number" widget="phone"/>
                         </group>
                     </group>
                 </sheet>

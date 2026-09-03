@@ -532,7 +532,15 @@ class Domain(models.Model):
         exten = self.env["connect.twilio.exten"].sudo().search([("number", "=", found_num)])
         # Do not let whatsapp calls to go for external calling
         if not exten and is_whatsapp:
-            return "<Response><Say>Oops</Say><Pause length='1'/><Say>Whatsapp Extension not found! Please create an extenstion for this Whatsapp number!</Say></Response>"
+            # Fall back to the number's own destination. An inbound WhatsApp
+            # call names one of our numbers, so it can be routed exactly like
+            # the PSTN call that reaches the same number through
+            # connect.twilio.number, without demanding a separate extension.
+            number = self.env['connect.twilio.number'].sudo().search(
+                [('phone_number', '=', found_num)], limit=1)
+            if number:
+                return number.render(request=request, params=params)
+            return "<Response><Say>Oops</Say><Pause length='1'/><Say>Whatsapp Extension not found! Please create an extension for this Whatsapp number!</Say></Response>"
         if not exten:
             # Get all extensions and match by pattern.
             # TODO: Handle bad exten numbers like 70[ that cannot be used by re.match.

@@ -207,10 +207,14 @@ computes via `sudo()`, so the field is safe for any internal user.
   `views/memory_backfill_views.xml` — list/form views for the three models.
 - `views/res_partner_views.xml` — memory smart button + header actions on the
   partner form.
-- `views/settings.xml` — standalone **Memory** settings form + settings menu
-  (`connect.menu_connect_settings`, `connect.group_admin`).
+- `views/settings.xml` — standalone **Memory** settings form + **Settings** menu
+  under the module's own Configuration child (`menu_memory_config`,
+  `connect.group_admin`), the way the provider submenus do — not under the core
+  Connect > Configuration menu. Loaded after `memory_menus.xml`, which defines
+  that parent.
 - `views/memory_menus.xml` — **Memory** root menu (`connect.menu_connect_root`,
-  `connect.group_user`, sequence 160) with **Outbox** / **Inbox** submenus.
+  `connect.group_user`, sequence 160) with **Outbox** / **Inbox** submenus and a
+  **Configuration** child (`connect.group_admin`, sequence 100) holding Settings.
 
 ## Data / crons — data/memory_data.xml
 

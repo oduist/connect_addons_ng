@@ -1,0 +1,10 @@
+# Per-module docs config, aggregated by root mkdocs.yml via mkdocs-monorepo-plugin.
+# The section names below are also the contract the in-Odoo Book reads: pages
+# under "Admin Guide" land in the Admin Guide, pages under "User Guide" in the
+# User Guide. See admin/book-setup.md.
+site_name: Book
+nav:
+  - Admin Guide:
+      - How the Book Finds Documentation: admin/book-setup.md
+  - User Guide:
+      - Reading the Documentation: user/reading-the-docs.md

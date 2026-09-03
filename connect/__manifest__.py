@@ -1,12 +1,12 @@
 {
     'name': 'Oduist Connect',
-    'version': '19.0.4.2.2',
+    'version': '19.0.4.3.0',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Communication platform for Odoo',
     'depends': ['base', 'mail', 'contacts', 'sms', 'resource'],
     'external_dependencies': {
-        'python': ['phonenumbers', 'jinja2', 'openai', 'PyJWT'],
+        'python': ['phonenumbers', 'jinja2', 'httpx', 'openai', 'PyJWT'],
     },
     'data': [
         # Security

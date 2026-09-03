@@ -12,6 +12,34 @@ import {user} from "@web/core/user"
 
 const uid = user.userId
 
+// Connection diagnostics: single prefix so admins can filter the browser
+// console by "[Connect Phone]" when a web phone fails to connect / call.
+const LOG_PREFIX = '[Connect Phone]'
+const clog = (...args) => console.log(LOG_PREFIX, ...args)
+const cwarn = (...args) => console.warn(LOG_PREFIX, ...args)
+const cerror = (...args) => console.error(LOG_PREFIX, ...args)
+
+// Human-readable hints for the most common Twilio Voice error codes so the
+// reason a phone won't connect is obvious straight from the console.
+function explainTwilioError(error) {
+    const code = error && error.code
+    const hints = {
+        20101: 'Invalid Access Token — check Twilio API Key/Secret and Account SID in Connect settings.',
+        20104: 'Access Token expired — the token TTL elapsed; it should auto-refresh.',
+        31005: 'Connection error (transport/WebSocket to Twilio failed) — check network/firewall/proxy and that wss to Twilio is allowed.',
+        31009: 'Transport error — no transport available to send the message.',
+        31201: 'Error acquiring microphone — no audio input device available.',
+        31202: 'Microphone permission denied by the user/browser.',
+        31208: 'Microphone permission prompt was dismissed — grant mic access for this site.',
+        31402: 'Media acquisition failed — the browser could not get the microphone (permissions, no device, or it is used by another app). This is the #1 reason an outgoing call ends instantly.',
+        31003: 'ICE connection failed — media path could not be established (NAT/firewall blocking UDP/media).',
+        31000: 'General/unknown Twilio Voice error.',
+        31204: 'Access Token: invalid signature.',
+        31205: 'Access Token expired.',
+    }
+    return hints[code] || (error && error.explanation) || ''
+}
+
 export class Phone extends Component {
     static template = 'connect_twilio.phone'
     static props = {
@@ -26,6 +54,10 @@ export class Phone extends Component {
         this.bus = this.props.bus
         this.token = this.props.token_data.token
         this.edge = this.props.token_data.edge
+        // Whether this user's calls are recorded by configuration. Used to
+        // show the recording state as soon as a call is answered instead of
+        // waiting for Twilio to list it (see applyExpectedRecordingState).
+        this.recordCalls = !!this.props.token_data.record_calls
         this.callStatus = {
             NoAnswer: 'noanswer',
             Busy: 'busy',
@@ -427,25 +459,95 @@ export class Phone extends Component {
         })
     }
 
-    async syncRecordingState() {
-        const channelSid = this.getRecordingChannelSid()
-        if (!channelSid) {
-            this.state.recordingState = 'off'
-            this.state.recordingError = 'Call SID unavailable'
+    // Both inputs this needs arrive after "accept", not with it: the Twilio SDK
+    // fills in the CallSid asynchronously, and the connect.channel row is
+    // created by the Twilio webhook, which races the event. A single attempt
+    // therefore samples a state that is legitimately not ready yet, and because
+    // nothing re-syncs afterwards the result sticks for the whole call -- with
+    // no CallSid isRecordingButtonDisabled() is true, so the button sits greyed
+    // out through a call that the Record Calls option is recording. Retry until
+    // the answer is real, and give up only once the call is over.
+    // Show what the configuration says straight away, so the button is right
+    // from the first frame of the call rather than after a round trip. Twilio
+    // cannot answer this early: with <Dial record="record-from-answer"> the
+    // recording does not exist until the far end picks up, so the API would
+    // report "off" for the whole ring. syncRecordingState() then confirms it,
+    // or corrects it if recording never actually started.
+    applyExpectedRecordingState() {
+        this.state.recordingState = this.recordCalls ? 'on' : 'off'
+        this.state.recordingBusy = false
+        this.state.recordingError = ''
+        this._broadcastRecordingState()
+    }
+
+    // The "accept" event fires when THIS leg reaches Twilio, not when the far
+    // end picks up (a call that rings out unanswered still reports accepted).
+    // With <Dial record="record-from-answer"> the recording only starts once
+    // the callee answers, so the wait is however long the phone rings -- no
+    // short fixed window can cover it. Poll at a low rate for the first
+    // minute, and only overwrite the configured state once Twilio has a real
+    // answer, so the button never flickers back to idle during the ring.
+    async syncRecordingState({attempts = 40, delay = 1500} = {}) {
+        for (let attempt = 0; attempt < attempts; attempt++) {
+            if (attempt) {
+                await new Promise((resolve) => setTimeout(resolve, delay))
+            }
+            // The call may have ended while we were waiting; endCall() owns the
+            // reset in that case, so leave its state alone.
+            if (this.state.phone_status !== this.status.accepted) {
+                return
+            }
+            if (!this.getRecordingChannelSid()) {
+                continue
+            }
+            try {
+                const result = await this.orm.call(
+                    'connect.channel',
+                    'get_softphone_recording_state',
+                    [this._recordingPayload()]
+                )
+                // "off" with no reference is not an answer yet, it is Twilio
+                // saying the recording has not appeared -- which is the normal
+                // case for the whole ring. Applying it would undo the
+                // configured state we showed at accept, so keep looking
+                // instead; the tail below corrects it if it never shows up.
+                const serverState = (result && result.state) || 'off'
+                const settled = serverState !== 'off' || (result && result.recording_ref)
+                if (!settled) {
+                    continue
+                }
+                this._applyRecordingResult(result)
+                this._broadcastRecordingState()
+                return
+            } catch (error) {
+                // "Active call was not found" just means the webhook has not
+                // landed yet, so keep trying and only surface the last failure.
+                if (attempt < attempts - 1) {
+                    continue
+                }
+                console.warn('Recording state sync failed:', error)
+                this.state.recordingState = 'error'
+                this.state.recordingError = error.message || String(error)
+                this._broadcastRecordingState()
+                return
+            }
+        }
+        if (this.state.phone_status !== this.status.accepted) {
             return
         }
-        try {
-            const result = await this.orm.call(
-                'connect.channel',
-                'get_softphone_recording_state',
-                [this._recordingPayload()]
-            )
-            this._applyRecordingResult(result)
+        // Out of attempts without Twilio ever reporting a recording.
+        if (!this.getRecordingChannelSid()) {
+            this.state.recordingState = 'off'
+            this.state.recordingError = 'Call SID unavailable'
             this._broadcastRecordingState()
-        } catch (error) {
-            console.warn('Recording state sync failed:', error)
-            this.state.recordingState = 'error'
-            this.state.recordingError = error.message || String(error)
+            return
+        }
+        // We had a CallSid and Twilio consistently said nothing is recording,
+        // so if we optimistically showed "on" from the configuration, that
+        // guess was wrong (recording never started) -- correct it now.
+        if (this.state.recordingState === 'on' && !this.state.recordingRef) {
+            this.state.recordingState = 'off'
+            this._broadcastRecordingState()
         }
     }
 
@@ -477,7 +579,7 @@ export class Phone extends Component {
         if (this.state.recordingBusy) {
             return 'fa fa-spinner fa-spin'
         }
-        return this.isRecordingOn() ? 'fa fa-stop-circle' : 'fa fa-circle'
+        return this.isRecordingOn() ? 'fa fa-stop-circle' : 'fa fa-dot-circle-o'
     }
 
     async _onClickRecordingToggle() {
@@ -506,37 +608,80 @@ export class Phone extends Component {
     }
 
     async updateToken() {
-        const {token} = await this.orm.call('connect.user', 'get_client_token')
-        if (token) this.userAgent.updateToken(token)
+        const result = await this.orm.call('connect.user', 'get_client_token')
+        const {token, error} = result || {}
+        if (error) {
+            cerror('get_client_token returned an error:', error)
+            return
+        }
+        if (token) {
+            clog('Fetched a fresh access token — updating device.')
+            this.userAgent.updateToken(token)
+        } else {
+            cerror('get_client_token returned no token — the phone cannot connect. Likely the user is not Client Enabled or Twilio username/domain/TwiML app are missing.')
+        }
     }
 
     initUserAgent() {
         const self = this
         if (!self.state.isActive) {
+            cwarn('Web phone is not active (state.isActive is false) — device will not be initialized.')
             return
         }
 
+        // Log what we start with: a missing/empty token means the server
+        // (connect.user.get_client_token) refused — usually client not
+        // enabled, or username/domain/TwiML app missing in Connect settings.
+        clog('Initializing Twilio Device', {
+            tokenPresent: !!self.token,
+            tokenLength: self.token ? String(self.token).length : 0,
+            edge: self.edge,
+        })
+        if (!self.token) {
+            cerror('No Twilio access token — cannot connect. Check the user is Client Enabled and that Twilio username/domain/TwiML app are configured.')
+        }
+
+        // logLevel: 2 = "info" (loglevel scale: 0 trace, 1 debug, 2 info,
+        // 3 warn, 4 error, 5 silent). At info the Twilio SDK itself logs
+        // registration and connection lifecycle so "registered"/"connecting"
+        // messages are visible when diagnosing a phone that won't connect.
         self.userAgent = new Twilio.Device(self.token, {
             edge: self.edge,
-            logLevel: 4,
+            logLevel: 2,
             codecPreferences: ["opus", "pcmu"]
+        })
+
+        // Device lifecycle: these tell you exactly how far the connection got.
+        self.userAgent.on('registering', () => {
+            clog('Device registering… (edge:', self.userAgent.edge, ')')
+        })
+        self.userAgent.on('registered', () => {
+            clog('Device REGISTERED — web phone is connected to Twilio (identity:', self.userAgent.identity, ', edge:', self.userAgent.edge, ')')
+        })
+        self.userAgent.on('unregistered', () => {
+            cwarn('Device UNREGISTERED — web phone is no longer connected to Twilio. If it flaps, the same user identity is likely registered in another tab/device.')
         })
 
         this.setIncomingVolume()
         self.userAgent.on('tokenWillExpire', () => {
-            console.log('tokenWillExpire REFRESH')
+            clog('Access token is about to expire — refreshing token…')
             self.updateToken().then()
         })
 
         self.userAgent.on('error', (error) => {
+            // Always surface the full error with a decoded reason.
+            cerror('Device error:', {
+                name: error && error.name,
+                code: error && error.code,
+                message: error && error.message,
+                reason: explainTwilioError(error),
+            }, error)
             if (error.name === 'AccessTokenExpired') {
-                console.log('AccessTokenExpired')
+                clog('AccessTokenExpired — refreshing token…')
                 self.updateToken().then()
             } else if (error.name === 'AccessTokenInvalid') {
-                console.log('AccessTokenInvalid')
+                cerror('AccessTokenInvalid — the phone cannot connect. Verify Twilio API Key/Secret/Account SID in Connect settings.')
                 self.bus.trigger('busTraySetException', {exception: error.name})
-            } else {
-                console.log(error)
             }
         })
         let lastTime = (new Date()).getTime()
@@ -597,7 +742,12 @@ export class Phone extends Component {
                 self.createCallCounter(phoneNumber)
                 self.state.phone_status = self.status.accepted
                 await self.setCallStatus("Answered")
-                await self.syncRecordingState()
+                // Show the configured recording state immediately, then let the
+                // Twilio sync confirm or correct it in the background.
+                self.applyExpectedRecordingState()
+                // Not awaited: it polls for up to a minute and must not hold up
+                // the rest of the accept handler; it updates state reactively.
+                self.syncRecordingState()
             })
             session.on("disconnect", async function (data) {
                 // console.log('incoming -> ended: ', data)
@@ -643,8 +793,16 @@ export class Phone extends Component {
             }
         })
 
-        self.userAgent.register().catch(() => {
-            console.warn('Failed to registered device!')
+        clog('Calling device.register()…')
+        self.userAgent.register().then(() => {
+            clog('device.register() resolved (registration accepted).')
+        }).catch((error) => {
+            cerror('device.register() FAILED — web phone did not connect:', {
+                name: error && error.name,
+                code: error && error.code,
+                message: error && error.message,
+                reason: explainTwilioError(error),
+            }, error)
         })
     }
 
@@ -677,14 +835,53 @@ export class Phone extends Component {
             Called: phoneNumber,
         }
 
-        self.session = await self.userAgent.connect({params})
+        // A call needs microphone access (getUserMedia). If the device is not
+        // registered, or the mic can't be acquired, connect() throws here —
+        // this is the most common "call ends instantly" failure.
+        clog('Placing outgoing call', {
+            to: phoneNumber,
+            deviceState: self.userAgent && self.userAgent.state,
+        })
+        if (self.userAgent && self.userAgent.state !== 'registered') {
+            cwarn('Placing a call while device is not "registered" (state:', self.userAgent && self.userAgent.state, ') — the call may fail.')
+        }
+        try {
+            self.session = await self.userAgent.connect({params})
+        } catch (error) {
+            cerror('Failed to start outgoing call — connect() threw:', {
+                name: error && error.name,
+                code: error && error.code,
+                message: error && error.message,
+                reason: explainTwilioError(error),
+            }, error)
+            self.state.phone_status = self.status.ended
+            await self.setCallStatus('Failed')
+            await self.endCall()
+            self.session = null
+            return
+        }
+
+        // Surface call-level errors (e.g. media/ICE failures) during the call.
+        self.session.on("error", function (error) {
+            cerror('Call error:', {
+                name: error && error.name,
+                code: error && error.code,
+                message: error && error.message,
+                reason: explainTwilioError(error),
+            }, error)
+        })
 
         self.session.on("accept", async function () {
             // console.log('outgoing -> accepted: ', data)
             self.createCallCounter(phoneNumber)
             self.state.phone_status = self.status.accepted
             await self.setCallStatus("Answered")
-            await self.syncRecordingState()
+            // Show the configured recording state immediately, then let the
+            // Twilio sync confirm or correct it in the background.
+            self.applyExpectedRecordingState()
+            // Not awaited: it polls for up to a minute and must not hold up
+            // the rest of the accept handler; it updates state reactively.
+            self.syncRecordingState()
             const params = self.getJsonCallData()
             self.bc.postMessage({event: "tbcAnswerCall", params})
         })

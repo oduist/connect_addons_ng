@@ -1,0 +1,152 @@
+# -*- coding: utf-8 -*-
+import json
+from datetime import datetime
+
+from odoo.tests import tagged
+from odoo.tests.common import TransactionCase
+
+from odoo.addons.connect_s3.models import s3_utils
+
+
+@tagged("post_install", "-at_install")
+class TestS3Utils(TransactionCase):
+    # ---- build_s3_url ----
+    def test_build_s3_url_with_prefix(self):
+        url = s3_utils.build_s3_url("my-bucket", "eu-central-1", "recordings")
+        self.assertEqual(url, "https://my-bucket.s3.eu-central-1.amazonaws.com/recordings")
+
+    def test_build_s3_url_strips_slashes(self):
+        url = s3_utils.build_s3_url("my-bucket", "eu-central-1", "/recordings/")
+        self.assertEqual(url, "https://my-bucket.s3.eu-central-1.amazonaws.com/recordings")
+
+    def test_build_s3_url_no_prefix(self):
+        url = s3_utils.build_s3_url("my-bucket", "us-east-1", "")
+        self.assertEqual(url, "https://my-bucket.s3.us-east-1.amazonaws.com")
+
+    # ---- is_s3_media_url ----
+    def test_is_s3_media_url_true_virtual_hosted(self):
+        url = "https://my-bucket.s3.eu-central-1.amazonaws.com/recordings/AC1/RE1"
+        self.assertTrue(s3_utils.is_s3_media_url(url, "my-bucket"))
+
+    def test_is_s3_media_url_false_for_twilio(self):
+        url = "https://api.twilio.com/2010-04-01/Accounts/AC1/Recordings/RE1"
+        self.assertFalse(s3_utils.is_s3_media_url(url, "my-bucket"))
+
+    def test_is_s3_media_url_false_when_empty(self):
+        self.assertFalse(s3_utils.is_s3_media_url("", "my-bucket"))
+
+    def test_is_s3_media_url_false_without_bucket(self):
+        url = "https://my-bucket.s3.eu-central-1.amazonaws.com/recordings/RE1"
+        self.assertFalse(s3_utils.is_s3_media_url(url, ""))
+
+    def test_is_s3_media_url_true_path_style(self):
+        url = "https://s3.eu-central-1.amazonaws.com/my-bucket/recordings/RE1.mp3"
+        self.assertTrue(s3_utils.is_s3_media_url(url, "my-bucket"))
+
+    def test_is_s3_media_url_false_for_prefix_sharing_bucket(self):
+        # "my-bucket2" is a different bucket that merely starts with our name.
+        url = "https://my-bucket2.s3.eu-central-1.amazonaws.com/recordings/RE1.mp3"
+        self.assertFalse(s3_utils.is_s3_media_url(url, "my-bucket"))
+
+    def test_is_s3_media_url_false_when_name_only_in_key(self):
+        # The bucket name appears in the object key, not as the bucket.
+        url = "https://other-bucket.s3.eu-central-1.amazonaws.com/recordings/my-bucket/RE1.mp3"
+        self.assertFalse(s3_utils.is_s3_media_url(url, "my-bucket"))
+
+    def test_is_s3_media_url_false_for_bucket_root_without_key(self):
+        # Our bucket, but no object — not a media URL.
+        url = "https://s3.eu-central-1.amazonaws.com/my-bucket"
+        self.assertFalse(s3_utils.is_s3_media_url(url, "my-bucket"))
+
+    # ---- parse_s3_key ----
+    def test_parse_s3_key_virtual_hosted(self):
+        url = "https://my-bucket.s3.eu-central-1.amazonaws.com/recordings/AC1/RE1.mp3"
+        self.assertEqual(s3_utils.parse_s3_key(url, "my-bucket"), "recordings/AC1/RE1.mp3")
+
+    def test_parse_s3_key_path_style(self):
+        url = "https://s3.eu-central-1.amazonaws.com/my-bucket/recordings/RE1.mp3"
+        self.assertEqual(s3_utils.parse_s3_key(url, "my-bucket"), "recordings/RE1.mp3")
+
+    # ---- normalize_bucket_name ----
+    def test_normalize_bucket_name_adds_prefix(self):
+        self.assertEqual(
+            s3_utils.normalize_bucket_name("recordings-acme"),
+            "oduist-connect-recordings-acme",
+        )
+
+    def test_normalize_bucket_name_keeps_existing_prefix(self):
+        self.assertEqual(
+            s3_utils.normalize_bucket_name("oduist-connect-test"),
+            "oduist-connect-test",
+        )
+
+    def test_normalize_bucket_name_is_idempotent(self):
+        once = s3_utils.normalize_bucket_name("test")
+        self.assertEqual(s3_utils.normalize_bucket_name(once), once)
+
+    def test_normalize_bucket_name_trims_whitespace(self):
+        self.assertEqual(s3_utils.normalize_bucket_name("  test  "), "oduist-connect-test")
+
+    def test_normalize_bucket_name_empty_stays_empty(self):
+        self.assertEqual(s3_utils.normalize_bucket_name(""), "")
+        self.assertEqual(s3_utils.normalize_bucket_name(None), "")
+        self.assertEqual(s3_utils.normalize_bucket_name("   "), "")
+
+    def test_normalize_bucket_name_custom_prefix(self):
+        self.assertEqual(
+            s3_utils.normalize_bucket_name("acme", prefix="my-prefix-"),
+            "my-prefix-acme",
+        )
+
+    # ---- build_iam_policy ----
+    def test_build_iam_policy_is_valid_json(self):
+        doc = json.loads(s3_utils.build_iam_policy())
+        self.assertEqual(doc["Version"], "2012-10-17")
+        sids = [s["Sid"] for s in doc["Statement"]]
+        self.assertEqual(sids, ["CreateAndConfigureBucket", "ReadWriteObjects"])
+
+    def test_build_iam_policy_default_prefix_arns(self):
+        doc = json.loads(s3_utils.build_iam_policy())
+        create = next(s for s in doc["Statement"] if s["Sid"] == "CreateAndConfigureBucket")
+        self.assertIn("s3:CreateBucket", create["Action"])
+        self.assertEqual(create["Resource"], "arn:aws:s3:::oduist-connect-*")
+
+    def test_build_iam_policy_object_arns_use_prefix(self):
+        doc = json.loads(s3_utils.build_iam_policy(prefix="my-prefix-"))
+        rw = next(s for s in doc["Statement"] if s["Sid"] == "ReadWriteObjects")
+        self.assertEqual(
+            rw["Resource"],
+            ["arn:aws:s3:::my-prefix-*", "arn:aws:s3:::my-prefix-*/*"],
+        )
+
+    # ---- build_lifecycle_config ----
+    def test_build_lifecycle_config(self):
+        cfg = s3_utils.build_lifecycle_config("recordings", 30)
+        rule = cfg["Rules"][0]
+        self.assertEqual(rule["Status"], "Enabled")
+        self.assertEqual(rule["Expiration"], {"Days": 30})
+        self.assertEqual(rule["Filter"], {"Prefix": "recordings/"})
+        self.assertEqual(rule["ID"], "connect-recordings-retention")
+
+    def test_build_lifecycle_config_without_prefix(self):
+        cfg = s3_utils.build_lifecycle_config("", 7)
+        self.assertEqual(cfg["Rules"][0]["Filter"], {"Prefix": ""})
+
+    # ---- is_recording_expired ----
+    def test_recording_not_expired_when_retention_zero(self):
+        self.assertFalse(
+            s3_utils.is_recording_expired(datetime(2020, 1, 1), 0, datetime(2030, 1, 1))
+        )
+
+    def test_recording_not_expired_when_no_start(self):
+        self.assertFalse(s3_utils.is_recording_expired(None, 30, datetime(2030, 1, 1)))
+
+    def test_recording_expired_after_window(self):
+        self.assertTrue(
+            s3_utils.is_recording_expired(datetime(2026, 1, 1), 30, datetime(2026, 3, 1))
+        )
+
+    def test_recording_not_expired_within_window(self):
+        self.assertFalse(
+            s3_utils.is_recording_expired(datetime(2026, 1, 1), 30, datetime(2026, 1, 10))
+        )

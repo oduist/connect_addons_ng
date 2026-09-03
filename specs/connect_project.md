@@ -214,16 +214,19 @@ both models.
 - **Form extension** (`project.view_task_form2`): smart button in `button_box`
   showing `connect_calls_count` (fa-phone icon, `widget="statinfo"`), opening
   `connect_calls_task_action`; inserts `partner_phone`/`partner_mobile` read-only
-  fields after `partner_id`; adds a "Recorded Calls" notebook page listing
+  fields with `widget="phone"` after `partner_id`; adds a "Recorded Calls"
+  notebook page listing
   `recorded_calls` (`start_time`, `caller_number`, `called_number`,
-  `recording_widget` rendered with `widget="html"`)
+  `recording_widget` rendered with `widget="html"`); caller/called numbers in
+  the embedded list are plain fields
 
 ### project_views.xml
 - **Action** `connect_calls_project_action`: window action listing calls
   (`domain="[('project', '=', active_id)]"`, `view_mode="list,form"`)
 - **Form extension** (`project.edit_project`): same pattern as `task_views.xml` —
   smart button (`connect_calls_project_action`), `partner_phone`/`partner_mobile`
-  fields, and a "Recorded Calls" notebook page listing `recorded_calls`
+  fields with `widget="phone"`, and a "Recorded Calls" notebook page listing
+  `recorded_calls` with caller/called numbers rendered as plain fields
 
 ---
 

@@ -145,7 +145,7 @@ unlink `sale.order` directly — read access is the full requirement.
 - **Form extension** (`sale.view_order_form`): smart button in `button_box` showing
   `connect_calls_count` (fa-phone icon, `widget="statinfo"`), opening
   `connect_calls_sale_action`; also inserts `partner_phone`/`partner_mobile`
-  read-only fields after `partner_id`
+  read-only fields with `widget="phone"` after `partner_id`
 - **Search extensions** (`sale.sale_order_view_search_inherit_quotation` and
   `sale.sale_order_view_search_inherit_sale`): add `partner_phone`/`partner_mobile`
   as searchable fields after `partner_id`, on both the quotations and the sales

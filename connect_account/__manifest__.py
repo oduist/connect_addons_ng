@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Account',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Phone',
     'summary': 'Accounting integration for Oduist Connect',
     'author': 'Oduist',

@@ -49,7 +49,7 @@
                         </group>
                         <group string="External Phone">
                             <field name="infobip_phone_enabled" string="Enabled"/>
-                            <field name="infobip_phone_number" string="Phone Number"
+                            <field name="infobip_phone_number" string="Phone Number" widget="phone"
                                    invisible="infobip_phone_enabled == False"
                                    required="infobip_phone_enabled == True"/>
                             <field name="infobip_phone_priority" string="Priority"

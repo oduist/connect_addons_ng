@@ -67,7 +67,7 @@
                     <t t-else="">
                         <img t-if="state.callerId.partnerId" alt="Avatar" class="o_partner_avatar" t-att-src="state.callerId.partnerIconUrl"/>
                         <span t-if="state.callerId.partnerId" class="o_partner_name"><t t-out="state.callerId.partnerName"/></span>
-                        <span class="o_partner_name"><t t-out="state.callerId.phoneNumber"/></span>
+                        <span class="o_partner_name"><i t-if="state.isWhatsapp" class="fa fa-whatsapp custom-whatsapp"/><t t-out="state.callerId.phoneNumber"/></span>
                         <span class="o_partner_name"><t t-out="state.callDurationTime"/></span>
                         <div class="text-center" title="Customer">
                             <button class="btn p-3 border rounded-circle" t-on-click="_createPartner">
@@ -127,8 +127,20 @@
                     <button t-if="state.phone_status === status.accepted" aria-label="Mute Microphone" t-attf-class="flex-item" t-attf-title="{{ state.isMicrophoneMute ? 'Unmute Microphone' : 'Mute Microphone' }}" t-on-click="_onClickMicrophoneMute">
                         <i t-attf-class="fa {{ state.isMicrophoneMute ? 'icon-mic_off' : 'icon-mic' }}"/>
                     </button>
-                    <button t-if="state.phone_status === status.accepted" aria-label="Recording" t-attf-class="flex-item {{ isRecordingOn() ? 'active' : '' }}" t-att-title="getRecordingTitle()" t-att-disabled="isRecordingButtonDisabled()" t-on-click="_onClickRecordingToggle">
-                        <i t-att-class="getRecordingIconClass()"/>
+                    <button t-if="state.phone_status === status.accepted"
+                            t-attf-class="flex-item o_phone_recording_btn {{ isRecordingOn() ? 'active' : '' }}"
+                            t-att-aria-label="getRecordingTitle()"
+                            t-att-aria-pressed="isRecordingOn() ? 'true' : 'false'"
+                            t-att-title="getRecordingTitle()"
+                            t-att-disabled="isRecordingButtonDisabled()"
+                            t-on-click="_onClickRecordingToggle">
+                        <span t-if="state.recordingState === 'off'"
+                              class="o_phone_recording_idle"
+                              aria-hidden="true">
+                            <span class="o_phone_recording_idle_dot"/>
+                            <span class="o_phone_recording_idle_label">REC</span>
+                        </span>
+                        <i t-else="" t-att-class="getRecordingIconClass()"/>
                     </button>
                 </div>
 

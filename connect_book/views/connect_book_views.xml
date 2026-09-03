@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_connect_book" model="ir.actions.client">
+        <field name="name">User Guide</field>
+        <field name="tag">connect_book.book</field>
+    </record>
+
+    <record id="action_connect_book_admin" model="ir.actions.client">
+        <field name="name">Admin Guide</field>
+        <field name="tag">connect_book.admin</field>
+    </record>
+
+    <!-- The Documentation section is owned by this module: core Connect has no
+         such menu, and nothing else needs one.
+
+         Sequence 200 keeps it last in the Connect menu, behind everything a
+         provider or an add-on puts there (the highest today is Memory at 160)
+         and behind Configuration at 100. The manual belongs after the work, not
+         in the middle of it, and the gap leaves room for menus added later. -->
+    <menuitem id="menu_connect_documentation"
+              name="Documentation"
+              parent="connect.menu_connect_root"
+              groups="connect.group_user"
+              sequence="200"/>
+
+    <menuitem id="menu_connect_book_doc"
+              name="User Guide"
+              parent="menu_connect_documentation"
+              action="action_connect_book"
+              groups="connect.group_user"
+              sequence="5"/>
+
+    <menuitem id="menu_connect_book_admin"
+              name="Admin Guide"
+              parent="menu_connect_documentation"
+              action="action_connect_book_admin"
+              groups="connect.group_admin"
+              sequence="10"/>
+</odoo>
