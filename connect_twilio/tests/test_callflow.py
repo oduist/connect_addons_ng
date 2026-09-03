@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """connect.twilio.callflow tests (moved from the shared core callflow
 suite after the provider model separation, ADR-031)."""
-from odoo.tests import tagged
+from lxml import etree
+
 from odoo import Command
+from odoo.tests import tagged
 
 from .common import TwilioTestCommon
 
@@ -32,6 +34,42 @@ class TestTwilioCallflow(TwilioTestCommon):
         keys = [k for k, _ in self.callflow._fields['gather_input_type'].selection]
         self.assertIn('speech', keys)
         self.assertIn('dtmf speech', keys)
+
+    def test_prompt_is_rendered_without_gather(self):
+        """Prompt remains a standalone Say when input collection is disabled."""
+        self.callflow.write({
+            'gather_input': False,
+            'prompt_message': 'Please wait while we connect your call.',
+        })
+
+        response = str(self.callflow.render(request={'Caller': 'client:test'}))
+
+        self.assertIn('Please wait while we connect your call.', response)
+        self.assertNotIn('<Gather', response)
+
+    def test_prompt_field_is_visible_without_gather(self):
+        """Callflow form must expose prompts that are played without Gather."""
+        view = self.env.ref('connect_twilio.view_twilio_callflow_form')
+        arch = etree.fromstring(view.arch_db.encode())
+        prompt = arch.xpath("//field[@name='prompt_message']")[0]
+
+        self.assertFalse(
+            prompt.xpath("ancestor::group[@invisible='not gather_input']")
+        )
+
+    def test_invalid_message_is_aligned_with_gather_settings(self):
+        """Gather settings and their validation message share one row."""
+        view = self.env.ref('connect_twilio.view_twilio_callflow_form')
+        arch = etree.fromstring(view.arch_db.encode())
+        gather_settings = arch.xpath("//group[@string='Gather Settings']")[0]
+        invalid_message = arch.xpath(
+            "//group[@string='Invalid Input Message']"
+        )[0]
+
+        self.assertIs(gather_settings.getparent(), invalid_message.getparent())
+        self.assertEqual(
+            gather_settings.getparent().get('invisible'), 'not gather_input'
+        )
 
     def test_callflow_with_choices(self):
         exten = self.env['connect.twilio.exten'].create({'number': '400'})

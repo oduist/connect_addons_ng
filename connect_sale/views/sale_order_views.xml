@@ -15,13 +15,14 @@
         <field name="arch" type="xml">
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="%(connect_calls_sale_action)d" type="action"
-                        class="oe_stat_button" icon="fa-phone">
+                        class="oe_stat_button" icon="fa-phone"
+                        groups="connect.group_user">
                     <field name="connect_calls_count" string="Calls" widget="statinfo"/>
                 </button>
             </xpath>
             <field name="partner_id" position="after">
-                <field name="partner_phone" readonly="1"/>
-                <field name="partner_mobile" readonly="1"/>
+                <field name="partner_phone" widget="phone" readonly="1"/>
+                <field name="partner_mobile" widget="phone" readonly="1"/>
             </field>
         </field>
     </record>

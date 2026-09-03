@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Telnyx',
-    'version': '19.0.1.4.4',
+    'version': '15.0.1.4.4',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Telnyx integration for Oduist Connect',
@@ -34,15 +34,20 @@
         'data/ir_cron.xml',
     ],
     'assets': {
+        # Odoo 15: owl templates must go to web.assets_qweb; the mail
+        # message-action patches have no 15 counterpart (ADR-062).
         'web.assets_backend': [
             'connect_telnyx/static/src/icomoon/style.css',
-            'connect_telnyx/static/src/components/phone/*/*',
+            'connect_telnyx/static/src/components/phone/*/*.js',
+            'connect_telnyx/static/src/components/phone/*/*.scss',
             'connect_telnyx/static/src/js/main.js',
             'connect_telnyx/static/src/js/utils.js',
-            'connect_telnyx/static/src/widgets/phone_field/*',
-            'connect_telnyx/static/src/services/actions/*',
-            'connect_telnyx/static/src/services/mail/*',
-            'connect_telnyx/static/src/widgets/voice_field/*',
+            'connect_telnyx/static/src/widgets/phone_field/phone_field.js',
+            'connect_telnyx/static/src/services/actions/*.js',
+            'connect_telnyx/static/src/widgets/voice_field/voice_field.js',
+        ],
+        'web.assets_qweb': [
+            'connect_telnyx/static/src/components/phone/*/*.xml',
         ],
     },
     'post_init_hook': 'post_init_hook',

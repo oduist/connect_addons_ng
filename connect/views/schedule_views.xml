@@ -6,11 +6,11 @@
         <field name="name">connect.schedule.tree</field>
         <field name="model">connect.schedule</field>
         <field name="arch" type="xml">
-            <list>
+            <tree>
                 <field name="name"/>
                 <field name="calendar_id"/>
                 <field name="tz"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -41,22 +41,22 @@
                     <notebook>
                         <page string="Special Working Days" name="special_days">
                             <field name="special_day_ids">
-                                <list editable="bottom">
+                                <tree editable="bottom">
                                     <field name="name"/>
                                     <field name="date"/>
                                     <field name="work_from" widget="float_time"/>
                                     <field name="work_to" widget="float_time"/>
-                                </list>
+                                </tree>
                             </field>
                         </page>
                         <page string="Public Holidays" name="holidays">
                             <field name="holiday_ids">
-                                <list editable="bottom">
+                                <tree editable="bottom">
                                     <field name="name"/>
                                     <field name="date_from"/>
                                     <field name="date_to"/>
                                     <field name="prompt_message"/>
-                                </list>
+                                </tree>
                             </field>
                         </page>
                         <page string="Preview" name="preview">
@@ -71,7 +71,7 @@
     <record id="action_connect_schedule" model="ir.actions.act_window">
         <field name="name">Working Schedules</field>
         <field name="res_model">connect.schedule</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
     <!-- Special Working Day -->
@@ -79,13 +79,13 @@
         <field name="name">connect.schedule.special_day.tree</field>
         <field name="model">connect.schedule.special_day</field>
         <field name="arch" type="xml">
-            <list editable="bottom">
+            <tree editable="bottom">
                 <field name="name"/>
                 <field name="date"/>
                 <field name="work_from" widget="float_time"/>
                 <field name="work_to" widget="float_time"/>
                 <field name="schedule_ids" widget="many2many_tags"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -114,7 +114,7 @@
     <record id="action_connect_schedule_special_day" model="ir.actions.act_window">
         <field name="name">Special Working Days</field>
         <field name="res_model">connect.schedule.special_day</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
     <!-- Availability slots -->
@@ -135,14 +135,14 @@
         <field name="name">connect.schedule.slot.tree</field>
         <field name="model">connect.schedule.slot</field>
         <field name="arch" type="xml">
-            <list create="0" edit="0" delete="0">
+            <tree create="0" edit="0" delete="0">
                 <field name="schedule_id"/>
                 <field name="slot_type"/>
                 <field name="name"/>
                 <field name="start"/>
                 <field name="stop"/>
-                <field name="allday" column_invisible="1"/>
-            </list>
+                <field name="allday" invisible="1"/>
+            </tree>
         </field>
     </record>
 
@@ -177,7 +177,7 @@
     <record id="action_connect_schedule_slot" model="ir.actions.act_window">
         <field name="name">Availability</field>
         <field name="res_model">connect.schedule.slot</field>
-        <field name="view_mode">calendar,list</field>
+        <field name="view_mode">calendar,tree</field>
         <field name="context">{'search_default_filter_available': 1, 'search_default_filter_closed': 1}</field>
     </record>
 

@@ -4,9 +4,9 @@
 
 - **Name:** Oduist Connect
 - **Technical:** `connect`
-- **Version:** 19.0.4.2.2
+- **Version:** 19.0.4.3.0
 - **Depends:** `base`, `mail`, `contacts`, `sms`, `resource`
-- **Python deps:** `phonenumbers`, `jinja2`, `openai` (for transcription - not Twilio-specific), `PyJWT`
+- **Python deps:** `phonenumbers`, `jinja2`, `httpx` (HTTP client used by settings), `openai` (for transcription - not Twilio-specific), `PyJWT`
 - **Application:** True
 - **License:** LGPL-3
 
@@ -65,6 +65,7 @@ for easy access from other models.
 |--------|-------------|
 | `get_param()` | Singleton parameter access |
 | `set_param()` | Singleton parameter write |
+| `get_media_auth(media_url)` | Credentials for the media proxy to fetch provider audio; `None` in core, overridden per provider (ADR-060) |
 | `open_settings_form(view_xmlid="connect.connect_settings_form", name="General Settings")` | UI action opening the settings singleton through the given form view. Parametrized so each provider module's Settings menu opens the same record through its own standalone view (e.g. `connect_twilio.twilio_settings_form`). |
 | `originate_call(number, res_model=None, res_id=None, user=None, **kwargs)` | Click-to-call dispatcher. Resolves the provider via `_get_originate_provider()`; provider modules override and chain via `super()` — each handles the call when its key matches, otherwise falls through. The core base raises a `UserError` when no provider can handle the call. |
 | `_get_originate_provider(user=None)` | Resolve the provider key for the user: explicit `connect.user.originate_provider` → the only installed provider (single `selection_add` entry) → `UserError` (none installed, or several installed and no choice made). |
@@ -197,12 +198,28 @@ Order: `id desc`
 | Method | Description |
 |--------|-------------|
 | `_get_channel_numbers()` | Generic regex-based number parsing. Handles phone numbers, `whatsapp:` prefix stripping, and SIP/client URIs with or without a URI scheme via `connect.user.get_user_by_uri` (ADR-051). |
+| `process_channel_event(params)` | Create or update a channel from a normalized provider event, link its parent and resolve PBX users. On **update** it protects two values the originator knows better than the webhook does — see below. |
 | `_get_duration_human()` | Human-readable duration |
 | `get_softphone_recording_state(payload)` | Provider-dispatched RPC returning runtime recording support/state for the active softphone call. |
 | `start_softphone_recording(payload)` | Provider-dispatched RPC to start recording the active softphone call. |
 | `stop_softphone_recording(payload)` | Provider-dispatched RPC to stop recording the active softphone call. |
 | `_softphone_recording_channel(payload)` | Resolve a provider channel SID and verify the requester is a participant or Connect admin. |
 | `_check_softphone_recording_active()` | Reject runtime controls for completed/busy/failed/no-answer/canceled channels. |
+
+**What `process_channel_event()` refuses to overwrite.** Click-to-call creates
+the outgoing leg itself and knows two things the provider's status callback for
+that same leg cannot report, because the leg is an ordinary voice call to the
+agent's browser:
+
+| Value | Webhook reports | Kept because |
+|-------|-----------------|--------------|
+| `called` | the transport target — the agent's `client:`/`sip:` URI | the dialed destination would be replaced by the agent's own extension. The URI is preserved verbatim in `to`, so nothing is lost. Updates carrying a real number still overwrite. |
+| `call_type` | `phone` | the leg carries no `whatsapp:` identity **by design** — a `whatsapp:` `From` makes Twilio report `From=None` and kill the call before the `<WhatsApp>` verb runs — so the event describes the transport, not the call. An upgrade to `whatsapp` still applies; a downgrade back to `phone` does not. |
+
+`connect.call.call_type` is taken from the **first** leg and never revisited, so
+without the second guard every outgoing WhatsApp call was recorded as an
+ordinary phone call. Inbound WhatsApp was never affected: its first leg carries
+`whatsapp:` in `Caller`.
 
 ---
 
@@ -215,8 +232,8 @@ Order: `create_date DESC`
 | Field | Type | Notes |
 |-------|------|-------|
 | `name` | Char | Computed |
-| `from_number` | Char | Required |
-| `to_number` | Char | Required |
+| `from_number` | Char | Required; `phone` widget in the message form |
+| `to_number` | Char | Required; `phone` widget in the message form |
 | `body` | Text | |
 | `num_media` | Integer | |
 | `message_type` | Char | sms/WhatsApp/mms |
@@ -468,7 +485,7 @@ Order: `id desc`
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `connect_user` | Many2one | Computed |
+| `connect_user` | Many2one | Computed, `compute_sudo=True`. The compute searches `connect.user`, which only the Connect groups may read; without `compute_sudo` any internal user outside those groups hit an `AccessError` merely reading their own `res.users` record. Resolving the link is not privileged — the value is the reader's own PBX user — and `connect.user` itself stays unreadable to them |
 | `pin_code` | Char | Auto-generated on create |
 
 **Constraints:**
@@ -580,10 +597,12 @@ regeneration hooks.
 | `/connect/<uid>/` | GET | - | Health check endpoint |
 
 **Notes:**
-- `_serve_media()` is abstract. It needs authentication credentials from the integration
-  module to fetch the actual audio file from the provider. Core provides the routing
-  structure; integration modules override with provider-specific auth (e.g., Twilio
-  basic auth with account_sid/auth_token).
+- `_serve_media()` fetches the provider's audio and streams it to the browser. It takes
+  its credentials from `connect.settings.get_media_auth(media_url)`, which core answers
+  with `None` and provider modules override (e.g. `connect_twilio` returns
+  `(account_sid, auth_token)` for Twilio hosts only). A failed fetch answers `502` and
+  logs the upstream status: the audio element itself shows nothing but a 0-second
+  recording, so the log is the only place the cause can appear (ADR-060).
 
 ---
 
@@ -593,7 +612,7 @@ regeneration hooks.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `phone_number` | Char | Target number for transfer |
+| `phone_number` | Char | Target number for transfer; `phone` widget in the wizard |
 
 **Methods:**
 
@@ -627,7 +646,7 @@ All models get access rules for the three groups:
 | `connect.channel` | Read | Full | Create+Read |
 | `connect.message` | Read | Full | Create+Read |
 | `connect.recording` | Read | Full | Create+Read |
-| `connect.user` | Read | Full | - |
+| `connect.user` | Read | Full | Read |
 | `connect.debug` | - | Full | Create |
 | `connect.settings` | - | Full | - |
 | `connect.favorite` | Read+Write | Full | - |
@@ -690,14 +709,14 @@ All models get list (tree) and form views. Key view details:
 
 | View | Notes |
 |------|-------|
-| `call_views.xml` | List + form with recording widget, durable transcript/summary, partner button, chatter |
-| `channel_views.xml` | List + form (admin menu entry) |
-| `message_views.xml` | List + form with media widget, direction/status icons (menu entry lives in connect_twilio) |
-| `recording_views.xml` | List + form with audio player, transcript, summary, and optional Partner and Users list columns |
+| `call_views.xml` | Plain caller/called values in lists; form phone widgets, recording widget, durable transcript/summary, partner button, chatter |
+| `channel_views.xml` | Plain caller/called values in the list; form phone widgets for caller/called and computed numbers (admin menu entry) |
+| `message_views.xml` | Plain from/to values in the list; form phone widgets, media widget, direction/status icons (menu entry lives in connect_twilio) |
+| `recording_views.xml` | Plain caller/called values in the list; form phone widgets, audio player, transcript, summary, and optional Partner and Users list columns |
 | `user_views.xml` | List + form with voicemail, summary prompt, originate provider |
 | `debug_views.xml` | List (read-only) |
 | `settings.xml` | Core settings form (general, registration, transcription/OpenAI). Provider settings forms live in their own modules and open the same singleton via the parametrized `open_settings_form()`. |
-| `res_partner_views.xml` | Inherit partner form: add call/message count smart buttons |
+| `res_partner_views.xml` | Inherit partner form: add call/message count smart buttons, gated on `connect.group_user` |
 | `favorite_views.xml` | List + form |
 | `license.xml` | License form + menu |
 
@@ -708,6 +727,16 @@ configuration; each provider module plugs its own submenu (**Twilio**,
 **FreeSWITCH**, **Asterisk**) under `menu_connect_root` at sequence 50, so
 providers appear after Calls/Users in installation order and Configuration
 (seq 100) always stays last — see `specs/architecture.md`.
+
+`menu_connect_root` is gated on `connect.group_user,connect.group_admin`
+(`group_admin` implies `group_user`; both are listed to mirror
+`connect_addons`). Children stay ungated and inherit the gate. Odoo's
+`load_menus` already pruned the app for users who can read none of the child
+actions, but that is implicit filtering, not a gate — it left Connect pages
+reachable by URL, bookmark or a restored last action. The gate does not
+suppress the `AccessError` a user without the groups gets by navigating
+straight to a Connect URL: the ACL is what answers there, and granting
+`connect.group_user` is the fix for a user who is meant to have access.
 
 ```
 Connect (root, seq 10)
@@ -760,5 +789,5 @@ sharing.
 ```
 connect (core)
   depends: ['base', 'mail', 'contacts', 'sms', 'resource']
-  python:  ['phonenumbers', 'jinja2', 'openai', 'PyJWT']
+  python:  ['phonenumbers', 'jinja2', 'httpx', 'openai', 'PyJWT']
 ```

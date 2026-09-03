@@ -1,0 +1,4 @@
+# Per-module docs config, aggregated by root mkdocs.yml via mkdocs-monorepo-plugin.
+site_name: Vonage
+nav:
+  - Vonage Integration: admin/vonage-setup.md

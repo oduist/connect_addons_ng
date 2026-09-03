@@ -2,13 +2,11 @@
 import {registry} from "@web/core/registry"
 import {PhoneSysTray} from "@connect_telnyx/components/phone/tray/tray"
 import {Phone} from "@connect_telnyx/components/phone/phone/phone"
-import {user} from "@web/core/user"
+import {ConnectEventBus} from "@connect/utils/event_bus"
 
-const uid = user.userId
 const serviceRegistry = registry.category("services")
 const sysTrayRegistry = registry.category("systray")
 const mainComponents = registry.category("main_components")
-import {EventBus} from "@odoo/owl"
 
 export function isTelnyxStaleRequestError(error) {
     return Boolean(error && error.name === "StaleRequestError" &&
@@ -33,10 +31,11 @@ export const phoneService = {
     dependencies: ["orm"],
     async start(env, {orm}) {
         const pathname = document.location.pathname
-        if (pathname.includes("/odoo")) {
+        // Odoo 15 serves the backend under /web (the /odoo scheme is 17.2+).
+        if (pathname.startsWith("/web")) {
             const token_data = await orm.call('connect.user', 'get_telnyx_client_token')
             if (token_data.token) {
-                let bus = new EventBus()
+                let bus = new ConnectEventBus()
                 sysTrayRegistry.add('connectTelnyxPhoneSysTray', {Component: PhoneSysTray, props: {bus}})
                 mainComponents.add('connectTelnyxPhone', {Component: Phone, props: {bus, token_data}})
             }

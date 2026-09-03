@@ -19,16 +19,16 @@
                         </thead>
                         <tbody>
                             <t t-foreach="state.calls" t-as="call" t-key="call.id">
-                                <tr class="table-body d-flex" t-on-click="() => this._OpenActiveCallForm(call.id)">
-                                    <td t-attf-title="{{call.caller ? call.caller : ''}}"><t t-out="call.caller"/></td>
-                                    <td t-attf-title="{{call.called ? call.called : ''}}"><t t-out="call.called"/></td>
-                                    <td t-attf-title="{{call.caller_user ? call.caller_user[1] : ''}}"><t t-if="call.caller_user" t-out="call.caller_user[1]"/></td>
-                                    <td t-attf-title="{{call.called_users ? call.called_users[1] : ''}}"><t t-if="call.called_users" t-out="call.called_users[1]"/></td>
-                                    <td class="partner-td" t-attf-title="{{call.partner ? call.partner[1] : ''}}" t-on-click="(ev) => this._openPartnerForm(ev, call.partner)">
-                                        <t t-if="call.partner" t-out="call.partner[1]"/>
+                                <tr class="table-body d-flex" t-on-click="_OpenActiveCallForm(call.id)">
+                                    <td t-attf-title="{{call.caller ? call.caller : ''}}"><t t-esc="call.caller"/></td>
+                                    <td t-attf-title="{{call.called ? call.called : ''}}"><t t-esc="call.called"/></td>
+                                    <td t-attf-title="{{call.caller_user ? call.caller_user[1] : ''}}"><t t-if="call.caller_user" t-esc="call.caller_user[1]"/></td>
+                                    <td t-attf-title="{{call.called_users ? call.called_users[1] : ''}}"><t t-if="call.called_users" t-esc="call.called_users[1]"/></td>
+                                    <td class="partner-td" t-attf-title="{{call.partner ? call.partner[1] : ''}}" t-on-click="_openPartnerForm(call.partner)">
+                                        <t t-if="call.partner" t-esc="call.partner[1]"/>
                                     </td>
                                     <td t-attf-title="{{call.direction ? call.direction : ''}}">
-                                        <t t-out="call.direction"/>
+                                        <t t-esc="call.direction"/>
                                     </td>
                                 </tr>
                             </t>

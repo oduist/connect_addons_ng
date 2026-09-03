@@ -7,11 +7,11 @@
             <form string="Send RCS Message">
                 <group>
                     <field name="rcs_agent_id"/>
-                    <field name="phone"/>
+                    <field name="phone" widget="phone"/>
                     <field name="body"/>
                     <field name="sms_fallback"/>
-                    <field name="sms_fallback_from" invisible="not sms_fallback"
-                           required="sms_fallback"/>
+                    <field name="sms_fallback_from"
+                   attrs="{'invisible': [('sms_fallback', '=', False)], 'required': [('sms_fallback', '!=', False)]}"/>
                     <field name="res_model" invisible="1"/>
                     <field name="res_id" invisible="1"/>
                 </group>

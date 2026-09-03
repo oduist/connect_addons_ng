@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import re
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError
@@ -85,6 +85,27 @@ class Settings(models.Model):
         string="Fetch Call Prices",
         help="Enable fetching call prices from Twilio API after call completion."
     )
+
+    @api.model
+    def get_media_auth(self, media_url):
+        """Twilio API credentials, and only for Twilio's own hosts.
+
+        Recording media needs HTTP Basic auth whenever the account requires
+        it. The host check is not cosmetic: an account with External Storage
+        hands out a bucket URL of its own, and the Twilio auth token must not
+        be sent there (that media needs the bucket's credentials, which
+        Connect does not hold -- the player will report a 0-second recording
+        and the proxy logs the upstream status).
+        """
+        host = (urlparse(media_url or '').hostname or '').lower()
+        if host != 'twilio.com' and not host.endswith('.twilio.com'):
+            return super().get_media_auth(media_url)
+        settings = self.sudo()
+        account_sid = settings.get_param('account_sid')
+        auth_token = settings.get_param('auth_token')
+        if not (account_sid and auth_token):
+            return super().get_media_auth(media_url)
+        return (account_sid, auth_token)
 
     @api.model
     def get_client(self):
@@ -190,7 +211,13 @@ class Settings(models.Model):
                 )
             )
         if "client:" in to:
-            to += "&From={}".format((number or '').replace("+", ""))
+            # The widget labels the call from this parameter -- and reads the
+            # whatsapp: prefix as "show the WhatsApp badge". The plus is
+            # dropped because it decodes as a space in a query string.
+            display_number = (number or '').replace("+", "")
+            if whatsapp_call:
+                display_number = "whatsapp:{}".format(display_number)
+            to += "&From={}".format(display_number)
         exten = self.env["connect.twilio.exten"].search(
             [("number", "=", number)], limit=1
         )
@@ -203,8 +230,14 @@ class Settings(models.Model):
             api_url, "twilio/webhook/callstatus#e={}".format(edge)
         )
         if exten:
-            callerId = user.connect_user.twilio_exten.number
-            twiml = exten.render()
+            # An extension-less caller must still present an identity: an
+            # empty caller ID makes Twilio substitute an arbitrary number.
+            callerId = user.connect_user.twilio_caller_id()
+            # Rendering the destination dialplan is system work: it reads the
+            # callee's connect.user, which the record rules keep private to
+            # its owner. Without sudo, calling a colleague's extension fails
+            # with an AccessError on connect.user.
+            twiml = exten.sudo().render()
         else:
             if whatsapp_call:
                 pbx_user = user.connect_user
@@ -238,11 +271,27 @@ class Settings(models.Model):
         record_status_url = urljoin(
             api_url, "twilio/webhook/recordingstatus#e={}".format(edge)
         )
+        # The leg created here is an ordinary voice call to the agent's
+        # browser client; only the TwiML it executes talks WhatsApp. A
+        # "whatsapp:" caller ID is meaningless as the From of that voice leg
+        # -- Twilio accepted the create but reported From=None and killed the
+        # call as busy in the same second, so the <WhatsApp> verb never ran
+        # and a WhatsApp click-to-call silently did nothing. Keep the
+        # whatsapp: identity inside <Dial callerId="...">, and present a real
+        # voice caller ID on the outer leg.
+        client_leg_caller_id = callerId
+        if whatsapp_call and str(callerId or '').startswith('whatsapp:'):
+            client_leg_caller_id = (
+                user.connect_user.twilio_outgoing_callerid.number
+                or self.env['connect.twilio.outgoing_callerid'].search(
+                    [('is_default', '=', True)], limit=1).number
+                or user.connect_user.twilio_caller_id()
+            )
         debug(self, 'Originate destination TwiML: {}'.format(twiml))
         channel = client.calls.create(
             twiml=twiml,
             to=to,
-            from_=callerId,
+            from_=client_leg_caller_id,
             status_callback=status_url,
             record=record,
             recording_channels="dual",
@@ -254,6 +303,11 @@ class Settings(models.Model):
             {
                 "sid": channel.sid,
                 "technical_direction": "outbound-api",
+                # Only this leg knows the call is WhatsApp: its From is a
+                # plain voice caller ID and its To is the agent's client:
+                # URI, so the status webhook can only report a phone leg.
+                # The ledger takes the call's type from here.
+                "call_type": 'whatsapp' if whatsapp_call else 'phone',
                 "caller_user": user.id,
                 "caller_pbx_user": user.connect_user.id,
                 "partner": partner_id,

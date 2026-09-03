@@ -6,12 +6,23 @@ import {Calls} from "@connect/components/calls/calls"
 import {Favorites} from "@connect_telnyx/components/phone/favorites/favorites"
 import {Contacts} from "@connect_telnyx/components/phone/contacts/contacts"
 import {dialTone, setFocus} from "@connect_telnyx/js/utils"
-import {Component, useState, useRef, onWillStart, onMounted} from "@odoo/owl"
-import {useDebounced} from "@web/core/utils/timing"
-import {user} from "@web/core/user"
-import {_t} from "@web/core/l10n/translation"
+import session from "web.session"
+import core from "web.core"
 
-const uid = user.userId
+const {Component} = owl
+const {useState, useRef, onWillStart, onMounted} = owl.hooks
+const _t = core._t
+
+const uid = session.uid
+
+// Odoo 15 has no @web/core/utils/timing useDebounced helper.
+function debounce(fn, delay) {
+    let timeout
+    return function (...args) {
+        clearTimeout(timeout)
+        timeout = setTimeout(() => fn.apply(this, args), delay)
+    }
+}
 
 // Thin adapter exposing a Twilio-Device-like session API on top of a
 // TelnyxRTC Call, so the phone logic ported from connect_twilio stays
@@ -78,13 +89,6 @@ class TelnyxSession {
 }
 
 export class Phone extends Component {
-    static template = 'connect_telnyx.phone'
-    static props = {
-        bus: Object,
-        token_data: Object
-    }
-
-    static components = {Calls, Contacts, Favorites}
 
     constructor() {
         super(...arguments)
@@ -185,7 +189,6 @@ export class Phone extends Component {
     }
 
     setup() {
-        super.setup()
         this.orm = useService('orm')
         this.action = useService('action')
         this.notification = useService("notification")
@@ -206,7 +209,7 @@ export class Phone extends Component {
                 title: 'Connect', sticky: true, type: 'danger'})
         }
 
-        this.debounceEnterPhoneNumber = useDebounced((ev) => {
+        this.debounceEnterPhoneNumber = debounce((ev) => {
             this._onEnterPhoneNumber(ev)
         }, 400)
 
@@ -723,7 +726,7 @@ export class Phone extends Component {
         }
         const description = error && (error.description || error.message)
         return description
-            ? _t("Phone error: %s", description)
+            ? _.str.sprintf(_t("Phone error: %s"), description)
             : _t("The phone call could not be started.")
     }
 
@@ -1194,3 +1197,9 @@ export class Phone extends Component {
         }
     }
 }
+Phone.template = 'connect_telnyx.phone'
+Phone.props = {
+    bus: Object,
+    token_data: Object
+}
+Phone.components = {Calls, Contacts, Favorites}

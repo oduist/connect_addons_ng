@@ -42,9 +42,9 @@
             </t>
             <div class="o_phone_call_details flex-column">
                 <img alt="Avatar" class="o_partner_avatar" t-att-src="avatar"/>
-                <span t-if="caller_id" class="o_partner_name"><t t-out="caller_id"/></span>
-                <span class="o_partner_name"><t t-out="caller"/></span>
-                <span t-if="state.call.duration_human" class="o_partner_name"><t t-out="state.call.duration_human"/></span>
+                <span t-if="caller_id" class="o_partner_name"><t t-esc="caller_id"/></span>
+                <span class="o_partner_name"><t t-esc="caller"/></span>
+                <span t-if="state.call.duration_human" class="o_partner_name"><t t-esc="state.call.duration_human"/></span>
                 <div class="text-center action-container" title="Customer" t-if="!(state.call.called_users.length > 0 and state.call.caller_user)">
                     <button t-if="state.call.partner" class="btn  p-3 border rounded-circle" t-on-click="_openPartner">
                         <i aria-label="Customer" class="fa fa-fw fa-lg fa-user"/>
@@ -99,18 +99,18 @@
 
                         <tr class="d-flex">
                             <td class="o_partner_icon">
-                                <div class="partner-icon" t-on-click="() => this._open_detail(call)"
+                                <div class="partner-icon" t-on-click="_open_detail(call)"
                                      title="Click to view detail">
                                     <img class="rounded-circle o_user_avatar" alt="User" t-att-src="avatar"/>
                                 </div>
                             </td>
                             <td class="o_history_info w-100 d-flex flex-row">
                                 <div class="d-flex flex-column info-card"
-                                     t-on-click="() => this._onClickContactCall(caller)"
+                                     t-on-click="_onClickContactCall(caller)"
                                      t-attf-title="Call to {{caller}}">
                                     <div>
                                         <div class="card-identifier">
-                                            <t t-out="caller_id"/>
+                                            <t t-esc="caller_id"/>
                                         </div>
                                     </div>
                                     <div class="card-date">
@@ -120,16 +120,16 @@
                                         <t t-else="">
                                             <span class="icon-call_made me-2"/>
                                         </t>
-                                        <t t-out="call.create_date"/>
+                                        <t t-esc="call.create_date"/>
                                     </div>
                                     <div class="card-date">
                                         <span class="icon-call"/>
-                                        <t t-out="caller"/>
+                                        <t t-esc="caller"/>
                                     </div>
                                 </div>
                                 <div class="o_favorite">
                                     <button aria-label="Favorite" t-attf-title="Add {{caller_id}} to Favorites"
-                                            t-on-click="() => this._onClickFavorite(call)">
+                                            t-on-click="_onClickFavorite(call)">
                                         <i t-attf-class="fa {{call.favorite ? 'fa-star' : 'fa-star-o'}}"/>
                                     </button>
                                 </div>

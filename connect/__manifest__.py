@@ -1,12 +1,12 @@
 {
     'name': 'Oduist Connect',
-    'version': '19.0.4.2.2',
+    'version': '15.0.4.3.0',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Communication platform for Odoo',
     'depends': ['base', 'mail', 'contacts', 'sms', 'resource'],
     'external_dependencies': {
-        'python': ['phonenumbers', 'jinja2', 'openai', 'PyJWT'],
+        'python': ['phonenumbers', 'jinja2', 'httpx', 'openai', 'PyJWT'],
     },
     'data': [
         # Security
@@ -35,10 +35,20 @@
         'wizard/transfer_views.xml',
     ],
     'assets': {
+        # Odoo 15: owl templates must go to web.assets_qweb (ADR-062).
         'web.assets_backend': [
-            '/connect/static/src/components/license_banner/*',
-            '/connect/static/src/components/calls/*',
-            '/connect/static/src/services/active_calls/*',
+            '/connect/static/src/utils/event_bus.js',
+            '/connect/static/src/components/license_banner/*.js',
+            '/connect/static/src/components/license_banner/*.scss',
+            '/connect/static/src/components/calls/*.js',
+            '/connect/static/src/components/calls/*.scss',
+            '/connect/static/src/services/active_calls/*.js',
+            '/connect/static/src/services/active_calls/*.scss',
+        ],
+        'web.assets_qweb': [
+            '/connect/static/src/components/license_banner/*.xml',
+            '/connect/static/src/components/calls/*.xml',
+            '/connect/static/src/services/active_calls/*.xml',
         ],
     },
     'post_init_hook': 'post_init_hook',

@@ -175,6 +175,89 @@ class TestChannel(ConnectTestCommon):
         self.assertEqual(self.channel.call_type, 'phone')
 
 
+
+    # --- process_channel_event: originate destination survives the webhook ---
+    # Click-to-call creates the channel with the dialed number as "called",
+    # then the first status event for that same leg reports the agent's
+    # client:/sip: URI as Called. That must not clobber the destination
+    # (the URI stays available in "to").
+
+    def test_event_keeps_originate_destination_over_client_uri(self):
+        ch = self._create_channel(
+            'orig_sid_1', caller='+15550001111', called='+37360681783')
+        self.env['connect.channel'].process_channel_event({
+            'sid': 'orig_sid_1',
+            'caller': '+15550001111',
+            'called': 'client:agent@example.sip.twilio.com',
+            'to': 'client:agent@example.sip.twilio.com',
+            'status': 'ringing',
+        })
+        self.assertEqual(ch.called, '+37360681783')
+        self.assertEqual(ch.to, 'client:agent@example.sip.twilio.com')
+
+    def test_event_still_updates_called_for_real_numbers(self):
+        ch = self._create_channel(
+            'orig_sid_2', caller='+15550001111', called='+37360681783')
+        self.env['connect.channel'].process_channel_event({
+            'sid': 'orig_sid_2',
+            'caller': '+15550001111',
+            'called': '+15559998888',
+            'status': 'ringing',
+        })
+        self.assertEqual(ch.called, '+15559998888')
+
+    # --- process_channel_event: a WhatsApp leg is never downgraded ---
+    # Click-to-call knows the call is WhatsApp and marks the leg it
+    # creates. The outer voice leg to the agent deliberately carries no
+    # "whatsapp:" identity -- Twilio kills the call when it does -- so
+    # its status events report call_type 'phone'. That must not overwrite
+    # what originate_call already established, or the ledger records an
+    # outgoing WhatsApp call as an ordinary phone call.
+
+    def test_event_does_not_downgrade_whatsapp_to_phone(self):
+        ch = self._create_channel('wa_sid_1', call_type='whatsapp')
+        self.env['connect.channel'].process_channel_event({
+            'sid': 'wa_sid_1',
+            'caller': '+15550001111',
+            'called': '+37360681783',
+            'status': 'ringing',
+            'call_type': 'phone',
+        })
+        self.assertEqual(ch.call_type, 'whatsapp')
+
+    def test_event_upgrades_phone_to_whatsapp(self):
+        ch = self._create_channel('wa_sid_2', call_type='phone')
+        self.env['connect.channel'].process_channel_event({
+            'sid': 'wa_sid_2',
+            'caller': 'whatsapp:+15550001111',
+            'called': 'whatsapp:+37360681783',
+            'status': 'ringing',
+            'call_type': 'whatsapp',
+        })
+        self.assertEqual(ch.call_type, 'whatsapp')
+
+    def test_outgoing_whatsapp_call_is_typed_whatsapp(self):
+        """The ledger entry, not just the leg, carries the WhatsApp type."""
+        ch = self._create_channel(
+            'wa_sid_3',
+            caller='+15550001111',
+            called='+37360681783',
+            technical_direction='outbound-api',
+            call_type='whatsapp',
+        )
+        self.env['connect.channel'].process_channel_event({
+            'sid': 'wa_sid_3',
+            'caller': '+15550001111',
+            'called': 'client:agent@example.sip.twilio.com',
+            'to': 'client:agent@example.sip.twilio.com',
+            'status': 'ringing',
+            'call_type': 'phone',
+        })
+        with self.mock_license_check(), self.mock_connect_reload_view():
+            self.env['connect.call'].process_call_event(ch)
+        self.assertEqual(ch.call.call_type, 'whatsapp')
+
+
 @tagged('at_install', '-post_install')
 class TestFindPartnerNormalization(ConnectTestCommon):
     """_find_partner reaches the matcher for local-format numbers (ADR-024).

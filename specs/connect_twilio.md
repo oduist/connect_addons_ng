@@ -67,7 +67,8 @@ Extends core settings with Twilio API credentials, client management, and sync.
 |--------|-------------|
 | `get_client()` | Create and return Twilio REST client instance |
 | `sync()` | Full sync of all Twilio resources (numbers, callerIDs, domains, etc.) |
-| `originate_call()` | Override of the core dispatcher: when `_get_originate_provider(user)` is not `'twilio'`, falls through to `super()`; otherwise initiates the outbound call via the Twilio API |
+| `get_media_auth(media_url)` | `(account_sid, auth_token)` for `*.twilio.com` media, `None` for anything else — an External Storage bucket must not receive the Twilio token (ADR-060) |
+| `originate_call()` | Override of the core dispatcher: when `_get_originate_provider(user)` is not `'twilio'`, falls through to `super()`; otherwise initiates the outbound call via the Twilio API. The `From` of an internal originate comes from `connect.user.twilio_caller_id()` (ADR-058). With `whatsapp_call=True` the WhatsApp identity goes on the inner `<Dial callerId="whatsapp:…"><WhatsApp>`, never on the outer leg's `From` — Twilio accepts the create, reports `From=None` and ends the call as busy in the same second, so the `<WhatsApp>` verb never runs. The channel it creates records `call_type` (`whatsapp`/`phone`) explicitly, because nothing on that leg lets the status webhook infer it |
 | `get_external_call_route()` | Return TwiML route for external calls |
 | `get_twilio_balance()` | Fetch account balance from Twilio API |
 | `_reset_twilio_edge()` | Onchange: reset edge when region changes |
@@ -122,6 +123,8 @@ Extends core channel with Twilio SID and webhook-based channel management.
 | Method | Description |
 |--------|-------------|
 | `on_call_status()` | Twilio webhook: create/update channel records from Twilio params |
+| `_map_twilio_params()` | Map Twilio webhook params to the generic channel event dict |
+| `_strip_exten_plus()` | Twilio E.164-prefixes a bare extension used as caller ID (`100` comes back as `+100`); map it back when a `connect.twilio.exten` matches |
 | `connect_notify()` | Desktop notification for incoming SIP/Client calls |
 | `transfer()` | Channel-level transfer via Twilio API |
 
@@ -143,7 +146,7 @@ Extends core message with Twilio message handling - implements the abstract `sen
 
 | Method | Description |
 |--------|-------------|
-| `receive()` | Twilio webhook: process incoming SMS/WhatsApp messages |
+| `receive()` | Twilio webhook: process incoming SMS/WhatsApp messages. Runs as the webhook user, so the `connect.twilio.message_configuration` lookup is `sudo()`d — that model is admin-only by design, and reading it unprivileged raised an `AccessError` the handler's own `except` swallowed, silently discarding the message while still answering 200 (so Twilio never retried) |
 | `send()` | **Implements abstract:** Send message via Twilio API. Dispatch guard: when `connect.settings._get_message_provider()` is not `'twilio'`, falls through to `super()` (co-installation with other messaging providers, e.g. `connect_bird`). |
 | `client_send()` | Low-level: `client.messages.create()` wrapper |
 | `_compute_direction()` | Override: check against Twilio-owned numbers to determine direction |
@@ -186,6 +189,51 @@ recording. Runtime state is stored on the shared channel control fields
 completed artifacts continue to enter `connect.recording` through the Twilio
 recording status webhook.
 
+Live state is read from Twilio, never inferred from configuration. When the
+channel carries no control state of its own, `_softphone_recording_state_twilio`
+calls `_twilio_active_recording()`, which walks `_twilio_recording_call_sids()`
+— this leg and then its parent chain — lists each leg's recordings and keeps
+the ones whose `status` is `in-progress`. The filtering is done here, in
+Python: `CallRecordingList.list()` filters by date only, and passing it
+`status=` raises `TypeError`. The parent hop matters because a
+callflow emits `<Dial record='record-from-answer-dual'>` on the inbound leg
+while the softphone holds the client child leg; without it a recorded callflow
+call reports `off`. `_softphone_recording_stop_twilio` resolves the same way, so
+stop targets the leg that actually carries the recording and falls back to
+`channel.sid` + `Twilio.CURRENT` only when no live recording is found. Lookup
+failures are logged and degrade to `off` rather than breaking the widget.
+
+The phone renders `off` as a purple circular badge with a white dot and `REC`
+label, and `on` as a purple `fa-stop-circle` active action; transitions use a
+spinner. The button exposes a dynamic accessible label and `aria-pressed`.
+`connect.user.record_calls=False` keeps automatic recording off but does not
+hide the manual start action, and it no longer influences the reported state.
+
+**Painting the state before Twilio can answer.** With
+`<Dial record="record-from-answer">` the recording does not exist until the far
+end picks up, and the API needs a further moment to list it, so a single sample
+at `accept` always landed in the gap and left the button offering *Start
+Recording* for a call that was being recorded. Two mechanisms cover the window:
+
+- `applyExpectedRecordingState()` paints the button at `accept` from the
+  `record_calls` value returned by `get_client_token()`. That flag is what
+  actually decides recording in every path the web phone uses — the caller's own
+  `connect.user.record_calls` for outgoing (`connect.settings.originate_call`)
+  and the callee's for incoming (the user dial TwiML and the SIP domain
+  handler) — so the widget owner's own flag governs both directions.
+- `syncRecordingState()` then polls (1.5s interval, up to a minute — `accept`
+  fires when the leg reaches Twilio, not when the far end answers, so the wait
+  is however long the phone rings) and overwrites that optimistic state only
+  once Twilio gives a real answer. An `off` with no recording reference counts
+  as *not yet settled* and keeps polling; anything else ends the loop. The
+  error state is reported only when no CallSid ever arrived.
+
+`_twilio_active_recording()` accepts the three non-terminal statuses, not just
+`in-progress`: on a live call Twilio reports a running recording as
+`processing` with `duration -1`. Twilio remains the sole authority on recording
+state — the expected state only decides what is painted before the API can
+answer.
+
 ---
 
 ### 6. user.py - `_inherit = 'connect.user'`
@@ -214,7 +262,7 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `uri` | Char | Computed: `user@domain` |
 | `connect_uri` | Char | Computed: with edge prefix |
 | `application` | Many2one | `connect.twilio.twiml` |
-| `whatsapp_sender_id` | Many2one | `connect.whatsapp_sender` |
+| `whatsapp_sender_id` | Many2one | `connect.whatsapp_sender`; selectable senders must be synchronized and `ONLINE` |
 | `twilio_edge` | Selection | Twilio edge location |
 
 **Additional Methods:**
@@ -226,19 +274,24 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `_update_sip_password()` | Update SIP password on Twilio |
 | `delete_sip_account()` | Delete SIP credential from Twilio |
 | `generate_twilio_password()` | Generate strong random password |
-| `render()` | Main TwiML rendering: dispatches to client/sip/voicemail |
-| `render_client()` | Generate TwiML `<Dial><Client>` |
+| `render()` | Main TwiML rendering: dispatches to client/sip/voicemail. With a ledger call it walks the callflows through `connect.twilio.user_callflow_call`; without one (click-to-call, rendered before the channel exists) it emits a single `<Dial>` and carries the already-dialed ids in the action URL |
+| `render_client()` | Generate TwiML `<Dial><Client>`; for a bare extension caller ID it adds a `From` `<Parameter>` (Twilio hands the callee `+101`; the web phone prefers the parameter). Other caller IDs reach the browser as Twilio's own `From` (ADR-058) |
 | `render_sip()` | Generate TwiML `<Dial><Sip>` |
 | `render_voicemail()` | Generate TwiML `<Record>` for voicemail |
 | `get_greeting_message()` / `get_voicemail_prompt()` | `<Say>` the user prompts with `language`/`voice` from `connect.user` (fallbacks `en-US` / `Woman`, ADR-037) |
-| `get_client_token()` | Generate JWT for Twilio Voice SDK |
+| `get_client_token()` | Generate JWT for Twilio Voice SDK. Returns `record_calls` alongside the token so the widget can paint the expected recording state at answer with no extra round trip (see *Runtime recording control* below); returns `{'token': False}` for a user outside the Connect groups |
 | `get_client_identity()` | Return SIP identity string |
+| `twilio_caller_id()` | Caller ID for calls this user places: the extension, else `twilio_outgoing_callerid`, else the default outgoing caller ID, else the client identity `client:<username>@<domain>` — an empty caller ID makes Twilio substitute an arbitrary number (ADR-058) |
 | `_get_sip_uri()` | Compute SIP URI |
 | `_manage_sip_callflow()` | Auto-manage SIP callflow entries |
 | `_manage_client_callflow()` | Auto-manage client callflow entries |
 | `create()` | Override: auto-create SIP account and extension |
+| `_get_caller_id()` | Caller ID for a rendered dialplan: `twilio_caller_id()` of the calling user, or the raw `Caller` when it maps to no PBX user |
 | `write()` | Override: handle SIP credential updates |
 | `unlink()` | Override: cleanup SIP account on Twilio |
+| `on_call_action()` | `<Dial>` action webhook: records the dialed callflows, stops on a leg that was answered/canceled (`DialCallStatus`), otherwise renders the next device |
+| `_get_dial_action_url()` / `_parse_done_callflows()` | Build/read the `done_callflows=` marker the action URL carries |
+| `_record_done_callflows()` / `_clear_done_callflows()` | Fold the marker into `connect.twilio.user_callflow_call` and drop the bookkeeping when the walk ends |
 
 ---
 
@@ -331,6 +384,13 @@ callflow field set (name, `exten`/`exten_number` → `connect.twilio.exten`,
 | `create_extension()` | Create associated `connect.twilio.exten` |
 | `_get_language_selection()` | BCP-47 language list — **duplicated** with `connect.freeswitch.callflow`, `connect.telnyx.callflow` and core `connect.user`; changes must be applied to all four (ADR-031/ADR-037) |
 
+`prompt_message` is independent of `gather_input`: `render()` emits it inside
+`<Gather>` when input is enabled and as a standalone `<Say>` otherwise. The
+call-flow form therefore keeps Prompt Message visible in both modes; Gather
+Settings, Invalid Input Message and Choices remain conditional. Gather Settings
+and Invalid Input Message share a row, while Prompt Message uses a separate
+full-width section (ADR-051).
+
 `connect.twilio.callflow_choice`: `callflow` (required), `choice_digits`
 (required), `exten` (`connect.twilio.exten`, required), `speech`.
 
@@ -355,6 +415,14 @@ Per-user call delivery steps (SIP/client legs), formerly
 `connect.user_callflow`/`connect.user_callflow_call`. Same shape: `user`
 (`connect.user`), `prio`, `callflow_type`, `method`; the `_call` model links a
 `connect.call` to the step.
+
+The walk is stateful only once the ledger call exists. `connect.settings.
+originate_call()` (click-to-call) renders the dialplan *before* the channel
+is created, so `connect.user.render()` cannot log the step it used there.
+It instead appends `?done_callflows=<ids>` to the `<Dial>` action URL, and
+`on_call_action()` folds those ids into `user_callflow_call` as soon as the
+call record is available. A `<Dial>` with an action URL makes every later
+verb unreachable, so exactly one step is rendered per request.
 
 ---
 
@@ -438,10 +506,22 @@ Twilio SIP domain management for SIP trunking.
 | `create_domain()` | High-level domain creation workflow |
 | `update_twilio_domain()` | Push domain config to Twilio |
 | `sync()` | Sync SIP domains from Twilio API |
-| `route_call()` | Route incoming SIP call to user extension |
+| `route_call()` | Route incoming SIP call to user extension; inbound WhatsApp falls back to `connect.twilio.number` |
 | `originate_external_call()` | Originate outbound call via SIP domain |
 | `originate_whatsapp_call()` | Originate WhatsApp call via domain |
 | `get_domain_app()` | Get or create the domain's TwiML application |
+
+`route_call()` resolves the dialled value to `found_num` and looks it up in
+`connect.twilio.exten`. The meaning of `found_num` differs per path: on the SIP
+path it is what the softphone dialled (an outbound destination), while for an
+inbound WhatsApp call it is one of our own numbers. Because of that, only the
+WhatsApp branch falls back to `connect.twilio.number` — searching
+`phone_number` and delegating to its `render()` — so a WhatsApp call reaches
+the same user or callflow a PSTN call to that number reaches, with no separate
+extension. An extension still wins when one exists; the "Whatsapp Extension not
+found" prompt remains for a number that matches neither. The SIP path keeps its
+old behaviour: falling back there would turn dialling our own number into a
+loop back inbound instead of an outbound call. See ADR-057.
 
 ---
 
@@ -479,7 +559,7 @@ Twilio WhatsApp sender/business account management.
 | Method | Description |
 |--------|-------------|
 | `sync()` | Sync WhatsApp senders from Twilio messaging API |
-| `get_default_sender()` | Return the default WhatsApp sender |
+| `get_default_sender()` | Return an `ONLINE`, synchronized sender in user preference → global default → fallback order; unavailable preferences/defaults are skipped |
 | `send_whatsapp()` | Send WhatsApp message via Twilio API |
 | `chatter_post()` | Post WhatsApp message to partner chatter |
 | `update_message_status()` | Webhook: update message delivery status |
@@ -515,7 +595,11 @@ All routes under `/twilio/webhook/` with Twilio request signature validation.
 
 **Signature validation:** All webhook routes validate the `X-Twilio-Signature` header
 using `twilio.request_validator.RequestValidator` when `twilio_verify_requests` is enabled
-in settings.
+in settings. `check_signature()` takes no arguments and validates against
+`request.httprequest.form` — the POST body only. Twilio signs the request URL
+(query string included) **plus** the POST parameters, and Odoo merges the query
+string into the route kwargs, so validating with those counts a query parameter
+twice and no URL carrying one can validate (ADR-059).
 
 ---
 
@@ -540,11 +624,11 @@ WhatsApp message sending wizard. Uses `whatsapp_sender.send_whatsapp()` to send 
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `sender_id` | Many2one | `connect.whatsapp_sender` |
-| `partner_id` | Many2one | `res.partner` |
-| `phone_number` | Char | |
+| `whatsapp_sender_id` | Many2one | `connect.whatsapp_sender` |
+| `phone` | Char | Recipient; rendered with `widget="phone"` |
 | `body` | Text | |
-| `template_id` | Many2one | `connect.message_content_template` |
+| `content_template_id` | Many2one | `connect.message_content_template` |
+| `content_variables` | Text | Template variables as JSON |
 
 ---
 
@@ -612,7 +696,7 @@ Default WhatsApp content template: `voice_call_request` - used for voice call co
 | `views/whatsapp_sender_views.xml` | List + form for WhatsApp senders (profile, status, sync) |
 | `views/message_content_template_views.xml` | List + form + search for WhatsApp templates (approval workflow) |
 | `wizard/sms_composer_views.xml` | SMS composer form (moved from core) |
-| `wizard/whatsapp_composer_views.xml` | WhatsApp message sending wizard form (sender, phone, template, body) |
+| `wizard/whatsapp_composer_views.xml` | WhatsApp message sending wizard form (sender, recipient with `phone` widget, template, body) |
 
 ### Menu Items
 

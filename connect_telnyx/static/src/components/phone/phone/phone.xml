@@ -10,7 +10,7 @@
                 <div class="o_header_content">
                     <i class="fa fa-phone" role="img"/>
                     <div class="o_header_title">
-                        <b t-out="title"/>
+                        <b t-esc="title"/>
                     </div>
                     <div aria-label="Hide" class="fa fa-window-minimize o_header_close" title="Hide" t-on-click="_onClickClose"/>
                 </div>
@@ -54,11 +54,11 @@
             <div t-attf-class="{{ state.isDialingPanel ? '' : 'o_hide' }} o_body_phone">
                 <div class="o_phone_call_details flex-column">
                     <t t-if="state.isPartner">
-                        <div class="o_partner_link" t-on-click="() => this._openPartner(state.callerId.partnerId)">
+                        <div class="o_partner_link" t-on-click="_openPartner(state.callerId.partnerId)">
                             <img alt="Avatar" class="o_partner_avatar" t-if="state.callerId.partnerId" t-att-src="state.callerId.partnerIconUrl"/>
-                            <span class="o_partner_name"><t t-out="state.callerId.partnerName"/></span>
-                            <span class="o_partner_name"><i t-if="state.isWhatsapp" class="fa fa-whatsapp custom-whatsapp"/><t t-out="state.callerId.phoneNumber"/></span>
-                            <span class="o_partner_name"><t t-out="state.callDurationTime"/></span>
+                            <span class="o_partner_name"><t t-esc="state.callerId.partnerName"/></span>
+                            <span class="o_partner_name"><i t-if="state.isWhatsapp" class="fa fa-whatsapp custom-whatsapp"/><t t-esc="state.callerId.phoneNumber"/></span>
+                            <span class="o_partner_name"><t t-esc="state.callDurationTime"/></span>
                         </div>
                         <div t-if="state.isCallForwarded" class="text-center mt-1" title="Cancel Forward">
                             <button class="btn p-3 border rounded-circle" t-on-click="_cancelForward">
@@ -68,9 +68,9 @@
                     </t>
                     <t t-else="">
                         <img t-if="state.callerId.partnerId" alt="Avatar" class="o_partner_avatar" t-att-src="state.callerId.partnerIconUrl"/>
-                        <span t-if="state.callerId.partnerId" class="o_partner_name"><t t-out="state.callerId.partnerName"/></span>
-                        <span class="o_partner_name"><t t-out="state.callerId.phoneNumber"/></span>
-                        <span class="o_partner_name"><t t-out="state.callDurationTime"/></span>
+                        <span t-if="state.callerId.partnerId" class="o_partner_name"><t t-esc="state.callerId.partnerName"/></span>
+                        <span class="o_partner_name"><t t-esc="state.callerId.phoneNumber"/></span>
+                        <span class="o_partner_name"><t t-esc="state.callDurationTime"/></span>
                         <div class="text-center" title="Customer">
                             <button class="btn p-3 border rounded-circle" t-on-click="_createPartner">
                                 <i aria-label="Customer" class="fa fa-fw fa-lg fa-user-plus"/>
@@ -82,15 +82,15 @@
                             </button>
                         </div>
                     </t>
-                    <div t-if="state.xTransferPartner" class="o_partner_link" t-on-click="() => this._openPartner(state.xTransferPartner.partnerId)">
+                    <div t-if="state.xTransferPartner" class="o_partner_link" t-on-click="_openPartner(state.xTransferPartner.partnerId)">
                         <span class="o_partner_name"><i class="fa fa-arrow-down"/></span>
                         <img alt="Avatar" class="o_partner_avatar" t-if="state.xTransferPartner.partnerId" t-att-src="state.xTransferPartner.partnerIconUrl"/>
-                        <span class="o_partner_name"><t t-out="state.xTransferPartner.partnerName"/></span>
-                        <span class="o_partner_name"><t t-out="state.xTransferPartner.phoneNumber"/></span>
+                        <span class="o_partner_name"><t t-esc="state.xTransferPartner.partnerName"/></span>
+                        <span class="o_partner_name"><t t-esc="state.xTransferPartner.phoneNumber"/></span>
                     </div>
                     <div t-if="state.xTransferInfo" class="o_partner_link">
                         <span class="o_partner_name"><i class="fa fa-arrow-down"/></span>
-                        <span class="o_partner_name"><t t-out="state.xTransferInfo"/></span>
+                        <span class="o_partner_name"><t t-esc="state.xTransferInfo"/></span>
                     </div>
                 </div>
             </div>

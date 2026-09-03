@@ -1,201 +1,191 @@
 /** @odoo-module **/
 "use strict"
 
-import {AutoComplete} from "@web/core/autocomplete/autocomplete"
-import {_t} from "@web/core/l10n/translation"
-import {registry} from "@web/core/registry"
-import {useService} from "@web/core/utils/hooks"
-import {Component, onWillStart, onWillUnmount, useEffect, useState} from "@odoo/owl"
-import {standardFieldProps} from "@web/views/fields/standard_field_props"
+// Odoo 15 variant (ADR-062): the OWL field registry is 16+; the
+// telnyx_voice widget is implemented as a legacy AbstractField with a
+// jQuery UI autocomplete (the same machinery the legacy many2one uses)
+// plus the Telnyx sample-playback button of the 19.0 branch.
+import AbstractField from "web.AbstractField"
+import fieldRegistry from "web.field_registry"
+import core from "web.core"
 
-export class TelnyxVoiceField extends Component {
-    static template = "connect_telnyx.TelnyxVoiceField"
-    static components = {AutoComplete}
-    static props = {
-        ...standardFieldProps,
-        languageField: {type: String},
-        providerField: {type: String},
-        speedField: {type: String, optional: true},
-        textField: {type: String, optional: true},
-    }
+const _t = core._t
 
-    setup() {
-        this.orm = useService("orm")
-        this.state = useState({displayValue: this.rawValue, revision: 0, playing: false})
+const TelnyxVoiceField = AbstractField.extend({
+    className: 'o_field_telnyx_voice',
+    supportedFieldTypes: ['char'],
+    events: Object.assign({}, AbstractField.prototype.events, {
+        'click .o_telnyx_voice_play': '_onClickPlay',
+    }),
+
+    init() {
+        this._super(...arguments)
+        const options = this.nodeOptions || {}
+        this.languageField = options.language_field || 'telnyx_system_voice_language'
+        this.providerField = options.provider_field || 'telnyx_system_voice_provider'
+        this.speedField = options.speed_field || ''
+        this.textField = options.text_field || ''
+        this.displayValue = ''
         this.audio = null
-        onWillStart(() => this.loadDisplayValue())
-        onWillUnmount(() => this.stopSample())
-        useEffect(
-            (voiceId) => {
-                if (voiceId !== this.state.voiceId) {
-                    this.loadDisplayValue()
-                }
-            },
-            () => [this.rawValue]
-        )
-    }
+        this.playing = false
+    },
 
-    get rawValue() {
-        return this.props.record.data[this.props.name] || ""
-    }
+    willStart() {
+        return Promise.all([this._super(...arguments), this._loadDisplayValue()])
+    },
 
-    get language() {
-        return this.props.record.data[this.props.languageField] || ""
-    }
+    destroy() {
+        this._stopSample()
+        this._super(...arguments)
+    },
 
-    get provider() {
-        return this.props.record.data[this.props.providerField] || ""
-    }
-
-    get placeholder() {
-        if (!this.language || !this.provider) {
-            return _t("Choose a language and provider first")
-        }
-        return _t("Search voices by name, gender, or Telnyx ID")
-    }
-
-    get sources() {
-        return [{
-            placeholder: _t("Loading voices..."),
-            options: (search) => this.loadOptions(search),
-        }]
-    }
-
-    async loadDisplayValue() {
-        const voiceId = this.rawValue
-        this.state.voiceId = voiceId
-        if (!voiceId) {
-            this.state.displayValue = ""
-            this.state.revision++
+    async _loadDisplayValue() {
+        if (!this.value) {
+            this.displayValue = ''
             return
         }
-        const option = await this.orm.call(
-            this.props.record.resModel, "telnyx_get_voice_label", [voiceId]
-        )
-        if (this.rawValue === voiceId) {
-            this.state.displayValue = this.formatOption(option)
-            this.state.revision++
-        }
-    }
+        const option = await this._rpc({
+            model: this.model,
+            method: 'telnyx_get_voice_label',
+            args: [this.value],
+        })
+        this.displayValue = this._formatOption(option)
+    },
 
-    async loadOptions(search) {
-        if (!this.language || !this.provider) {
-            return []
-        }
-        const options = await this.orm.call(
-            this.props.record.resModel,
-            "telnyx_get_voice_options",
-            [this.language, this.provider, search, 80]
-        )
-        return options.map((option) => ({
-            label: this.formatOption(option),
-            onSelect: () => this.selectOption(option),
-        }))
-    }
-
-    formatOption(option) {
-        if (!option?.details || option.details === option.label) {
-            return option?.label || ""
+    _formatOption(option) {
+        if (!option || !option.details || option.details === option.label) {
+            return (option && option.label) || ''
         }
         return `${option.label} - ${option.details}`
-    }
+    },
 
-    async selectOption(option) {
-        this.state.displayValue = this.formatOption(option)
-        this.state.voiceId = option.value
-        await this.props.record.update({[this.props.name]: option.value})
-    }
-
-    resetUnselectedInput({inputValue}) {
-        if (inputValue !== this.state.displayValue) {
-            this.state.revision++
+    async _loadOptions(search) {
+        const language = this.recordData[this.languageField] || ''
+        const provider = this.recordData[this.providerField] || ''
+        if (!language || !provider) {
+            return []
         }
-    }
+        const options = await this._rpc({
+            model: this.model,
+            method: 'telnyx_get_voice_options',
+            args: [language, provider, search || '', 80],
+        })
+        const self = this
+        return options.map((option) => ({
+            label: self._formatOption(option),
+            value: self._formatOption(option),
+            option,
+        }))
+    },
 
-    stopSample() {
+    _renderReadonly() {
+        this.$el.empty()
+        $('<span/>').text(this.displayValue || this.value || '').appendTo(this.$el)
+        if (this.value) {
+            this._appendPlayButton()
+        }
+    },
+
+    _renderEdit() {
+        this.$el.empty()
+        const placeholder = (!this.recordData[this.languageField] ||
+                !this.recordData[this.providerField])
+            ? _t("Choose a language and provider first")
+            : _t("Search voices by name, gender, or Telnyx ID")
+        this.$input = $('<input type="text" class="o_input"/>')
+            .attr('placeholder', placeholder)
+            .val(this.displayValue || this.value || '')
+            .appendTo(this.$el)
+        const self = this
+        this.$input.autocomplete({
+            source: function (request, response) {
+                self._loadOptions(request.term).then(response).catch(() => response([]))
+            },
+            select: function (ev, ui) {
+                self._selectOption(ui.item)
+                return false
+            },
+            minLength: 0,
+            delay: 300,
+        })
+        this.$input.on('focus', function () {
+            self.$input.autocomplete('search',
+                self.$input.val() === (self.displayValue || '') ? '' : self.$input.val())
+        })
+        this.$input.on('blur', function () {
+            // An unselected free-text input is not a voice id: restore the
+            // last selected label, as the 19.0 widget does.
+            self.$input.val(self.displayValue || '')
+        })
+        if (this.value) {
+            this._appendPlayButton()
+        }
+    },
+
+    _selectOption(item) {
+        if (!item.option) {
+            return
+        }
+        this.displayValue = item.label
+        this.$input.val(item.label)
+        this._setValue(item.option.value)
+    },
+
+    _appendPlayButton() {
+        $('<button type="button" class="btn btn-link o_telnyx_voice_play" ' +
+          'title="Play a sample of this voice"><i class="fa fa-play"/></button>')
+            .appendTo(this.$el)
+    },
+
+    _stopSample() {
         if (this.audio) {
             this.audio.pause()
             this.audio = null
         }
-        this.state.playing = false
-    }
+        this.playing = false
+    },
 
     /**
      * Play a Telnyx sample of the selected voice. Telnyx validates the voice
      * and the speed here exactly as it does for the assistant greeting, so an
      * unusable combination is reported while the form is still open.
      */
-    async playSample() {
-        if (this.state.playing || !this.rawValue) {
+    async _onClickPlay(ev) {
+        ev.preventDefault()
+        if (this.playing || !this.value) {
             return
         }
-        this.stopSample()
-        this.state.playing = true
-        const speed = this.props.speedField
-            ? this.props.record.data[this.props.speedField] || 1.0
+        this._stopSample()
+        this.playing = true
+        const speed = this.speedField
+            ? this.recordData[this.speedField] || 1.0
             : 1.0
-        const text = this.props.textField
-            ? this.props.record.data[this.props.textField] || false
+        const text = this.textField
+            ? this.recordData[this.textField] || false
             : false
         let result
         try {
-            result = await this.orm.call(
-                this.props.record.resModel,
-                "telnyx_preview_voice",
-                [this.rawValue, speed, text]
-            )
+            result = await this._rpc({
+                model: this.model,
+                method: 'telnyx_preview_voice',
+                args: [this.value, speed, text],
+            })
         } catch (error) {
-            this.state.playing = false
+            this.playing = false
             throw error
         }
         this.audio = new Audio(`data:audio/mpeg;base64,${result.audio}`)
-        this.audio.addEventListener("ended", () => this.stopSample())
-        this.audio.addEventListener("error", () => this.stopSample())
+        this.audio.addEventListener('ended', () => this._stopSample())
+        this.audio.addEventListener('error', () => this._stopSample())
         try {
             await this.audio.play()
-        } catch {
+        } catch (e) {
             // Autoplay policies can refuse playback without a user gesture.
-            this.stopSample()
+            this._stopSample()
         }
-    }
-}
+    },
+})
 
-export const telnyxVoiceField = {
-    component: TelnyxVoiceField,
-    displayName: _t("Telnyx Voice"),
-    supportedTypes: ["char"],
-    supportedOptions: [
-        {
-            label: _t("Language filter field"),
-            name: "language_field",
-            type: "field",
-            availableTypes: ["selection"],
-        },
-        {
-            label: _t("Provider filter field"),
-            name: "provider_field",
-            type: "field",
-            availableTypes: ["selection"],
-        },
-        {
-            label: _t("Voice speed field"),
-            name: "speed_field",
-            type: "field",
-            availableTypes: ["float"],
-        },
-        {
-            label: _t("Sample text field"),
-            name: "text_field",
-            type: "field",
-            availableTypes: ["char", "text"],
-        },
-    ],
-    extractProps: ({options}) => ({
-        languageField: options.language_field || "telnyx_system_voice_language",
-        providerField: options.provider_field || "telnyx_system_voice_provider",
-        speedField: options.speed_field || "",
-        textField: options.text_field || "",
-    }),
-}
+fieldRegistry.add('telnyx_voice', TelnyxVoiceField)
 
-registry.category("fields").add("telnyx_voice", telnyxVoiceField)
+export default TelnyxVoiceField

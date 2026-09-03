@@ -144,7 +144,7 @@ read access is the full requirement.
 - **Form extension** (`account.view_move_form`): smart button in `button_box`
   showing `connect_calls_count` (fa-phone icon, `widget="statinfo"`), opening
   `connect_calls_account_action`; also inserts `partner_phone`/`partner_mobile`
-  read-only fields after `partner_id`
+  read-only fields with `widget="phone"` after `partner_id`
 - **Search extension** (`account.view_account_invoice_filter`): adds
   `partner_phone`/`partner_mobile` as searchable fields after `partner_id`
 

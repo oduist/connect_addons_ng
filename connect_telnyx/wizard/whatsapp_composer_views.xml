@@ -7,10 +7,12 @@
             <form string="Send WhatsApp Message">
                 <group>
                     <field name="whatsapp_sender_id"/>
-                    <field name="phone"/>
+                    <field name="phone" widget="phone"/>
                     <field name="template_id"/>
-                    <field name="template_variables" invisible="not template_id"/>
-                    <field name="body" readonly="template_id != False"/>
+                    <field name="template_variables"
+                   attrs="{'invisible': [('template_id', '=', False)]}"/>
+                    <field name="body"
+                   attrs="{'readonly': [('template_id', '!=', False)]}"/>
                     <field name="res_model" invisible="1"/>
                     <field name="res_id" invisible="1"/>
                 </group>

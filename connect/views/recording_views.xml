@@ -4,7 +4,7 @@
         <field name="name">connect.recording.tree</field>
         <field name="model">connect.recording</field>
         <field name="arch" type="xml">
-            <list default_order="id desc">
+            <tree default_order="id desc">
                 <field name="call"/>
                 <field name="caller_number"/>
                 <field name="called_number"/>
@@ -13,7 +13,7 @@
                 <field name="duration_human" string="Duration"/>
                 <field name="list_view_summary" string="Summary"/>
                 <field name="create_date" string="Date"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -39,8 +39,8 @@
                             <field name="partner"/>
                             <field name="caller_user"/>
                             <field name="called_user"/>
-                            <field name="caller_number"/>
-                            <field name="called_number"/>
+                            <field name="caller_number" widget="phone"/>
+                            <field name="called_number" widget="phone"/>
                             <field name="duration_human" string="Duration"/>
                             <field name="status"/>
                             <field name="start_time"/>
@@ -53,17 +53,24 @@
                             <field name="price"/>
                             <field name="price_unit"/>
                             <field name="transcription_price"/>
-                            <field name="transcription_error" invisible="not transcription_error"/>
+                            <field name="transcription_error"
+                   attrs="{'invisible': [('transcription_error', '=', False)]}"/>
                         </group>
                     </group>
-                    <group string="Transcript" invisible="not transcript">
+                    <group string="Transcript"
+                   attrs="{'invisible': [('transcript', '=', False)]}">
                         <field name="transcript" nolabel="1" colspan="2"/>
                     </group>
-                    <group string="Summary" invisible="not summary">
+                    <group string="Summary"
+                   attrs="{'invisible': [('summary', '=', False)]}">
                         <field name="summary" nolabel="1" colspan="2"/>
                     </group>
                 </sheet>
-                <chatter/>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
             </form>
         </field>
     </record>
@@ -71,7 +78,7 @@
     <record id="action_connect_recording" model="ir.actions.act_window">
         <field name="name">Recordings</field>
         <field name="res_model">connect.recording</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
     <menuitem id="menu_connect_recordings"

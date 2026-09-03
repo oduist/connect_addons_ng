@@ -8,7 +8,7 @@
         <field name="inherit_id" ref="connect.view_connect_user_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='active']" position="after">
-                <field name="bird_phone_number"/>
+                <field name="bird_phone_number" widget="phone"/>
                 <field name="bird_voice_number"/>
                 <field name="bird_message_number"/>
             </xpath>

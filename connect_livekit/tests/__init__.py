@@ -9,3 +9,4 @@ from . import test_outgoing_callerid
 from . import test_room
 from . import test_settings
 from . import test_webhooks
+from . import test_web_phone_access

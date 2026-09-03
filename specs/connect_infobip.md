@@ -140,7 +140,8 @@ error fields + WhatsApp chatter note); `action_retry()`.
 `_pbx_number_fields() + ['infobip_exten_number']`. No per-user SIP at
 Infobip: the agent endpoints are `infobip_identity` (WebRTC, unique,
 auto-generated from the login when the web phone is enabled) and
-`infobip_phone_number` (E.164 external phone). Enable/priority/timeout
+`infobip_phone_number` (E.164 external phone, rendered with `widget="phone"`
+on the user form). Enable/priority/timeout
 fields per endpoint maintain `connect.infobip.user_callflow` rows via
 constrains (`_manage_infobip_channel_callflow`). Also: `infobip_exten`
 (+related number), `infobip_outgoing_callerid`,
@@ -189,7 +190,7 @@ always 200 (errors logged):
   selection from `connect_infobip_number`, `_action_send_sms()` →
   `connect.message.send()`.
 - `whatsapp_composer.py` — `connect.infobip.whatsapp_composer`
-  TransientModel: sender/template/variables/preview →
+  TransientModel: sender/recipient (`widget="phone"`)/template/variables/preview →
   `whatsapp_sender.send_whatsapp()`.
 
 ## Security (`security/access_rules.xml`)

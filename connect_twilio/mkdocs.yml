@@ -1,0 +1,14 @@
+# Per-module documentation config, aggregated by the root mkdocs.yml via the
+# mkdocs-monorepo-plugin (!include). docs_dir defaults to ./docs relative to
+# this file, i.e. connect_twilio/docs/.
+site_name: Twilio
+nav:
+  - Overview: index.md
+  - Installation: installation.md
+  - Account Configuration: configuration.md
+  - Users, SIP & Web Phone: users-and-sip.md
+  - Numbers & Call Routing: numbers-and-routing.md
+  - Call Flows & TwiML Apps: call-flows-twiml.md
+  - Messaging (SMS & WhatsApp): messaging.md
+  - Webhooks & Security: webhooks-security.md
+  - Maintenance: maintenance.md
