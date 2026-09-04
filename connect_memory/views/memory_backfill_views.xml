@@ -102,5 +102,6 @@
 
     <menuitem id="menu_memory_backfill" name="Backfill"
               parent="menu_memory_root" action="action_memory_backfill_jobs"
+              groups="connect.group_admin"
               sequence="30"/>
 </odoo>

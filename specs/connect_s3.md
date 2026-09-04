@@ -9,6 +9,8 @@
 - **External dependencies:** `boto3` (python)
 - **Application:** False
 - **License:** Other proprietary
+- **post_init_hook:** stamps the module install date and refreshes the Oduist
+  license status (mirrors the per-module hook pattern of the connect suite)
 - **ADR:** [060-s3-recording-storage](decisions/060-s3-recording-storage.md)
 
 ## Overview
@@ -138,6 +140,9 @@ core `PROTECTED_FIELDS` list is not touched.
 | `action_provision_s3_bucket()` | `create_bucket` (with `LocationConstraint` except in `us-east-1`) → `put_public_access_block` (all four blocks on) → `put_bucket_encryption` (AES256) → `put_bucket_lifecycle_configuration` when `s3_retention_days > 0`. Idempotent: `BucketAlreadyOwnedByYou` / `BucketAlreadyExists` are tolerated. An `AccessDenied` is re-raised with a message naming the prefix and the exact ARN the policy needs, because a prefix mismatch is the common failure. |
 | `action_create_twilio_aws_credential()` | `GET https://accounts.twilio.com/v1/Credentials/AWS`; if a credential named `connect-s3-recordings` exists, adopt its SID; otherwise `POST` with `Credentials=<key>:<secret>` and store the returned `CR…` SID. Idempotent. |
 | `action_recreate_twilio_aws_credential()` | Delete the existing `connect-s3-recordings` credential and create a fresh one from the current AWS keys — Twilio cannot update a credential's key in place. The new SID must be re-selected in the Console, so the notification is sticky. Guarded by a `confirm=` on the button. |
+| `_twilio_auth()` | Internal: the `(account_sid, auth_token)` pair for the Twilio accounts API, or raise when unset. |
+| `_aws_credentials_or_raise()` | Internal: the `(access_key, secret)` pair, or raise when either is missing. |
+| `_create_twilio_credential()` / `_list_twilio_credentials()` / `_delete_twilio_credential()` | Internal wrappers around `accounts.twilio.com/v1/Credentials/AWS` (POST / GET / DELETE) used by the two credential actions. |
 | `open_s3_form()` | Returns the act_window for the module's own settings form, following `connect_memory.open_memory_form()`. |
 
 The Twilio account credentials these actions use (`account_sid`, `auth_token`)
@@ -150,13 +155,14 @@ the hard dependency.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `recording_expired` | Boolean, compute | Non-stored. `is_recording_expired(start_time, s3_retention_days, now)` — pure arithmetic, never calls S3. |
+| `recording_expired` | Boolean, compute | Non-stored. Gates on `_s3_object()` first: a recording that does not live in our bucket (pre-switch Twilio, attachment) **never** reports expired, whatever the retention setting. For S3-hosted audio it is `is_recording_expired(start_time, s3_retention_days, now)` — pure arithmetic, never calls S3. |
 
 **Methods**
 
 | Method | Description |
 |--------|-------------|
-| `_fetch_media_to(temp_file)` | Override of the core seam. When S3 is enabled and `media_url` is ours, `download_fileobj(bucket, key, temp_file)`; otherwise `super()` (attachment or `requests.get`). |
+| `_s3_object()` | Return `(bucket, key)` when this recording's audio lives in our bucket, else `()` (attachment present, S3 disabled, or a non-S3 `media_url`). The single predicate every S3 read path branches on. |
+| `_fetch_media_to(temp_file)` | Override of the core seam. When `_s3_object()` matches, `download_fileobj(bucket, key, temp_file)`; otherwise `super()` (attachment or `requests.get`). |
 | `_get_media_src(proxy_recordings)` | Override of the core seam. With `proxy_recordings` off and an S3 URL, return a boto3 presigned URL; otherwise `super()`. |
 | `_get_recording_widget()` | Override: call `super()`, then replace the widget with `<i>Recording expired</i>` for records where `recording_expired` is set. |
 
@@ -195,16 +201,18 @@ from `odoo.addons.connect.controllers.main` and overrides one method.
 This covers both existing core routes, `/connect/recording/<id>` and
 `/connect/voicemail/<id>`, since both funnel through `_serve_media`.
 
-### Related fix in `connect_twilio`
+### The Twilio-hosted (mixed-mode) path
 
-Core `_serve_media` fetches `media_url` with a bare `requests.get` and no
-authentication. Twilio recording URLs require HTTP basic auth with
-`account_sid` / `auth_token`, so proxied playback of **Twilio-hosted**
-recordings is currently broken in this repository. That is exactly the mixed-mode
-path this module leaves in place for pre-switch recordings, so `connect_twilio`
-gains its own `ConnectController` subclass overriding `_serve_media` with the
-Twilio basic auth. `connect_s3` then simply falls through to it. The fix belongs
-in `connect_twilio` because the credentials and the URL shape are Twilio's.
+Pre-switch recordings still live at `api.twilio.com` and need HTTP basic auth
+with `account_sid` / `auth_token`. There is **no controller subclass in
+`connect_twilio`** for this; the seam is a settings method: core
+`ConnectController._serve_media()` (`connect/controllers/main.py`) asks
+`connect.settings.get_media_auth(media_url)` for credentials before its
+`requests.get`, and `connect_twilio` overrides that method
+(`connect_twilio/models/settings.py`) to return `(account_sid, auth_token)` for
+`*.twilio.com` hosts only — an External Storage bucket URL must never receive
+the Twilio token. `ConnectS3Controller._serve_media` simply falls through to
+`super()` for non-S3 URLs, which picks up that auth (ADR-060).
 
 ---
 
@@ -254,18 +262,18 @@ No new models, therefore no `ir.model.access.csv`. Access is controlled by:
 |------|--------|
 | `test_s3_utils.py` | Every `s3_utils` function without a database: prefix normalization idempotence and blank handling, IAM policy ARNs tracking a custom prefix, URL building with and without a folder prefix, S3-vs-Twilio URL detection, key parsing for virtual-hosted and path-style URLs, lifecycle config shape, expiry arithmetic including the `retention_days = 0` case. |
 | `test_s3_settings.py` | `aws_s3_bucket_name` and `aws_s3_url` computes, `aws_iam_policy` following `aws_s3_bucket_prefix`, and the `display_aws_secret_access_key` masking round-trip. |
+| `test_s3_recording.py` | 11 tests over the read path with a stubbed S3 client: `recording_expired` arithmetic and its `_s3_object()` gating (Twilio-hosted and disabled-S3 recordings never expire, attachments never go to S3), the expired widget text, `_get_media_src` returning a presigned URL vs falling through (Twilio URL, proxy setting, S3 disabled), and `_fetch_media_to` downloading from the stub. |
 
-No test contacts AWS or Twilio. The read path (`_fetch_media_to`,
-`_get_media_src`, `_serve_media`) is covered only in so far as the URL detection
-it branches on is covered; exercising it needs a boto3 stub or live AWS and is
-deferred with the live verification below.
+No test contacts AWS or Twilio — the boto3 client is stubbed.
 
 ---
 
 ## Documentation
 
-- `connect_s3/docs/admin/s3-recordings-setup.md` — the full setup walkthrough:
-  AWS IAM user and policy, Odoo settings, the manual Twilio Console step
+- `connect_s3/docs/index.md` — module overview (what it does, mixed mode,
+  expiry indicator)
+- `connect_s3/docs/setup.md` — the full setup walkthrough: AWS IAM user and
+  policy, Odoo settings, the manual Twilio Console step
 - `connect_s3/mkdocs.yml` — per-module docs config
 - root `mkdocs.yml` — an `!include ./connect_s3/mkdocs.yml` entry in `nav`
 - `requirements.txt` — `boto3`

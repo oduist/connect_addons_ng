@@ -59,6 +59,8 @@ hide:
     <a href="Dograh/admin/dograh-setup/" class="mod-tile" data-cat="agent" style="--c:#9085e9" data-code="connect_dograh" data-label="AI agents" data-tip="External voice agent framework, bridged via FreeSWITCH."><span class="mod-sym">Dg</span><span class="mod-nm">Dograh</span><span class="mod-code">connect_<wbr>dograh</span></a>
     <a href="Pipecat/admin/pipecat-setup/" class="mod-tile" data-cat="agent" style="--c:#9085e9" data-code="connect_pipecat" data-label="AI agents" data-tip="Open-source voice agent pipeline, bridged via FreeSWITCH."><span class="mod-sym">Pc</span><span class="mod-nm">Pipecat</span><span class="mod-code">connect_<wbr>pipecat</span></a>
     <a href="CRM/" class="mod-tile" data-cat="app" style="--c:#199e70" data-code="connect_crm" data-label="Odoo apps" data-tip="Calls link to leads; summaries land in the chatter."><span class="mod-sym">CRM</span><span class="mod-nm">CRM</span><span class="mod-code">connect_<wbr>crm</span></a>
+    <a href="crm-twilio-bridge/" class="mod-tile" data-cat="app" style="--c:#199e70" data-code="connect_crm_twilio" data-label="Odoo apps" data-tip="Auto-installed bridge routing Twilio messages to CRM leads."><span class="mod-sym">CTw</span><span class="mod-nm">CRM · Twilio</span><span class="mod-code">connect_<wbr>crm_<wbr>twilio</span></a>
+    <a href="freeswitch-website/admin/working-schedule/" class="mod-tile" data-cat="app" style="--c:#199e70" data-code="connect_freeswitch_website" data-label="Odoo apps" data-tip="Publish phone status and opening hours on your Odoo website."><span class="mod-sym">Web</span><span class="mod-nm">FreeSWITCH · Website</span><span class="mod-code">connect_<wbr>freeswitch_<wbr>website</span></a>
     <a href="Helpdesk/" class="mod-tile" data-cat="app" style="--c:#199e70" data-code="connect_helpdesk" data-label="Odoo apps" data-tip="Match or create tickets by phone number."><span class="mod-sym">HD</span><span class="mod-nm">Helpdesk</span><span class="mod-code">connect_<wbr>helpdesk</span></a>
     <a href="Sales/" class="mod-tile" data-cat="app" style="--c:#199e70" data-code="connect_sale" data-label="Odoo apps" data-tip="Turn a conversation into a quotation or order."><span class="mod-sym">Sal</span><span class="mod-nm">Sales</span><span class="mod-code">connect_<wbr>sale</span></a>
     <a href="Project/" class="mod-tile" data-cat="app" style="--c:#199e70" data-code="connect_project" data-label="Odoo apps" data-tip="Attach conversations to project tasks."><span class="mod-sym">Prj</span><span class="mod-nm">Project</span><span class="mod-code">connect_<wbr>project</span></a>
@@ -80,9 +82,16 @@ Connect consists of a core module plus provider integrations:
 | **connect_twilio** | Twilio integration. Owns its numbers, extensions, call flows and caller IDs; adds Twilio Voice SDK phone widget, SIP domains, WhatsApp, TwiML apps. |
 | **connect_freeswitch** | FreeSWITCH integration. Owns its numbers, extensions, call flows, endpoints and caller IDs; adds Verto WebRTC client, XML dialplan generation, SIP gateways. |
 | **connect_asterisk** | Asterisk integration for existing PBXs. Owns its endpoints and DID mappings; adds JsSIP web phone and AMI event pipeline via a sidecar agent. |
-| **connect_telnyx** | Telnyx integration. Owns its numbers, extensions, call flows and caller IDs; adds Telnyx WebRTC phone widget, SIP domains (credential connections), TeXML apps, SMS, WhatsApp, RCS. |
+| **connect_telnyx** | Telnyx integration. Owns its numbers, extensions, call flows and caller IDs; adds Telnyx WebRTC phone widget, SIP domains (credential connections), TeXML apps, SMS, WhatsApp, RCS, native AI Assistants. |
+| **connect_livekit** | LiveKit integration. Self-hosted realtime stack: video rooms with guest links, SIP telephony via the livekit-sip bridge, browser web phone, native LiveKit voice agents. |
+| **connect_infobip** | Infobip integration. Event-driven Calls API, per-user WebRTC identities, SMS and WhatsApp. |
+| **connect_bird** | Bird.com integration. SMS and WhatsApp messaging, voice-call ledger, callback click-to-call. |
+| **connect_vonage** | Vonage integration. NCCO-driven voice, browser calling, IVR and SMS. |
+| **connect_3cx** | 3CX integration for existing 3CX V20 PBXs. Contact sync, call journaling, click-to-call. |
 
-Install the **connect** core module plus the integration module(s) matching your telephony provider — several providers can coexist in one database. Each integration adds its own submenu (**Twilio**, **FreeSWITCH**, **Asterisk**, **Telnyx**) inside the **Connect** app, after **Calls** and in installation order.
+The AI-agent modules (ElevenLabs, Dograh, Pipecat), Odoo-app bridges (CRM, Helpdesk, Sales, Project, HR, Accounting) and Customer Memory sit on top — see the module grid above.
+
+Install the **connect** core module plus the integration module(s) matching your telephony provider — several providers can coexist in one database. Each integration adds its own submenu (**Twilio**, **FreeSWITCH**, **Asterisk**, **Telnyx**, **LiveKit**, …) inside the **Connect** app, after **Calls** and in installation order.
 
 ## Key Features
 
@@ -90,7 +99,7 @@ Install the **connect** core module plus the integration module(s) matching your
 - **Phone Widget** — Browser-based phone (Twilio Voice SDK, FreeSWITCH Verto WebRTC, Asterisk JsSIP, or Telnyx WebRTC)
 - **IVR / Call Flows** — Multi-level interactive voice response with DTMF and speech input
 - **Call Recording** — Automatic or per-user recording with in-browser playback
-- **AI Transcription** — OpenAI Whisper speech-to-text and GPT-4o call summaries
+- **AI Transcription** — OpenAI Whisper speech-to-text and GPT-5.4 mini call summaries
 - **SMS & WhatsApp** — Send and receive messages with delivery tracking
 - **Partner Integration** — Automatic caller ID lookup and call/message history on contacts
 

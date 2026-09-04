@@ -23,7 +23,7 @@ in the outbox until one starts pulling.
 Install `connect_memory` like any Odoo addon. Add `connect_memory_sale` if you
 want sale/invoice/payment events and the payment-behavior digest.
 
-## 2. Configure Connect → Configuration → Memory
+## 2. Configure Connect → Memory → Configuration → Settings
 
 | Setting | Meaning |
 |---------|---------|
@@ -59,9 +59,11 @@ Newly captured correspondence flows automatically once the switch is on. To load
 - **One customer** — open a partner and click **Load correspondence to memory**;
   it queues that customer's past emails and chatter messages (idempotent, so a
   second click reports "0 new").
-- **All customers** — Connect → Configuration → Memory → **Backfill all
-  partners** opens a wizard: pick a date range, preview the candidate count, and
-  start a resumable background job that a cron drains in batches.
+- **All customers** — open Connect → Memory → Configuration → Settings and
+  click **Backfill all partners…**: a wizard lets you pick a date range,
+  preview the candidate count, and start a resumable background job that a
+  cron drains in batches. Running and finished jobs are listed under
+  Connect → Memory → **Backfill** (admin-only).
 
 ## Security
 

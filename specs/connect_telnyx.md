@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Telnyx
 - **Technical:** `connect_telnyx`
-- **Version:** 19.0.1.4.3
+- **Version:** 19.0.1.4.4
 - **Depends:** `connect`
 - **Python deps:** `telnyx`, `nacl` (PyNaCl)
 - **Application:** False
@@ -22,7 +22,9 @@ models: `connect.telnyx.exten`, `connect.telnyx.callflow`
 (+`_choice`), `connect.telnyx.number`,
 `connect.telnyx.outgoing_callerid`, `connect.telnyx.user_callflow`
 (+`_call`), `connect.telnyx.message_configuration`,
-`connect.telnyx.texml` and `connect.telnyx.domain`.
+`connect.telnyx.texml`, `connect.telnyx.domain`,
+`connect.telnyx.ai_assistant` and the transient
+`connect.telnyx.ai_call_wizard`.
 
 Voice is integrated through **TeXML** — Telnyx's Twilio-compatible XML
 translator: webhooks carry Twilio-shaped parameters (`CallSid`, `From`,
@@ -250,7 +252,24 @@ supports it — `telnyx`/`rime` `voice_speed`, `minimax` `speed`),
 for unanswered outbound failures; verifies `GET /v2/balance` with
 `sudo` and returns `{balance_blocked, message}` — Connect groups only,
 the amount appears only for `connect.group_admin`, API errors are
-swallowed to `connect.debug`), `write()`
+swallowed to `connect.debug`),
+`telnyx_api_request(method, path, payload=None, params=None, timeout=20)`
+(raw v2 REST call for endpoints the SDK does not consistently expose;
+the API key never appears in error messages or debug output),
+`_ensure_telnyx_outbound_voice_profile()` (finds an enabled — or
+creates an `Odoo Connect` — outbound voice profile; Telnyx rejects any
+outbound INVITE from a connection without one),
+`_read_telnyx_outbound_destinations(profile_id=None)` (mirrors the
+profile whitelist into `telnyx_outbound_destinations`),
+`_push_telnyx_outbound_destinations(destinations)` (writes the
+admin-typed country codes onto the profile whitelist),
+`_telnyx_local_regions()` (country codes derived from owned
+numbers/caller IDs + the company country, used to seed a fresh profile
+whitelist instead of Telnyx's US/CA default),
+`compute_telnyx_sip_uri(user)` (`sip:<telnyx_uri>` for click-to-call),
+`get_telnyx_external_call_route(number, callerId, status_url)` (TeXML
+`<Dial><Number>` snippet with the call duration limit and status
+callback), `write()`
 (protected-field masking). Own standalone settings form view + menu via
 `open_settings_form()`.
 
@@ -275,10 +294,14 @@ generic event dict → core `process_channel_event()`;
 `message.sent`, `message.finalized`); `send()` implements the core
 abstract contract via `client.messages.send()`;
 `telnyx_client_send()`; `_compute_direction()` override checks
-`connect.telnyx.number`. **Known limitation:** co-installing
-connect_twilio and connect_telnyx leaves the last-loaded module owning
-`send()`/`_compute_direction` until a core dispatcher hook exists
-(ADR-032 §9).
+`connect.telnyx.number` and `connect.telnyx.whatsapp_sender`. `send()`
+is co-installation safe: it guards on
+`connect.settings._get_message_provider() != 'telnyx'` and falls
+through to `super()`, so the core per-user dispatcher
+(`connect.user.message_provider`) picks the sending module. **Known
+limitation:** co-installing connect_twilio and connect_telnyx still
+leaves the last-loaded module owning `_compute_direction()` and the
+`sms.composer` override (ADR-032 §9).
 
 ### recording.py - `_inherit = 'connect.recording'`
 
@@ -305,6 +328,7 @@ password is visible to the user for hardphone provisioning).
 | Field | Type | Notes |
 |-------|------|-------|
 | `originate_provider` | Selection | `selection_add=[('telnyx', 'Telnyx')]` |
+| `message_provider` | Selection | `selection_add=[('telnyx', 'Telnyx')]` |
 | `telnyx_exten` / `telnyx_exten_number` | M2O / related | registered in `_pbx_number_fields()` |
 | `telnyx_outgoing_callerid` | M2O | |
 | `telnyx_domain` | M2O | guarded default (install-order safe) |
@@ -509,6 +533,20 @@ Transient wizard: agent (default via `get_default_agent`), phone rendered with
 SMS-fallback toggle + fallback sender (defaults to the default outgoing
 caller ID).
 
+### ai_call_wizard.py - `connect.telnyx.ai_call_wizard`
+
+Transient wizard: `assistant` (M2O `connect.telnyx.ai_assistant`,
+required), `caller_id` (M2O `connect.telnyx.outgoing_callerid`,
+required), `to_number` (Char, required), `partner` (M2O `res.partner`,
+optional). `action_call()` validates the synced assistant/caller ID,
+normalizes the number to `+E164`, and starts an outbound AI call via
+`POST texml/ai_calls/<connection_id>` through the number-routing TeXML
+app (`get_number_app()` — no SIP domain required), passing the
+assistant SID and the partner-derived dynamic variables
+(`_partner_values()` + `odoo_partner_id`). The returned call SID is
+recorded as an `outbound-api` `connect.channel` and a desktop
+notification confirms the start.
+
 ---
 
 ## Security
@@ -519,8 +557,9 @@ read / admin full; `message_configuration` — admin only;
 `outgoing_callerid` webhook has **no write** row (no validation
 callback); WhatsApp senders — user R / admin CRUD / webhook R;
 WhatsApp templates and RCS agents — user R / admin CRUD; the WhatsApp
-and RCS composers — user CRUD (transients). Plus the `sms.composer`
-user grant.
+and RCS composers — user CRUD (transients); AI assistants — admin CRUD
+/ user read / webhook read; the AI call wizard — admin CRUD only
+(transient). Plus the `sms.composer` user grant.
 
 ---
 
@@ -530,20 +569,27 @@ user grant.
   `connect.telnyx.domain.route_call`), `Number Calls` app (model_method →
   `connect.telnyx.number.route_call`, the application every number is
   attached to), `Reject`, `Connection Failed`.
-- `data/ir_cron.xml` — `telnyx_fetch_call_prices_batch()` every 5 min.
+- `data/ir_cron.xml` — two 5-minute crons on `connect.call`:
+  `Fetch Call Prices from Telnyx` → `telnyx_fetch_call_prices_batch()`
+  and `Sync Telnyx AI Conversations` →
+  `telnyx_sync_ai_conversations_batch()` (the repair path for delayed
+  or missed AI conversation webhooks).
 
 ---
 
 ## Views & Menu
 
 Standalone Telnyx settings form; list/form views for numbers, extens,
-callflows, caller IDs, TeXML apps, domains, message configuration;
+callflows, caller IDs, AI assistants (`views/ai_assistant_views.xml`),
+TeXML apps, domains, message configuration;
 core user form/list extended with the Telnyx Phone tab and columns;
 `connect.call` form gets a Telnyx page. Menu: **Connect > Telnyx**
-(seq 50): Numbers, Extensions, Call Flows, Outgoing Caller IDs, TeXML
-Apps, SIP Domains, Messages (Messages, Message Configuration,
-WhatsApp Senders, WhatsApp Templates, RCS Agents — admin),
-Configuration > Settings.
+(seq 50): Numbers (10), Extensions (20), AI Assistants (20,
+`connect.group_admin` only — equal sequence falls back to id order, so
+it follows Extensions), Call Flows (30), Outgoing Caller IDs (40),
+TeXML Apps (50), SIP Domains (60), Messages (70: Messages, Message
+Configuration, WhatsApp Senders, WhatsApp Templates, RCS Agents —
+admin), Configuration (100) > Settings.
 
 ---
 

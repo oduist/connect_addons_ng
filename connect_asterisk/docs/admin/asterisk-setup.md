@@ -94,6 +94,17 @@ If you want Odoo to manage SIP credentials, the
 config for all endpoints — include it from `pjsip_wizard.conf` with
 `#exec curl`.
 
+## Customizing the generated config (optional)
+
+The snippets served by `manager_conf` and `sip_peers` are rendered from
+editable Jinja2 templates under **Connect > Asterisk > Configuration >
+Templates** (`sip_peer_header`, `sip_peer`, `manager_conf`). Each
+template form documents its available variables, shows whether it has
+been customized, and keeps the shipped default on a separate tab — a
+**Reset to Default** button restores it at any time. Edit these when
+your PBX needs extra pjsip wizard options or a different manager.conf
+layout; changes take effect on the next config download.
+
 ## 6. Web phone (optional)
 
 Enable *Web Phone* in the Asterisk settings and set the WebSocket URL

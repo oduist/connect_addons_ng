@@ -7,7 +7,7 @@ Manage inbound DIDs under **Connect ▸ Twilio ▸ Numbers**
 
 | Field | Description |
 |-------|-------------|
-| **Phone Number** | The DID in E.164, unique. |
+| **Phone Number** | The DID in E.164. |
 | **Friendly Name** | Label from Twilio. |
 | **SID** | Twilio Phone Number SID (populated by sync). |
 | **Destination** | Where inbound calls to this number go: **User**, **Call Flow**, or **TwiML**. |
@@ -33,14 +33,19 @@ Use **Sync** on the number list to import numbers from the Twilio account.
 Manage internal extension routing under **Connect ▸ Twilio ▸ Extensions**
 (`connect.twilio.exten`).
 
-- **Number** — the extension digits (up to 4), unique within Twilio.
+- **Number** — the extension digits, unique within Twilio. There is no enforced
+  length limit, but keep extensions to 4 digits or fewer: click-to-call treats
+  anything longer as an external number, and the caller-ID mapping heuristics
+  only recognize extensions up to 4 digits.
 - **Destination** — a polymorphic reference to a **User**, a **Call Flow**
   (`connect.twilio.callflow`), or a **TwiML app** (`connect.twilio.twiml`).
 - A **TwiML preview** shows what the extension renders.
 
 Extension uniqueness is **per provider** — a Twilio extension `100` is
-completely independent of a FreeSWITCH extension `100`. Users, call flows and
-TwiML apps each get an extension automatically when created.
+completely independent of a FreeSWITCH extension `100`. Nothing gets an
+extension automatically: users, call flows and TwiML apps each have a manual
+button on their form (**Twilio Extension** on the user, **Extension** on call
+flows and TwiML apps) that creates or edits the extension.
 
 ## Outgoing caller IDs
 
@@ -51,7 +56,8 @@ Manage the numbers your users present on outbound external calls under
 |-------|-------------|
 | **Friendly Name** | Label. |
 | **Number** | E.164, unique, **must start with `+`**. |
-| **Default** | Exactly one caller ID may be the default; used for users without a personal caller ID. |
+| **Type** (`callerid_type`) | **CallerID** — an external number verified through Twilio validation; **DID Number** — a Twilio-owned incoming number mirrored here by sync (no validation needed). |
+| **Default** | Exactly one caller ID may be the default; used for users without a personal caller ID. A CallerID-type record must be **validated** first. |
 | **SID** | Twilio OutgoingCallerID SID. |
 | **Users** | Users assigned this caller ID. |
 
@@ -61,16 +67,18 @@ Manage the numbers your users present on outbound external calls under
 
 ### Validating a caller ID
 
-Twilio requires ownership verification for numbers you do not own on Twilio:
+Twilio requires ownership verification for numbers you do not own on Twilio.
+Validation is available in the **US1 region only** — the **Validate** button
+raises an error in other regions:
 
-1. Create the caller ID — creation kicks off Twilio validation and returns a
-   **validation code**.
+1. Press **Validate** on the caller ID — Twilio returns a **validation code**.
 2. Twilio calls the number; the callee enters the code.
 3. Twilio posts the result to `/twilio/webhook/outgoing_callerid`, which updates
    the record status.
 
-Deleting a caller ID removes it from Twilio; renaming updates its friendly name
-on Twilio.
+Deleting a CallerID-type record removes it from Twilio; renaming updates its
+friendly name on Twilio. DID Number records cannot be deleted here — remove the
+number in the Twilio Console and press **Sync**.
 
 ## Outbound call routing (summary)
 

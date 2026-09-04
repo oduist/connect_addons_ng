@@ -4,10 +4,11 @@
 
 - **Name:** Oduist Connect CRM
 - **Technical:** `connect_crm`
-- **Version:** 19.0.1.0.0
+- **Version:** 19.0.1.0.2
 - **Depends:** `connect`, `crm`, `utm`
 - **Application:** False
 - **License:** Other proprietary
+- **Post-init hook:** `post_init_hook` — stamps the module install date and refreshes the Oduist license status
 
 ## Overview
 
@@ -65,7 +66,7 @@ Links calls to CRM leads and UTM sources.
 |--------|-------------|
 | `process_call_event()` | Override: on channel event, match phone to `lead` / `source` and attach to the call record |
 | `register_call()` | Override: after call fully ends, run `_auto_create_lead()` if configured |
-| `_auto_create_lead()` | Private: implements auto-creation logic based on call direction, status, and config |
+| `_auto_create_lead()` | Private: implements auto-creation logic based on call direction, status, and config; the unknown-callers rule fires only when the call has no matched `partner` |
 | `_get_ref()` | Override: returns `crm.lead,<id>` if lead is set |
 | `create_lead_button()` | UI action: create/link a lead from the call form |
 | `unlink_crm_lead()` | UI action: unlink the lead from this call |
@@ -92,6 +93,7 @@ Extends CRM leads with call tracking and phone-based matching.
 |-------|------|-------|
 | `connect_calls` | One2many → `connect.call` (field: `lead`) | All calls linked to this lead |
 | `connect_calls_count` | Integer | Computed, stored; count of `connect_calls` |
+| `mobile` | Char | Re-added plain field (Odoo 19 dropped `mobile` from `crm.lead`) |
 | `phone_normalized` | Char | Computed, stored, indexed; normalized `phone` |
 | `mobile_normalized` | Char | Computed, stored, indexed; normalized `mobile` |
 
@@ -103,7 +105,8 @@ Extends CRM leads with call tracking and phone-based matching.
 | `_get_phone_normalized()` | Compute: normalize phone/mobile using partner phone normalization |
 | `_get_connect_calls_count()` | Compute: count related calls |
 | `get_lead_by_number()` | Search open leads by phone/mobile (strips, +prefix, e164 formats) |
-| `create()` | Override: set `source_id` from context `call_id` if provided |
+| `_search_lead_by_number()` | Private: search active leads in open (non-won) stages by `phone_normalized`/`mobile_normalized` |
+| `create()` | Override: set `source_id` from context `connect_call_id` if provided, and back-link the new lead onto that call |
 | `write()` / `unlink()` | Override: clear registry cache after changes (Odoo 17+: `env.registry.clear_cache()`) |
 
 ---
@@ -179,13 +182,13 @@ Record rule: `connect.group_webhook` can access all leads `[(1,'=',1)]`.
 
 ## Static Assets (connect_crm/static/src/)
 
-**Deferred.** The old module patched a `ConnectActiveCallsPopup` OWL component at
-`@connect/services/active_calls/active_calls_popup`. That component does not yet
-exist in the new core `connect` module (`static/src/components/` contains only
-`license_banner`). Adding the Lead column to the active-calls widget is blocked
-until the widget itself is ported to core.
-
-When it is ported, this module will add:
+**None.** `connect_crm` ships no static assets (only the Apps Store description
+under `static/description/`). The core `connect` module now ships the
+active-calls widgets (`connect/static/src/services/active_calls/*` and
+`connect/static/src/components/calls/`); the widget picks up the `lead` field
+through `get_widget_fields()`, so no client-side patch is needed here. A
+dedicated popup patch (Lead column + click-to-open, matching the legacy
+behaviour) remains a possible future addition:
 - `services/active_calls/active_calls_popup.js` — patches `ConnectActiveCallsPopup` with `_onClickLead(ev, lead)` to open the linked lead
 - `services/active_calls/active_calls_popup.xml` — extends the QWeb template with a "Lead" column
 
@@ -206,9 +209,11 @@ When it is ported, this module will add:
 
 ## Prerequisites in Core `connect`
 
-Two changes to core `connect` are needed before (or as part of) this port:
+One change to core `connect` is still pending:
 
-1. **Add a standalone search view** `connect.view_connect_call_search` in `connect/views/call_views.xml` so integration modules can add provider- or domain-specific filters.
-2. **Port the active-calls popup widget** from the old monolithic module to `connect/static/src/services/active_calls/` so `connect_crm` (and any other module) can extend it. This unblocks the deferred static assets above.
+1. **Add a standalone search view** `connect.view_connect_call_search` in `connect/views/call_views.xml` so integration modules can add provider- or domain-specific filters. Until then, search-by-lead is not available.
 
-Both are tracked as TODOs and do not block the core data-model port of `connect_crm`.
+The active-calls popup widget has since been ported to core
+(`connect/static/src/services/active_calls/`), so that former prerequisite is
+resolved. The remaining item is tracked as a TODO and does not block
+`connect_crm`.

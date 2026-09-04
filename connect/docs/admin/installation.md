@@ -3,7 +3,7 @@
 ## Requirements
 
 - Odoo 17.0, 18.0, or 19.0
-- Python packages: `phonenumbers`, `jinja2`, `openai`
+- Python packages: `phonenumbers`, `jinja2`, `httpx`, `openai`, `PyJWT`
 - A telephony provider: Twilio account, FreeSWITCH server, or an existing Asterisk PBX (several providers can be installed side by side)
 
 ### Provider-specific requirements
@@ -29,7 +29,7 @@
 2. Install Python dependencies:
 
     ```bash
-    pip install phonenumbers jinja2 openai
+    pip install phonenumbers jinja2 httpx openai PyJWT
     # For Twilio:
     pip install twilio
     ```

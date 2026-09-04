@@ -64,7 +64,7 @@ class LivekitAgentAPIController(http.Controller):
                 type='http', auth='none', methods=['POST'], csrf=False,
                 readonly=False)
     def heartbeat(self, **_):
-        """Worker liveness marker shown on the settings dev page."""
+        """Worker liveness marker shown on the Agent Worker settings page."""
         if not self._check_token():
             return self._unauthorized()
         request.env['connect.settings'].sudo().set_param(

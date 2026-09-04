@@ -1,5 +1,5 @@
 {
-    'name': 'Connect Elevenlabs Knowledge',
+    'name': 'Oduist Connect ElevenLabs Knowledge',
     'summary': 'AI Knowledge Base Management',
     'description': """Integrate ElevenLabs Knowledge""",
     'currency': 'EUR',

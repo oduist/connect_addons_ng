@@ -22,6 +22,21 @@ from the changes themselves rather than from commit subjects. Work nobody
 outside the repository would notice — refactoring, formatting, tests, CI,
 version bumps, repository moves — is deliberately left out.
 
+## 2026-09
+
+### Fixed
+- **connect** — A licensed module installed without a recorded install date no
+  longer expires its trial immediately.
+- **connect** — Users outside the Connect groups no longer hit an access error
+  when a form resolves their PBX-user link.
+- **connect_crm** — The **For Unknown Callers** auto-create rule now fires only
+  for callers that are not in Contacts, as documented; calls from known
+  contacts no longer create stray leads when the answered/missed toggles are
+  off.
+- **connect_memory** — The **Backfill** menu is now visible to Connect
+  administrators only (it previously showed an access error to regular users),
+  and the **Memory** button on contacts appears only for Connect users.
+
 ## 2026-08
 
 ### Added

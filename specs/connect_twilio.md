@@ -4,11 +4,16 @@
 
 - **Name:** Oduist Connect Twilio
 - **Technical:** `connect_twilio`
-- **Version:** 19.0.2.0.0
+- **Version:** 19.0.2.3.0
 - **Depends:** `connect`
 - **Python deps:** `twilio`
 - **Application:** False
-- **License:** LGPL-3
+- **License:** Other proprietary
+- **post_init_hook:** stamps the module install date and refreshes the Oduist
+  license status (`update_license_status`)
+- **Migrations:** `migrations/19.0.2.0.1/post-migration.py` — drops the obsolete
+  `is_default` column from `connect_twilio_number` (outbound defaults are owned
+  by `connect.twilio.outgoing_callerid`)
 
 ## Overview
 
@@ -70,6 +75,7 @@ Extends core settings with Twilio API credentials, client management, and sync.
 | `get_media_auth(media_url)` | `(account_sid, auth_token)` for `*.twilio.com` media, `None` for anything else — an External Storage bucket must not receive the Twilio token (ADR-060) |
 | `originate_call()` | Override of the core dispatcher: when `_get_originate_provider(user)` is not `'twilio'`, falls through to `super()`; otherwise initiates the outbound call via the Twilio API. The `From` of an internal originate comes from `connect.user.twilio_caller_id()` (ADR-058). With `whatsapp_call=True` the WhatsApp identity goes on the inner `<Dial callerId="whatsapp:…"><WhatsApp>`, never on the outer leg's `From` — Twilio accepts the create, reports `From=None` and ends the call as busy in the same second, so the `<WhatsApp>` verb never runs. The channel it creates records `call_type` (`whatsapp`/`phone`) explicitly, because nothing on that leg lets the status webhook infer it |
 | `get_external_call_route()` | Return TwiML route for external calls |
+| `compute_sip_uri(user)` | Return `sip:<uri>` for the current user's `connect.user` (core dispatcher hook) |
 | `get_twilio_balance()` | Fetch account balance from Twilio API |
 | `_reset_twilio_edge()` | Onchange: reset edge when region changes |
 | `write()` | Override: handle protected field masking for auth_token and api_secret |
@@ -110,21 +116,20 @@ Extends core call with Twilio CallSid tracking, pricing, and webhook handling.
 
 ### 3. channel.py - `_inherit = 'connect.channel'`
 
-Extends core channel with Twilio SID and webhook-based channel management.
-
-**Additional Fields:**
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `sid` | Char | Twilio CallSid for this call leg |
+Twilio webhook adapter for the core channel ledger. **Adds no fields** — the
+`sid` / `parent_sid` columns it fills are core `connect.channel` fields; this
+file only maps Twilio webhook params onto them and implements the Twilio
+handlers for the core softphone recording RPCs.
 
 **Additional Methods:**
 
 | Method | Description |
 |--------|-------------|
-| `on_call_status()` | Twilio webhook: create/update channel records from Twilio params |
-| `_map_twilio_params()` | Map Twilio webhook params to the generic channel event dict |
+| `on_call_status()` | Twilio webhook: map the params via `_map_twilio_params()` and delegate to the core `process_channel_event()` |
+| `_map_twilio_params()` | Map Twilio webhook params to the generic channel event dict (SIDs, caller/called, direction, status, duration, `call_type` phone/whatsapp) |
 | `_strip_exten_plus()` | Twilio E.164-prefixes a bare extension used as caller ID (`100` comes back as `+100`); map it back when a `connect.twilio.exten` matches |
+| `_twilio_recording_call_sids()` / `_twilio_active_recording()` | Resolve which leg (this one or its parent chain) carries a live recording — see *Runtime softphone recording control* below |
+| `_softphone_recording_state_twilio()` / `_softphone_recording_start_twilio()` / `_softphone_recording_stop_twilio()` | Twilio handlers for the core softphone recording RPCs |
 | `connect_notify()` | Desktop notification for incoming SIP/Client calls |
 | `transfer()` | Channel-level transfer via Twilio API |
 
@@ -138,7 +143,7 @@ Extends core message with Twilio message handling - implements the abstract `sen
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `message_sid` | Char | Twilio MessageSid (made required in Twilio context) |
+| `message_sid` | Char | **Core field** (`connect.message`) — re-declared here as a plain Char; not required |
 | `account_sid` | Char | Twilio Account SID |
 | `messaging_service_sid` | Char | Twilio Messaging Service SID |
 
@@ -149,29 +154,24 @@ Extends core message with Twilio message handling - implements the abstract `sen
 | `receive()` | Twilio webhook: process incoming SMS/WhatsApp messages. Runs as the webhook user, so the `connect.twilio.message_configuration` lookup is `sudo()`d — that model is admin-only by design, and reading it unprivileged raised an `AccessError` the handler's own `except` swallowed, silently discarding the message while still answering 200 (so Twilio never retried) |
 | `send()` | **Implements abstract:** Send message via Twilio API. Dispatch guard: when `connect.settings._get_message_provider()` is not `'twilio'`, falls through to `super()` (co-installation with other messaging providers, e.g. `connect_bird`). |
 | `client_send()` | Low-level: `client.messages.create()` wrapper |
+| `action_retry()` | Re-send `failed` messages through `send()` (same recipient/body/target, original `from_number` as caller ID); non-`failed` records are skipped |
 | `_compute_direction()` | Override: check against Twilio-owned numbers to determine direction |
 
 ---
 
 ### 5. recording.py - `_inherit = 'connect.recording'`
 
-Extends core recording with Twilio-specific SIDs and webhook handling.
-
-**Additional Fields:**
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `sid` | Char | Twilio RecordingSID |
-| `call_sid` | Char | Twilio CallSid (channel SID) |
+Twilio webhook/API adapter for the core recording ledger. **Adds no fields** —
+`sid` and `call_sid` are core `connect.recording` fields; this file fills them
+from Twilio webhook params and API fetches.
 
 **Additional Methods:**
 
 | Method | Description |
 |--------|-------------|
-| `on_recording_status()` | Twilio webhook: recording status callback |
-| `prepare_data()` | Parse Twilio webhook params into recording field values |
-| `sync()` | Sync recordings from Twilio API |
-| `create()` | Override: sets sid/call_sid from Twilio params |
+| `on_recording_status()` | Twilio webhook: build the record values from the callback params (SIDs, duration, status, channel/call/partner links), fetch the recording details from the Twilio API, then create the `connect.recording` row via the standard `create()` |
+| `prepare_data()` | Map a Twilio API recording object into recording field values (incl. channel/call resolution by `call_sid`) |
+| `sync()` | Refresh existing recording rows from the Twilio API |
 
 **Notes:**
 - Transcription methods (`transcribe_recording()`, `make_summary()`, etc.) are NOT here.
@@ -285,11 +285,20 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `_get_sip_uri()` | Compute SIP URI |
 | `_manage_sip_callflow()` | Auto-manage SIP callflow entries |
 | `_manage_client_callflow()` | Auto-manage client callflow entries |
-| `create()` | Override: auto-create SIP account and extension |
+| `_manage_voicemail_enabled()` | Constrains: create/remove the `voicemail` user-callflow step when `voicemail_enabled` changes |
+| `_manage_channel_callflow()` | Shared helper: create/update/remove the SIP or client user-callflow step for the channel priority |
+| `_restrict_sip_domain_change()` | Onchange: forbid changing the SIP domain while a SIP account (SID) exists — disable SIP first |
+| `create()` | Override: when `sip_enabled` with a password, creates the SIP **credential** on Twilio and masks the password. It does **NOT** create an extension — extensions come from the manual `create_twilio_extension()` button |
+| `create_twilio_extension()` | Manual action (the **Twilio Extension** button on the user form): create/edit this user's `connect.twilio.exten` |
+| `render_voicemail_prompt()` | Render the user's `voicemail_prompt` as a Jinja2 template (`{'user': self}` context) |
+| `get_user_by_uri()` | Lookup `connect.user` by a `sip:`/`client:` URI's username; falls through to `super()` when nothing matches |
+| `_twilio_is_only_provider()` | True when no other telephony module (`connect_freeswitch`/`connect_asterisk`) is installed — drives the `client_enabled` default |
 | `_get_caller_id()` | Caller ID for a rendered dialplan: `twilio_caller_id()` of the calling user, or the raw `Caller` when it maps to no PBX user |
+| `_get_caller_name()` | Caller name for the web-phone `<Client>` parameter: the calling PBX user's name, else the `CallerName` param |
 | `write()` | Override: handle SIP credential updates |
 | `unlink()` | Override: cleanup SIP account on Twilio |
 | `on_call_action()` | `<Dial>` action webhook: records the dialed callflows, stops on a leg that was answered/canceled (`DialCallStatus`), otherwise renders the next device |
+| `_is_call_action_final()` | Whether the callflow walk must stop at this `<Dial>` action callback: terminal parent `CallStatus`, or a `DialCallStatus` other than busy/no-answer/failed |
 | `_get_dial_action_url()` / `_parse_done_callflows()` | Build/read the `done_callflows=` marker the action URL carries |
 | `_record_done_callflows()` / `_clear_done_callflows()` | Fold the marker into `connect.twilio.user_callflow_call` and drop the bookkeeping when the walk ends |
 
@@ -304,12 +313,13 @@ extension) with Twilio SID, webhook URLs, sync and call routing.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `phone_number` | Char | Required, `UNIQUE` |
+| `phone_number` | Char | Required (no uniqueness constraint) |
 | `friendly_name` | Char | |
 | `destination` | Selection | `user`, `callflow`, `twiml` |
 | `callflow` | Many2one | `connect.twilio.callflow` |
 | `user` | Many2one | `connect.user` |
 | `twiml` | Many2one | `connect.twilio.twiml` |
+| `is_ignored` | Boolean | "Ignored" — exclude the number from Connect routing/management |
 | `sid` | Char | Twilio Phone Number SID |
 | `voice_url` | Char | Computed webhook URL |
 | `voice_fallback_url` | Char | Computed |
@@ -341,23 +351,25 @@ Outbound caller IDs — full standalone model (formerly a
 | `name` | Char | Computed: friendly_name + number |
 | `friendly_name` | Char | Required |
 | `number` | Char | Required, `UNIQUE`, must start with `+` (E.164 constraint — duplicated in connect_freeswitch, fix both) |
-| `status` | Char | |
-| `is_default` | Boolean | Only one default allowed |
+| `callerid_type` | Selection | Required, default `outgoing_callerid`. `outgoing_callerid` ("CallerID") = a verified external number; `number` ("DID Number") = a Twilio-owned incoming phone number mirrored here as a usable caller ID |
+| `status` | Char | Validation status (`not validated` / `validated` / `validation failed`); `number`-type records skip validation |
+| `is_default` | Boolean | Only one default allowed; an `outgoing_callerid`-type record must be `validated` before it can become the default (`_check_default`) |
 | `callerid_users` | One2many | `connect.user` via `twilio_outgoing_callerid` |
-| `sid` | Char | Twilio OutgoingCallerID SID |
+| `sid` | Char | Twilio OutgoingCallerID / IncomingPhoneNumber SID |
 | `validation_code` | Char | Twilio validation code |
 
 **Additional Methods:**
 
 | Method | Description |
 |--------|-------------|
-| `sync()` | Sync outgoing caller IDs from Twilio API |
-| `sync_outgoing_callerid()` | Sync a single caller ID |
-| `validate()` | Initiate Twilio phone validation |
-| `update_status()` | Webhook: validation status callback |
-| `_change_number_friendly_name()` | Constrains: update friendly name on Twilio |
-| `create()` | Override: start Twilio validation on create |
-| `unlink()` | Override: remove from Twilio on delete |
+| `sync()` | Sync both batches: `sync_outgoing_callerid('outgoing_callerid')` then `sync_outgoing_callerid('number')` |
+| `sync_outgoing_callerid(callerid_type)` | Sync one `callerid_type` **batch** from the matching Twilio list (`outgoing_caller_ids` vs `incoming_phone_numbers`): create/update local rows, push friendly-name changes back, and remove local rows of that type whose SID is gone from Twilio |
+| `validate()` | Initiate Twilio phone validation for an `outgoing_callerid`-type record. **Requires `twilio_region == 'us1'`** — Twilio supports outgoing caller IDs in US1 only; an already-verified number is re-imported via `sync()` |
+| `update_status()` | Webhook: validation status callback — matches the number against `callerid_type = 'outgoing_callerid'` records only and sets `validated`/`validation failed` |
+| `_check_default()` | Constrains: `is_default` on an `outgoing_callerid`-type record requires `status == 'validated'` |
+| `_change_number_friendly_name()` | Constrains: push the friendly name to Twilio (`outgoing_caller_ids` for `outgoing_callerid` type, the linked `connect.twilio.number` for `number` type) |
+| `create()` | Override: new `outgoing_callerid`-type records start at `status = 'not validated'` (skipped with `skip_validation` context, e.g. during sync) |
+| `unlink()` | Override (only when `twilio_auto_sync` is on): deleting a `callerid_type = 'number'` record **raises** — Twilio numbers must be removed in the Twilio Console and re-synced; `outgoing_callerid`-type records are also deleted from Twilio |
 
 ---
 
@@ -430,7 +442,8 @@ verb unreachable, so exactly one step is rendered per request.
 
 Incoming-message routing, formerly core `connect.message_configuration`:
 `number` (Many2one `connect.twilio.number`, required), `destination` Selection
-(`res.partner`), `default_values` (JSON, validated by constraint). The CRM
+(`res.partner`), `default_values` (Text holding a **Python dict literal**,
+validated by a constraint via `ast.literal_eval` — not JSON). The CRM
 extension of this model lives in the auto-installed bridge module
 `connect_crm_twilio` (depends on `connect_crm` + `connect_twilio`).
 
@@ -490,7 +503,7 @@ Twilio SIP domain management for SIP trunking.
 | `cred_list_sid` | Char | Twilio Credential List SID |
 | `subdomain` | Char | SIP subdomain |
 | `domain_name` | Char | Computed full domain |
-| `edge_domains` | Char | Computed edge-specific domains |
+| `edge_domains` | Text | Computed edge-specific domains |
 | `friendly_name` | Char | |
 | `sip_registration` | Boolean | Allow SIP registration |
 | `delete_protection` | Boolean | Prevent accidental deletion |
@@ -537,15 +550,13 @@ Twilio WhatsApp sender/business account management.
 | `number` | Char | WhatsApp phone number |
 | `status` | Char | |
 | `url` | Char | |
-| `offline_reasons` | Char | |
+| `offline_reasons` | Text | |
 | `number_id` | Many2one | `connect.twilio.number` |
-| `profile_name` | Char | |
+| `profile_name` | Char | Business Name |
 | `profile_about` | Char | |
+| `profile_vertical` | Char | Business vertical |
 | `profile_address` | Char | |
 | `profile_description` | Text | |
-| `profile_emails` | Char | |
-| `profile_logo_url` | Char | |
-| `profile_websites` | Char | |
 | `callback_url` | Char | Computed |
 | `status_callback_url` | Char | Computed |
 | `messaging_limit` | Char | |
@@ -559,6 +570,7 @@ Twilio WhatsApp sender/business account management.
 | Method | Description |
 |--------|-------------|
 | `sync()` | Sync WhatsApp senders from Twilio messaging API |
+| `action_sync()` | UI button wrapper around `sync()` |
 | `get_default_sender()` | Return an `ONLINE`, synchronized sender in user preference → global default → fallback order; unavailable preferences/defaults are skipped |
 | `send_whatsapp()` | Send WhatsApp message via Twilio API |
 | `chatter_post()` | Post WhatsApp message to partner chatter |
@@ -582,16 +594,18 @@ All routes under `/twilio/webhook/` with Twilio request signature validation.
 
 | Route | Method | Description |
 |-------|--------|-------------|
-| `/twilio/webhook/call/status` | POST | Call status callback |
-| `/twilio/webhook/call/action` | POST | Call action (gather input) |
-| `/twilio/webhook/recording/status` | POST | Recording status callback |
-| `/twilio/webhook/voicemail/status` | POST | Voicemail recording callback |
-| `/twilio/webhook/message/receive` | POST | Incoming SMS/WhatsApp |
-| `/twilio/webhook/message/status` | POST | Message delivery status |
-| `/twilio/webhook/callerid/status` | POST | Caller ID validation status |
-| `/twilio/webhook/number/<id>/voice` | POST | Inbound call to number |
-| `/twilio/webhook/twiml/<id>/voice` | POST | TwiML app voice request |
-| `/twilio/webhook/callflow/<id>/gather` | POST | Callflow gather result |
+| `/twilio/webhook/callstatus` | POST | Call status callback → `connect.call.on_call_status()` |
+| `/twilio/webhook/callaction` | POST | Call action callback → `connect.call.on_call_action()` |
+| `/twilio/webhook/<string:model_name>/call_action/<int:record_id>` | POST | Model-specific `<Dial>` action callback → `model.on_call_action(record_id, kw)`; legacy model names still arriving from stale Twilio-side URLs are remapped via `LEGACY_CALL_ACTION_MODELS` (`connect.callflow` → `connect.twilio.callflow`) |
+| `/twilio/webhook/recordingstatus` | POST | Recording status callback → `connect.recording.on_recording_status()` |
+| `/twilio/webhook/vm_recordingstatus` | POST | Voicemail recording callback → `connect.call.on_vm_recording_status()` |
+| `/twilio/webhook/message` | POST | Incoming SMS/WhatsApp → `connect.message.receive()` |
+| `/twilio/webhook/message_status` | POST | Message delivery status → `connect.whatsapp_sender.update_message_status()` |
+| `/twilio/webhook/outgoing_callerid` | POST | Caller ID validation status → `connect.twilio.outgoing_callerid.update_status()` |
+| `/twilio/webhook/number` | POST | Inbound call to a Twilio number → `connect.twilio.number.route_call()` |
+| `/twilio/webhook/twiml/<int:twiml_id>` | POST | TwiML app voice request → `connect.twilio.twiml.render()` |
+| `/twilio/webhook/callflow/<int:flow_id>/gather` | POST | Callflow gather result → `connect.twilio.callflow.gather_action()` |
+| `/twilio/webhook/domain` | POST | Inbound SIP-domain call → `connect.twilio.domain.route_call()` |
 
 **Signature validation:** All webhook routes validate the `X-Twilio-Signature` header
 using `twilio.request_validator.RequestValidator` when `twilio_verify_requests` is enabled
@@ -654,6 +668,8 @@ Uses core `group_webhook` for webhook access to Twilio-created records.
 | `connect.twilio.domain` | Read | Full | Read |
 | `connect.whatsapp_sender` | Read | Full | Read+Write+Create |
 | `connect.message_content_template` | Read | Full | - |
+| `connect.whatsapp_composer` | Full | Full | - |
+| `sms.composer` | Full (extra row for `connect.group_user` on the core wizard) | (Odoo base rules) | - |
 
 `connect.twilio.message_configuration` is admin-only (infrastructure/config
 model), mirroring the old core rule.
@@ -665,6 +681,18 @@ model), mirroring the old core rule.
 ---
 
 ## Data
+
+### data/twiml.xml
+
+Three seed TwiML applications (`connect.twilio.twiml`): **SIP Domain Calls**
+(`domain_route_call`), **Reject** (`twiml_reject`) and **Connection Failed**
+(`twiml_connection_failed`).
+
+### data/ir_cron.xml
+
+Scheduled job **Fetch Call Prices from Twilio** (`fetch_call_prices`) — batch
+price fetching for completed calls, effective only when the `fetch_call_prices`
+setting is enabled.
 
 ### data/whatsapp_templates.xml
 
@@ -679,6 +707,7 @@ Default WhatsApp content template: `voice_call_request` - used for voice call co
 | File | Inherits | Changes |
 |------|----------|---------|
 | `views/user_views.xml` | `connect.view_connect_user_form`, `connect.view_connect_user_tree` | Add SIP/Client phone tab, username, domain, edge, whatsapp_sender, application, twilio_exten; list adds sip_enabled/client_enabled columns |
+| `views/call_views.xml` | `connect.view_connect_call_form` | Adds a **Twilio** page to the call form: `call_sid`, `price`, `price_unit`, `price_currency`, `is_price_fetched` |
 
 ### New Views
 

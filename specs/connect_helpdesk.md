@@ -4,10 +4,11 @@
 
 - **Name:** Oduist Connect Helpdesk
 - **Technical:** `connect_helpdesk`
-- **Version:** 19.0.1.0.0
+- **Version:** 19.0.1.0.1
 - **Depends:** `connect`, `helpdesk`
 - **Application:** False
 - **License:** Other proprietary
+- **Post-init hook:** `post_init_hook` — stamps the module install date and refreshes the Oduist license status
 
 ## Overview
 
@@ -67,7 +68,7 @@ Links calls to helpdesk tickets.
 | `register_call()` | Override: after call fully ends, run `_auto_create_ticket()` if configured |
 | `_auto_create_ticket()` | Private: implements auto-creation logic by direction/status/unknown-caller |
 | `_get_ref()` | Override: returns `helpdesk.ticket,<id>` if ticket is set |
-| `create_ticket_button()` | UI action: create/link a ticket from the call form |
+| `create_ticket_button()` | UI action: create/link a ticket from the call form. Raises `ValidationError` if the `connect_helpdesk` license is not active |
 | `unlink_ticket()` | UI action: unlink the ticket from this call |
 | `get_widget_fields()` | Override: adds `'ticket'` to widget field list |
 | `register_helpdesk_ticket_call_summary()` | Constrains `summary`: if call has summary + ticket + config, post summary to ticket chatter |
@@ -88,7 +89,7 @@ Adds phone-lookup and a back-reference to calls.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `connect_calls` | One2many → `connect.call.ticket` | All calls linked to this ticket |
+| `connect_calls` | One2many → `connect.call` (field: `ticket`) | All calls linked to this ticket |
 | `connect_calls_count` | Integer, stored computed | Count for stat button |
 | `phone_normalized` | Char, stored indexed | `+` + `strip_number(partner_phone)`; used for lookup |
 
@@ -138,9 +139,12 @@ webhook user can see all tickets.
 ## Deferred
 
 - Active-calls popup patch (`static/src/services/active_calls/`) — the core
-  popup widget is not yet ported into NG. When it lands, add a small patch
-  showing the ticket column in the popup and a click action routing to the
-  ticket form (matches the legacy behaviour and the `connect_crm` plan).
+  popup widget is now ported
+  (`connect/static/src/services/active_calls/*`); the widget picks up the
+  `ticket` field through `get_widget_fields()`. A small patch showing a
+  dedicated ticket column in the popup and a click action routing to the
+  ticket form (matching the legacy behaviour and the `connect_crm` plan)
+  remains a possible future addition.
 
 ---
 
@@ -152,5 +156,6 @@ None in this first iteration.
 
 ## Tests
 
-Placed in `connect_helpdesk/tests/` and run via oduflow:
-`run_odoo_tests connect_helpdesk`.
+The `connect_helpdesk/tests/` package exists but currently ships no tests
+(`tests/__init__.py` is empty). When tests are added, place them there and run
+via oduflow: `run_odoo_tests connect_helpdesk`.

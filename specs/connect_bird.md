@@ -71,12 +71,19 @@ active with the capability → `ValidationError`), `has_capability()`
 
 #### `connect.bird.message_template` — models/message_template.py
 
-Approved WhatsApp templates synced read-only from
-`GET /v1/whatsapp/templates` (tolerates a missing whatsapp scope).
-Required to start a conversation outside the 24-hour customer-service
-window. Fields: `sid`, `name`, `locale`, `status`, `category`,
-`variables` (JSON list), `body_preview`. Methods: `sync()`,
-`get_variable_keys()`, mapping isolated in `_map_remote_template()`.
+Message templates of both products synced read-only from the Bird
+platform: `sync()` iterates `GET /v1/sms/templates` and
+`GET /v1/whatsapp/templates` (upsert per product, drop vanished ones;
+tolerates a missing scope on the access key — logged, no failure).
+WhatsApp templates are required to start a conversation outside the
+24-hour customer-service window; SMS templates are the primary SMS
+send path while free-form SMS is not generally available. Fields:
+`sid`, `product` (Selection `sms`/`whatsapp`, required, indexed),
+`name`, `locale`, `status`, `category`, `scope`, `variables` (JSON
+list), `body_preview`. Methods: `sync()`, `get_variable_keys()`,
+mapping isolated in `_map_remote_sms_template()` /
+`_map_remote_whatsapp_template()` (WhatsApp templates carry no id:
+name + language identify them).
 
 #### `connect.bird.message_configuration` — models/message_configuration.py
 
@@ -241,17 +248,20 @@ Inherited views: core user form (+Bird fields), message form
 SMS composer (+`outgoing_callerid`).
 
 Data: `data/ir_cron.xml` — "Connect Bird: Fetch Call Recordings" every 2
-minutes.
+minutes and "Connect Bird: Poll Message Status" every 5 minutes (the
+platform delivers webhook events for the email product only so far).
 
 ---
 
 ## Tests
 
-`tests_suite/connect_bird/tests/` (private submodule, conditional loader in
-`connect_bird/tests/__init__.py`): settings/API helper, webhook endpoint
-registration (one-time secret, fallback event list), Standard-Webhooks
-signature verification (HttpCase), inbound messages (idempotency, media,
-routing, threading), outbound send (payload, WhatsApp→SMS fallback,
-dispatch fall-through, templates), lifecycle status events (upsert), voice
-event chains, originate (payload, ledger pre-create), recordings (cron,
-retries, URL refresh). All HTTP is mocked.
+Colocated in `connect_bird/tests/` with a plain explicit-import
+`__init__.py` and a shared `common.py`: `test_settings` (settings/API
+helper), `test_webhook_setup` (endpoint registration — one-time secret,
+fallback event list), `test_signature` (Standard-Webhooks verification,
+HttpCase), `test_message_receive` (idempotency, media, routing,
+threading), `test_message_send` (payload, WhatsApp→SMS fallback,
+dispatch fall-through), `test_templates`, `test_message_status`
+(lifecycle status upsert + polling), `test_voice_events` (event
+chains), `test_originate` (payload, ledger pre-create),
+`test_recording` (cron, retries, URL refresh). All HTTP is mocked.

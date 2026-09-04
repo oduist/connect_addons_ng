@@ -7,9 +7,10 @@ that memory for a summary instead of digging through the history yourself.
 
 ## The Memory smart button
 
-Open any customer and you'll see a **Memory events** smart button with a count.
-Click it to see everything Connect has remembered about that customer — each
-captured message or business event, with the record it came from.
+Open any customer and you'll see a **Memory** smart button with a count. Click
+it to open the **Memory events** list — everything Connect has remembered about
+that customer, each captured message or business event, with the record it came
+from.
 
 ## Get a customer summary
 

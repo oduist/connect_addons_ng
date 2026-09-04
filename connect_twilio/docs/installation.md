@@ -63,5 +63,5 @@ Telnyx, Asterisk, etc.) in one database. In a multi-provider database:
 
 Python source is identical across the 17.0 / 18.0 / 19.0 series branches; only
 XML views and per-series migrations differ. The manifest version tail (for
-example `2.2.0`) is the product version and is aligned across branches; the
+example `2.3.0`) is the product version and is aligned across branches; the
 leading `19.0.` only marks the target Odoo series.

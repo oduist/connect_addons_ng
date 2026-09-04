@@ -32,7 +32,7 @@ your Twilio account.
 | **Number** | WhatsApp phone number. |
 | **Status** | Online / offline (with offline reasons). |
 | **Default** | Default sender for users without a personal sender. |
-| **Profile** | Business profile: name, about, address, description, emails, logo, websites. |
+| **Profile** | Business profile: name, about, vertical, address, description. |
 | **Quality Rating** | Twilio quality rating. |
 | **Messaging Limit** | Daily message limit tier. |
 | **Voice Application** | TwiML app used for WhatsApp voice calls. |
@@ -95,7 +95,8 @@ Both legs land in the ledger and the call is recorded with call type
 Manage under **Connect ▸ Twilio ▸ Messages ▸ Message Configuration**
 (`connect.twilio.message_configuration`, admin-only). It routes incoming messages
 on a given Twilio number to a destination (e.g. create/lookup a `res.partner`),
-with optional JSON `default_values` for the created record.
+with optional `default_values` for the created record — a **Python dict
+literal** (e.g. `{'name': 'Inbound SMS'}`), not JSON.
 
 !!! info "CRM routing"
     Routing incoming messages to CRM leads is handled by the auto-installed

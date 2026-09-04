@@ -83,7 +83,7 @@ class CrmCall(models.Model):
                 debug(self, 'Creating a lead for answered incoming call.')
             elif self.status != 'completed' and auto_create_leads_for_in_missed_calls:
                 debug(self, 'Creating a lead for missed incoming call.')
-            elif auto_create_leads_for_in_unknown_callers:
+            elif not self.partner and auto_create_leads_for_in_unknown_callers:
                 debug(self, 'Creating a lead for unknown incoming call.')
             else:
                 debug(self, 'No CRM call auto create rule matched for {}'.format(self.id))
