@@ -358,6 +358,11 @@ setup!"</em>.</p>
   default), the controller validates the <code>X-Twilio-Signature</code> header with
   <code>twilio.request_validator.RequestValidator</code>, using the <strong>Auth Token</strong> read via
   <code>sudo()</code>. The request URL is forced to <code>https:</code> for the signature computation.</li>
+<li><code>check_signature()</code> validates against the <strong>POST form body only</strong>
+  (<code>request.httprequest.form</code>), never the merged route kwargs: Twilio signs the
+  full URL (query string included) plus the POST parameters, and Odoo folds the
+  query string into the kwargs, so validating with those would count every query
+  parameter twice and reject any webhook URL that carries one.</li>
 <li>When validation fails, voice endpoints return <code>&lt;Response&gt;&lt;Say&gt;Invalid Twilio
   request!&lt;/Say&gt;&lt;/Response&gt;</code> and status endpoints return <code>False</code>; nothing is
   processed.</li>

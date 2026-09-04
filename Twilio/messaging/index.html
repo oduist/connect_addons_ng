@@ -321,7 +321,7 @@ your Twilio account.</p>
 </tr>
 <tr>
 <td><strong>Profile</strong></td>
-<td>Business profile: name, about, address, description, emails, logo, websites.</td>
+<td>Business profile: name, about, vertical, address, description.</td>
 </tr>
 <tr>
 <td><strong>Quality Rating</strong></td>
@@ -415,7 +415,8 @@ calls from those countries still work.</p>
 <p>Manage under <strong>Connect ▸ Twilio ▸ Messages ▸ Message Configuration</strong>
 (<code>connect.twilio.message_configuration</code>, admin-only). It routes incoming messages
 on a given Twilio number to a destination (e.g. create/lookup a <code>res.partner</code>),
-with optional JSON <code>default_values</code> for the created record.</p>
+with optional <code>default_values</code> for the created record — a <strong>Python dict
+literal</strong> (e.g. <code>{'name': 'Inbound SMS'}</code>), not JSON.</p>
 <div class="admonition info">
 <p class="admonition-title">CRM routing</p>
 <p>Routing incoming messages to CRM leads is handled by the auto-installed

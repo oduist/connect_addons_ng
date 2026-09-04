@@ -294,7 +294,7 @@
 <tbody>
 <tr>
 <td><strong>Phone Number</strong></td>
-<td>The DID in E.164, unique.</td>
+<td>The DID in E.164.</td>
 </tr>
 <tr>
 <td><strong>Friendly Name</strong></td>
@@ -335,14 +335,19 @@ the configured destination.</p>
 <p>Manage internal extension routing under <strong>Connect ▸ Twilio ▸ Extensions</strong>
 (<code>connect.twilio.exten</code>).</p>
 <ul>
-<li><strong>Number</strong> — the extension digits (up to 4), unique within Twilio.</li>
+<li><strong>Number</strong> — the extension digits, unique within Twilio. There is no enforced
+  length limit, but keep extensions to 4 digits or fewer: click-to-call treats
+  anything longer as an external number, and the caller-ID mapping heuristics
+  only recognize extensions up to 4 digits.</li>
 <li><strong>Destination</strong> — a polymorphic reference to a <strong>User</strong>, a <strong>Call Flow</strong>
   (<code>connect.twilio.callflow</code>), or a <strong>TwiML app</strong> (<code>connect.twilio.twiml</code>).</li>
 <li>A <strong>TwiML preview</strong> shows what the extension renders.</li>
 </ul>
 <p>Extension uniqueness is <strong>per provider</strong> — a Twilio extension <code>100</code> is
-completely independent of a FreeSWITCH extension <code>100</code>. Users, call flows and
-TwiML apps each get an extension automatically when created.</p>
+completely independent of a FreeSWITCH extension <code>100</code>. Nothing gets an
+extension automatically: users, call flows and TwiML apps each have a manual
+button on their form (<strong>Twilio Extension</strong> on the user, <strong>Extension</strong> on call
+flows and TwiML apps) that creates or edits the extension.</p>
 <h2 id="outgoing-caller-ids">Outgoing caller IDs</h2>
 <p>Manage the numbers your users present on outbound external calls under
 <strong>Connect ▸ Twilio ▸ Outgoing Caller IDs</strong> (<code>connect.twilio.outgoing_callerid</code>).</p>
@@ -363,8 +368,12 @@ TwiML apps each get an extension automatically when created.</p>
 <td>E.164, unique, <strong>must start with <code>+</code></strong>.</td>
 </tr>
 <tr>
+<td><strong>Type</strong> (<code>callerid_type</code>)</td>
+<td><strong>CallerID</strong> — an external number verified through Twilio validation; <strong>DID Number</strong> — a Twilio-owned incoming number mirrored here by sync (no validation needed).</td>
+</tr>
+<tr>
 <td><strong>Default</strong></td>
-<td>Exactly one caller ID may be the default; used for users without a personal caller ID.</td>
+<td>Exactly one caller ID may be the default; used for users without a personal caller ID. A CallerID-type record must be <strong>validated</strong> first.</td>
 </tr>
 <tr>
 <td><strong>SID</strong></td>
@@ -379,16 +388,18 @@ TwiML apps each get an extension automatically when created.</p>
 <p><img alt="New outgoing caller ID form" src="../images/callerid-form.png" /></p>
 <p><em>Adding an outgoing caller ID. Only one caller ID can be the default.</em></p>
 <h3 id="validating-a-caller-id">Validating a caller ID</h3>
-<p>Twilio requires ownership verification for numbers you do not own on Twilio:</p>
+<p>Twilio requires ownership verification for numbers you do not own on Twilio.
+Validation is available in the <strong>US1 region only</strong> — the <strong>Validate</strong> button
+raises an error in other regions:</p>
 <ol>
-<li>Create the caller ID — creation kicks off Twilio validation and returns a
-   <strong>validation code</strong>.</li>
+<li>Press <strong>Validate</strong> on the caller ID — Twilio returns a <strong>validation code</strong>.</li>
 <li>Twilio calls the number; the callee enters the code.</li>
 <li>Twilio posts the result to <code>/twilio/webhook/outgoing_callerid</code>, which updates
    the record status.</li>
 </ol>
-<p>Deleting a caller ID removes it from Twilio; renaming updates its friendly name
-on Twilio.</p>
+<p>Deleting a CallerID-type record removes it from Twilio; renaming updates its
+friendly name on Twilio. DID Number records cannot be deleted here — remove the
+number in the Twilio Console and press <strong>Sync</strong>.</p>
 <h2 id="outbound-call-routing-summary">Outbound call routing (summary)</h2>
 <p>When a user places a click-to-call (and their <code>originate_provider</code> is <code>twilio</code>):</p>
 <ol>

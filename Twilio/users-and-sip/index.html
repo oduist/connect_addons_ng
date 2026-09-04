@@ -339,8 +339,9 @@ sync rather than recreated.</p>
 <p><em>The </em><em>Twilio Phone</em><em> tab on a PBX user: SIP phone and web phone (Twilio Client),
 each with its own enable switch, ring priority and timeout.</em></p>
 <h3 id="extension">Extension</h3>
-<p>Give every PBX user an extension: open the user and press <strong>Extension</strong>, then
-enter the number (100, 101, ...). Nothing assigns one automatically.</p>
+<p>Give every PBX user an extension: open the user and press the <strong>Twilio
+Extension</strong> button, then enter the number (100, 101, ...). Nothing assigns one
+automatically — creating a user does <strong>not</strong> create an extension.</p>
 <p>The extension is what colleagues dial to reach the user, and it is the caller
 ID the user's own calls present — the number that shows on the callee's phone
 and in the call history. A user without one falls back to their own outgoing
@@ -366,10 +367,6 @@ identity (ADR-058).</p>
 <tr>
 <td><strong>Web Phone Ring Timeout</strong> (<code>client_ring_timeout</code>)</td>
 <td>Seconds to ring before falling through to the next channel.</td>
-</tr>
-<tr>
-<td><strong>Edge</strong> (<code>twilio_edge</code>)</td>
-<td>Preferred Twilio edge for this user's web phone.</td>
 </tr>
 </tbody>
 </table>
@@ -418,19 +415,22 @@ identity (ADR-058).</p>
 <td>SIP password. Auto-generated with a strong policy (12+ characters).</td>
 </tr>
 <tr>
-<td><strong>SIP URI</strong></td>
-<td>Computed <code>username@domain.sip.twilio.com</code>.</td>
+<td><strong>SIP URI</strong> (<code>connect_uri</code>)</td>
+<td>Computed <code>username@subdomain.sip.twilio.com</code>, or the edge-specific host (<code>username@subdomain.sip.&lt;edge&gt;.twilio.com</code>) when the user's <strong>Edge</strong> is not Global Low-latency Roaming.</td>
 </tr>
 </tbody>
 </table>
 <div class="admonition info">
 <p class="admonition-title">Automatic credential management</p>
-<p>Creating a user (or enabling a Twilio phone on one) automatically creates the
-matching SIP credential and extension on Twilio. Changing the password
-updates it on Twilio; deleting the user removes the credential. Existing
-Twilio credentials are imported rather than duplicated.</p>
+<p>Creating a user with the SIP phone enabled (or enabling it later) automatically
+creates the matching SIP <strong>credential</strong> on Twilio — and only the credential;
+the extension is a separate, manual step (see <a href="#extension">Extension</a> above).
+Changing the password updates the credential on Twilio; deleting the user
+removes it. Existing Twilio credentials are imported rather than duplicated.</p>
 </div>
 <h3 id="other-per-user-fields">Other per-user fields</h3>
+<p>These sit in the user's <strong>User Info</strong> and <strong>Call Settings</strong> groups, not on the
+Twilio Phone tab:</p>
 <table>
 <thead>
 <tr>
@@ -452,8 +452,12 @@ Twilio credentials are imported rather than duplicated.</p>
 <td>WhatsApp number assigned to this user.</td>
 </tr>
 <tr>
+<td><strong>Edge</strong> (<code>twilio_edge</code>)</td>
+<td>Preferred Twilio edge for this user (web phone and edge-specific SIP URI).</td>
+</tr>
+<tr>
 <td><strong>Extension</strong> (<code>twilio_exten</code>)</td>
-<td>The user's internal extension (auto-created).</td>
+<td>The user's internal extension — created manually with the <strong>Twilio Extension</strong> button, never automatically.</td>
 </tr>
 </tbody>
 </table>

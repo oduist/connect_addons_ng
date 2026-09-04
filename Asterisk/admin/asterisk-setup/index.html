@@ -283,6 +283,15 @@ transport. To let the dialplan route a DID to a user, map it under
 <code>/asterisk/api/sip_peers?token=...</code> route renders a pjsip wizard
 config for all endpoints — include it from <code>pjsip_wizard.conf</code> with
 <code>#exec curl</code>.</p>
+<h2 id="customizing-the-generated-config-optional">Customizing the generated config (optional)</h2>
+<p>The snippets served by <code>manager_conf</code> and <code>sip_peers</code> are rendered from
+editable Jinja2 templates under <strong>Connect &gt; Asterisk &gt; Configuration &gt;
+Templates</strong> (<code>sip_peer_header</code>, <code>sip_peer</code>, <code>manager_conf</code>). Each
+template form documents its available variables, shows whether it has
+been customized, and keeps the shipped default on a separate tab — a
+<strong>Reset to Default</strong> button restores it at any time. Edit these when
+your PBX needs extra pjsip wizard options or a different manager.conf
+layout; changes take effect on the next config download.</p>
 <h2 id="6-web-phone-optional">6. Web phone (optional)</h2>
 <p>Enable <em>Web Phone</em> in the Asterisk settings and set the WebSocket URL
 (<code>wss://pbx.example.com:8089/ws</code>). Requirements on Asterisk:
@@ -346,6 +355,11 @@ salesperson) and <code>get_user_data_by_did</code> (DID → user dialstring).</p
       
         <li>
           <a class="docs-toc__link" href="#5-map-users-and-endpoints">5. Map users and endpoints</a>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#customizing-the-generated-config-optional">Customizing the generated config (optional)</a>
           
         </li>
       

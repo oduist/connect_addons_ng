@@ -1071,6 +1071,21 @@ loads the integration modules and binds internal services securely. Key files:</
 <td>IVR with digit collection and choices</td>
 </tr>
 <tr>
+<td><code>dialplan_callflow_voicemail</code></td>
+<td>Dialplan</td>
+<td>Standalone callflow voicemail recorder</td>
+</tr>
+<tr>
+<td><code>dialplan_ivr_choice</code></td>
+<td>Dialplan</td>
+<td>Landing extension for user-typed IVR choices</td>
+</tr>
+<tr>
+<td><code>dialplan_ivr_invalid</code></td>
+<td>Dialplan</td>
+<td>Catch-all extension for invalid IVR input</td>
+</tr>
+<tr>
 <td><code>dialplan_ring_group</code></td>
 <td>Dialplan</td>
 <td>Ring group bridging to multiple users</td>
@@ -1084,6 +1099,16 @@ loads the integration modules and binds internal services securely. Key files:</
 <td><code>dialplan_outgoing_route</code></td>
 <td>Dialplan</td>
 <td>Outbound call routing via gateway</td>
+</tr>
+<tr>
+<td><code>dialplan_fs_fifo</code></td>
+<td>Dialplan</td>
+<td>FS Queue dialplan based on mod_fifo</td>
+</tr>
+<tr>
+<td><code>dialplan_valet_parking</code></td>
+<td>Dialplan</td>
+<td>Valet parking extensions (park/retrieve calls in slots)</td>
 </tr>
 <tr>
 <td><code>dialplan_system</code></td>
@@ -1109,6 +1134,11 @@ loads the integration modules and binds internal services securely. Key files:</
 <td><code>config_xml_rpc</code></td>
 <td>Configuration</td>
 <td>XML-RPC server settings</td>
+</tr>
+<tr>
+<td><code>config_fifo</code></td>
+<td>Configuration</td>
+<td>fifo.conf.xml with static outbound consumers for every FS Queue</td>
 </tr>
 </tbody>
 </table>
@@ -1149,8 +1179,12 @@ loads the integration modules and binds internal services securely. Key files:</
 <td>Call detail records. FreeSWITCH sends CDR XML after each call.</td>
 </tr>
 <tr>
-<td><code>PUT /freeswitch/webhook/recording/&lt;uuid&gt;.wav</code></td>
-<td>Call recordings. FreeSWITCH uploads recorded audio files.</td>
+<td><code>PUT /freeswitch/webhook/recording/&lt;token&gt;/&lt;filename&gt;</code></td>
+<td>Call recordings. FreeSWITCH uploads recorded audio files (<code>&lt;uuid&gt;.wav</code>); the webhook token travels as a path segment.</td>
+</tr>
+<tr>
+<td><code>PUT /freeswitch/webhook/voicemail/&lt;token&gt;/&lt;filename&gt;</code></td>
+<td>Voicemail recordings. The dialplan <code>record</code> application uploads callflow/user voicemail files; same token-in-path scheme.</td>
 </tr>
 </tbody>
 </table>
@@ -1211,7 +1245,7 @@ The expected registration gap after the Odoo save is a few seconds.</p>
 <ol>
 <li>Obtain (or generate and set) the new trunk password in the
    provider's portal.</li>
-<li>In Odoo open <strong>Connect → FreeSWITCH → Gateways</strong>, open the trunk
+<li>In Odoo open <strong>Connect → FreeSWITCH → Configuration → SIP Gateways</strong>, open the trunk
    gateway and paste the new value into <strong>Password</strong> (the field is
    visible to Connect admins only), then <strong>Save</strong>. The save schedules a
    post-commit <code>sofia profile external restart reloadxml</code>, so the new
@@ -1265,7 +1299,6 @@ not match. Check the <code>destination_number</code> the trunk actually sends (O
 log, or <code>fs_cli</code> console at debug level) and make sure the stored DID's digits
 match it — differences beyond a leading <code>+</code> (e.g. an extra national prefix) are
 not normalized and require the stored number to match the delivered digits.</p>
-<h2 id="troubleshooting_1">Troubleshooting</h2>
 <h3 id="no-audio-on-calls">No audio on calls</h3>
 <ul>
 <li><strong>Check firewall</strong>: UDP ports 16000-17000 must be open for RTP media</li>
@@ -1482,15 +1515,6 @@ not normalized and require the stored number to match the delivered digits.</p>
                 <li>
                   <a class="docs-toc__link" href="#inbound-call-dropped-with-404-did-format-mismatch">Inbound call dropped with 404 (DID format mismatch)</a>
                 </li>
-              
-            </ul>
-          
-        </li>
-      
-        <li>
-          <a class="docs-toc__link" href="#troubleshooting_1">Troubleshooting</a>
-          
-            <ul class="docs-toc__list docs-toc__list--nested">
               
                 <li>
                   <a class="docs-toc__link" href="#no-audio-on-calls">No audio on calls</a>

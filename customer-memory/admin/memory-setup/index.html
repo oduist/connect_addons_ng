@@ -246,7 +246,7 @@ in the outbox until one starts pulling.</p>
 <h2 id="1-install-the-modules">1. Install the modules</h2>
 <p>Install <code>connect_memory</code> like any Odoo addon. Add <code>connect_memory_sale</code> if you
 want sale/invoice/payment events and the payment-behavior digest.</p>
-<h2 id="2-configure-connect-configuration-memory">2. Configure Connect → Configuration → Memory</h2>
+<h2 id="2-configure-connect-memory-configuration-settings">2. Configure Connect → Memory → Configuration → Settings</h2>
 <table>
 <thead>
 <tr>
@@ -318,9 +318,11 @@ param or the <code>X-Memory-Token</code> header) against these routes:</p>
 <li><strong>One customer</strong> — open a partner and click <strong>Load correspondence to memory</strong>;
   it queues that customer's past emails and chatter messages (idempotent, so a
   second click reports "0 new").</li>
-<li><strong>All customers</strong> — Connect → Configuration → Memory → <strong>Backfill all
-  partners</strong> opens a wizard: pick a date range, preview the candidate count, and
-  start a resumable background job that a cron drains in batches.</li>
+<li><strong>All customers</strong> — open Connect → Memory → Configuration → Settings and
+  click <strong>Backfill all partners…</strong>: a wizard lets you pick a date range,
+  preview the candidate count, and start a resumable background job that a
+  cron drains in batches. Running and finished jobs are listed under
+  Connect → Memory → <strong>Backfill</strong> (admin-only).</li>
 </ul>
 <h2 id="security">Security</h2>
 <ul>
@@ -355,7 +357,7 @@ param or the <code>X-Memory-Token</code> header) against these routes:</p>
         </li>
       
         <li>
-          <a class="docs-toc__link" href="#2-configure-connect-configuration-memory">2. Configure Connect → Configuration → Memory</a>
+          <a class="docs-toc__link" href="#2-configure-connect-memory-configuration-settings">2. Configure Connect → Memory → Configuration → Settings</a>
           
         </li>
       

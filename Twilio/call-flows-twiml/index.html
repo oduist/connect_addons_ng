@@ -304,7 +304,7 @@ optional voicemail fallback.</em></p>
 </tr>
 <tr>
 <td><strong>Extension</strong></td>
-<td>Auto-created <code>connect.twilio.exten</code> that points at this flow.</td>
+<td>The <code>connect.twilio.exten</code> that points at this flow — created manually with the <strong>Extension</strong> stat button on the form, not automatically.</td>
 </tr>
 <tr>
 <td><strong>Language</strong></td>
@@ -325,6 +325,10 @@ optional voicemail fallback.</em></p>
 <tr>
 <td><strong>Ring Users</strong></td>
 <td>Users to ring for a "reception"-style flow.</td>
+</tr>
+<tr>
+<td><strong>Record Calls</strong> (<code>record_calls</code>)</td>
+<td>Record the calls this flow delivers.</td>
 </tr>
 <tr>
 <td><strong>Voicemail</strong></td>
@@ -385,8 +389,9 @@ URL / Voice Status URL</strong>, <strong>SID</strong> (Twilio Application SID), 
 <strong>Extension</strong>.</p>
 <h3 id="lifecycle">Lifecycle</h3>
 <ul>
-<li>Creating a TwiML app creates the corresponding Twilio Application via the API
-  and an extension for direct dialing.</li>
+<li>Creating a TwiML app creates the corresponding Twilio Application via the API.
+  It does <strong>not</strong> create an extension — use the <strong>Extension</strong> button on the form
+  to add one for direct dialing.</li>
 <li>Editing pushes updated webhook URLs to Twilio.</li>
 <li>Deleting removes the Twilio Application.</li>
 <li>Inbound voice requests hit <code>/twilio/webhook/twiml/&lt;id&gt;</code>, which calls
