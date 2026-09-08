@@ -1,58 +1,88 @@
 ---
 id: B01
-title: Odoo VoIP vs Connect+Twilio
+title: Odoo 19 Phone vs Oduist Connect
 status: draft
 language: en
 platforms: [linkedin]
 publish_date:
 postiz_post_id:
 published_url:
-sources: [connect_twilio/docs/index.md, connect/docs/user/callflows.md]
+sources:
+  - https://www.odoo.com/documentation/19.0/applications/productivity/phone.html
+  - https://oduist.com/blog/odoo-experience-2025-ai-summaries-2/019-what-s-new-in-voip-23
+  - connect_twilio/docs/index.md
+  - connect/docs/user/callflows.md
+  - connect_asterisk/docs/admin/asterisk-setup.md
 ---
 
 ## Post
 
-Odoo's built-in VoIP is fine — if all you need is a dial button. 🎯
+Odoo 19 shipped call recording and AI transcripts in the Phone app. That's genuinely good — and it makes half of every "Odoo VoIP is just a dialer" slide obsolete, including one of ours. 🙂
 
-But "our phones" usually means more: an IVR menu, call recording, SMS follow-ups, and knowing what was said on every call.
+So let me redraw the line honestly.
 
-That's the gap **Oduist Connect + Twilio** closes, right inside Odoo:
+What Odoo 19 Phone now does well: a redesigned browser softphone, recording you can start and stop mid-call, OpenAI transcripts and summaries on the call record, attended transfers.
 
-📞 Browser phone with click-to-call — that part stays
-🌳 Multi-level IVR / call flows with speech input
-⏺️ Call recording with in-browser playback
-🤖 AI transcripts & GPT summaries straight into the chatter
-💬 SMS & WhatsApp from the same interface
+Where **Oduist Connect** still goes further:
 
-And when you outgrow Twilio pricing? The same platform runs on Telnyx, self-hosted FreeSWITCH or your existing PBX. Your call history stays.
+🔌 Your existing PBX keeps running — Asterisk, FreePBX or 3CX
+☎️ Desk phones and classic SIP — Odoo Phone needs SIP over WebSocket
+🌳 IVR, ring groups and queues, built in Odoo forms
+🤖 AI voice agents that answer the phone, open tickets and take orders
+🌍 Nine providers instead of three, self-hosted included
 
-What's the one phone feature you miss most in Odoo? 👇
+If recording and transcripts are all you need, use Odoo's. Really — it's built in and it works.
 
-#Odoo #Twilio #VoIP #CRM
+If your phone system has to survive contact with a real PBX, that's where we start.
+
+Which of these do you actually need? 👇
+
+#Odoo #Odoo19 #VoIP #Telephony
 
 ## Card
 
 ```json
 {
   "template": "comparison",
-  "kicker": "Oduist Connect · Twilio",
-  "headline": "Odoo VoIP is a dialer.",
-  "headline_grad": "You need a phone system.",
-  "lede": "Full cloud telephony inside Odoo — powered by Twilio.",
-  "columns": ["Odoo VoIP", "Connect"],
+  "kicker": "Oduist Connect · Odoo 19",
+  "headline": "Odoo 19 Phone got good.",
+  "headline_grad": "Here's what's left.",
+  "lede": "Recording and AI summaries ship with Odoo now. *The gap moved* — to providers, desk phones, IVR and agents that answer.",
+  "columns": ["Odoo 19 Phone", "Connect"],
   "rows": [
-    {"f": "Click-to-call & web phone", "m": ["✓", "✓"]},
-    {"f": "IVR / call flows", "m": ["—", "✓"]},
-    {"f": "Call recording", "m": ["—", "✓"]},
-    {"f": "AI transcripts & summaries", "m": ["—", "✓"]},
-    {"f": "SMS & WhatsApp", "m": ["—", "✓"]},
-    {"f": "AI voice agents", "m": ["—", "✓"]}
+    {"f": "Browser softphone & click-to-call", "m": ["✓", "✓"]},
+    {"f": "Call recording", "m": ["✓", "✓"]},
+    {"f": "AI transcript & summary", "m": ["✓", "✓"]},
+    {"f": "Keep your existing PBX", "m": ["—", "✓"]},
+    {"f": "Desk phones & classic SIP", "m": ["—", "✓"]},
+    {"f": "IVR, queues & call flows", "m": ["—", "✓"]},
+    {"f": "AI agents that answer calls", "m": ["—", "✓"]}
   ],
-  "footer": "Works with Twilio, Telnyx, FreeSWITCH, Asterisk, 3CX & more"
+  "footer": "Odoo 19 Phone: 3 providers · Connect: 9, plus the PBX you already run"
 }
 ```
 
 ## Notes
 
-Before publishing: re-check the "Odoo VoIP" column against the current Odoo 19
-release so the comparison stays accurate.
+**This post was corrected after the first draft got it wrong.** The original
+claimed Odoo's built-in module has no recording and no transcription. That was
+true of earlier releases and is false for Odoo 19, where VoIP was renamed
+**Phone** and gained admin-configurable call recording (start/stop mid-call),
+OpenAI transcription with an auto summary stored on the call, and attended
+transfers.
+
+Verified 2026-09 against the Odoo 19 Phone documentation and our own blog write-up
+(both listed in `sources`). Re-verify before publishing: Odoo ships fast and the
+concession rows are the ones that make the rest of the card credible.
+
+Two claims to keep precise in the comments:
+
+- **Provider count.** Odoo Phone documents Axivox, OnSIP and DIDWW, plus custom
+  providers that speak SIP over WebSocket. The "classic SIP-only endpoints won't
+  work in the browser" limitation is what the desk-phone row rests on.
+- **IVR and queues.** Odoo Phone itself does not build them; with Axivox you
+  configure dial plans in Axivox's own console. Say "built in Odoo forms" — do
+  not say "Odoo has no IVR at all", because an Axivox customer will correct you.
+
+Naming: Odoo 19 calls it **Phone**, but people still search "Odoo VoIP". Use both
+terms across the article version of this post.

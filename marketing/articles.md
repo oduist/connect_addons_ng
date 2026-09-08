@@ -42,7 +42,7 @@
 
 | # | Заголовок | Мысль / интент | Источник |
 |---|---|---|---|
-| B1 | **Odoo VoIP vs Oduist Connect: what the built-in module doesn't do** | ⭐ Уже написан пост. IVR, запись, AI, SMS. `COMM` | connect_twilio docs |
+| B1 | **Odoo 19 Phone vs Oduist Connect: where the gap actually is** | ⭐ Уже написан пост. ⚠️ В Odoo 19 VoIP переименован в **Phone** и получил запись звонков и AI-транскрипцию — сравнивать надо по провайдерам, десктопным SIP-телефонам, IVR/очередям и AI-агентам, а НЕ по записи и транскриптам. `COMM` | docs Odoo 19 Phone + connect_twilio docs |
 | B2 | **Twilio vs Telnyx for Odoo: a practical comparison** | Цена, TwiML vs TeXML, у Telnyx — RCS и нативные AI-ассистенты. `COMM` | twilio + telnyx |
 | B3 | **FreeSWITCH vs Asterisk with Odoo: which self-hosted path** | Новый PBX под ключ vs «оставить существующий». `COMM` | freeswitch + asterisk |
 | B4 | **ElevenLabs vs Pipecat vs Dograh vs LiveKit: choosing an AI voice engine** | Хостед vs self-hosted, набор инструментов, ограничения. `COMM` | E-кластер |
@@ -359,3 +359,7 @@ I 15 · J 20 · K 14 · L 9 · M 6 · N 12 · O 6). По приоритетам:
   меняется вместе с кодом.
 - Не публикуйте сравнения с конкурентами (B) без перепроверки их актуальных
   возможностей — устаревшее сравнение бьёт по доверию сильнее, чем помогает.
+- **Пример, почему это правило существует:** первая версия B1 утверждала, что во
+  встроенном модуле Odoo нет записи и транскрипции. Для Odoo 19 это неверно.
+  Любое утверждение «у них этого нет» проверяйте по документации нужной версии
+  в день написания, а не по памяти.
