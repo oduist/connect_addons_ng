@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 627px; overflow: hidden; }
+  body {
+    font-family: "Inter", "Segoe UI", -apple-system, Arial, sans-serif;
+    background: #0e0f14; color: #eef0fa; position: relative;
+  }
+  .glow { position: absolute; border-radius: 50%; filter: blur(120px); opacity: .35; }
+  .glow.cyan    { width: 500px; height: 500px; background: #2dd4ff; top: -220px; right: -120px; }
+  .glow.magenta { width: 420px; height: 420px; background: #e16bff; bottom: -240px; left: -140px; opacity: .22; }
+
+  .wrap { position: relative; z-index: 2; display: flex; height: 100%; padding: 60px 72px 90px; align-items: center; gap: 56px; }
+  .copy { flex: 1.1; }
+  .kicker { font-size: 19px; letter-spacing: .28em; text-transform: uppercase; color: #2dd4ff; font-weight: 600; margin-bottom: 24px; }
+  h1 { font-size: 64px; line-height: 1.06; font-weight: 800; letter-spacing: -0.02em; }
+  h1 .grad { background: linear-gradient(90deg, #2dd4ff, #7c83ff 55%, #e16bff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { margin-top: 24px; font-size: 25px; line-height: 1.45; color: #9aa1bd; max-width: 520px; }
+
+  .table { flex: 1; background: #14161f; border: 1px solid rgba(238,240,250,.08); border-radius: 20px; padding: 28px 32px; }
+  .thead { display: grid; grid-template-columns: 1fr 120px 120px; font-size: 18px; color: #9aa1bd; font-weight: 600; padding-bottom: 14px; border-bottom: 1px solid rgba(238,240,250,.1); }
+  .thead .col { text-align: center; }
+  .thead .col.hl { color: #2dd4ff; }
+  .row { display: grid; grid-template-columns: 1fr 120px 120px; align-items: center; font-size: 21px; padding: 12px 0; border-bottom: 1px solid rgba(238,240,250,.05); }
+  .row:last-child { border-bottom: none; }
+  .row .f { color: #eef0fa; font-weight: 500; }
+  .row .m { text-align: center; font-size: 24px; }
+  .yes { color: #2dd4ff; } .no { color: #5b6184; }
+
+  .foot { position: absolute; z-index: 2; left: 72px; right: 72px; bottom: 30px; display: flex; justify-content: space-between; font-size: 19px; color: #9aa1bd; }
+  .foot .url { color: #2dd4ff; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="glow cyan"></div>
+  <div class="glow magenta"></div>
+  <div class="wrap">
+    <div class="copy">
+      <div class="kicker">Oduist Connect · Twilio</div>
+      <h1>Odoo VoIP is<br>a dialer. You need<br><span class="grad">a phone system.</span></h1>
+      <div class="lede">Full cloud telephony inside Odoo — powered by Twilio.</div>
+    </div>
+    <div class="table">
+      <div class="thead"><span></span><span class="col">Odoo VoIP</span><span class="col hl">Connect</span></div>
+      <div class="row"><span class="f">Click-to-call &amp; web phone</span><span class="m yes">✓</span><span class="m yes">✓</span></div>
+      <div class="row"><span class="f">IVR / call flows</span><span class="m no">—</span><span class="m yes">✓</span></div>
+      <div class="row"><span class="f">Call recording</span><span class="m no">—</span><span class="m yes">✓</span></div>
+      <div class="row"><span class="f">AI transcripts &amp; summaries</span><span class="m no">—</span><span class="m yes">✓</span></div>
+      <div class="row"><span class="f">SMS &amp; WhatsApp</span><span class="m no">—</span><span class="m yes">✓</span></div>
+      <div class="row"><span class="f">AI voice agents</span><span class="m no">—</span><span class="m yes">✓</span></div>
+    </div>
+  </div>
+  <div class="foot">
+    <span>Works with Twilio, Telnyx, FreeSWITCH, Asterisk, 3CX &amp; more</span>
+    <span class="url">oduist.com</span>
+  </div>
+</body>
+</html>

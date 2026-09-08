@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 627px; overflow: hidden; }
+  body {
+    font-family: "Inter", "Segoe UI", -apple-system, Arial, sans-serif;
+    background: #0e0f14;
+    color: #eef0fa;
+    position: relative;
+  }
+  /* soft glow accents */
+  .glow { position: absolute; border-radius: 50%; filter: blur(120px); opacity: .35; }
+  .glow.cyan    { width: 500px; height: 500px; background: #2dd4ff; top: -220px; right: -120px; }
+  .glow.magenta { width: 420px; height: 420px; background: #e16bff; bottom: -240px; left: -140px; opacity: .22; }
+
+  .wrap { position: relative; z-index: 2; display: flex; height: 100%; padding: 64px 72px; align-items: center; gap: 56px; }
+
+  .copy { flex: 1.25; }
+  .kicker {
+    font-size: 20px; letter-spacing: .28em; text-transform: uppercase;
+    color: #2dd4ff; font-weight: 600; margin-bottom: 26px;
+  }
+  h1 { font-size: 74px; line-height: 1.04; font-weight: 800; letter-spacing: -0.02em; }
+  h1 .grad {
+    background: linear-gradient(90deg, #2dd4ff, #7c83ff 55%, #e16bff);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .lede { margin-top: 28px; font-size: 27px; line-height: 1.45; color: #9aa1bd; max-width: 560px; }
+  .lede b { color: #eef0fa; font-weight: 600; }
+
+  /* periodic-table motif */
+  .grid { flex: 1; display: grid; grid-template-columns: repeat(3, 128px); gap: 14px; justify-content: end; }
+  .tile {
+    width: 128px; height: 128px; border-radius: 18px;
+    background: #14161f; border: 1px solid rgba(238,240,250,.08);
+    padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between;
+    border-top: 3px solid var(--c);
+  }
+  .tile .sym { font-size: 38px; font-weight: 800; color: var(--c); }
+  .tile .nm  { font-size: 15.5px; color: #9aa1bd; font-weight: 500; }
+  .tile.hero { background: linear-gradient(135deg, rgba(45,212,255,.16), rgba(225,107,255,.14)); border-color: rgba(45,212,255,.45); }
+
+  .foot {
+    position: absolute; z-index: 2; left: 72px; right: 72px; bottom: 34px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 19px; color: #9aa1bd;
+  }
+  .foot .url { color: #2dd4ff; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="glow cyan"></div>
+  <div class="glow magenta"></div>
+  <div class="wrap">
+    <div class="copy">
+      <div class="kicker">Oduist Connect</div>
+      <h1>Give Odoo<br><span class="grad">a voice.</span></h1>
+      <div class="lede">AI agents answer your calls and turn every conversation into <b>leads, tickets and orders</b> — right inside Odoo.</div>
+    </div>
+    <div class="grid">
+      <div class="tile hero" style="--c:#2dd4ff"><span class="sym">AI</span><span class="nm">Voice agents</span></div>
+      <div class="tile" style="--c:#3987e5"><span class="sym">Tw</span><span class="nm">Twilio</span></div>
+      <div class="tile" style="--c:#3987e5"><span class="sym">Tx</span><span class="nm">Telnyx</span></div>
+      <div class="tile" style="--c:#3987e5"><span class="sym">FS</span><span class="nm">FreeSWITCH</span></div>
+      <div class="tile" style="--c:#3987e5"><span class="sym">3CX</span><span class="nm">3CX</span></div>
+      <div class="tile" style="--c:#3987e5"><span class="sym">Ast</span><span class="nm">Asterisk</span></div>
+      <div class="tile" style="--c:#199e70"><span class="sym">CRM</span><span class="nm">Odoo CRM</span></div>
+      <div class="tile" style="--c:#199e70"><span class="sym">HD</span><span class="nm">Helpdesk</span></div>
+      <div class="tile" style="--c:#c98500"><span class="sym">Mem</span><span class="nm">Memory</span></div>
+    </div>
+  </div>
+  <div class="foot">
+    <span>Voice · SMS · WhatsApp · Video — one platform, any provider</span>
+    <span class="url">oduist.com</span>
+  </div>
+</body>
+</html>

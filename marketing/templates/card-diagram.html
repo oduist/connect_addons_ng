@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 627px; overflow: hidden; }
+  body {
+    font-family: "Inter", "Segoe UI", -apple-system, Arial, sans-serif;
+    background: #0e0f14; color: #eef0fa; position: relative;
+  }
+  .glow { position: absolute; border-radius: 50%; filter: blur(120px); opacity: .35; }
+  .glow.cyan    { width: 500px; height: 500px; background: #2dd4ff; top: -220px; right: -120px; }
+  .glow.magenta { width: 420px; height: 420px; background: #e16bff; bottom: -240px; left: -140px; opacity: .22; }
+
+  .wrap { position: relative; z-index: 2; display: flex; height: 100%; padding: 64px 72px 90px; align-items: center; gap: 40px; }
+  .copy { flex: 1.25; }
+  .kicker { font-size: 20px; letter-spacing: .28em; text-transform: uppercase; color: #2dd4ff; font-weight: 600; margin-bottom: 26px; }
+  h1 { font-size: 70px; line-height: 1.05; font-weight: 800; letter-spacing: -0.02em; }
+  h1 .grad { background: linear-gradient(90deg, #2dd4ff, #7c83ff 55%, #e16bff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { margin-top: 26px; font-size: 26px; line-height: 1.45; color: #9aa1bd; max-width: 560px; }
+  .lede b { color: #eef0fa; font-weight: 600; }
+
+  .diagram { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .node {
+    width: 300px; border-radius: 18px; background: #14161f;
+    border: 1px solid rgba(238,240,250,.08); padding: 22px 26px; text-align: center;
+  }
+  .node .t { font-size: 30px; font-weight: 800; }
+  .node .s { font-size: 17px; color: #9aa1bd; margin-top: 4px; }
+  .node.cx .t { color: #3987e5; }
+  .node.od .t { color: #199e70; }
+  .link { font-size: 15px; color: #9aa1bd; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0; }
+  .link .arrow { font-size: 30px; color: #2dd4ff; line-height: 1; }
+  .link .lbl { background: rgba(45,212,255,.1); border: 1px solid rgba(45,212,255,.3); color: #2dd4ff; border-radius: 999px; padding: 4px 14px; font-weight: 600; font-size: 15px; }
+
+  .foot { position: absolute; z-index: 2; left: 72px; right: 72px; bottom: 30px; display: flex; justify-content: space-between; font-size: 19px; color: #9aa1bd; }
+  .foot .url { color: #2dd4ff; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="glow cyan"></div>
+  <div class="glow magenta"></div>
+  <div class="wrap">
+    <div class="copy">
+      <div class="kicker">Oduist Connect · 3CX</div>
+      <h1>Keep your 3CX.<br><span class="grad">Add Odoo.</span></h1>
+      <div class="lede">Caller ID lookup, call journal in the chatter and click-to-call — <b>without replacing your PBX</b>. Set up in an afternoon.</div>
+    </div>
+    <div class="diagram">
+      <div class="node cx"><div class="t">3CX V20</div><div class="s">your existing PBX</div></div>
+      <div class="link"><span class="arrow">⇅</span><span class="lbl">Connect</span></div>
+      <div class="node od"><div class="t">Odoo</div><div class="s">CRM · Helpdesk · Contacts</div></div>
+    </div>
+  </div>
+  <div class="foot">
+    <span>Contact pop-up on ring · Call log &amp; recordings in Odoo · Click-to-call</span>
+    <span class="url">oduist.com</span>
+  </div>
+</body>
+</html>

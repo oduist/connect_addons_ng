@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 627px; overflow: hidden; }
+  body {
+    font-family: "Inter", "Segoe UI", -apple-system, Arial, sans-serif;
+    background: #0e0f14; color: #eef0fa; position: relative;
+  }
+  .glow { position: absolute; border-radius: 50%; filter: blur(120px); opacity: .35; }
+  .glow.purple  { width: 500px; height: 500px; background: #7c83ff; top: -220px; right: -120px; }
+  .glow.magenta { width: 420px; height: 420px; background: #e16bff; bottom: -240px; left: -140px; opacity: .22; }
+
+  .wrap { position: relative; z-index: 2; display: flex; height: 100%; padding: 64px 72px 90px; align-items: center; gap: 48px; }
+  .copy { flex: 1.2; }
+  .kicker { font-size: 20px; letter-spacing: .28em; text-transform: uppercase; color: #9085e9; font-weight: 600; margin-bottom: 26px; }
+  h1 { font-size: 68px; line-height: 1.05; font-weight: 800; letter-spacing: -0.02em; }
+  h1 .grad { background: linear-gradient(90deg, #7c83ff, #e16bff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { margin-top: 26px; font-size: 26px; line-height: 1.45; color: #9aa1bd; max-width: 560px; }
+  .lede b { color: #eef0fa; font-weight: 600; }
+
+  .chat { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+  .bubble { border-radius: 18px; padding: 18px 22px; font-size: 21px; line-height: 1.4; max-width: 420px; }
+  .caller { background: #14161f; border: 1px solid rgba(238,240,250,.08); align-self: flex-start; color: #eef0fa; }
+  .agent  { background: linear-gradient(135deg, rgba(124,131,255,.18), rgba(225,107,255,.16)); border: 1px solid rgba(124,131,255,.4); align-self: flex-end; color: #eef0fa; }
+  .who { font-size: 15px; color: #9aa1bd; margin-bottom: 5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  .agent .who { color: #9085e9; }
+  .ticket {
+    align-self: flex-end; margin-top: 2px;
+    background: rgba(25,158,112,.12); border: 1px solid rgba(25,158,112,.4);
+    color: #4ade9d; border-radius: 999px; padding: 8px 18px; font-size: 18px; font-weight: 600;
+  }
+  .foot { position: absolute; z-index: 2; left: 72px; right: 72px; bottom: 30px; display: flex; justify-content: space-between; font-size: 19px; color: #9aa1bd; }
+  .foot .url { color: #2dd4ff; font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="glow purple"></div>
+  <div class="glow magenta"></div>
+  <div class="wrap">
+    <div class="copy">
+      <div class="kicker">Oduist Connect · AI Agents</div>
+      <h1>Your Helpdesk<br>now <span class="grad">answers<br>the phone.</span></h1>
+      <div class="lede">An AI agent takes the call, finds the customer and <b>opens the ticket</b> — before your team even picks up. 27 languages, 24/7.</div>
+    </div>
+    <div class="chat">
+      <div class="bubble caller"><div class="who">Caller · 2:47 AM</div>"Hi, our shipment arrived damaged, order S00142..."</div>
+      <div class="bubble agent"><div class="who">AI Agent</div>"I'm sorry to hear that. I've found your order and created ticket #318 — our team will call you back first thing in the morning."</div>
+      <div class="ticket">✓ Ticket #318 created in Odoo Helpdesk</div>
+    </div>
+  </div>
+  <div class="foot">
+    <span>ElevenLabs voice agents · grounded in your Odoo knowledge base</span>
+    <span class="url">oduist.com</span>
+  </div>
+</body>
+</html>

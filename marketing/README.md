@@ -1,0 +1,131 @@
+# Маркетинговый конвейер Oduist Connect
+
+Как мы делаем посты для LinkedIn и других соцсетей: Claude генерирует текст и
+карточку по шаблону, Postiz публикует. Один пост = один markdown-файл в
+`posts/`. Этот документ — единственный источник правды по процессу.
+
+## Архитектура
+
+```
+Очередь тем (README, раздел "Очередь")
+        │
+        ▼
+Claude: текст поста + карточка (templates/*.html → out/*.png)
+        │
+        ▼
+Ревью человеком (файл в posts/, статус draft → approved)
+        │
+        ▼
+Postiz (MCP или Public API): загрузка картинки, черновик/расписание
+        │
+        ▼
+LinkedIn · X · Facebook · YouTube · TikTok ...
+```
+
+## Подключение Claude к Postiz
+
+Два пути; основной — MCP (без кода).
+
+### Путь 1: MCP (основной)
+
+Postiz имеет официальный MCP-сервер. Подключение к Claude Code одной командой:
+
+```bash
+# self-hosted (подставить свой URL Postiz):
+claude mcp add postiz --transport http --url https://<postiz-host>/mcp/<API-KEY>
+# облачный Postiz:
+claude mcp add postiz --transport http --url https://api.postiz.com/mcp/<API-KEY>
+```
+
+API-ключ берётся в Postiz: **Settings → Developers → Public API**.
+После подключения Claude напрямую видит каналы, загружает медиа и ставит посты
+в расписание — инструкция «запланируй этот пост в LinkedIn на вторник 10:00»
+выполняется без промежуточных скриптов.
+
+### Путь 2: Public API (запасной / для скриптов)
+
+База: `https://<postiz-host>/public/v1` (облако: `https://api.postiz.com/public/v1`).
+Заголовок: `Authorization: <API-KEY>` (без "Bearer").
+Лимит: 90 запросов/час на создание постов (self-hosted настраивается `API_LIMIT`).
+
+```bash
+# 1. Список подключённых каналов (запомнить id нужных):
+curl -s -H "Authorization: $POSTIZ_API_KEY" https://<host>/public/v1/integrations
+
+# 2. Загрузка картинки (до 50 МБ):
+curl -s -H "Authorization: $POSTIZ_API_KEY" \
+  -F "file=@marketing/out/card-xxx.png" https://<host>/public/v1/upload
+
+# 3. Создание поста (type: draft | schedule | now):
+curl -s -X POST -H "Authorization: $POSTIZ_API_KEY" -H "Content-Type: application/json" \
+  https://<host>/public/v1/posts -d '{
+    "type": "schedule",
+    "date": "2026-09-15T10:00:00Z",
+    "posts": [{
+      "integration": {"id": "<linkedin-channel-id>"},
+      "value": [{"content": "<текст поста>", "image": [{"id": "<upload-id>"}]}]
+    }]
+  }'
+```
+
+## Процесс создания нового поста (по шаблону)
+
+1. **Тема.** Берём верхнюю из очереди ниже (или горячий инфоповод — релиз,
+   кейс, фича). Одна тема = одна мысль. Не смешивать.
+2. **Файл поста.** Скопировать `posts/_template.md` в
+   `posts/YYYY-MM-DD-<slug>.md`, заполнить frontmatter.
+3. **Текст.** Писать по формуле из шаблона (hook → суть 3–5 буллетов → CTA →
+   3–5 хэштегов). Основной язык — английский (аудитория Odoo международная).
+4. **Карточка.** Выбрать тип шаблона из `templates/`:
+   - `card-thesis.html` — заголовок + сетка модулей («периодическая таблица») —
+     для анонсов и тезисов;
+   - `card-comparison.html` — сравнительная таблица — для «X vs Y»;
+   - `card-diagram.html` — схема «A ⇅ B» — для интеграций;
+   - `card-dialog.html` — диалог с AI-агентом — для сценариев/историй.
+   Скопировать шаблон, заменить тексты (заголовок, лид, плитки/строки),
+   отрендерить в PNG 1200×627:
+   ```bash
+   agent-browser open file://$PWD/marketing/out/<slug>.html
+   agent-browser set viewport 1200 627
+   agent-browser screenshot marketing/out/<slug>.png
+   agent-browser close
+   ```
+   Обязательно посмотреть PNG глазами перед публикацией.
+5. **Ревью.** Человек читает пост и карточку. Чек-лист ниже. Статус в
+   frontmatter: `draft` → `approved`.
+6. **Публикация.** Claude через Postiz MCP: загрузить PNG, создать пост по
+   каналам из frontmatter, поставить дату. Пока процесс обкатывается —
+   `type: draft` (подтверждение руками в календаре Postiz), позже `schedule`.
+7. **Закрытие.** Статус → `published`, вписать дату и ссылку на публикацию.
+
+## Чек-лист перед публикацией
+
+- [ ] Факты о продукте сверены с docs/ или specs/ (не выдумываем фичи).
+- [ ] Утверждения о конкурентах проверены на актуальной версии.
+- [ ] В карточке нет опечаток; URL в футере правильный.
+- [ ] Хук в первых двух строках (LinkedIn обрезает превью).
+- [ ] Есть CTA, провоцирующий комментарии (не «ссылка в био»).
+- [ ] Видео (если есть): H.264/AAC MP4, прошло тест-публикацию на тестовом
+      аккаунте (у Postiz бывают капризы формата на Instagram/TikTok).
+
+## Тон и правила
+
+- Пишем как инженеры для инженеров и владельцев бизнеса: конкретика, цифры,
+  сценарии. Без буллшита «revolutionize your business».
+- Продукт называем **Oduist Connect**. Odoo пишется с одной заглавной.
+- Не публикуем скриншоты с реальными данными клиентов.
+- 2–4 поста в неделю на LinkedIn; один и тот же контент в X/Facebook можно
+  дублировать с сокращённым текстом.
+
+## Очередь тем
+
+- [x] Odoo VoIP vs Connect+Twilio (сравнение) — posts/примеры
+- [x] Подключить 3CX к Odoo (диаграмма)
+- [x] AI-агент для Odoo Helpdesk (диалог)
+- [ ] AI-агент оформляет заказ (connect_elevenlabs_sale) — диалог
+- [ ] «Ваш Asterisk остаётся» (connect_asterisk) — диаграмма
+- [ ] Память о клиенте: AI помнит все разговоры (connect_memory) — тезис
+- [ ] Self-hosted телефония без вендор-лока (FreeSWITCH) — тезис
+- [ ] Запись + транскрипция + GPT-резюме каждого звонка — тезис
+- [ ] WhatsApp/SMS/RCS из Odoo (Telnyx/Bird/Infobip) — тезис
+- [ ] Документация живёт внутри Odoo (connect_book) — тезис
