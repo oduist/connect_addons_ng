@@ -31,10 +31,10 @@
 | A2 | **Which telephony provider should you use with Odoo?** | Дерево решений: облачный CPaaS vs self-hosted vs «оставить свою АТС». `COMM` | все provider docs |
 | A3 | **AI voice agents for Odoo: what they can actually do** | Главный крючок продукта: агент открывает тикеты, оформляет заказы, бронирует встречи. `INFO` | connect/docs/user/ai-agents.md |
 | A4 | **Six ways a phone call finds its record in Odoo** | Лид, тикет, заказ, счёт, задача, сотрудник — таблица правил сопоставления. `INFO` | все bridge configuration.md |
-| A5 | **One phone system, eleven providers: the architecture** | Технологически-агностичное ядро + провайдеры; несколько провайдеров в одной базе. `BRAND` | specs/architecture.md |
+| A5 | **One phone system, nine providers: the architecture** | Технологически-агностичное ядро + провайдеры; несколько провайдеров в одной базе. Девять телефонных провайдеров; ElevenLabs/Dograh/Pipecat — это AI-агенты, а не операторы. `BRAND` | specs/architecture.md |
 | A6 | **From ringing phone to closed deal: the full Odoo call lifecycle** | Сквозной сценарий: звонок → карточка → запись → транскрипт → резюме → лид. `INFO` | connect/docs/user/* |
 | A7 | **Self-hosted vs cloud telephony for Odoo: total cost and control** | FreeSWITCH/LiveKit против Twilio/Telnyx: деньги, данные, ответственность. `COMM` | freeswitch + twilio docs |
-| A8 | **The Odoo telephony buyer's checklist** | 20 вопросов, которые надо задать любому вендору (мы на все отвечаем «да»). `COMM` | синтез |
+| A8 | **The Odoo telephony buyer's checklist** | Вопросы, которые надо задать любому вендору; каждый должен опираться на страницу документации, а не на желаемое число. `COMM` | синтез |
 
 ---
 
@@ -73,7 +73,7 @@
 | C8 | **How to connect Vonage to Odoo** | Одна кнопка создаёт всё приложение. `COMM` | vonage-setup.md |
 | C9 | **Video meetings in Odoo with LiveKit** | Комната с карточки контакта, гостевая ссылка. `COMM` | livekit/user/meetings.md |
 | C10 | **Store Twilio call recordings in your own S3 bucket** | Своё хранилище + retention. `COMM` | connect_s3/setup.md |
-| C11 | **Try the whole stack on your laptop: the all-in-one Docker file** | `docker-compose.full.yml` с Odoo 19 + Postgres. `INFO` | freeswitch-setup.md |
+| C11 | **The whole stack in one compose file** | `docker-compose.full.yml` с Odoo 19 + Postgres. Это стек для одного хоста, а НЕ для ноутбука: нужен публичный FQDN и сертификат Let's Encrypt. `INFO` | freeswitch-setup.md |
 
 ---
 
@@ -144,7 +144,7 @@
 | F13 | **Employee call history without a single manual tag** | `INFO` | connect_hr |
 | F14 | **Manual corrections always win: linking that respects humans** | Ручную привязку автоматика не перезаписывает. `INFO` | business-records.md |
 | F15 | **Ringing vs hung up: why linking and creating happen at different moments** | `process_call_event` vs `register_call`. `BRAND` | bridge docs |
-| F16 | **No new menus: integrating without cluttering Odoo** | 5 из 6 мостов не добавляют ни одного пункта меню. `BRAND` | bridge docs |
+| F16 | **No new menus: integrating without cluttering Odoo** | Ни один из шести мостов не добавляет пунктов меню — только smart-кнопки, вкладки и колонки. `BRAND` | bridge docs |
 | F17 | **Inbound SMS that becomes a CRM lead** | `INFO` | connect_crm_twilio |
 
 ---
@@ -251,7 +251,7 @@
 | K1 | **From empty VM to live PBX: a 10-step onboarding runbook** | customer-onboarding.md |
 | K2 | **The 8-point smoke test before you declare a customer live** | customer-onboarding.md |
 | K3 | **Capacity planning: 1000 RTP ports ≈ 500 concurrent calls** | freeswitch-setup.md |
-| K4 | **fs_cli cheat sheet: 11 commands every operator needs** | fs_cli.md |
+| K4 | **fs_cli cheat sheet: the commands every operator needs** (в `fs_cli.md` их 10) | fs_cli.md |
 | K5 | **Customizing generated FreeSWITCH XML from an Odoo form** | freeswitch-setup.md |
 | K6 | **Least-cost routing rules with regex and priorities** | freeswitch-setup.md |
 | K7 | **Bring your own SIP trunk to any carrier** | freeswitch-setup.md, livekit |
@@ -298,7 +298,7 @@
 
 | # | Заголовок | Мысль / интент | Источник |
 |---|---|---|---|
-| N1 | **One ledger, eleven providers: how we keep the core technology-agnostic** | `BRAND` | specs/architecture.md |
+| N1 | **One ledger, nine providers: how we keep the core technology-agnostic** | `BRAND` | specs/architecture.md |
 | N2 | **Why we deliberately duplicate code across provider modules** | ADR-031 — спорное решение, отличная дискуссия. `BRAND` | specs/decisions/ |
 | N3 | **Identical Python across three Odoo branches: an invariant, not a preference** | `BRAND` | AGENTS.md |
 | N4 | **Documentation that ships inside the product** | connect_book: только установленные модули. `BRAND` | connect_book |
@@ -328,11 +328,13 @@
 
 ## Итого и порядок запуска
 
-**Всего 150 статей.** По приоритетам: **P1 ≈ 45** (кластеры A, B, C, D +
-F1–F3), **P2 ≈ 60** (E, F, G, H, I, L, M), **P3 ≈ 45** (J, K, N, O).
+**Всего 198 статей** (A 8 · B 14 · C 11 · D 26 · E 8 · F 17 · G 20 · H 12 ·
+I 15 · J 20 · K 14 · L 9 · M 6 · N 12 · O 6). По приоритетам: **P1 = 62**
+(кластеры A, B, C, D + F1–F3), **P2 = 84** (E, остальной F, G, H, I, L, M),
+**P3 = 52** (J, K, N, O).
 
 Реалистичный темп для одного маркетолога — **1–2 статьи в неделю**, то есть
-плана хватает примерно на два года. Не пытайтесь писать всё.
+плана хватает больше чем на два года. Не пытайтесь писать всё.
 
 **Первые 10 статей (месяцы 1–3), в этом порядке:**
 
