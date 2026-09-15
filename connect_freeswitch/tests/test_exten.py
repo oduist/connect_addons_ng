@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """connect.freeswitch.exten tests (moved from the shared core exten suite
 after the provider model separation, ADR-031)."""
+from odoo.exceptions import ValidationError
 from odoo.tests import tagged
 
 from .common import FsTestCommon
@@ -63,6 +64,13 @@ class TestFsExten(FsTestCommon):
         copy = self.exten.copy()
         self.assertEqual(int(copy.number), int(self.exten.number) + 1)
 
+    def test_copy_does_not_carry_the_destination(self):
+        """A duplicate is a spare number, not a second way to reach the
+        same user -- which the destination guard would refuse anyway."""
+        copy = self.exten.copy()
+        self.assertFalse(copy.dst)
+        self.assertEqual(self.connect_user.freeswitch_exten, self.exten)
+
     def test_user_back_link(self):
         """Creating an exten pointing at a user sets user.freeswitch_exten."""
         self.assertEqual(self.connect_user.freeswitch_exten, self.exten)
@@ -72,16 +80,44 @@ class TestFsExten(FsTestCommon):
         self.exten.unlink()
         self.assertFalse(self.connect_user.freeswitch_exten)
 
-    def test_create_reuses_orphan_exten(self):
-        orphan = self.env['connect.freeswitch.exten'].create({
-            'number': '500',
-        })
-        new_exten = self.env['connect.freeswitch.exten'].create({
-            'number': '500',
-            'model': 'connect.user',
-            'res_id': self.connect_user.id,
-        })
-        self.assertEqual(orphan.id, new_exten.id)
+    def test_create_refuses_a_number_already_in_use(self):
+        """An extension is never taken over by another one being created.
+
+        A number whose extension happens to have no destination used to be
+        rewritten with the new values and returned in place of the record
+        the caller asked to create.
+        """
+        orphan = self.env['connect.freeswitch.exten'].create({'number': '500'})
+        with self.assertRaises(ValidationError):
+            self.env['connect.freeswitch.exten'].create({
+                'number': '500',
+                'model': 'connect.user',
+                'res_id': self.connect_user.id,
+            })
+        self.assertFalse(orphan.dst)
+        self.assertEqual(
+            self.env['connect.freeswitch.exten'].search_count([('number', '=', '500')]), 1)
+
+    def test_a_second_extension_for_the_same_user_is_refused(self):
+        second = self.env['connect.freeswitch.exten'].create({'number': '501'})
+        with self.assertRaises(ValidationError):
+            second.write({
+                'model': 'connect.user', 'res_id': self.connect_user.id})
+            self.env.flush_all()
+        self.env.invalidate_all()
+        self.assertEqual(self.connect_user.freeswitch_exten, self.exten)
+
+    def test_moving_an_extension_releases_the_previous_user(self):
+        other = self._create_connect_user('fs_extenuser2')
+        self.exten.write({'model': 'connect.user', 'res_id': other.id})
+        self.env.flush_all()
+        self.assertFalse(self.connect_user.freeswitch_exten)
+        self.assertEqual(other.freeswitch_exten, self.exten)
+
+    def test_clearing_the_destination_releases_the_user(self):
+        self.exten.write({'model': False, 'res_id': False})
+        self.env.flush_all()
+        self.assertFalse(self.connect_user.freeswitch_exten)
 
     def test_create_extension_action(self):
         result = self.env['connect.freeswitch.exten'].create_extension(

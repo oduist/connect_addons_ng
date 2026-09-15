@@ -419,6 +419,32 @@ The dst-Reference mechanics are **duplicated** with
 Extension uniqueness is per provider — cross-provider uniqueness disappeared by
 design.
 
+**Two things an extension refuses, instead of doing them quietly.**
+
+`_check_number_available()` (called from `create()`) rejects a number another
+extension already carries, naming what it points at. The `UNIQUE` constraint
+says the same thing, but only at flush time and only about a column — and it
+never covered the hole this closes: an extension whose destination happened to
+be empty used to be *rewritten* with the new values and returned in place of
+the record the caller asked to create, so creating an extension silently took
+over an existing one.
+
+`_check_destination_available()` (`@api.constrains('model', 'res_id')`) rejects
+a second extension pointing at a destination that already has one. `write()`
+used to enforce this by clearing `res_id` on whichever extension was already
+there, silently: giving a user a second extension moved their phone onto it and
+left the first extension behind, still naming them, so two extensions claimed
+the same person. Reassigning is therefore two deliberate steps — free the old
+extension, then assign the new one.
+
+Leaving a destination is now driven by `_stored_dst()`, which reads
+`model`/`res_id` rather than the `dst` Reference: `dst` is computed and
+unstored and recomputes to `None` partway through `_set_dst`'s write, which is
+exactly when the destination being left has to be unlinked. Reading it there
+did nothing, so moving an extension to another user — or clearing its
+destination — left the first user still pointing at it, with a stale extension
+number for the caller ID and the directory to read.
+
 ---
 
 ### 11. user_callflow.py - `connect.twilio.user_callflow` + `connect.twilio.user_callflow_call` (own models, ADR-031)

@@ -25,6 +25,16 @@ version bumps, repository moves — is deliberately left out.
 ## 2026-09
 
 ### Fixed
+- **connect_twilio, connect_freeswitch, connect_telnyx, connect_infobip** —
+  Assigning an extension no longer takes one over in silence. A number that
+  already exists is refused with the reason on screen, including when the
+  existing extension points at nothing (it used to be rewritten and handed
+  back as if it were new), and so is a second extension for a destination that
+  already has one (the first one used to be left behind, still naming the same
+  user). Moving an extension to another destination, or clearing it, now
+  releases the previous one instead of leaving a stale extension number behind
+  for the caller ID and the colleague directory to read. **Duplicate** gives
+  the next free number with no destination set.
 - **connect_twilio** — The web phone's **Recent** list no longer shows missed
   calls as connected with a `00:00` duration, and names what actually happened
   from the side you were on: a colleague who declined or was busy, or a call

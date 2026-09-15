@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from odoo import fields, models, api, release
+from odoo.exceptions import ValidationError
 if release.version_info[0] >= 19:
     from odoo.models import Constraint
 
@@ -80,10 +81,7 @@ class Exten(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            exten = self.search([('number', '=', vals['number'])])
-            if exten and not exten.dst:
-                exten.write(vals)
-                return exten
+            self._check_number_available(vals.get('number'))
         res = super().create(vals_list)
         for record in res:
             if record.dst:
@@ -91,15 +89,88 @@ class Exten(models.Model):
         return res
 
     def write(self, vals):
-        if (self.model is not False) and ('model' in vals) and ('res_id' in vals):
-            if self.dst:
-                self._link_dst(self.dst, False)
-            self.env[self._name].search([
-                ('res_id', '=', vals['res_id']), ('model', '=', vals['model'])]).update({'res_id': False})
+        # Capture where each extension points before the write, so a
+        # destination it is moved away from can be told about it.
+        moving = ('model' in vals) or ('res_id' in vals)
+        previous = [(rec, rec._stored_dst()) for rec in self] if moving else []
         res = super().write(vals)
-        if self.dst:
-            self._link_dst(self.dst, self)
+        for rec, dst in previous:
+            if dst and dst != rec._stored_dst():
+                self._link_dst(dst, False)
+        for rec in self:
+            if rec.dst:
+                self._link_dst(rec.dst, rec)
         return res
+
+    def _stored_dst(self):
+        """The destination this extension points at, read from the columns.
+
+        Not from the `dst` Reference: it is computed and unstored, and
+        recomputes to None partway through _set_dst's write -- exactly when
+        write() has to unlink the destination being left behind. Reading
+        `dst` there silently did nothing, so moving an extension to another
+        user, or clearing its destination, left the first user still
+        naming it: a stale extension number on the record the caller ID and
+        the directory read.
+        """
+        self.ensure_one()
+        if not self.model or not self.res_id or self.model not in self.env:
+            return None
+        return self.env[self.model].browse(self.res_id).exists()
+
+    @api.model
+    def _check_number_available(self, number):
+        """Refuse a number another extension already carries.
+
+        The UNIQUE constraint says the same thing, but only at flush time
+        and only about a column. Raising here names the extension that is
+        in the way -- and closes the hole it left: an extension whose
+        destination happened to be empty used to be rewritten with the new
+        values and returned in place of the record the caller asked to
+        create, so assigning a number quietly took over an existing
+        extension.
+        """
+        if not number:
+            return
+        taken = self.search([('number', '=', number)], limit=1)
+        if not taken:
+            return
+        if taken.dst:
+            raise ValidationError(
+                'Extension {} already exists and points to {}. Pick another '
+                'number, or edit that extension.'.format(
+                    number, taken.dst.display_name))
+        raise ValidationError(
+            'Extension {} already exists, with no destination set. Open it '
+            'and set its destination instead of creating a second extension '
+            'with the same number.'.format(number))
+
+    @api.constrains('model', 'res_id')
+    def _check_destination_available(self):
+        """One destination, one extension.
+
+        write() used to enforce this by clearing `res_id` on whichever
+        extension already pointed at the destination, silently: giving a
+        user a second extension moved their phone onto it and left the
+        first one behind, still naming them, so two extensions claimed the
+        same person. Say it instead, and let the admin free the old
+        extension on purpose.
+        """
+        for rec in self:
+            if not rec.model or not rec.res_id:
+                continue
+            other = self.search([
+                ('model', '=', rec.model),
+                ('res_id', '=', rec.res_id),
+                ('id', '!=', rec.id),
+            ], limit=1)
+            if other:
+                raise ValidationError(
+                    '{} is already reached on extension {}. Clear that '
+                    "extension's destination first, or change its number, "
+                    'instead of adding a second one.'.format(
+                        rec.dst.display_name if rec.dst else rec.model,
+                        other.number))
 
     def unlink(self):
         for rec in self:
@@ -114,6 +185,12 @@ class Exten(models.Model):
         last_number = extensions[-1].number
         new_number = int(last_number) + 1
         data_list[0]['number'] = str(new_number)
+        # The copy is a spare number, not a second way to reach the same
+        # place: a destination has exactly one extension
+        # (_check_destination_available), so carrying the original's over
+        # would make every duplicate fail.
+        data_list[0]['model'] = False
+        data_list[0]['res_id'] = False
         return data_list
 
     def _get_dst(self):
