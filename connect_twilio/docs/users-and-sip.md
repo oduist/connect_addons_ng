@@ -99,8 +99,81 @@ Twilio Phone tab:
 | **Edge** (`twilio_edge`) | Preferred Twilio edge for this user (web phone and edge-specific SIP URI). |
 | **Extension** (`twilio_exten`) | The user's internal extension — created manually with the **Twilio Extension** button, never automatically. |
 
+## Using the web phone
+
+Open the phone with the handset button in the systray. The dot next to
+*Connect* in the header is green when the browser is registered with Twilio,
+and the extension beside it is your own. Once a call is live the header says so
+and starts a timer, and the tabs step aside until the call ends.
+
+The phone follows Odoo's own colour scheme: switch the backend to dark mode and
+the panel goes dark with it. There is no separate setting.
+
+Three tabs along the bottom:
+
+| Tab | What it holds |
+|-----|---------------|
+| **Keypad** | The dial field and keys. Type a name, a number or an extension. |
+| **Recent** | Your calls, newest first, grouped by **Today**, **Yesterday**, then by date. |
+| **Favourites** | Speed dial, as a grid. |
+
+### Dialling
+
+Press the keys, or just type. The two behave differently on purpose:
+
+- **Pressing the keys** keeps the keypad on screen and names the number
+  underneath it as soon as it matches a contact or a colleague.
+- **Typing on your keyboard** searches, and the matches take the keypad's
+  place — **Colleagues** (reached on their extension) above **Customers**
+  (reached on their number). Press <kbd>Enter</kbd> to dial. If nothing
+  matches, the green button still dials exactly what you typed.
+
+!!! note "What colleagues can see of each other"
+    Any Connect user can look a colleague up by name or extension and dial
+    them. The lookup returns **only a name and an extension** — SIP usernames,
+    passwords and SIDs stay visible to Connect administrators alone, and a
+    user still cannot open another user's PBX record.
+
+The two buttons flanking the green call button send an **SMS** or a
+**WhatsApp** message to the number instead of calling it.
+
+### On a call
+
+The timer and the recording state sit above a grid of controls: **Forward**,
+**Keypad** (to send touch tones — the field shows the tones as you send them),
+**Contact** (opens the contact, or creates one if the number is unknown),
+**Mute** and **Record**. Red only ever ends the call.
+
+Forwarding keeps the call on screen: the person you are talking to stays in a
+strip along the top while you pick who to hand them to, and **Back to the
+call** returns without dropping anything.
+
+Picking someone hands the call straight over and drops you out of it — there is
+no announcement first. Colleagues are reached on their extension and anyone
+else on their number, exactly as if you had dialled them.
+
+### After a call
+
+The panel goes straight back to wherever you were before the call — the keypad,
+**Recent** or **Favourites** — so you can carry on. If you were on **Recent**,
+the call you have just finished is already in the list.
+
+### Favourites
+
+Star a call in **Recent** to keep its number. The line under the grid tells you
+which number your outgoing calls present to the other end.
+
+!!! note "Safari: click the phone before your first call"
+    Safari will not let a web page pick an audio output device until you have
+    interacted with the page. Until you click something, the phone falls back
+    to your default output — which is usually what you want anyway. Opening the
+    phone once after loading Odoo is enough.
+
 ## Web phone token
 
 The browser softphone requests a JWT from `connect.user.get_client_token()`,
 which is signed with the **API Key SID / Secret** from settings. If web-phone
 users cannot register, verify those two credentials are set and correct.
+
+Alongside the token the call returns your extension and your outgoing caller
+ID, which is what the header and the favourites footer display.

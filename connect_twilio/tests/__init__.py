@@ -3,6 +3,7 @@ from . import test_callflow
 from . import test_channel_exten_number
 from . import test_domain_whatsapp_routing
 from . import test_exten
+from . import test_forward_call
 from . import test_outgoing_callerid
 from . import test_recording_controls
 from . import test_recording_media

@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 import json
 import logging
-from urllib.parse import urljoin
+from urllib.parse import urlencode, urljoin, urlsplit, urlunsplit
 
 from markupsafe import escape
 
 from odoo import models, api, release
 from odoo.exceptions import UserError
 
+from twilio.twiml.voice_response import VoiceResponse
+
+from odoo.addons.connect.models.channel import CALL_END_STATUSES
 from odoo.addons.connect.models.settings import debug
 from .settings import MAX_EXTEN_LEN
 
@@ -227,12 +230,128 @@ class Channel(models.Model):
             raise UserError('Could not stop recording: {}'.format(e))
         return channel._softphone_recording_payload()
 
-    def transfer(self, to=None):
-        self.ensure_one()
+    def _softphone_forward_twilio(self, payload):
+        """Blind-transfer the call this softphone leg belongs to.
+
+        The other party's leg is pointed back at the same TwiML application
+        that routes every outgoing call, with the destination carried in
+        `forward_to`. Routing is therefore not reimplemented here: an
+        extension resolves to the colleague's client or SIP phone and an
+        external number is dialled with the usual caller ID, because
+        `connect.twilio.domain.route_call()` does the deciding either way.
+
+        Redirecting the *other* leg is what makes this work in both
+        directions. On an inbound call that leg is the customer; on an
+        outbound one it is the person we called. Either way it is the party
+        who should end up talking to the forward target, and our own leg drops
+        as soon as the bridge goes away.
+        """
+        channel = self._softphone_recording_channel(payload)
+        # Same resolution and ownership checks the recording controls use:
+        # the helper answers "which live leg is this softphone on, and may
+        # this user touch it?", which is not specific to recording.
+        channel._check_softphone_recording_active()
+        number = (payload.get('number') or '').strip()
+        if not number:
+            raise UserError('No number to forward the call to.')
+
         client = self.env['connect.settings'].get_client()
-        call = client.calls(self.sid).update(
-            twiml="<Response><Say>Ahoy there</Say></Response>"
+        other_sid = channel._forward_target_sid(client)
+
+        pbx_user = (
+            channel.caller_pbx_user
+            or channel.called_pbx_user
+            or self.env.user.connect_user
         )
+        application = pbx_user.domain.application or pbx_user.application
+        if not application or not application.voice_url:
+            raise UserError(
+                'No Twilio application is configured to route the forwarded '
+                'call. Set a SIP domain application in Connect settings.')
+
+        # Announce before moving them. Being redirected mid-sentence with no
+        # warning reads as a dropped call; a short line and a beat of silence
+        # is what the other Connect generation plays here too.
+        response = VoiceResponse()
+        response.say('Transferring your call now.')
+        response.pause(length=1)
+        response.redirect(
+            self._url_with_query(application.voice_url, {'forward_to': number}),
+            method='POST',
+        )
+
+        try:
+            client.calls(other_sid).update(twiml=str(response))
+        except Exception as e:
+            logger.exception('Could not forward call %s to %s', other_sid, number)
+            raise UserError('Could not forward the call: {}'.format(e))
+
+        debug(self, 'Forwarded channel %s to %s' % (other_sid, number))
+        return {'forwarded_to': number, 'channel_sid': other_sid}
+
+    def _forward_target_sid(self, client):
+        """The SID of the leg to move: the other party on this call.
+
+        The ledger answers this without a round-trip, and answers it the same
+        way in both directions -- the sibling of the softphone's leg is the
+        customer on an inbound call and the callee on an outbound one, and is
+        never our own leg, so the `<Dial>` we are running cannot be torn down
+        underneath us.
+
+        It only answers when the ledger is complete, though. A channel row
+        still in flight, or a third leg left up by a ring group, and there is
+        no single sibling to pick. Twilio knows regardless, so fall back to
+        asking it rather than refusing a transfer the user can see is
+        possible.
+        """
+        self.ensure_one()
+        siblings = (self.call.channels - self).filtered(
+            lambda c: c.status not in CALL_END_STATUSES)
+        if len(siblings) == 1:
+            return siblings.sid
+
+        logger.info(
+            'Ledger shows %s other live legs on call %s; asking Twilio which '
+            'leg to forward', len(siblings), self.call.id)
+        try:
+            live = self._twilio_sibling_sid(client)
+        except Exception as e:
+            logger.exception('Could not ask Twilio for the other leg of %s', self.sid)
+            raise UserError('Could not work out which party to forward: {}'.format(e))
+        if not live:
+            raise UserError(
+                'This call cannot be forwarded: there is no other party on '
+                'the line.')
+        return live
+
+    def _twilio_sibling_sid(self, client):
+        """Ask Twilio for the other leg: our parent, or failing that our child.
+
+        A softphone leg is the child on an inbound call (the customer dialled
+        in and the platform dialled us) and the parent on an outbound one (we
+        dialled out), so the other party is whichever of the two we are not.
+        """
+        self.ensure_one()
+        ours = client.calls(self.sid).fetch()
+        parent_sid = getattr(ours, 'parent_call_sid', None)
+        if parent_sid:
+            return parent_sid
+        for child in client.calls.list(parent_call_sid=self.sid, limit=20):
+            if child.status not in CALL_END_STATUSES:
+                return child.sid
+        return None
+
+    @api.model
+    def _url_with_query(self, url, params):
+        """Add query parameters to a URL that may already carry a fragment.
+
+        TwiML voice URLs end in `#e=<edge>`, so appending `?x=y` naively would
+        bury the query inside the fragment and Twilio would never send it.
+        """
+        parts = urlsplit(url)
+        query = '&'.join(filter(None, [parts.query, urlencode(params)]))
+        return urlunsplit(
+            (parts.scheme, parts.netloc, parts.path, query, parts.fragment))
 
     def connect_notify(
         self, title='Connect', sticky=False, warning=False

@@ -279,7 +279,7 @@ Extends core user with Twilio SIP credentials, client tokens, and TwiML renderin
 | `render_sip()` | Generate TwiML `<Dial><Sip>` |
 | `render_voicemail()` | Generate TwiML `<Record>` for voicemail |
 | `get_greeting_message()` / `get_voicemail_prompt()` | `<Say>` the user prompts with `language`/`voice` from `connect.user` (fallbacks `en-US` / `Woman`, ADR-037) |
-| `get_client_token()` | Generate JWT for Twilio Voice SDK. Returns `record_calls` alongside the token so the widget can paint the expected recording state at answer with no extra round trip (see *Runtime recording control* below); returns `{'token': False}` for a user outside the Connect groups |
+| `get_client_token()` | Generate JWT for Twilio Voice SDK. Returns `record_calls` alongside the token so the widget can paint the expected recording state at answer with no extra round trip (see *Runtime recording control* below), plus `exten` (the user's own extension, shown in the softphone header) and `outgoing_callerid` (the number the far end sees, shown under the favourites grid); returns `{'token': False}` for a user outside the Connect groups |
 | `get_client_identity()` | Return SIP identity string |
 | `twilio_caller_id()` | Caller ID for calls this user places: the extension, else `twilio_outgoing_callerid`, else the default outgoing caller ID, else the client identity `client:<username>@<domain>` — an empty caller ID makes Twilio substitute an arbitrary number (ADR-058) |
 | `_get_sip_uri()` | Compute SIP URI |
@@ -759,11 +759,17 @@ Connect > Twilio (seq 50)
 
 | Path | Description |
 |------|-------------|
-| `components/phone/` | Phone UI component (dial pad, call controls, status) |
+| `components/phone/phone/` | The panel itself: screen switching, Twilio Device wiring, call state |
+| `components/phone/recents/` | Recent calls, grouped by day (Twilio's own copy — ADR-062) |
+| `components/phone/contacts/` | Search results: colleagues and customers, also the forward picker. Colleagues come from core `connect.user.search_directory()`, not a `searchRead` — see ADR-063 |
+| `components/phone/favorites/` | Favourites speed-dial grid |
+| `components/phone/tray/` | Systray toggle and hang-up button |
+| `components/phone/icons/` | Inline SVG icon set (`connect_twilio.icon_*`, called with `t-call`) |
 | `js/main.js` | Twilio Device initialization, token refresh, event handlers |
 | `js/utils.js` | Utility functions |
 | `widgets/phone_field/` | Click-to-call phone field widget |
 | `services/` | Active calls service, mail service extensions |
+| `services/errors/` | `connectAudioGestureHandler` — suppresses the Safari audio-output rejection (see below) |
 
 The phone widget uses the Twilio Voice JavaScript SDK (`@twilio/voice-sdk`) to:
 - Initialize a Twilio Device with JWT token from `connect.user.get_client_token()`
@@ -771,8 +777,161 @@ The phone widget uses the Twilio Voice JavaScript SDK (`@twilio/voice-sdk`) to:
 - Make outgoing calls (dial pad, click-to-call from partner form)
 - Show active call status (duration, caller info)
 - Transfer calls
-- Manage call hold/mute
+- Mute the microphone, and mute the ringer while idle
 - Start/stop recording for the active call through the core softphone recording RPCs
+
+#### Panel layout
+
+The panel is 380×700 and stays on **one light ground** throughout, idle or on
+a call. A single getter, `Phone.screen`, picks exactly one body screen;
+`Phone.isCallScreen` says whether a call is live, which is what hides the tab
+bar — during a call there is nowhere else to go.
+
+| `screen` | Tab bar | Shown when |
+|----------|---------|------------|
+| `incoming` | hidden | `inIncoming` — ringing, with Decline / Answer |
+| `forward` | hidden | `isForward` — the forward picker, call kept in a strip on top |
+| `dtmf` | hidden | `inCall` + `isKeypad` — the keypad again; the field shows the tones sent |
+| `incall` | hidden | `inCall` — timer, recording state, control grid, End call |
+| `recents` | shown | `isCalls` |
+| `favorites` | shown | `isFavorites` |
+| `contacts` | shown | `isContactList` — results take the keypad's place |
+| `keypad` | shown | default — dial field, keypad, and the live match under the number |
+
+`incoming` is checked first: a ringing phone is the only thing worth looking at.
+
+**Ending a call restores the screen the user was on before it started.**
+`endCall()` reads `lastActiveTab` — which the tab handlers set, and which the
+in-call controls deliberately do not touch — and puts the panel back on the
+keypad, the recent list or the favourites. There is no call-summary screen in
+between; the panel returns to work rather than reporting on itself. Because the
+tab screens are mounted by `t-if`, the one being restored mounts fresh and
+refetches in `onWillStart`, so the recent list already includes the call that
+just ended.
+
+The contact control is **Contact** when the person on the other end resolves
+to a `res.partner`, and **Create** only when nobody does. On an internal call
+no partner matches the extension, so `searchPartner()` falls through to a
+`connect.user` lookup — but a colleague has a contact too, reached through
+their `res.users`, so there is still something to open and nothing to create.
+`get_user_by_exten_number()` returns it as `partner_id` (core, so every
+provider gets it).
+
+This only ever went wrong on the caller's side: an *inbound* call carries a
+`Partner` custom parameter from the TwiML and sets `isPartner` directly, so the
+callee's panel never took the fall-through.
+
+`computeUserData()` puts that partner in `partnerId`. The field previously held
+the `connect.user` id, which would have opened an unrelated contact had
+anything followed it.
+
+A live call is told apart by the header text, the timer and the green dot, not
+by inverting the panel. `--csp-raised` (`#F0EDF3`) is the surface the call
+controls, the on-air strip and the quiet buttons sit on.
+
+#### Call forward (blind transfer)
+
+`connect.channel.forward_softphone_call({provider, channel_sid, number})`
+hands the other party over to `number` and drops this leg. Core owns the
+dispatcher and the access checks; `_softphone_forward_twilio` owns the
+mechanics, exactly as the recording controls are split.
+
+The Twilio implementation redirects the **other** leg — not the softphone's —
+to the SIP domain's TwiML application, carrying the destination in a
+`forward_to` query parameter, and `connect.twilio.domain.route_call()` prefers
+`forward_to` over `To`. Routing is therefore not duplicated: an extension
+resolves to the colleague's client or SIP phone and an external number is
+dialled with the usual caller ID. Redirecting the other leg is also what makes
+it direction-agnostic — inbound, that leg is the customer; outbound, it is the
+person we called. See ADR-064.
+
+The query is inserted **before** the URL fragment: voice URLs end in
+`#e=<edge>`, so a naively appended `?forward_to=` would be swallowed by the
+fragment and never reach Twilio.
+
+Which leg moves is decided by `_forward_target_sid()`: the sibling channel from
+the ledger when there is exactly one live, otherwise Twilio is asked for our
+parent (inbound) or our live child (outbound). The ledger path costs no API
+round-trip mid-call; the fallback keeps a transfer working when a channel row
+is still in flight or a ring group left a third leg up.
+
+The caller hears `<Say>Transferring your call now.</Say>` and a one-second
+pause before the redirect, and the agent's own leg is ended afterwards — on an
+outbound call it is the leg running the `<Dial>`, which merely completes when
+the callee is redirected away and would otherwise strand the agent.
+
+#### Safari and audio output selection
+
+Safari gates `HTMLAudioElement.setSinkId()` behind a user gesture, and the
+Twilio SDK calls it from inside its own sound playback without handing the
+promise back. The rejection escapes to `window` as a `NotAllowedError`
+("A user gesture is required") and the web client raises a full error dialog
+over something harmless — the browser keeps the default output device, and
+sound works normally after the first click.
+
+`services/errors/audio_gesture_handler.js` registers
+`connectAudioGestureHandler` in the **`error_handlers`** registry at
+`sequence: 95`, ahead of core's `defaultHandler` (100) which opens the dialog;
+returning `true` breaks the handler loop. It has to be a registry entry rather
+than an `unhandledrejection` listener in the component: the web client installs
+its own listener at startup, so anything registered when the phone mounts runs
+second and cannot stop the dialog.
+
+The match is deliberately narrow — `NotAllowedError` **and** a message naming a
+user gesture or `setSinkId`. A denied microphone is also a `NotAllowedError`
+and must keep surfacing. Verified: the Safari rejection is swallowed (logged as
+a `[Connect Phone]` console warning), while a denied microphone and unrelated
+errors still raise the dialog.
+
+#### Dark theme
+
+`phone.dark.scss` is registered in **`web.assets_web_dark`**, the bundle Odoo
+serves instead of `web.assets_web` when the user's colour scheme is dark. That
+bundle `include`s the light one first, so the file is a pure override and the
+panel follows the backend theme — there is no toggle of the module's own and no
+setting to keep in sync. Dark mode itself is an Odoo **Enterprise** feature
+(Community's `ir.http.color_scheme()` always returns `light`), so on Community
+the panel is simply always light.
+
+The `web.assets_backend` globs end with
+`('remove', 'connect_twilio/static/src/**/*.dark.scss')`: without it the
+`components/phone/*/*` glob sweeps the dark override into the light bundle and
+darkens the panel for everyone.
+
+Nearly all of the theme is a token remap, because screens read
+`--csp-bg` / `--csp-fg` / `--csp-muted` / `--csp-line` and never a raw colour.
+Two tokens exist purely to survive the inversion:
+
+- `--csp-stop-ink` — the stop red **as text**, which must lift on a dark ground
+  for contrast, while `--csp-stop` stays solid because it also fills the End
+  call and Decline buttons and a lifted red there reads as washed out.
+- `--csp-elevated` — a surface that sits *above* the panel (the dial bar's
+  SMS/WhatsApp buttons), as opposed to `--csp-raised`, which sits just off it.
+
+`.o_csp_ctrl_active` is `background: var(--csp-fg); color: var(--csp-bg)`, so
+"active means inverted" holds on either ground with no dark counterpart.
+
+Colour discipline: green appears at most once per screen and only ever means
+"a call can start or is running"; red only ever ends something.
+
+**Avatars fall back to a coloured initial, never to an image file.** The path
+every module points at, `/connect/static/src/images/default_contact.jpg`, does
+not exist — core ships no `static/src/images` at all — so it renders as a
+broken image. `contactInitial()` / `contactTone()` in `js/utils.js` build a
+deterministic tile instead, which is also what the design calls for. Core
+`connect.calls` and the other providers' favourites still reference the missing
+file.
+
+**`prepareCall()` refuses an empty number.** It is the single point every dial
+converges on — keypad, contact and favourite lists, recent list, click-to-call
+from a form — and Twilio will happily accept a call with an empty `To`, ring
+nobody, and leave a nameless row in the ledger. The user gets a notification
+instead.
+
+**`Contacts` stays mounted on every screen** (hidden with `o_hide` rather than
+`t-if`). `_onClickForward()` announces the mode over the bus *before* the
+screen changes, so a component that came into existence afterwards would never
+hear the event and the forward picker would render without its search box.
 
 ---
 

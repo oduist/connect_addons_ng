@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Twilio',
-    'version': '19.0.2.3.0',
+    'version': '19.0.2.4.0',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Twilio integration for Oduist Connect',
@@ -38,7 +38,18 @@
             'connect_twilio/static/src/js/utils.js',
             'connect_twilio/static/src/widgets/phone_field/*',
             'connect_twilio/static/src/services/actions/*',
+            'connect_twilio/static/src/services/errors/*',
             'connect_twilio/static/src/services/mail/*',
+            # The globs above would otherwise sweep the dark overrides into
+            # the light bundle and darken the panel for everyone.
+            ('remove', 'connect_twilio/static/src/**/*.dark.scss'),
+        ],
+        # Odoo serves this bundle instead of web.assets_web when the user's
+        # colour scheme is dark; it includes the light one first, so these
+        # files are pure overrides. The softphone follows the backend theme
+        # with no toggle of its own.
+        'web.assets_web_dark': [
+            'connect_twilio/static/src/**/*.dark.scss',
         ],
     },
     'post_init_hook': 'post_init_hook',

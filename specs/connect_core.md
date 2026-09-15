@@ -435,6 +435,7 @@ links).
 | `_pbx_number_fields()` | Provider hook (`@api.model`): names of Char fields on connect.user holding a provider extension number. Returns `[]` in core; provider modules append their field (`twilio_exten_number`, `freeswitch_exten_number`, `asterisk_exten_number`). |
 | `get_pbx_number()` | First non-empty provider extension number of this user (iterates `_pbx_number_fields()`). Used e.g. by `connect.channel._get_channel_numbers()`. |
 | `get_user_by_exten_number()` | Lookup connect.user by extension number; searches across all `_pbx_number_fields()`, so it works with any combination of installed providers. |
+| `search_directory(query, limit=10)` | Colleague directory for the softphones: matches `name` or any `_pbx_number_fields()` extension and returns a hand-built `{id, name, user_id, exten_number}` per hit. Gated on `connect.group_user`/`group_admin`, then runs `sudo()` — the `rule_connect_user_own` record rule otherwise resolves only the caller's own record, and widening it would expose the credentials provider modules hang off this model (`connect_twilio.password`/`username`/`sid`). The payload is an explicit dict, so a new field on `connect.user` can never leak through it. See ADR-063. |
 | `get_user_by_uri()` | No-op in core (returns empty recordset). Integration modules override to lookup connect.user by SIP URI or client identity. |
 | `manage_group()` | Add/remove security groups on linked res.users |
 | `create()` / `write()` / `unlink()` | Group management side effects |

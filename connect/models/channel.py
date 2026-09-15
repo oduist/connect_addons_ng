@@ -286,7 +286,7 @@ class Channel(models.Model):
             user_ids.update(self.call.called_users.ids)
         if user.id in user_ids:
             return True
-        raise AccessError('You can control recording only for your own calls.')
+        raise AccessError('You can control only your own calls.')
 
     def _check_softphone_recording_active(self):
         self.ensure_one()
@@ -303,6 +303,30 @@ class Channel(models.Model):
         method = '_softphone_recording_{}_{}'.format(action, provider)
         if not hasattr(self, method):
             return self._softphone_recording_unsupported()
+        return getattr(self, method)(payload)
+
+    # ------------------------------------------------------------------
+    # Blind transfer
+    # ------------------------------------------------------------------
+
+    @api.model
+    def forward_softphone_call(self, payload):
+        """Send the other party on this call to `number` and drop out of it.
+
+        Blind transfer: the caller is handed over immediately, with no
+        announcement, which is what the softphone's forward picker offers.
+        Provider-dispatched exactly like the recording controls above -- core
+        owns the contract and the access checks, the provider module owns the
+        mechanics of moving a live leg.
+        """
+        payload = payload or {}
+        provider = payload.get('provider')
+        if not provider:
+            raise UserError('Missing telephony provider.')
+        method = '_softphone_forward_{}'.format(provider)
+        if not hasattr(self, method):
+            raise UserError(
+                'Forwarding a call is not supported by this provider.')
         return getattr(self, method)(payload)
 
     @api.model
