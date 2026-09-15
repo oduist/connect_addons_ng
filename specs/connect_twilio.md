@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Twilio
 - **Technical:** `connect_twilio`
-- **Version:** 19.0.2.3.0
+- **Version:** 19.0.2.4.1
 - **Depends:** `connect`
 - **Python deps:** `twilio`
 - **Application:** False
@@ -808,10 +808,10 @@ The phone widget uses the Twilio Voice JavaScript SDK (`@twilio/voice-sdk`) to:
 
 #### Panel layout
 
-The panel is 380×700 and stays on **one light ground** throughout, idle or on
-a call. A single getter, `Phone.screen`, picks exactly one body screen;
-`Phone.isCallScreen` says whether a call is live, which is what hides the tab
-bar — during a call there is nowhere else to go.
+The panel is laid out at 380×700 and stays on **one light ground** throughout,
+idle or on a call. A single getter, `Phone.screen`, picks exactly one body
+screen; `Phone.isCallScreen` says whether a call is live, which is what hides
+the tab bar — during a call there is nowhere else to go.
 
 | `screen` | Tab bar | Shown when |
 |----------|---------|------------|
@@ -860,6 +860,43 @@ anything followed it.
 A live call is told apart by the header text, the timer and the green dot, not
 by inverting the panel. `--csp-raised` (`#F0EDF3`) is the surface the call
 controls, the on-air strip and the quiet buttons sit on.
+
+#### Size and position
+
+The panel is **drawn at 380×700 and shown at nine tenths of it**, through
+`zoom: var(--csp-zoom)` on `.o_connect_softphone`. Scaling the whole thing
+keeps every proportion — type, icons, spacing, the keypad lattice — in step,
+and leaves one number to tune rather than two hundred lengths to keep aligned
+by hand. The type ramp is set a size or so larger to pay the zoom back, so the
+panel loses a tenth of its footprint on screen while a row name still reads at
+about 14px.
+
+Two calculations live in a different coordinate space because of it, and both
+divide the zoom back out:
+
+- `max-height` is `calc((100vh - 48px) / var(--csp-zoom))`. `vh` is **not**
+  rescaled inside a zoomed element — it stays the real viewport height,
+  measured in the panel's own coordinates — so the plain clamp left the panel a
+  tenth shorter than the space it had.
+- `_moveTo()` writes `left`/`top` divided by the computed zoom, because those
+  resolve in the panel's coordinates and are scaled afterwards. Without it the
+  panel lands short of the pointer, by more the further it is dragged.
+
+**The panel is kept inside the window.** `_clampToViewport()` measures the
+panel (`getBoundingClientRect()`) instead of assuming a size: it is positioned
+only from its top-left, and its height follows the window through `max-height`,
+so both far edges have to be worked out at the time. The constants this
+replaced described a 300×520 panel that has not existed since the redesign,
+which is why the phone could be dragged 80px past the right edge and 180px past
+the bottom one. The same clamp runs from three places — the drag, a `resize`
+listener, and `onPatched` when the panel is shown again, since a hidden panel
+is `display: none`, measures zero and cannot be clamped while it is away.
+
+A panel that has never been dragged has no `left`/`top` of its own and is left
+alone: it is parked on `bottom: 0`, which no resize can push off screen.
+
+The other providers' phones keep the older 300×520 chrome, where those same
+constants still describe the panel, so the drag code there is untouched.
 
 #### Recent list
 

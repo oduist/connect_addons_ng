@@ -109,6 +109,10 @@ and starts a timer, and the tabs step aside until the call ends.
 The phone follows Odoo's own colour scheme: switch the backend to dark mode and
 the panel goes dark with it. There is no separate setting.
 
+Drag the panel by its header to move it. It cannot be dragged off the screen,
+and if you make the browser window smaller it comes back inside on its own —
+the header, and with it the hang-up button, is always reachable.
+
 Three tabs along the bottom:
 
 | Tab | What it holds |

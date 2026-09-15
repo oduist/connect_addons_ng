@@ -24,7 +24,17 @@ version bumps, repository moves — is deliberately left out.
 
 ## 2026-09
 
+### Changed
+- **connect_twilio** — The web phone takes a tenth less room on screen. The
+  panel is now drawn at its full size and displayed slightly smaller, with the
+  text set larger to compensate, so it fits a laptop screen without anything
+  becoming harder to read.
+
 ### Fixed
+- **connect_twilio** — The web phone can no longer be dragged off the screen,
+  and comes back inside on its own when the browser window is made smaller —
+  the panel had been clamped as if it were the smaller one from before the
+  redesign, so it could go 80px past the right edge and 180px past the bottom.
 - **connect_twilio, connect_freeswitch, connect_telnyx, connect_infobip** —
   Assigning an extension no longer takes one over in silence. A number that
   already exists is refused with the reason on screen, including when the

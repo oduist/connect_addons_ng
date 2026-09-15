@@ -6,11 +6,13 @@ import {Recents} from "@connect_twilio/components/phone/recents/recents"
 import {Favorites} from "@connect_twilio/components/phone/favorites/favorites"
 import {Contacts} from "@connect_twilio/components/phone/contacts/contacts"
 import {contactInitial, contactTone, dialTone, setFocus} from "@connect_twilio/js/utils"
-import {Component, useState, useRef, onWillStart, onMounted} from "@odoo/owl"
+import {Component, useState, useRef, onWillStart, onMounted, onPatched, onWillUnmount} from "@odoo/owl"
 import {useDebounced} from "@web/core/utils/timing"
 import {user} from "@web/core/user"
 
 const uid = user.userId
+
+const clamp = (value, low, high) => Math.min(Math.max(value, low), high)
 
 // Connection diagnostics: single prefix so admins can filter the browser
 // console by "[Connect Phone]" when a web phone fails to connect / call.
@@ -217,10 +219,12 @@ export class Phone extends Component {
             const phoneRoot = this.phoneRoot.el
             this.phoneHeader.el.addEventListener("mousedown", function (e) {
                 self.isDown = true
-                self.offset = [
-                    phoneRoot.offsetLeft - e.clientX,
-                    phoneRoot.offsetTop - e.clientY
-                ]
+                // Measured, not read off offsetLeft: the panel is zoomed, so
+                // its own coordinates and the pointer's are not the same
+                // scale, and the two only agree at the start of a drag by
+                // accident.
+                const rect = phoneRoot.getBoundingClientRect()
+                self.offset = [rect.left - e.clientX, rect.top - e.clientY]
             }, true)
 
             document.addEventListener("mouseup", function () {
@@ -234,20 +238,18 @@ export class Phone extends Component {
                         x: event.clientX,
                         y: event.clientY
                     }
-                    const px = self.mousePosition.x + self.offset[0]
-                    const py = self.mousePosition.y + self.offset[1]
-                    const cx = document.documentElement.clientWidth
-                    const cy = document.documentElement.clientHeight
-
-                    let left = px < 10 ? 0 : px
-                    left = left + 310 > cx ? cx - 300 : left
-                    let top = py < 10 ? 0 : py
-                    top = top + 530 > cy ? cy - 520 : top
-
-                    phoneRoot.style.left = left + "px"
-                    phoneRoot.style.top = top + "px"
+                    self._moveTo(
+                        self.mousePosition.x + self.offset[0],
+                        self.mousePosition.y + self.offset[1],
+                    )
                 }
             }, true)
+
+            // A window the panel fits in can be resized out from under it,
+            // and the panel's own height follows the window, so the clamp has
+            // to run again rather than only while the pointer is down.
+            this._onViewportResize = () => this._keepOnScreen()
+            window.addEventListener("resize", this._onViewportResize)
             // BroadcastChannel Events
             const self = this
             this.bc.onmessage = ({data: {event, params}}) => {
@@ -385,6 +387,80 @@ export class Phone extends Component {
             }
             this.bc.postMessage({event: "tbcNewTab", params: {id: this.id}})
         })
+
+        onPatched(() => {
+            // A hidden panel is `display: none` and measures zero, so a window
+            // resized while it was away could not be answered then. Answer it
+            // the moment it comes back.
+            if (this.state.isDisplay && !this._wasDisplayed) {
+                this._keepOnScreen()
+            }
+            this._wasDisplayed = this.state.isDisplay
+        })
+
+        onWillUnmount(() => {
+            window.removeEventListener("resize", this._onViewportResize)
+        })
+    }
+
+    // ------------------------------------------------------------ position
+
+    /**
+     * Where the panel may sit, in viewport coordinates.
+     *
+     * The whole of it has to stay in the window. Both far edges are worked
+     * out from its measured size rather than from constants: the panel is
+     * only ever positioned from its top-left corner, and its height follows
+     * the window through `max-height`. The constants this replaces described
+     * a 300x520 panel that has not existed since the redesign, which is why
+     * the phone could be dragged 80px past the right edge and 180px past the
+     * bottom one.
+     */
+    _clampToViewport(left, top) {
+        const rect = this.phoneRoot.el.getBoundingClientRect()
+        const cx = document.documentElement.clientWidth
+        const cy = document.documentElement.clientHeight
+        return [
+            clamp(left, 0, Math.max(0, cx - rect.width)),
+            clamp(top, 0, Math.max(0, cy - rect.height)),
+        ]
+    }
+
+    /**
+     * Move the panel to a position measured on screen.
+     *
+     * `left`/`top` resolve in the panel's own coordinates, which the zoom
+     * scales afterwards, so the zoom has to be divided back out -- otherwise
+     * the panel lands short of the pointer, by more the further it is dragged.
+     */
+    _moveTo(left, top) {
+        const el = this.phoneRoot.el
+        const [x, y] = this._clampToViewport(left, top)
+        const zoom = parseFloat(getComputedStyle(el).zoom) || 1
+        el.style.left = (x / zoom) + "px"
+        el.style.top = (y / zoom) + "px"
+    }
+
+    /**
+     * Put the panel back inside the window if something moved it out.
+     *
+     * A panel that has never been dragged is still parked on `bottom: 0` with
+     * no `left`/`top` of its own, and nothing can push that off screen, so it
+     * is left alone -- writing coordinates would only pin it where it happens
+     * to be.
+     */
+    _keepOnScreen() {
+        const el = this.phoneRoot.el
+        if (!el || (!el.style.left && !el.style.top)) {
+            return
+        }
+        const rect = el.getBoundingClientRect()
+        if (!rect.width || !rect.height) {
+            // Hidden: `display: none` measures zero, and clamping against
+            // that would move the panel to the top-left corner.
+            return
+        }
+        this._moveTo(rect.left, rect.top)
     }
 
 
