@@ -7,9 +7,29 @@ import {contactInitial, contactTone} from "@connect_twilio/js/utils"
 
 const uid = user.userId
 
-// Call statuses that mean the two ends never spoke. Everything else is
-// treated as a connected call and shows its duration.
-const UNCONNECTED = ['noanswer', 'busy', 'rejected', 'canceled', 'failed']
+// How a call that never connected is named, from the ledger status and the
+// side of it you were on. A status listed here means the two ends did not
+// speak; anything else is a connected call and shows its duration.
+//
+// Reading the same status from both sides matters: `busy` is what Twilio
+// reports when someone presses Decline on their softphone, so the person who
+// pressed it sees "Declined" and the person who called them sees "Busy".
+// Calling either of them "Failed" -- as one label for every unconnected call
+// did -- says the system broke when nothing did.
+//
+// Both spellings of the unanswered status are listed: connect.call.status is
+// copied from the channel, so it carries Twilio's hyphenated `no-answer`,
+// while `noanswer` is the spelling used elsewhere in the Connect family.
+// Matching only one of them turns every missed call into a connected one with
+// a 00:00 duration.
+const OUTCOMES = {
+    'no-answer': {incoming: 'Missed', outgoing: 'No answer'},
+    'noanswer': {incoming: 'Missed', outgoing: 'No answer'},
+    'busy': {incoming: 'Declined', outgoing: 'Busy'},
+    'rejected': {incoming: 'Declined', outgoing: 'Declined'},
+    'canceled': {incoming: 'Missed', outgoing: 'Cancelled'},
+    'failed': {incoming: 'Failed', outgoing: 'Failed'},
+}
 
 
 /**
@@ -108,20 +128,30 @@ export class Recents extends Component {
             name = parts[parts.length - 1].trim()
         }
 
+        // The colleague on the other leg of an internal call, if there is one.
+        // Both the avatar and a favourite made from this row need them, so it
+        // is worked out once.
+        const peerUserId = isIncoming
+            ? (call.caller_user ? call.caller_user[0] : false)
+            : (call.called_users.length ? call.called_users[0] : false)
+
         // false, not a placeholder image: the template falls back to a
         // coloured initial, because there is no default avatar file to point at.
         let avatar = false
         if (call.partner) {
             avatar = `/web/image?model=res.partner&field=avatar_128&id=${call.partner[0]}`
-        } else if (isIncoming && call.caller_user) {
-            avatar = `/web/image?model=res.users&field=avatar_128&id=${call.caller_user[0]}`
-        } else if (!isIncoming && call.called_users.length) {
-            avatar = `/web/image?model=res.users&field=avatar_128&id=${call.called_users[0]}`
+        } else if (peerUserId) {
+            avatar = `/web/image?model=res.users&field=avatar_128&id=${peerUserId}`
         }
 
         // get_widget_calls returns naive UTC; the list is read in local time.
         const when = new Date(`${call.create_date} UTC`)
-        const connected = !UNCONNECTED.includes(call.status)
+        const outcome = OUTCOMES[call.status]
+        const connected = !outcome
+        const side = isIncoming ? 'incoming' : 'outgoing'
+        const outcomeLabel = connected
+            ? (isIncoming ? 'Incoming' : 'Outgoing')
+            : outcome[side]
 
         // A call can reach the ledger with neither a peer nor a number (a
         // misdialled empty call used to be able to do exactly that). Leave the
@@ -136,8 +166,10 @@ export class Recents extends Component {
             tone: contactTone(label),
             isIncoming,
             connected,
+            outcome: outcomeLabel,
             duration: connected ? call.duration_human : '',
             partnerId: call.partner ? call.partner[0] : false,
+            userId: peerUserId,
             favorite: this.favorites.includes(number),
             dayKey: this._dayKey(when),
             dayLabel: this._dayLabel(when),
@@ -211,9 +243,16 @@ export class Recents extends Component {
             await this.orm.unlink('connect.favorite', existing, {})
             this.notification.add('Removed from Favourites', {title: 'Phone', type: 'info'})
         } else {
+            // Same precedence the list itself uses: the contact if there is
+            // one, otherwise the colleague, and only then the bare number.
+            // Dropping the colleague here would turn every starred internal
+            // call into an anonymous extension in Favourites, which reads
+            // from `user` for the name and the face.
             const values = {phone_number: call.number}
             if (call.partnerId) {
                 values.partner = call.partnerId
+            } else if (call.userId) {
+                values.user = call.userId
             } else {
                 values.name = call.number
             }

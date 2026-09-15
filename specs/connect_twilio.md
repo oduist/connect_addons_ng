@@ -821,6 +821,12 @@ This only ever went wrong on the caller's side: an *inbound* call carries a
 `Partner` custom parameter from the TwiML and sets `isPartner` directly, so the
 callee's panel never took the fall-through.
 
+The inbound path takes that parameter only when it is a **real numeric id**.
+`Partner` is absent, empty or non-numeric on any route that does not set it,
+and treating that as a partner put `NaN` in `partnerId` and the raw number in
+the name slot; the guard falls through to `searchPartner()` instead, which is
+the lookup that resolves the caller by number.
+
 `computeUserData()` puts that partner in `partnerId`. The field previously held
 the `connect.user` id, which would have opened an unrelated contact had
 anything followed it.
@@ -828,6 +834,42 @@ anything followed it.
 A live call is told apart by the header text, the timer and the green dot, not
 by inverting the panel. `--csp-raised` (`#F0EDF3`) is the surface the call
 controls, the on-air strip and the quiet buttons sit on.
+
+#### Recent list
+
+A row folds one ledger call into a single line: who it was with, which way it
+went, what came of it, and how long it lasted.
+
+The outcome is read from `connect.call.status` — which is copied from the last
+channel, so it carries **Twilio's** spelling — and named from the side the user
+was on. A status in the table means the two ends never spoke and the row shows
+no duration; anything else is a connected call.
+
+| `status` | Incoming | Outgoing |
+|----------|----------|----------|
+| `no-answer` / `noanswer` | Missed | No answer |
+| `busy` | Declined | Busy |
+| `rejected` | Declined | Declined |
+| `canceled` | Missed | Cancelled |
+| `failed` | Failed | Failed |
+| anything else | Incoming | Outgoing |
+
+Both spellings of the unanswered status are listed on purpose: Twilio reports
+`no-answer` and the rest of the Connect family writes `noanswer`. Matching only
+one of them makes every missed call look connected, with a `00:00` duration.
+
+Reading the same status from both sides matters just as much. Twilio reports a
+softphone **Decline** as `busy`, so one label for every unconnected call told
+the person who declined, the person who hit a busy line and the person whose
+call rang out that the call *failed* — which says the system broke when nothing
+did.
+
+Starring a row records **who** it was about, not just the number: the contact
+if there is one, otherwise the colleague on the other leg (`connect.favorite.user`),
+and only then the bare number as a plain name. This is the same precedence the
+list itself resolves the row with, and Favourites reads the name and the face
+from those two fields — so dropping the colleague turned every starred internal
+call into an anonymous extension.
 
 #### Call forward (blind transfer)
 

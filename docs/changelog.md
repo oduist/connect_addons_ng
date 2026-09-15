@@ -25,6 +25,16 @@ version bumps, repository moves — is deliberately left out.
 ## 2026-09
 
 ### Fixed
+- **connect_twilio** — The web phone's **Recent** list no longer shows missed
+  calls as connected with a `00:00` duration, and names what actually happened
+  from the side you were on: a colleague who declined or was busy, or a call
+  that rang out, no longer reads as *Failed*.
+- **connect_twilio** — Starring a call to a colleague in **Recent** now keeps
+  the colleague in **Favourites**, with their name and photo, instead of a bare
+  extension.
+- **connect_twilio** — An incoming call that arrives without a contact
+  reference is now looked up by number, instead of showing the number where the
+  caller's name belongs.
 - **connect** — A licensed module installed without a recorded install date no
   longer expires its trial immediately.
 - **connect** — Users outside the Connect groups no longer hit an access error

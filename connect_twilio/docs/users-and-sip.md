@@ -158,10 +158,31 @@ The panel goes straight back to wherever you were before the call — the keypad
 **Recent** or **Favourites** — so you can carry on. If you were on **Recent**,
 the call you have just finished is already in the list.
 
+### Recent
+
+Each row is one call: who it was with, which way it went, what came of it and
+how long it lasted. Click the row to call back, the photo to open the call
+record, the star to keep the number.
+
+A call that never connected says so in red, and says it **from your side** — the
+same call reads differently to the two people on it:
+
+| What happened | You were called | You called |
+|---------------|-----------------|------------|
+| Nobody picked up | Missed | No answer |
+| The other end pressed Decline | Declined | Busy |
+| The call was hung up before it connected | Missed | Cancelled |
+| The call could not be placed at all | Failed | Failed |
+
+So *Failed* now means what it says: something went wrong. A colleague who was
+busy, or who decided not to take your call, is not a failure and no longer
+reads as one.
+
 ### Favourites
 
-Star a call in **Recent** to keep its number. The line under the grid tells you
-which number your outgoing calls present to the other end.
+Star a call in **Recent** to keep its number. Starring a colleague keeps the
+colleague — their name and their photo — not just the extension. The line under
+the grid tells you which number your outgoing calls present to the other end.
 
 !!! note "Safari: click the phone before your first call"
     Safari will not let a web page pick an audio output device until you have
