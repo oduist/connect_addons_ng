@@ -775,6 +775,19 @@ class User(models.Model):
                 # answer to show immediately. The Twilio sync still runs and
                 # corrects it if recording did not actually start.
                 'record_calls': bool(user.record_calls),
+                # Shown in the softphone header ("· ext 101") and under the
+                # favourites grid ("Calls you place show +1 555 0100"), so the
+                # user can see which identity the phone is and what the far
+                # end will see, without leaving the panel.
+                'exten': user.twilio_exten_number or '',
+                'outgoing_callerid': (
+                    user.twilio_outgoing_callerid.number
+                    or self.env['connect.twilio.outgoing_callerid']
+                    .sudo()
+                    .search([('is_default', '=', True)], limit=1)
+                    .number
+                    or ''
+                ),
             }
         except Exception as e:
             logger.exception('Error getting Twilio JWT:')

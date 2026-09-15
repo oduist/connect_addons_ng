@@ -82,6 +82,104 @@ class TestConnectUser(ConnectTestCommon):
             self.env['connect.user'].with_user(
                 self.portal_user).get_user_by_exten_number('8101')
 
+    def test_write_on_several_users_at_once(self):
+        """Editing two PBX users in one write must not raise.
+
+        write() hands manage_group() the whole recordset; it used to reach
+        res.users.has_group() with a multi-record self and raise
+        "Expected singleton", so any mass edit from the list view died.
+        """
+        second = self._create_connect_user('multi_write_user')
+        both = self.connect_user + second
+
+        both.write({'record_calls': False})
+
+        self.assertEqual(both.mapped('record_calls'), [False, False])
+        group_user = self.env.ref('connect.group_user')
+        group_admin = self.env.ref('connect.group_admin')
+        for rec in both:
+            self.assertTrue(
+                rec.user in group_user[GROUP_USERS_FIELD]
+                or rec.user in group_admin[GROUP_USERS_FIELD],
+                'each edited user should still hold a Connect group')
+
+    # ------------------------------------------------------------------
+    # search_directory — the colleague directory the softphones dial from.
+    # Its whole reason to exist is that it steps around the
+    # rule_connect_user_own record rule, so what it does NOT return matters
+    # as much as what it does. See ADR-063.
+    # ------------------------------------------------------------------
+
+    def test_search_directory_finds_a_colleague(self):
+        """A Connect user finds someone other than themselves."""
+        colleague = self._create_connect_user('directory_colleague')
+        colleague.user.group_ids = [(4, self.env.ref('connect.group_user').id)]
+        caller = self.connect_user.user
+
+        result = self.env['connect.user'].with_user(caller).search_directory(
+            colleague.user.name)
+
+        self.assertIn(colleague.id, [row['id'] for row in result])
+
+    def test_search_directory_reaches_past_the_record_rule(self):
+        """The rule hides the colleague from a plain search; this still finds them."""
+        colleague = self._create_connect_user('directory_hidden')
+        caller = self.basic_user
+        caller.group_ids = [(4, self.env.ref('connect.group_user').id)]
+
+        hidden = self.env['connect.user'].with_user(caller).search(
+            [('id', '=', colleague.id)])
+        self.assertFalse(
+            hidden, 'record rule should hide a colleague from a plain search')
+
+        result = self.env['connect.user'].with_user(caller).search_directory(
+            colleague.user.name)
+        self.assertIn(colleague.id, [row['id'] for row in result])
+
+    def test_search_directory_returns_only_directory_keys(self):
+        """No credential can ride along: the payload is a fixed set of keys.
+
+        connect_twilio hangs `password`, `username` and `sid` off this model,
+        which is why the record rule is left alone and this method hand-builds
+        its result instead of returning a recordset or a caller-controlled
+        search_read.
+        """
+        colleague = self._create_connect_user('directory_keys')
+        caller = self.connect_user.user
+
+        result = self.env['connect.user'].with_user(caller).search_directory(
+            colleague.user.name)
+
+        self.assertTrue(result)
+        for row in result:
+            self.assertEqual(
+                set(row), {'id', 'name', 'user_id', 'exten_number'})
+
+    def test_search_directory_requires_a_connect_group(self):
+        """Someone outside the Connect groups gets nothing at all."""
+        with self.assertRaises(ValidationError):
+            self.env['connect.user'].with_user(
+                self.portal_user).search_directory('anything')
+
+    def test_search_directory_empty_query(self):
+        """An empty query is not a request for the whole staff list."""
+        caller = self.connect_user.user
+        for query in ('', '   ', None):
+            self.assertEqual(
+                self.env['connect.user'].with_user(caller).search_directory(query),
+                [], 'empty query should return nothing, got the directory')
+
+    def test_search_directory_respects_limit(self):
+        """The limit is honoured, so a one-character query cannot dump the list."""
+        for index in range(3):
+            self._create_connect_user('directory_limit_%s' % index)
+        caller = self.connect_user.user
+
+        result = self.env['connect.user'].with_user(caller).search_directory(
+            'directory_limit', limit=2)
+
+        self.assertEqual(len(result), 2)
+
     def test_default_record_calls(self):
         """Test record_calls defaults to True."""
         self.assertTrue(self.connect_user.record_calls)

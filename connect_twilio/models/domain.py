@@ -518,7 +518,12 @@ class Domain(models.Model):
         debug(self, "Domain call to %s" % request.get("To"))
         # Create call + channel
         self.env["connect.call"].on_call_status(request)
-        to_val = request.get("To") or ''
+        # A blind transfer points the other party's leg back at this same
+        # application with the destination in `forward_to`, so that a
+        # forwarded call is routed by exactly the rules below rather than by a
+        # parallel implementation. Everything else about the request still
+        # describes the live call, which is what the ledger wants.
+        to_val = request.get("forward_to") or request.get("To") or ''
         # Extract number for SIP or WhatsApp channels
         found = re.search(r"^sip:(.+)@(.+)\.sip\.((.+)\.)?twilio\.com", to_val)
         is_whatsapp = False

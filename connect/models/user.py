@@ -122,18 +122,23 @@ class User(models.Model):
         # connect.user CRUD (already gated by connect.group_admin on the
         # model ACL). Use sudo so a Connect admin who is not also an Odoo
         # system administrator can still create/remove connect.users.
-        if self.user and self.user.has_group('base.group_system') and self.user.has_group('base.group_erp_manager'):
-            group_connect_admin = self.env.ref('connect.group_admin').sudo()
-            if action == 'add':
-                group_connect_admin.write({attribute_name: [(4, self.user.id)]})
+        #
+        # Iterate: write() calls this on whatever recordset it was given, so
+        # editing two PBX users at once used to reach has_group() with a
+        # multi-record self and raise "Expected singleton".
+        for rec in self:
+            if not rec.user:
+                continue
+            if (rec.user.has_group('base.group_system')
+                    and rec.user.has_group('base.group_erp_manager')):
+                group = self.env.ref('connect.group_admin').sudo()
             else:
-                group_connect_admin.with_context(install_mode=True).write({attribute_name: [(3, self.user.id)]})
-        elif self.user:
-            group_connect_user = self.env.ref('connect.group_user').sudo()
+                group = self.env.ref('connect.group_user').sudo()
             if action == 'add':
-                group_connect_user.write({attribute_name: [(4, self.user.id)]})
+                group.write({attribute_name: [(4, rec.user.id)]})
             else:
-                group_connect_user.with_context(install_mode=True).write({attribute_name: [(3, self.user.id)]})
+                group.with_context(install_mode=True).write(
+                    {attribute_name: [(3, rec.user.id)]})
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -187,7 +192,57 @@ class User(models.Model):
         # Keep the historical key used by the transfer widget.
         user[0]['exten_number'] = next(
             (user[0][f] for f in number_fields if user[0].get(f)), '')
+        # The colleague's contact. Every res.users has one, and it is the
+        # record a caller actually wants when they ask to open the person on
+        # the other end -- the user record is an account, the partner is the
+        # person.
+        record = self.sudo().browse(user[0]['id'])
+        user[0]['partner_id'] = record.user.partner_id.id or False
         return user[0]
+
+    @api.model
+    def search_directory(self, search_query, limit=10):
+        """Colleagues a Connect user may dial, by name or extension.
+
+        The `rule_connect_user_own` record rule deliberately keeps a Connect
+        user out of every other connect.user record, and rightly so: provider
+        modules hang credentials off this model (connect_twilio adds
+        `password`, `username` and `sid`). A softphone still has to let
+        someone dial a colleague, so this runs sudo and hand-picks the only
+        two things a directory needs -- who they are and what to dial.
+        Nothing else leaves the model, and the record rule is untouched.
+
+        Returns a list of {id, name, user_id, exten_number}; provider
+        extension fields come from `_pbx_number_fields()`, so a database with
+        several providers installed resolves whichever one the colleague has.
+        """
+        has_group = self.env.user.has_group
+        if not any([has_group('connect.group_user'), has_group('connect.group_admin')]):
+            raise ValidationError('Only Connect users can search other Connect users!')
+        query = (search_query or '').strip()
+        if not query:
+            return []
+        number_fields = self._pbx_number_fields()
+        # One OR less than the number of terms: the name plus one term per
+        # provider extension field.
+        domain = ['|'] * len(number_fields) + [('name', 'ilike', query)] + [
+            (field_name, '=ilike', '%{}%'.format(query))
+            for field_name in number_fields
+        ]
+        records = self.sudo().search_read(
+            domain, ['id', 'name', 'user'] + number_fields,
+            order='name asc', limit=limit)
+        return [
+            {
+                'id': record['id'],
+                'name': record['name'],
+                'user_id': record['user'][0] if record['user'] else False,
+                'exten_number': next(
+                    (record[field_name] for field_name in number_fields
+                     if record.get(field_name)), ''),
+            }
+            for record in records
+        ]
 
     @api.model
     def get_user_by_uri(self, userinfo):
