@@ -47,6 +47,19 @@ extension automatically: users, call flows and TwiML apps each have a manual
 button on their form (**Twilio Extension** on the user, **Extension** on call
 flows and TwiML apps) that creates or edits the extension.
 
+!!! note "An extension is never taken over silently"
+    Saving is refused, with the reason on screen, if the number is already in
+    use — even by an extension that currently points at nothing — or if the
+    destination you picked is already reached on another extension.
+
+    So moving a user to a different extension is two deliberate steps: clear
+    the destination on their current extension (or renumber it), then assign
+    the new one. Freeing an extension always releases the user — clearing its
+    destination, pointing it at someone else, or deleting it.
+
+    **Duplicate** gives you the next free number with no destination set, for
+    the same reason.
+
 ## Outgoing caller IDs
 
 Manage the numbers your users present on outbound external calls under

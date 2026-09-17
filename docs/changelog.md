@@ -24,7 +24,37 @@ version bumps, repository moves — is deliberately left out.
 
 ## 2026-09
 
+### Changed
+- **connect_twilio** — The web phone takes a tenth less room on screen. The
+  panel is now drawn at its full size and displayed slightly smaller, with the
+  text set larger to compensate, so it fits a laptop screen without anything
+  becoming harder to read.
+
 ### Fixed
+- **connect_twilio** — The web phone can no longer be dragged off the screen,
+  and comes back inside on its own when the browser window is made smaller —
+  the panel had been clamped as if it were the smaller one from before the
+  redesign, so it could go 80px past the right edge and 180px past the bottom.
+- **connect_twilio, connect_freeswitch, connect_telnyx, connect_infobip** —
+  Assigning an extension no longer takes one over in silence. A number that
+  already exists is refused with the reason on screen, including when the
+  existing extension points at nothing (it used to be rewritten and handed
+  back as if it were new), and so is a second extension for a destination that
+  already has one (the first one used to be left behind, still naming the same
+  user). Moving an extension to another destination, or clearing it, now
+  releases the previous one instead of leaving a stale extension number behind
+  for the caller ID and the colleague directory to read. **Duplicate** gives
+  the next free number with no destination set.
+- **connect_twilio** — The web phone's **Recent** list no longer shows missed
+  calls as connected with a `00:00` duration, and names what actually happened
+  from the side you were on: a colleague who declined or was busy, or a call
+  that rang out, no longer reads as *Failed*.
+- **connect_twilio** — Starring a call to a colleague in **Recent** now keeps
+  the colleague in **Favourites**, with their name and photo, instead of a bare
+  extension.
+- **connect_twilio** — An incoming call that arrives without a contact
+  reference is now looked up by number, instead of showing the number where the
+  caller's name belongs.
 - **connect** — A licensed module installed without a recorded install date no
   longer expires its trial immediately.
 - **connect** — Users outside the Connect groups no longer hit an access error

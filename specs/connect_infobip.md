@@ -164,7 +164,7 @@ matching `client:{identity}@infobip`, `get_user_by_infobip_identity()`,
 | Model | Purpose |
 |-------|---------|
 | `connect.infobip.number` | Synced DIDs (`number_key`, `capabilities`); `destination` user/external (+`external_callerid_mode`); pushes SMS forward-to-HTTP and the voice action best-effort; `route_call(event)` routes CALL_RECEIVED |
-| `connect.infobip.exten` | dst-Reference mechanics (duplicated block); v1 dst = `connect.user` only; no render pipeline |
+| `connect.infobip.exten` | dst-Reference mechanics (duplicated block); v1 dst = `connect.user` only; no render pipeline. An extension refuses a number another extension already carries, and refuses to be a second extension for a destination that already has one (`_check_number_available()` / `_check_destination_available()`); leaving a destination goes through `_stored_dst()`. All three are part of the duplicated block — see the `connect.twilio.exten` section of `specs/connect_twilio.md` for what each used to do silently. |
 | `connect.infobip.outgoing_callerid` | Owned-numbers caller IDs (duplicated E.164/is_default block), synced from the Numbers API |
 | `connect.infobip.user_callflow` | Ring steps (`callflow_type` client/phone, `prio`, `ring_timeout`); no per-call progress model — progress lives on the channel |
 | `connect.infobip.whatsapp_sender` | Readonly-synced senders (`GET /whatsapp/1/senders`), `send_whatsapp()` text/template, 24h window check, `get_default_sender()`, `chatter_post()` |

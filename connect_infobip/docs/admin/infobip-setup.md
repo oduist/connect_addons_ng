@@ -78,7 +78,10 @@ plans differ, so verify in the portal).
   run on the Infobip platform, not in Odoo.
 - **Extensions** (Connect → Infobip → Extensions): short internal
   numbers pointing at users, used for web-phone dialing and click-to-call
-  caller IDs. Call flows (IVR) are not part of v1.
+  caller IDs. Call flows (IVR) are not part of v1. Saving is refused, with
+  the reason on screen, if the number is already in use — even by an
+  extension pointing at nothing — or if the user you picked is already
+  reached on another extension; nothing is taken over silently.
 - Unrouted or exhausted calls hear a spoken message (the user's
   voicemail prompt when enabled) and are hung up; recorded voicemail is
   not part of v1.

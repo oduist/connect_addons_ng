@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Twilio
 - **Technical:** `connect_twilio`
-- **Version:** 19.0.2.3.0
+- **Version:** 19.0.2.4.1
 - **Depends:** `connect`
 - **Python deps:** `twilio`
 - **Application:** False
@@ -419,6 +419,32 @@ The dst-Reference mechanics are **duplicated** with
 Extension uniqueness is per provider — cross-provider uniqueness disappeared by
 design.
 
+**Two things an extension refuses, instead of doing them quietly.**
+
+`_check_number_available()` (called from `create()`) rejects a number another
+extension already carries, naming what it points at. The `UNIQUE` constraint
+says the same thing, but only at flush time and only about a column — and it
+never covered the hole this closes: an extension whose destination happened to
+be empty used to be *rewritten* with the new values and returned in place of
+the record the caller asked to create, so creating an extension silently took
+over an existing one.
+
+`_check_destination_available()` (`@api.constrains('model', 'res_id')`) rejects
+a second extension pointing at a destination that already has one. `write()`
+used to enforce this by clearing `res_id` on whichever extension was already
+there, silently: giving a user a second extension moved their phone onto it and
+left the first extension behind, still naming them, so two extensions claimed
+the same person. Reassigning is therefore two deliberate steps — free the old
+extension, then assign the new one.
+
+Leaving a destination is now driven by `_stored_dst()`, which reads
+`model`/`res_id` rather than the `dst` Reference: `dst` is computed and
+unstored and recomputes to `None` partway through `_set_dst`'s write, which is
+exactly when the destination being left has to be unlinked. Reading it there
+did nothing, so moving an extension to another user — or clearing its
+destination — left the first user still pointing at it, with a stale extension
+number for the caller ID and the directory to read.
+
 ---
 
 ### 11. user_callflow.py - `connect.twilio.user_callflow` + `connect.twilio.user_callflow_call` (own models, ADR-031)
@@ -782,10 +808,10 @@ The phone widget uses the Twilio Voice JavaScript SDK (`@twilio/voice-sdk`) to:
 
 #### Panel layout
 
-The panel is 380×700 and stays on **one light ground** throughout, idle or on
-a call. A single getter, `Phone.screen`, picks exactly one body screen;
-`Phone.isCallScreen` says whether a call is live, which is what hides the tab
-bar — during a call there is nowhere else to go.
+The panel is laid out at 380×700 and stays on **one light ground** throughout,
+idle or on a call. A single getter, `Phone.screen`, picks exactly one body
+screen; `Phone.isCallScreen` says whether a call is live, which is what hides
+the tab bar — during a call there is nowhere else to go.
 
 | `screen` | Tab bar | Shown when |
 |----------|---------|------------|
@@ -821,6 +847,12 @@ This only ever went wrong on the caller's side: an *inbound* call carries a
 `Partner` custom parameter from the TwiML and sets `isPartner` directly, so the
 callee's panel never took the fall-through.
 
+The inbound path takes that parameter only when it is a **real numeric id**.
+`Partner` is absent, empty or non-numeric on any route that does not set it,
+and treating that as a partner put `NaN` in `partnerId` and the raw number in
+the name slot; the guard falls through to `searchPartner()` instead, which is
+the lookup that resolves the caller by number.
+
 `computeUserData()` puts that partner in `partnerId`. The field previously held
 the `connect.user` id, which would have opened an unrelated contact had
 anything followed it.
@@ -828,6 +860,79 @@ anything followed it.
 A live call is told apart by the header text, the timer and the green dot, not
 by inverting the panel. `--csp-raised` (`#F0EDF3`) is the surface the call
 controls, the on-air strip and the quiet buttons sit on.
+
+#### Size and position
+
+The panel is **drawn at 380×700 and shown at nine tenths of it**, through
+`zoom: var(--csp-zoom)` on `.o_connect_softphone`. Scaling the whole thing
+keeps every proportion — type, icons, spacing, the keypad lattice — in step,
+and leaves one number to tune rather than two hundred lengths to keep aligned
+by hand. The type ramp is set a size or so larger to pay the zoom back, so the
+panel loses a tenth of its footprint on screen while a row name still reads at
+about 14px.
+
+Two calculations live in a different coordinate space because of it, and both
+divide the zoom back out:
+
+- `max-height` is `calc((100vh - 48px) / var(--csp-zoom))`. `vh` is **not**
+  rescaled inside a zoomed element — it stays the real viewport height,
+  measured in the panel's own coordinates — so the plain clamp left the panel a
+  tenth shorter than the space it had.
+- `_moveTo()` writes `left`/`top` divided by the computed zoom, because those
+  resolve in the panel's coordinates and are scaled afterwards. Without it the
+  panel lands short of the pointer, by more the further it is dragged.
+
+**The panel is kept inside the window.** `_clampToViewport()` measures the
+panel (`getBoundingClientRect()`) instead of assuming a size: it is positioned
+only from its top-left, and its height follows the window through `max-height`,
+so both far edges have to be worked out at the time. The constants this
+replaced described a 300×520 panel that has not existed since the redesign,
+which is why the phone could be dragged 80px past the right edge and 180px past
+the bottom one. The same clamp runs from three places — the drag, a `resize`
+listener, and `onPatched` when the panel is shown again, since a hidden panel
+is `display: none`, measures zero and cannot be clamped while it is away.
+
+A panel that has never been dragged has no `left`/`top` of its own and is left
+alone: it is parked on `bottom: 0`, which no resize can push off screen.
+
+The other providers' phones keep the older 300×520 chrome, where those same
+constants still describe the panel, so the drag code there is untouched.
+
+#### Recent list
+
+A row folds one ledger call into a single line: who it was with, which way it
+went, what came of it, and how long it lasted.
+
+The outcome is read from `connect.call.status` — which is copied from the last
+channel, so it carries **Twilio's** spelling — and named from the side the user
+was on. A status in the table means the two ends never spoke and the row shows
+no duration; anything else is a connected call.
+
+| `status` | Incoming | Outgoing |
+|----------|----------|----------|
+| `no-answer` / `noanswer` | Missed | No answer |
+| `busy` | Declined | Busy |
+| `rejected` | Declined | Declined |
+| `canceled` | Missed | Cancelled |
+| `failed` | Failed | Failed |
+| anything else | Incoming | Outgoing |
+
+Both spellings of the unanswered status are listed on purpose: Twilio reports
+`no-answer` and the rest of the Connect family writes `noanswer`. Matching only
+one of them makes every missed call look connected, with a `00:00` duration.
+
+Reading the same status from both sides matters just as much. Twilio reports a
+softphone **Decline** as `busy`, so one label for every unconnected call told
+the person who declined, the person who hit a busy line and the person whose
+call rang out that the call *failed* — which says the system broke when nothing
+did.
+
+Starring a row records **who** it was about, not just the number: the contact
+if there is one, otherwise the colleague on the other leg (`connect.favorite.user`),
+and only then the bare number as a plain name. This is the same precedence the
+list itself resolves the row with, and Favourites reads the name and the face
+from those two fields — so dropping the colleague turned every starred internal
+call into an anonymous extension.
 
 #### Call forward (blind transfer)
 

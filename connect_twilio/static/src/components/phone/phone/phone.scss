@@ -43,14 +43,30 @@
   --csp-line: var(--csp-hairline);
   --csp-hover: rgba(108, 76, 132, .055);
 
+  // The panel is laid out at 380x700 and shown at nine tenths of that. Scaling
+  // the whole thing keeps every proportion of the design -- type, icons,
+  // spacing, the keypad lattice -- in step with one another, and leaves one
+  // number to tune instead of two hundred lengths to keep aligned by hand.
+  //
+  // The type ramp below is set a size or so larger to pay the zoom back, so
+  // the panel loses a tenth of its footprint while a row name still reads at
+  // about 14px. Anything that reads a position off this panel has to divide
+  // the zoom back out -- see `max-height` here and `_moveTo()` in phone.js.
+  --csp-zoom: 0.9;
+
   position: fixed;
   bottom: 0;
   z-index: 1100;
   display: flex;
   flex-flow: column nowrap;
+  zoom: var(--csp-zoom);
   width: 380px;
   height: 700px;
-  max-height: calc(100vh - 48px);
+  // `vh` is not rescaled inside a zoomed element: it stays the real viewport
+  // height measured in the panel's own coordinates. Dividing by the zoom turns
+  // this back into the visual clamp it reads as -- the viewport, less a margin
+  // -- instead of one that is a third too eager.
+  max-height: calc((100vh - 48px) / var(--csp-zoom));
   overflow: hidden;
   // box-sizing is border-box globally (Bootstrap reboot), so the border is
   // drawn inside the 380x700 and does not shift the panel.
@@ -59,7 +75,7 @@
   background: var(--csp-bg);
   color: var(--csp-fg);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-feature-settings: "tnum" 1;
   box-shadow: 0 1px 2px rgba(25, 19, 37, .06), 0 12px 34px -10px rgba(25, 19, 37, .22);
 
@@ -91,13 +107,13 @@
   }
 
   .o_csp_who {
-    font-size: 13.5px;
+    font-size: 14.5px;
     font-weight: 600;
     letter-spacing: .005em;
   }
 
   .o_csp_sub {
-    font-size: 13.5px;
+    font-size: 14.5px;
     font-weight: 400;
     color: var(--csp-muted);
   }
@@ -186,7 +202,7 @@
     padding: 11px 18px;
     border-bottom: 1px solid var(--csp-line);
     background: var(--csp-raised);
-    font-size: 12.5px;
+    font-size: 14px;
     color: var(--csp-muted);
   }
 
@@ -268,7 +284,7 @@
     align-items: center;
     gap: 7px;
     margin-top: 10px;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--csp-muted);
 
     b {
@@ -286,7 +302,7 @@
     border-radius: 5px;
     background: var(--csp-plum-wash);
     color: var(--csp-plum);
-    font-size: 11.5px;
+    font-size: 13px;
     font-weight: 500;
   }
 
@@ -356,7 +372,7 @@
   .o_csp_key_l {
     height: 11px;
     color: var(--csp-faint);
-    font-size: 9.5px;
+    font-size: 11px;
     letter-spacing: .14em;
   }
 
@@ -429,7 +445,7 @@
   // Stands in for an avatar when there is no record to take one from.
   .o_csp_av_ph {
     color: #fff;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 500;
     line-height: 1;
   }
@@ -468,7 +484,7 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    font-size: 14px;
+    font-size: 15.5px;
     color: var(--csp-muted);
 
     svg {
@@ -489,7 +505,7 @@
     align-items: center;
     gap: 8px;
     min-height: 20px;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--csp-muted);
   }
 
@@ -497,7 +513,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--csp-muted);
   }
 
@@ -505,12 +521,12 @@
     display: flex;
     align-items: center;
     gap: 7px;
-    font-size: 12px;
+    font-size: 13.5px;
     color: var(--csp-muted);
   }
 
   .o_csp_recerr {
-    font-size: 12px;
+    font-size: 13.5px;
     color: var(--csp-stop-ink);
   }
 
@@ -522,7 +538,7 @@
     padding: 7px 12px;
     border-radius: 10px;
     background: var(--csp-hover);
-    font-size: 12.5px;
+    font-size: 14px;
     color: var(--csp-muted);
     cursor: pointer;
 
@@ -567,7 +583,7 @@
 
   .o_csp_lbl {
     margin-top: 6px;
-    font-size: 10.5px;
+    font-size: 12.5px;
     color: var(--csp-muted);
   }
 
@@ -590,7 +606,7 @@
     border-radius: 13px;
     background: var(--csp-raised);
     color: var(--csp-ink);
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1.2;
 
     svg {
@@ -626,7 +642,7 @@
     border-radius: 14px;
     background: var(--csp-stop);
     color: #fff;
-    font-size: 14px;
+    font-size: 15.5px;
     font-weight: 500;
     letter-spacing: .005em;
 
@@ -659,7 +675,7 @@
     border: 0;
     border-radius: 16px;
     color: #fff;
-    font-size: 14px;
+    font-size: 15.5px;
     font-weight: 500;
 
     svg {
@@ -697,7 +713,7 @@
     border-top: 2px solid transparent;
     background: none;
     color: var(--csp-muted);
-    font-size: 11px;
+    font-size: 13px;
 
     svg {
       width: 19px;
@@ -719,10 +735,10 @@
     display: flex;
     align-items: center;
     gap: 9px;
-    padding: 0 18px;
+    padding: 0 14px;
     border-bottom: 1px solid var(--csp-line);
     color: var(--csp-muted);
-    font-size: 13.5px;
+    font-size: 14.5px;
 
     svg {
       flex: 0 0 15px;
@@ -748,8 +764,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 16px 18px 8px;
-    font-size: 11.5px;
+    padding: 10px 14px 4px;
+    font-size: 13px;
     color: var(--csp-muted);
 
     &:after {
@@ -764,8 +780,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 18px 18px 7px;
-    font-size: 11.5px;
+    padding: 12px 14px 4px;
+    font-size: 13px;
     color: var(--csp-muted);
   }
 
@@ -776,8 +792,8 @@
   .o_csp_row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 9px 18px;
+    gap: 10px;
+    padding: 6px 14px;
     cursor: pointer;
 
     &:hover {
@@ -794,7 +810,7 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    font-size: 14px;
+    font-size: 15.5px;
     font-weight: 500;
     letter-spacing: -.005em;
 
@@ -810,11 +826,11 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    margin-top: 2px;
+    margin-top: 0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    font-size: 12.5px;
+    font-size: 14px;
     color: var(--csp-muted);
 
     svg {
@@ -835,7 +851,7 @@
   .o_csp_rowend {
     flex: 0 0 auto;
     color: var(--csp-faint);
-    font-size: 12px;
+    font-size: 13.5px;
   }
 
   .o_csp_callbtn {
@@ -889,7 +905,7 @@
   .o_csp_empty {
     padding: 48px 32px;
     color: var(--csp-muted);
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.55;
     text-align: center;
   }
@@ -924,14 +940,14 @@
 
     .o_csp_n {
       max-width: 96px;
-      font-size: 12px;
+      font-size: 13.5px;
       line-height: 1.25;
       text-align: center;
     }
   }
 
   .o_csp_favsub {
-    font-size: 10.5px;
+    font-size: 12.5px;
     color: var(--csp-muted);
   }
 
@@ -947,7 +963,7 @@
     margin: 6px 18px 0;
     padding-top: 14px;
     border-top: 1px solid var(--csp-line);
-    font-size: 12.5px;
+    font-size: 14px;
     line-height: 1.45;
     color: var(--csp-muted);
 
