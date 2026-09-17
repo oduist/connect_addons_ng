@@ -461,10 +461,130 @@ Twilio Phone tab:</p>
 </tr>
 </tbody>
 </table>
+<h2 id="using-the-web-phone">Using the web phone</h2>
+<p>Open the phone with the handset button in the systray. The dot next to
+<em>Connect</em> in the header is green when the browser is registered with Twilio,
+and the extension beside it is your own. Once a call is live the header says so
+and starts a timer, and the tabs step aside until the call ends.</p>
+<p>The phone follows Odoo's own colour scheme: switch the backend to dark mode and
+the panel goes dark with it. There is no separate setting.</p>
+<p>Drag the panel by its header to move it. It cannot be dragged off the screen,
+and if you make the browser window smaller it comes back inside on its own —
+the header, and with it the hang-up button, is always reachable.</p>
+<p>Three tabs along the bottom:</p>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Keypad</strong></td>
+<td>The dial field and keys. Type a name, a number or an extension.</td>
+</tr>
+<tr>
+<td><strong>Recent</strong></td>
+<td>Your calls, newest first, grouped by <strong>Today</strong>, <strong>Yesterday</strong>, then by date.</td>
+</tr>
+<tr>
+<td><strong>Favourites</strong></td>
+<td>Speed dial, as a grid.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dialling">Dialling</h3>
+<p>Press the keys, or just type. The two behave differently on purpose:</p>
+<ul>
+<li><strong>Pressing the keys</strong> keeps the keypad on screen and names the number
+  underneath it as soon as it matches a contact or a colleague.</li>
+<li><strong>Typing on your keyboard</strong> searches, and the matches take the keypad's
+  place — <strong>Colleagues</strong> (reached on their extension) above <strong>Customers</strong>
+  (reached on their number). Press <kbd>Enter</kbd> to dial. If nothing
+  matches, the green button still dials exactly what you typed.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">What colleagues can see of each other</p>
+<p>Any Connect user can look a colleague up by name or extension and dial
+them. The lookup returns <strong>only a name and an extension</strong> — SIP usernames,
+passwords and SIDs stay visible to Connect administrators alone, and a
+user still cannot open another user's PBX record.</p>
+</div>
+<p>The two buttons flanking the green call button send an <strong>SMS</strong> or a
+<strong>WhatsApp</strong> message to the number instead of calling it.</p>
+<h3 id="on-a-call">On a call</h3>
+<p>The timer and the recording state sit above a grid of controls: <strong>Forward</strong>,
+<strong>Keypad</strong> (to send touch tones — the field shows the tones as you send them),
+<strong>Contact</strong> (opens the contact, or creates one if the number is unknown),
+<strong>Mute</strong> and <strong>Record</strong>. Red only ever ends the call.</p>
+<p>Forwarding keeps the call on screen: the person you are talking to stays in a
+strip along the top while you pick who to hand them to, and <strong>Back to the
+call</strong> returns without dropping anything.</p>
+<p>Picking someone hands the call straight over and drops you out of it — there is
+no announcement first. Colleagues are reached on their extension and anyone
+else on their number, exactly as if you had dialled them.</p>
+<h3 id="after-a-call">After a call</h3>
+<p>The panel goes straight back to wherever you were before the call — the keypad,
+<strong>Recent</strong> or <strong>Favourites</strong> — so you can carry on. If you were on <strong>Recent</strong>,
+the call you have just finished is already in the list.</p>
+<h3 id="recent">Recent</h3>
+<p>Each row is one call: who it was with, which way it went, what came of it and
+how long it lasted. Click the row to call back, the photo to open the call
+record, the star to keep the number.</p>
+<p>A call that never connected says so in red, and says it <strong>from your side</strong> — the
+same call reads differently to the two people on it:</p>
+<table>
+<thead>
+<tr>
+<th>What happened</th>
+<th>You were called</th>
+<th>You called</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nobody picked up</td>
+<td>Missed</td>
+<td>No answer</td>
+</tr>
+<tr>
+<td>The other end pressed Decline</td>
+<td>Declined</td>
+<td>Busy</td>
+</tr>
+<tr>
+<td>The call was hung up before it connected</td>
+<td>Missed</td>
+<td>Cancelled</td>
+</tr>
+<tr>
+<td>The call could not be placed at all</td>
+<td>Failed</td>
+<td>Failed</td>
+</tr>
+</tbody>
+</table>
+<p>So <em>Failed</em> now means what it says: something went wrong. A colleague who was
+busy, or who decided not to take your call, is not a failure and no longer
+reads as one.</p>
+<h3 id="favourites">Favourites</h3>
+<p>Star a call in <strong>Recent</strong> to keep its number. Starring a colleague keeps the
+colleague — their name and their photo — not just the extension. The line under
+the grid tells you which number your outgoing calls present to the other end.</p>
+<div class="admonition note">
+<p class="admonition-title">Safari: click the phone before your first call</p>
+<p>Safari will not let a web page pick an audio output device until you have
+interacted with the page. Until you click something, the phone falls back
+to your default output — which is usually what you want anyway. Opening the
+phone once after loading Odoo is enough.</p>
+</div>
 <h2 id="web-phone-token">Web phone token</h2>
 <p>The browser softphone requests a JWT from <code>connect.user.get_client_token()</code>,
 which is signed with the <strong>API Key SID / Secret</strong> from settings. If web-phone
 users cannot register, verify those two credentials are set and correct.</p>
+<p>Alongside the token the call returns your extension and your outgoing caller
+ID, which is what the header and the favourites footer display.</p>
   </article>
 
       </main>
@@ -508,6 +628,35 @@ users cannot register, verify those two credentials are set and correct.</p>
               
                 <li>
                   <a class="docs-toc__link" href="#other-per-user-fields">Other per-user fields</a>
+                </li>
+              
+            </ul>
+          
+        </li>
+      
+        <li>
+          <a class="docs-toc__link" href="#using-the-web-phone">Using the web phone</a>
+          
+            <ul class="docs-toc__list docs-toc__list--nested">
+              
+                <li>
+                  <a class="docs-toc__link" href="#dialling">Dialling</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#on-a-call">On a call</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#after-a-call">After a call</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#recent">Recent</a>
+                </li>
+              
+                <li>
+                  <a class="docs-toc__link" href="#favourites">Favourites</a>
                 </li>
               
             </ul>

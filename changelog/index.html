@@ -87,8 +87,39 @@ from the changes themselves rather than from commit subjects. Work nobody
 outside the repository would notice — refactoring, formatting, tests, CI,
 version bumps, repository moves — is deliberately left out.</p>
 <h2 id="2026-09">2026-09</h2>
+<h3 id="changed">Changed</h3>
+<ul>
+<li><strong>connect_twilio</strong> — The web phone takes a tenth less room on screen. The
+  panel is now drawn at its full size and displayed slightly smaller, with the
+  text set larger to compensate, so it fits a laptop screen without anything
+  becoming harder to read.</li>
+</ul>
 <h3 id="fixed">Fixed</h3>
 <ul>
+<li><strong>connect_twilio</strong> — The web phone can no longer be dragged off the screen,
+  and comes back inside on its own when the browser window is made smaller —
+  the panel had been clamped as if it were the smaller one from before the
+  redesign, so it could go 80px past the right edge and 180px past the bottom.</li>
+<li><strong>connect_twilio, connect_freeswitch, connect_telnyx, connect_infobip</strong> —
+  Assigning an extension no longer takes one over in silence. A number that
+  already exists is refused with the reason on screen, including when the
+  existing extension points at nothing (it used to be rewritten and handed
+  back as if it were new), and so is a second extension for a destination that
+  already has one (the first one used to be left behind, still naming the same
+  user). Moving an extension to another destination, or clearing it, now
+  releases the previous one instead of leaving a stale extension number behind
+  for the caller ID and the colleague directory to read. <strong>Duplicate</strong> gives
+  the next free number with no destination set.</li>
+<li><strong>connect_twilio</strong> — The web phone's <strong>Recent</strong> list no longer shows missed
+  calls as connected with a <code>00:00</code> duration, and names what actually happened
+  from the side you were on: a colleague who declined or was busy, or a call
+  that rang out, no longer reads as <em>Failed</em>.</li>
+<li><strong>connect_twilio</strong> — Starring a call to a colleague in <strong>Recent</strong> now keeps
+  the colleague in <strong>Favourites</strong>, with their name and photo, instead of a bare
+  extension.</li>
+<li><strong>connect_twilio</strong> — An incoming call that arrives without a contact
+  reference is now looked up by number, instead of showing the number where the
+  caller's name belongs.</li>
 <li><strong>connect</strong> — A licensed module installed without a recorded install date no
   longer expires its trial immediately.</li>
 <li><strong>connect</strong> — Users outside the Connect groups no longer hit an access error
@@ -117,7 +148,7 @@ version bumps, repository moves — is deliberately left out.</p>
 <li><strong>connect_freeswitch</strong> — Fallback routing for call queues, so a queue nobody
   answers hands the call on instead of dropping it.</li>
 </ul>
-<h3 id="changed">Changed</h3>
+<h3 id="changed_1">Changed</h3>
 <ul>
 <li>Every module's Apps Store page was rebuilt in the Aurora house style, and the
   Accounting, HR, Project and Sales bridges got one for the first time.</li>
@@ -179,7 +210,7 @@ model separation that lets them run side by side.</p>
 <li>The documentation site, published from the repository.</li>
 <li>An Apps Store page for every module.</li>
 </ul>
-<h3 id="changed_1">Changed</h3>
+<h3 id="changed_2">Changed</h3>
 <ul>
 <li><strong>Provider model separation.</strong> Extensions, numbers, call flows, caller IDs and
   endpoints are now owned by each provider instead of shared, so a FreeSWITCH
@@ -220,7 +251,7 @@ model separation that lets them run side by side.</p>
 <li><strong>connect_freeswitch</strong> — Endpoint authentication passwords are generated as
   passphrases instead of being set by hand.</li>
 </ul>
-<h3 id="changed_2">Changed</h3>
+<h3 id="changed_3">Changed</h3>
 <ul>
 <li>Caller IDs are normalised to E.164 before a contact is matched, so the same
   number written three ways still finds one contact.</li>
@@ -292,7 +323,7 @@ model separation that lets them run side by side.</p>
 <li><strong>connect_twilio</strong> — The Twilio integration became a module of its own.</li>
 <li><strong>connect_freeswitch</strong> — Call detail records are read from FreeSWITCH.</li>
 </ul>
-<h3 id="changed_3">Changed</h3>
+<h3 id="changed_4">Changed</h3>
 <ul>
 <li><strong>The platform was split into a technology-agnostic core plus provider
   modules.</strong> <code>connect</code> keeps the shared call, message and recording history and
@@ -348,6 +379,10 @@ There is no holding area: a change is recorded against the month it ships in.</p
             <ul class="docs-toc__list docs-toc__list--nested">
               
                 <li>
+                  <a class="docs-toc__link" href="#changed">Changed</a>
+                </li>
+              
+                <li>
                   <a class="docs-toc__link" href="#fixed">Fixed</a>
                 </li>
               
@@ -365,7 +400,7 @@ There is no holding area: a change is recorded against the month it ships in.</p
                 </li>
               
                 <li>
-                  <a class="docs-toc__link" href="#changed">Changed</a>
+                  <a class="docs-toc__link" href="#changed_1">Changed</a>
                 </li>
               
                 <li>
@@ -386,7 +421,7 @@ There is no holding area: a change is recorded against the month it ships in.</p
                 </li>
               
                 <li>
-                  <a class="docs-toc__link" href="#changed_1">Changed</a>
+                  <a class="docs-toc__link" href="#changed_2">Changed</a>
                 </li>
               
                 <li>
@@ -411,7 +446,7 @@ There is no holding area: a change is recorded against the month it ships in.</p
                 </li>
               
                 <li>
-                  <a class="docs-toc__link" href="#changed_2">Changed</a>
+                  <a class="docs-toc__link" href="#changed_3">Changed</a>
                 </li>
               
                 <li>
@@ -470,7 +505,7 @@ There is no holding area: a change is recorded against the month it ships in.</p
                 </li>
               
                 <li>
-                  <a class="docs-toc__link" href="#changed_3">Changed</a>
+                  <a class="docs-toc__link" href="#changed_4">Changed</a>
                 </li>
               
             </ul>

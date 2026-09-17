@@ -348,6 +348,18 @@ completely independent of a FreeSWITCH extension <code>100</code>. Nothing gets 
 extension automatically: users, call flows and TwiML apps each have a manual
 button on their form (<strong>Twilio Extension</strong> on the user, <strong>Extension</strong> on call
 flows and TwiML apps) that creates or edits the extension.</p>
+<div class="admonition note">
+<p class="admonition-title">An extension is never taken over silently</p>
+<p>Saving is refused, with the reason on screen, if the number is already in
+use — even by an extension that currently points at nothing — or if the
+destination you picked is already reached on another extension.</p>
+<p>So moving a user to a different extension is two deliberate steps: clear
+the destination on their current extension (or renumber it), then assign
+the new one. Freeing an extension always releases the user — clearing its
+destination, pointing it at someone else, or deleting it.</p>
+<p><strong>Duplicate</strong> gives you the next free number with no destination set, for
+the same reason.</p>
+</div>
 <h2 id="outgoing-caller-ids">Outgoing caller IDs</h2>
 <p>Manage the numbers your users present on outbound external calls under
 <strong>Connect ▸ Twilio ▸ Outgoing Caller IDs</strong> (<code>connect.twilio.outgoing_callerid</code>).</p>
