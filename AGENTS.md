@@ -114,8 +114,8 @@ Use oduflow to manage module development and deployment.
 ## Version Compatibility
 
 **Python source is identical across series branches — this is an invariant, not
-a preference.** A module's `.py` files must be byte-for-byte the same on `17.0`,
-`18.0` and `19.0`. This is the whole point: it turns a backport into a
+a preference.** A module's `.py` files must be byte-for-byte the same on `15.0`,
+`17.0`, `18.0` and `19.0`. This is the whole point: it turns a backport into a
 near-empty diff (a clean cherry-pick instead of a manual merge), keeps review
 trivial (only non-Python assets change between branches), and stops the two
 series from silently drifting into two different products. Holding this
@@ -136,8 +136,18 @@ branches internally, and have the business logic call it uniformly — the file
 stays identical across branches.
 
 **Only non-Python assets may differ between branches:** XML views, QWeb/HTML
-templates, and per-series `migrations/` entry points. Everything else — models,
-controllers, wizards, business logic, tests — stays identical across series.
+templates, JS/OWL frontend assets, and per-series `migrations/` entry points.
+Everything else — models, controllers, wizards, business logic, tests — stays
+identical across series.
+
+**The `15.0` branch is special (ADR-062):** it is a verbatim content mirror of
+`19.0` (mirrored modules keep `19.0.x` manifest versions, `19.0.*` migration
+folders and 19-style views — they are not installable on Odoo 15), **except**
+`connect` and `connect_telnyx`, which are really ported: 15-syntax XML
+(`<tree>`, `attrs=`, `oe_chatter`, `category_id`/`users`, cron `numbercall`),
+a maintained OWL 1 fork of the JS frontend, and series-correct `15.0.x`
+manifests + `migrations/15.0.*` entry points. Their Python still matches
+`19.0` byte-for-byte.
 
 ### Cross-branch versioning rules
 

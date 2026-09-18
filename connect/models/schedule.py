@@ -5,8 +5,10 @@ from datetime import datetime, timedelta, time
 import pytz
 from markupsafe import Markup, escape
 
-from odoo import api, fields, models
+from odoo import api, fields, models, release
 from odoo.exceptions import ValidationError
+
+from .compat import env_translate
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +244,7 @@ class Schedule(models.Model):
                         '{:%H:%M} – {:%H:%M}'.format(s, e)
                         for s, e in day['windows'])
                 else:
-                    hours = self.env._('Closed')
+                    hours = env_translate(self.env, 'Closed')
                 label = ' ({})'.format(escape(day['label'])) if day['label'] else ''
                 rows.append(
                     '<tr><td class="pe-3">{:%A, %d.%m.%Y}</td>'
@@ -284,7 +286,7 @@ class Schedule(models.Model):
                         'schedule_id': rec.id,
                         'slot_type': 'available',
                         'name': '{}: {}'.format(
-                            rec.name, self.env._('Available')),
+                            rec.name, env_translate(self.env, 'Available')),
                         'start': utc(start), 'stop': utc(stop),
                     })
                 for start, stop in day['attendances']:
@@ -292,7 +294,7 @@ class Schedule(models.Model):
                         'schedule_id': rec.id,
                         'slot_type': 'schedule',
                         'name': '{}: {}'.format(
-                            rec.name, self.env._('Working Schedule')),
+                            rec.name, env_translate(self.env, 'Working Schedule')),
                         'start': utc(start), 'stop': utc(stop),
                     })
                 for start, stop, leave in day['leaves']:
@@ -302,7 +304,7 @@ class Schedule(models.Model):
                         'slot_type': 'holiday',
                         'name': '{}: {}'.format(
                             rec.name,
-                            leave.name or self.env._('Public Holiday')),
+                            leave.name or env_translate(self.env, 'Public Holiday')),
                         'start': utc(start),
                         # All-day events ending exactly at next midnight
                         # would render on the next day too.
@@ -322,7 +324,7 @@ class Schedule(models.Model):
                         'schedule_id': rec.id,
                         'slot_type': 'closed',
                         'name': '{}: {}'.format(
-                            rec.name, self.env._('Closed')),
+                            rec.name, env_translate(self.env, 'Closed')),
                         'start': utc(day_start),
                         'stop': utc(day_stop - timedelta(seconds=1)),
                         'allday': True,
@@ -350,11 +352,15 @@ class Schedule(models.Model):
 
     def action_view_slots(self):
         self.ensure_one()
+        # The list view type is named "tree" before Odoo 18.
+        view_mode = (
+            'calendar,list' if release.version_info[0] >= 18
+            else 'calendar,tree')
         return {
             'type': 'ir.actions.act_window',
-            'name': self.env._('Availability'),
+            'name': env_translate(self.env, 'Availability'),
             'res_model': 'connect.schedule.slot',
-            'view_mode': 'calendar,list',
+            'view_mode': view_mode,
             'domain': [('schedule_id', '=', self.id)],
             'context': {
                 'search_default_filter_available': 1,

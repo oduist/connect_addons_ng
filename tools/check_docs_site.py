@@ -168,7 +168,7 @@ def _prev_next():
 @check("edit links point at the owning module's source file")
 def _edit_url():
     html = read(MODULE_PAGE)
-    match = re.search(r'href="([^"]*edit/19\.0/[^"]+)"', html)
+    match = re.search(r'href="([^"]*edit/\d+\.\d+/[^"]+)"', html)
     if not match:
         return "no Edit on GitHub link on a module page"
     url = match.group(1)
