@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="connect_settings_form_voiceml" model="ir.ui.view">
+        <field name="name">connect.settings.form.voiceml</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" eval="False"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <sheet>
+                    <notebook>
+                        <page name="voiceml_api" string="VoiceML API">
+                            <group>
+                                <group string="VoiceML Credentials" name="voiceml_api">
+                                    <div colspan="2">
+                                        <small>Don't have an account yet?
+                                            <a href="https://voicetel.com/signup/" target="_blank">Sign up</a>
+                                            at <code>https://voicetel.com/signup/</code>, then sign in to the
+                                            <a href="https://www.voicetel.com/" target="_blank">carrier portal</a>.
+                                            VoiceTel provisions a VoiceML account (Account SID + API key).
+                                            The API key is shown <strong>exactly once</strong> — save it
+                                            immediately; it is both the SDK auth token and the
+                                            webhook signature key.</small>
+                                    </div>
+                                    <field name="account_sid"/>
+                                    <field name="display_api_key" string="API Key" password="1"/>
+                                    <field name="voiceml_base_url" string="API URL"/>
+                                    <field name="voiceml_wss_url" string="WebRTC WSS URL"/>
+                                    <field name="voiceml_auto_sync" groups="base.group_no_one"/>
+                                    <button colspan="2" name="sync" type="object"
+                                            string="SYNC VOICEML ACCOUNT" class="btn btn-primary"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Development" groups="base.group_no_one" name="voiceml_dev">
+                            <group>
+                                <group>
+                                    <field name="voiceml_verify_requests"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.actions.server" id="voiceml_settings_action">
+        <field name="type">ir.actions.server</field>
+        <field name="name">VoiceML Settings</field>
+        <field name="model_id" ref="connect.model_connect_settings"/>
+        <field name="binding_model_id" ref="connect.model_connect_settings"/>
+        <field name="state">code</field>
+        <field name="code">action = model.open_settings_form('connect_voiceml.connect_settings_form_voiceml', 'VoiceML Settings')</field>
+    </record>
+
+    <menuitem id="menu_voiceml_settings"
+              name="Settings"
+              parent="menu_voiceml_config"
+              action="voiceml_settings_action"
+              sequence="10"/>
+</odoo>

@@ -1,0 +1,56 @@
+.o_cvm_phone {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-width: 220px;
+}
+
+.o_cvm_header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.o_cvm_dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #adb5bd;
+}
+
+.o_cvm_dot_registered {
+    background: #28a745;
+}
+
+.o_cvm_dot_failed,
+.o_cvm_dot_missing-js {
+    background: #dc3545;
+}
+
+.o_cvm_who {
+    font-weight: 600;
+}
+
+.o_cvm_body {
+    margin-top: 4px;
+    color: #6c757d;
+}
+
+.o_cvm_error {
+    margin-top: 4px;
+    color: #dc3545;
+}
+
+.o_cvm_tray {
+    position: relative;
+}
+
+.o_cvm_tray_pop {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 1000;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="connect_voiceml.phone" owl="1">
+        <div class="o_cvm_phone">
+            <audio t-ref="remoteAudio" autoplay="1"/>
+            <div class="o_cvm_header">
+                <span t-attf-class="o_cvm_dot o_cvm_dot_{{ state.registration }}"/>
+                <span class="o_cvm_who" t-out="state.uri or 'VoiceML'"/>
+            </div>
+            <div t-if="state.error" class="o_cvm_error" t-out="state.error"/>
+            <div t-else="" class="o_cvm_body" t-out="state.registration"/>
+        </div>
+    </t>
+
+</templates>

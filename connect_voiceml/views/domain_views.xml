@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_voiceml_domain_tree" model="ir.ui.view">
+        <field name="name">connect.voiceml.domain.tree</field>
+        <field name="model">connect.voiceml.domain</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="domain_name"/>
+                <field name="friendly_name"/>
+                <field name="sid"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_voiceml_domain_form" model="ir.ui.view">
+        <field name="name">connect.voiceml.domain.form</field>
+        <field name="model">connect.voiceml.domain</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="domain_name"/>
+                        <field name="friendly_name"/>
+                        <field name="subdomain"/>
+                        <field name="sid"/>
+                        <field name="cred_list_sid"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_voiceml_domain" model="ir.actions.act_window">
+        <field name="name">SIP Domains</field>
+        <field name="res_model">connect.voiceml.domain</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_voiceml_domains"
+              name="SIP Domains"
+              parent="menu_connect_voiceml"
+              action="action_voiceml_domain"
+              sequence="60"/>
+</odoo>

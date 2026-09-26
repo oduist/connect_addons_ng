@@ -53,6 +53,7 @@ nav:
   - Changelog: changelog.md
   - Core: '!include ./connect/mkdocs.yml'
   - Twilio: '!include ./connect_twilio/mkdocs.yml'
+  - VoiceML: '!include ./connect_voiceml/mkdocs.yml'
   - FreeSWITCH: '!include ./connect_freeswitch/mkdocs.yml'
   - FreeSWITCH Website: '!include ./connect_freeswitch_website/mkdocs.yml'
   - Vonage: '!include ./connect_vonage/mkdocs.yml'

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="connect_voiceml.phone_tray" owl="1">
+        <div class="o_cvm_tray">
+            <button class="o_cvm_tray_btn" t-on-click="() => state.open = !state.open">
+                Phone
+            </button>
+            <div t-if="state.open" class="o_cvm_tray_pop">
+                <VoiceMLPhone/>
+            </div>
+        </div>
+    </t>
+
+</templates>

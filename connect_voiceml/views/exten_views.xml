@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_voiceml_exten_tree" model="ir.ui.view">
+        <field name="name">connect.voiceml.exten.tree</field>
+        <field name="model">connect.voiceml.exten</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="number"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_voiceml_exten_form" model="ir.ui.view">
+        <field name="name">connect.voiceml.exten.form</field>
+        <field name="model">connect.voiceml.exten</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="number"/>
+                        <field name="dst"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_voiceml_exten" model="ir.actions.act_window">
+        <field name="name">Extensions</field>
+        <field name="res_model">connect.voiceml.exten</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_voiceml_extens"
+              name="Extensions"
+              parent="menu_connect_voiceml"
+              action="action_voiceml_exten"
+              sequence="20"/>
+</odoo>

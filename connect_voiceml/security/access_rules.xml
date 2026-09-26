@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="access_connect_voiceml_application_admin" model="ir.model.access">
+        <field name="name">connect.voiceml.application admin</field>
+        <field name="model_id" ref="model_connect_voiceml_application"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_voiceml_application_user" model="ir.model.access">
+        <field name="name">connect.voiceml.application user</field>
+        <field name="model_id" ref="model_connect_voiceml_application"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_voiceml_application_webhook" model="ir.model.access">
+        <field name="name">connect.voiceml.application webhook</field>
+        <field name="model_id" ref="model_connect_voiceml_application"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_voiceml_domain_admin" model="ir.model.access">
+        <field name="name">connect.voiceml.domain admin</field>
+        <field name="model_id" ref="model_connect_voiceml_domain"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_voiceml_domain_user" model="ir.model.access">
+        <field name="name">connect.voiceml.domain user</field>
+        <field name="model_id" ref="model_connect_voiceml_domain"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_voiceml_domain_webhook" model="ir.model.access">
+        <field name="name">connect.voiceml.domain webhook</field>
+        <field name="model_id" ref="model_connect_voiceml_domain"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_voiceml_exten_admin" model="ir.model.access">
+        <field name="name">connect.voiceml.exten admin</field>
+        <field name="model_id" ref="model_connect_voiceml_exten"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_voiceml_exten_user" model="ir.model.access">
+        <field name="name">connect.voiceml.exten user</field>
+        <field name="model_id" ref="model_connect_voiceml_exten"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_voiceml_exten_webhook" model="ir.model.access">
+        <field name="name">connect.voiceml.exten webhook</field>
+        <field name="model_id" ref="model_connect_voiceml_exten"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_voiceml_callflow_admin" model="ir.model.access">
+        <field name="name">connect.voiceml.callflow admin</field>
+        <field name="model_id" ref="model_connect_voiceml_callflow"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_voiceml_callflow_user" model="ir.model.access">
+        <field name="name">connect.voiceml.callflow user</field>
+        <field name="model_id" ref="model_connect_voiceml_callflow"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_voiceml_callflow_choice_admin" model="ir.model.access">
+        <field name="name">connect.voiceml.callflow_choice admin</field>
+        <field name="model_id" ref="model_connect_voiceml_callflow_choice"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_voiceml_callflow_choice_user" model="ir.model.access">
+        <field name="name">connect.voiceml.callflow_choice user</field>
+        <field name="model_id" ref="model_connect_voiceml_callflow_choice"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_voiceml_number_admin" model="ir.model.access">
+        <field name="name">connect.voiceml.number admin</field>
+        <field name="model_id" ref="model_connect_voiceml_number"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_voiceml_number_user" model="ir.model.access">
+        <field name="name">connect.voiceml.number user</field>
+        <field name="model_id" ref="model_connect_voiceml_number"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_voiceml_number_webhook" model="ir.model.access">
+        <field name="name">connect.voiceml.number webhook</field>
+        <field name="model_id" ref="model_connect_voiceml_number"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_voiceml_outgoing_callerid_admin" model="ir.model.access">
+        <field name="name">connect.voiceml.outgoing_callerid admin</field>
+        <field name="model_id" ref="model_connect_voiceml_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_admin"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="access_connect_voiceml_outgoing_callerid_user" model="ir.model.access">
+        <field name="name">connect.voiceml.outgoing_callerid user</field>
+        <field name="model_id" ref="model_connect_voiceml_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_user"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="access_connect_voiceml_outgoing_callerid_webhook" model="ir.model.access">
+        <field name="name">connect.voiceml.outgoing_callerid webhook</field>
+        <field name="model_id" ref="model_connect_voiceml_outgoing_callerid"/>
+        <field name="group_id" ref="connect.group_webhook"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+</odoo>

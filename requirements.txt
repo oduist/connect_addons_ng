@@ -2,6 +2,7 @@ httpx
 openai
 pyjwt
 twilio
+voiceml
 vonage
 telnyx
 pynacl

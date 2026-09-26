@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_connect_user_voiceml_tree" model="ir.ui.view">
+        <field name="name">connect.user.voiceml.tree</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_tree"/>
+        <field name="arch" type="xml">
+            <field name="user" position="after">
+                <field name="voiceml_exten_number"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_connect_user_voiceml_form" model="ir.ui.view">
+        <field name="name">connect.user.voiceml.form</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_form"/>
+        <field name="arch" type="xml">
+            <notebook position="inside">
+                <page name="voiceml" string="VoiceML">
+                    <group>
+                        <group string="SIP / Web Phone">
+                            <field name="sip_enabled"/>
+                            <field name="client_enabled"/>
+                            <field name="username"/>
+                            <field name="domain"/>
+                            <field name="password" password="1"/>
+                            <field name="uri"/>
+                            <field name="application"/>
+                        </group>
+                        <group string="Caller ID">
+                            <field name="voiceml_outgoing_callerid"/>
+                        </group>
+                    </group>
+                </page>
+            </notebook>
+        </field>
+    </record>
+</odoo>

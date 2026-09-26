@@ -1,7 +1,7 @@
 # Oduist Connect — AI Voice Platform for Odoo
 
-**Supported platforms:** Asterisk · FreeSWITCH · Twilio · Telnyx · Bird ·
-Infobip · LiveKit · Pipecat · Dograh
+**Supported platforms:** Asterisk · FreeSWITCH · Twilio · VoiceML · Telnyx ·
+Bird · Infobip · LiveKit · Pipecat · Dograh
 
 **Give Odoo a voice.** Oduist Connect brings AI voice agents that live inside
 Odoo — they answer and place real phone calls, qualify leads and help your team
@@ -34,6 +34,7 @@ handles their messaging (`message_provider`).
 |--------|:----:|---------|
 | **`connect`** | 4.2.0 | Technology-agnostic **core** and Odoo app. Shared call/message ledger (`connect.call`, `connect.channel`, `connect.recording`, `connect.message`), PBX people (`connect.user`), common settings, OpenAI transcription/summarization, working-schedule engine, partner integration. Holds **no** provider-specific code or PBX configuration. |
 | **`connect_twilio`** | 2.2.0 | **Twilio** integration. Owns its numbers/extensions/call flows/caller IDs; Twilio Voice JS SDK web phone, SIP domains, TwiML apps, SMS & WhatsApp. |
+| **`connect_voiceml`** | 1.0.0 | **VoiceML** integration. Twilio-wire-compatible voice + SMS + AMD service. Owns numbers/extensions/call flows/caller IDs; JsSIP (SIP-over-WebRTC) web phone against a self-hosted OpenSIPS registrar, SIP domains + credential lists, TwiML apps, SMS. REST via the `voiceml-python-sdk`. |
 | **`connect_freeswitch`** | 2.1.1 | **FreeSWITCH** integration (self-hosted). Owns numbers/extensions/call flows/endpoints/caller IDs; Verto WebRTC client, XML dialplan generation, SIP gateways/routes, FIFO, parking, SIP firewall. |
 | **`connect_freeswitch_website`** | 1.0.0 | Website snippets for FreeSWITCH number working schedules (Phone Status, Phone Opening Hours) + public `/freeswitch/schedule/*` endpoints. Only module allowed to depend on `website`. |
 | **`connect_asterisk`** | 2.1.0 | **Asterisk** integration for existing PBXs (FreePBX / Issabel / plain). Owns endpoints and DID mappings; JsSIP web phone over WSS, click-to-call and AMI event pipeline via the `oduist/asterisk-agent` sidecar, config-snippet generation. |
@@ -47,10 +48,10 @@ handles their messaging (`message_provider`).
 | **`connect_crm_twilio`** | 1.0.0 | Auto-installed glue (`connect_crm` + `connect_twilio`): message routing to CRM leads. |
 | **`connect_helpdesk`** | 1.0.0 | Bridges Connect with Odoo **Helpdesk** — call/message history on tickets. |
 
-Provider modules (`connect_twilio`, `connect_freeswitch`, `connect_asterisk`,
-`connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`,
-`connect_dograh`, `connect_pipecat`) all depend on `connect` and are
-**independent of each other**.
+Provider modules (`connect_twilio`, `connect_voiceml`, `connect_freeswitch`,
+`connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`,
+`connect_bird`, `connect_dograh`, `connect_pipecat`) all depend on `connect`
+and are **independent of each other**.
 
 ---
 
@@ -59,6 +60,7 @@ Provider modules (`connect_twilio`, `connect_freeswitch`, `connect_asterisk`,
 | Provider | Voice | Browser web phone | Messaging | IVR / call flows | AI voice agents | Deployment |
 |----------|:-----:|:-----------------:|-----------|:----------------:|:---------------:|------------|
 | Twilio | ✅ TwiML | ✅ Voice JS SDK | SMS, WhatsApp | ✅ | — | Cloud |
+| VoiceML | ✅ TwiML | ✅ JsSIP (SIP/WebRTC) | SMS | ✅ | — | Cloud + self-hosted SIP registrar |
 | FreeSWITCH | ✅ XML dialplan | ✅ Verto WebRTC | — | ✅ | via Dograh / Pipecat | Self-hosted |
 | Asterisk | ✅ AMI sidecar | ✅ JsSIP | — | (uses existing PBX) | — | Existing PBX |
 | Telnyx | ✅ TeXML | ✅ @telnyx/webrtc | SMS, WhatsApp, RCS | ✅ | — | Cloud |
@@ -127,7 +129,8 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 CRUD), `connect.group_webhook` (webhook record creation).
 
 **Webhook routes** are namespaced and authenticated per provider —
-`/twilio/webhook/*` (X-Twilio-Signature), `/asterisk/webhook/*` &
+`/twilio/webhook/*` (X-Twilio-Signature), `/voiceml/webhook/*`
+(X-Twilio-Signature), `/asterisk/webhook/*` &
 `/asterisk/api/*` (Bearer agent token), `/telnyx/webhook/*` (Ed25519),
 `/infobip/webhook/*` (shared token), `/livekit/webhook` (JWT WebhookReceiver),
 `/dograh/api/*` (Bearer service token), `/bird/webhook` (Standard-Webhooks).
@@ -164,7 +167,8 @@ product version; the head marks the target Odoo series.
 5. Place and answer calls from the phone widget in the Odoo navbar.
 
 **Python dependencies** (`requirements.txt`): `openai`, `pyjwt`, `twilio`,
-`telnyx`, `pynacl`, `livekit-api`. Docker images for the self-hosted stacks
+`voiceml`, `telnyx`, `pynacl`, `livekit-api`. Docker images for the self-hosted
+stacks
 (`oduist/freeswitch`, `oduist/freeswitch-firewall`, `oduist/asterisk-agent`,
 `oduist/livekit-agent`, `oduist/dograh-api`) are built from each module's
 `deploy/` folder.
