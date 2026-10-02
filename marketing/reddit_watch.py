@@ -54,12 +54,26 @@ QUERIES = [
     ("B", "erp telephony", 'erp (telephony OR "phone system") integration'),
 ]
 
-INTENT = re.compile(
-    r"\b(looking for|recommend|anyone using|anyone know|how do i|how to|"
-    r"need a|need an|best way|suggestions|advice|is there a|alternatives?|"
-    r"struggling|can't get|cannot get|doesn't work|does not work|help)\b",
+# Someone with an actual problem, as opposed to a title that merely ends in "?".
+NEED = re.compile(
+    r"\b(i|we)\s+(really\s+)?(need|want|am looking|'m looking|are looking|"
+    r"can'?t|cannot|tried|struggl)"
+    r"|\b(need|want|looking for|recommend)\s+(a|an|the)\b"
+    r"|\b(anyone using|anyone know|how do i|best way|suggestions|advice)\b",
     re.I,
 )
+# Content-marketing shapes. These carry a heavy penalty: they mention our
+# keywords in a list of tools, but nobody in them is asking us anything.
+LISTICLE = re.compile(
+    r"(\bbest\b.{0,50}\b20\d\d\b|\btop \d+\b|\bhonest review\b"
+    r"|\bfull breakdown\b|\balternatives?\b.{0,30}\b20\d\d\b"
+    r"|here'?s what we|what we'?ve learned|\bdevelopment company\b"
+    r"|\bultimate guide\b|\bcomplete guide\b|\bwhy you should\b)",
+    re.I,
+)
+# r/u_<name> is a personal profile feed, not a community. Everything posted
+# there is self-promotion by its owner, so it is never a lead.
+PROFILE_SUB = re.compile(r"^u_", re.I)
 VENDOR_NEWS = re.compile(
     r"\b(now (natively )?integrat(es|ed)|integration is (now )?(live|available)|"
     r"we('ve| have) (launched|released|built)|introducing|announcing|"
@@ -77,9 +91,17 @@ TEL_STRONG = re.compile(
 # Ambiguous in ordinary English or in consumer chat ("take a sip", "send an
 # sms"), so these only count when Odoo is mentioned too.
 TEL_WEAK = re.compile(r"\b(sip|sms|whatsapp|extension|dial)\b", re.I)
-PRIORITY_SUBS = {
-    "odoo", "voip", "freepbx", "asterisk", "crm", "sysadmin", "telephony",
-    "smallbusiness", "msp", "erp",
+# Substring match, so r/CRMSoftware and r/3CXOfficial count too.
+PRIORITY_SUB = re.compile(
+    r"(odoo|voip|pbx|asterisk|freeswitch|telephon|crm|3cx|sysadmin|msp|erp)", re.I
+)
+CORE_SUB = re.compile(r"^(odoo|voip|freepbx|asterisk|telephony)$", re.I)
+# Subreddits that only ever surface keyword-stuffed marketing. Override with
+# REDDIT_WATCH_BLOCKLIST as a comma-separated list.
+SUB_BLOCKLIST = {
+    s.strip().lower()
+    for s in os.environ.get("REDDIT_WATCH_BLOCKLIST", "rankpine,zentechai").split(",")
+    if s.strip()
 }
 
 
@@ -127,6 +149,10 @@ def parse(root):
 
 def classify(post, tier):
     """Score a post and label what kind of attention it deserves."""
+    sub = post["subreddit"]
+    if PROFILE_SUB.match(sub) or sub.lower() in SUB_BLOCKLIST:
+        return None
+
     text = f"{post['title']} {post['body']}"
     has_odoo = bool(ODOO.search(text))
     strong = bool(TEL_STRONG.search(text))
@@ -152,16 +178,27 @@ def classify(post, tier):
     if VENDOR_NEWS.search(post["title"]):
         kind = "competitor"
         why.append("vendor announcement")
-    elif INTENT.search(text) or post["title"].rstrip().endswith("?"):
+    elif NEED.search(text):
         kind = "lead"
-        score += 3
+        score += 4
         why.append("asking for help")
+    elif post["title"].rstrip().endswith("?"):
+        kind = "lead"
+        score += 1
+        why.append("question")
     else:
         kind = "discussion"
 
-    if post["subreddit"].lower() in PRIORITY_SUBS:
+    if LISTICLE.search(text):
+        score -= 6
+        why.append("listicle/promo")
+
+    if CORE_SUB.match(sub):
+        score += 2
+        why.append(f"r/{sub}")
+    elif PRIORITY_SUB.search(sub):
         score += 1
-        why.append(f"r/{post['subreddit']}")
+        why.append(f"r/{sub}")
     if tier == "A":
         score += 1
 
