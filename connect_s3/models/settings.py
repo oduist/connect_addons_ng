@@ -343,7 +343,9 @@ class Settings(models.Model):
                 )
         if changed_fields:
             self.with_context(skip_protected_fields=True).sudo().write(changed_fields)
-        if release.version_info[0] >= 17:
+        if release.version_info[0] >= 20:
+            self.env.transaction.invalidate_ormcache()
+        elif release.version_info[0] >= 17:
             self.env.registry.clear_cache()
         else:
             self.clear_caches()

@@ -9,7 +9,7 @@ from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError
 
 from odoo.addons.connect.models.license import ODUIST_MODULES
-from odoo.addons.connect.models.settings import debug
+from odoo.addons.connect.models.settings import debug, get_system_param
 
 ODUIST_MODULES.append('connect_bird')
 
@@ -94,7 +94,7 @@ class Settings(models.Model):
         prefix (bk_{region}_...); ir.config_parameter connect.bird_api_url
         overrides the whole base for debugging.
         """
-        override = self.env['ir.config_parameter'].sudo().get_param(
+        override = get_system_param(self.env, 
             'connect.bird_api_url')
         if override:
             return override.rstrip('/')
@@ -358,7 +358,9 @@ class Settings(models.Model):
             self.with_context(
                 skip_protected_fields=True
             ).sudo().write(changed_fields)
-        if release.version_info[0] >= 17:
+        if release.version_info[0] >= 20:
+            self.env.transaction.invalidate_ormcache()
+        elif release.version_info[0] >= 17:
             self.env.registry.clear_cache()
         else:
             self.clear_caches()

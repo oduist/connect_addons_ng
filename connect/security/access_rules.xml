@@ -2,378 +2,288 @@
 <odoo>
 
     <!-- connect.call access -->
-    <record id="access_call_user" model="ir.model.access">
+    <record id="access_call_user" model="ir.access">
         <field name="name">connect.call user</field>
         <field name="model_id" ref="model_connect_call"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">cru</field>
+        <field name="domain">['|', '|',
+            ('caller_user', '=', user.id),
+            ('answered_user', '=', user.id),
+            ('called_users', 'in', [user.id])
+        ]</field>
     </record>
 
-    <record id="access_call_admin" model="ir.model.access">
+    <record id="access_call_admin" model="ir.access">
         <field name="name">connect.call admin</field>
         <field name="model_id" ref="model_connect_call"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_call_webhook" model="ir.model.access">
+    <record id="access_call_webhook" model="ir.access">
         <field name="name">connect.call webhook</field>
         <field name="model_id" ref="model_connect_call"/>
         <field name="group_id" ref="group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">cru</field>
     </record>
 
     <!-- connect.channel access -->
-    <record id="access_channel_user" model="ir.model.access">
+    <record id="access_channel_user" model="ir.access">
         <field name="name">connect.channel user</field>
         <field name="model_id" ref="model_connect_channel"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
+        <field name="domain">['|',
+            ('caller_user', '=', user.id),
+            ('called_user', '=', user.id)
+        ]</field>
     </record>
 
-    <record id="access_channel_admin" model="ir.model.access">
+    <record id="access_channel_admin" model="ir.access">
         <field name="name">connect.channel admin</field>
         <field name="model_id" ref="model_connect_channel"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_channel_webhook" model="ir.model.access">
+    <record id="access_channel_webhook" model="ir.access">
         <field name="name">connect.channel webhook</field>
         <field name="model_id" ref="model_connect_channel"/>
         <field name="group_id" ref="group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">cru</field>
     </record>
 
     <!-- connect.message access -->
-    <record id="access_message_user" model="ir.model.access">
+    <record id="access_message_user" model="ir.access">
         <field name="name">connect.message user</field>
         <field name="model_id" ref="model_connect_message"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">cru</field>
+        <field name="domain">['|',
+            ('sender_user', '=', user.id),
+            ('sender_user', '=', False)
+        ]</field>
     </record>
 
-    <record id="access_message_admin" model="ir.model.access">
+    <record id="access_message_admin" model="ir.access">
         <field name="name">connect.message admin</field>
         <field name="model_id" ref="model_connect_message"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_message_webhook" model="ir.model.access">
+    <record id="access_message_webhook" model="ir.access">
         <field name="name">connect.message webhook</field>
         <field name="model_id" ref="model_connect_message"/>
         <field name="group_id" ref="group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">cru</field>
     </record>
 
     <!-- connect.recording access -->
-    <record id="access_recording_user" model="ir.model.access">
+    <record id="access_recording_user" model="ir.access">
         <field name="name">connect.recording user</field>
         <field name="model_id" ref="model_connect_recording"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
+        <field name="domain">['|',
+            ('caller_user', '=', user.id),
+            ('called_user', '=', user.id)
+        ]</field>
     </record>
 
-    <record id="access_recording_admin" model="ir.model.access">
+    <record id="access_recording_admin" model="ir.access">
         <field name="name">connect.recording admin</field>
         <field name="model_id" ref="model_connect_recording"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_recording_webhook" model="ir.model.access">
+    <record id="access_recording_webhook" model="ir.access">
         <field name="name">connect.recording webhook</field>
         <field name="model_id" ref="model_connect_recording"/>
         <field name="group_id" ref="group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">cru</field>
     </record>
 
     <!-- connect.user access -->
-    <record id="access_connect_user_user" model="ir.model.access">
+    <record id="access_connect_user_user" model="ir.access">
         <field name="name">connect.user user</field>
         <field name="model_id" ref="model_connect_user"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
+        <field name="domain">[('user', '=', user.id)]</field>
     </record>
 
-    <record id="access_connect_user_admin" model="ir.model.access">
+    <record id="access_connect_user_admin" model="ir.access">
         <field name="name">connect.user admin</field>
         <field name="model_id" ref="model_connect_user"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_connect_user_webhook" model="ir.model.access">
+    <record id="access_connect_user_webhook" model="ir.access">
         <field name="name">connect.user webhook</field>
         <field name="model_id" ref="model_connect_user"/>
         <field name="group_id" ref="group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.settings access (admin-only; non-managers reach non-secret
          config only through the sudo-safe get_param method) -->
-    <record id="access_connect_settings_admin" model="ir.model.access">
+    <record id="access_connect_settings_admin" model="ir.access">
         <field name="name">connect.settings admin</field>
         <field name="model_id" ref="model_connect_settings"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">cru</field>
     </record>
 
     <!-- connect.debug access (admin-only; the debug() helper writes via sudo) -->
-    <record id="access_debug_admin" model="ir.model.access">
+    <record id="access_debug_admin" model="ir.access">
         <field name="name">connect.debug admin</field>
         <field name="model_id" ref="model_connect_debug"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_debug_webhook" model="ir.model.access">
+    <record id="access_debug_webhook" model="ir.access">
         <field name="name">connect.debug webhook</field>
         <field name="model_id" ref="model_connect_debug"/>
         <field name="group_id" ref="group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">cr</field>
     </record>
 
     <!-- connect.favorite access -->
-    <record id="access_favorite_user" model="ir.model.access">
+    <record id="access_favorite_user" model="ir.access">
         <field name="name">connect.favorite user</field>
         <field name="model_id" ref="model_connect_favorite"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_favorite_admin" model="ir.model.access">
+    <record id="access_favorite_admin" model="ir.access">
         <field name="name">connect.favorite admin</field>
         <field name="model_id" ref="model_connect_favorite"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
     <!-- connect.transfer_wizard access -->
-    <record id="access_transfer_wizard_user" model="ir.model.access">
+    <record id="access_transfer_wizard_user" model="ir.access">
         <field name="name">connect.transfer_wizard user</field>
         <field name="model_id" ref="model_connect_transfer_wizard"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_transfer_wizard_admin" model="ir.model.access">
+    <record id="access_transfer_wizard_admin" model="ir.access">
         <field name="name">connect.transfer_wizard admin</field>
         <field name="model_id" ref="model_connect_transfer_wizard"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
     <!-- connect.schedule access -->
-    <record id="access_schedule_user" model="ir.model.access">
+    <record id="access_schedule_user" model="ir.access">
         <field name="name">connect.schedule user</field>
         <field name="model_id" ref="model_connect_schedule"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_schedule_admin" model="ir.model.access">
+    <record id="access_schedule_admin" model="ir.access">
         <field name="name">connect.schedule admin</field>
         <field name="model_id" ref="model_connect_schedule"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_schedule_webhook" model="ir.model.access">
+    <record id="access_schedule_webhook" model="ir.access">
         <field name="name">connect.schedule webhook</field>
         <field name="model_id" ref="model_connect_schedule"/>
         <field name="group_id" ref="group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.schedule.special_day access -->
-    <record id="access_schedule_special_day_user" model="ir.model.access">
+    <record id="access_schedule_special_day_user" model="ir.access">
         <field name="name">connect.schedule.special_day user</field>
         <field name="model_id" ref="model_connect_schedule_special_day"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_schedule_special_day_admin" model="ir.model.access">
+    <record id="access_schedule_special_day_admin" model="ir.access">
         <field name="name">connect.schedule.special_day admin</field>
         <field name="model_id" ref="model_connect_schedule_special_day"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_schedule_special_day_webhook" model="ir.model.access">
+    <record id="access_schedule_special_day_webhook" model="ir.access">
         <field name="name">connect.schedule.special_day webhook</field>
         <field name="model_id" ref="model_connect_schedule_special_day"/>
         <field name="group_id" ref="group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.schedule.slot access (derived data managed by cron/admin) -->
-    <record id="access_schedule_slot_user" model="ir.model.access">
+    <record id="access_schedule_slot_user" model="ir.access">
         <field name="name">connect.schedule.slot user</field>
         <field name="model_id" ref="model_connect_schedule_slot"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_schedule_slot_admin" model="ir.model.access">
+    <record id="access_schedule_slot_admin" model="ir.access">
         <field name="name">connect.schedule.slot admin</field>
         <field name="model_id" ref="model_connect_schedule_slot"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
     <!-- resource.calendar & friends: let Connect admins manage working
          time without HR roles; Connect users can read them -->
-    <record id="access_resource_calendar_user" model="ir.model.access">
+    <record id="access_resource_calendar_user" model="ir.access">
         <field name="name">resource.calendar connect user</field>
         <field name="model_id" ref="resource.model_resource_calendar"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_resource_calendar_admin" model="ir.model.access">
+    <record id="access_resource_calendar_admin" model="ir.access">
         <field name="name">resource.calendar connect admin</field>
         <field name="model_id" ref="resource.model_resource_calendar"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_resource_calendar_attendance_user" model="ir.model.access">
+    <record id="access_resource_calendar_attendance_user" model="ir.access">
         <field name="name">resource.calendar.attendance connect user</field>
         <field name="model_id" ref="resource.model_resource_calendar_attendance"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_resource_calendar_attendance_admin" model="ir.model.access">
+    <record id="access_resource_calendar_attendance_admin" model="ir.access">
         <field name="name">resource.calendar.attendance connect admin</field>
         <field name="model_id" ref="resource.model_resource_calendar_attendance"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_resource_calendar_leaves_user" model="ir.model.access">
+    <record id="access_resource_calendar_leaves_user" model="ir.access">
         <field name="name">resource.calendar.leaves connect user</field>
         <field name="model_id" ref="resource.model_resource_calendar_leaves"/>
         <field name="group_id" ref="group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_resource_calendar_leaves_admin" model="ir.model.access">
+    <record id="access_resource_calendar_leaves_admin" model="ir.access">
         <field name="name">resource.calendar.leaves connect admin</field>
         <field name="model_id" ref="resource.model_resource_calendar_leaves"/>
         <field name="group_id" ref="group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
 </odoo>

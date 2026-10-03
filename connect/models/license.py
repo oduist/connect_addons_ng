@@ -14,6 +14,25 @@ PUBLIC_KEY_PARAM = "oduist_license.public_key"
 ODUIST_MODULES = []
 
 
+def get_system_param(env, key, default=False):
+    """Version-safe ir.config_parameter read: Odoo 20 replaced get_param
+    with typed accessors (get_str & co)."""
+    icp = env["ir.config_parameter"].sudo()
+    if release.version_info[0] >= 20:
+        return icp.get_str(key) or default
+    return icp.get_param(key, default)
+
+
+def set_system_param(env, key, value):
+    """Version-safe ir.config_parameter write (set_param was replaced by
+    typed accessors in Odoo 20)."""
+    icp = env["ir.config_parameter"].sudo()
+    if release.version_info[0] >= 20:
+        icp.set_str(key, value)
+    else:
+        icp.set_param(key, value)
+
+
 def api_call(url: str, request_data: dict) -> dict:
     """Perform a REST API call to the specified URL."""
     try:
@@ -176,9 +195,7 @@ class OduistLicense(models.Model):
     def _get_public_key(self):
         """Get public key from system parameters"""
         return (
-            self.env["ir.config_parameter"]
-            .sudo()
-            .get_param(PUBLIC_KEY_PARAM, default="")
+            get_system_param(self.env, PUBLIC_KEY_PARAM, default="")
         )
 
     @api.model
@@ -344,7 +361,7 @@ class OduistLicense(models.Model):
         Updates license_token, registration_number and subscription data.
         """
         base_url = (
-            self.env["ir.config_parameter"].sudo().get_param("oduist_license_server")
+            get_system_param(self.env, "oduist_license_server")
         )
         if not base_url:
             raise ValidationError("License server URL not configured!")
@@ -402,7 +419,7 @@ class OduistLicense(models.Model):
             raise ValidationError("License check failed: empty response")
         if response.get("token"):
             License.set_param("license_token", response.get("token"))
-            ICP.set_param(PUBLIC_KEY_PARAM, response.get("public_key"))
+            set_system_param(self.env, PUBLIC_KEY_PARAM, response.get("public_key"))
             token_data = self.validate_token(response.get("token"))
             if token_data and token_data.get("registration_number"):
                 License.set_param(
@@ -501,7 +518,7 @@ class OduistLicense(models.Model):
             ir.actions.act_url action to open payment link
         """
         base_url = (
-            self.env["ir.config_parameter"].sudo().get_param("oduist_license_server")
+            get_system_param(self.env, "oduist_license_server")
         )
         if not base_url:
             raise ValidationError("License server URL not configured!")

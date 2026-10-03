@@ -2,403 +2,281 @@
 <odoo>
 
     <!-- connect.freeswitch.gateway access rules -->
-    <record id="access_freeswitch_gateway_admin" model="ir.model.access">
+    <record id="access_freeswitch_gateway_admin" model="ir.access">
         <field name="name">connect.freeswitch.gateway admin</field>
         <field name="model_id" ref="model_connect_freeswitch_gateway"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_freeswitch_gateway_user" model="ir.model.access">
+    <record id="access_freeswitch_gateway_user" model="ir.access">
         <field name="name">connect.freeswitch.gateway user</field>
         <field name="model_id" ref="model_connect_freeswitch_gateway"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_freeswitch_gateway_webhook" model="ir.model.access">
+    <record id="access_freeswitch_gateway_webhook" model="ir.access">
         <field name="name">connect.freeswitch.gateway webhook</field>
         <field name="model_id" ref="model_connect_freeswitch_gateway"/>
         <field name="group_id" ref="connect.group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.freeswitch.outgoing_route access rules -->
-    <record id="access_freeswitch_outgoing_route_admin" model="ir.model.access">
+    <record id="access_freeswitch_outgoing_route_admin" model="ir.access">
         <field name="name">connect.freeswitch.outgoing_route admin</field>
         <field name="model_id" ref="model_connect_freeswitch_outgoing_route"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_freeswitch_outgoing_route_user" model="ir.model.access">
+    <record id="access_freeswitch_outgoing_route_user" model="ir.access">
         <field name="name">connect.freeswitch.outgoing_route user</field>
         <field name="model_id" ref="model_connect_freeswitch_outgoing_route"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_freeswitch_outgoing_route_webhook" model="ir.model.access">
+    <record id="access_freeswitch_outgoing_route_webhook" model="ir.access">
         <field name="name">connect.freeswitch.outgoing_route webhook</field>
         <field name="model_id" ref="model_connect_freeswitch_outgoing_route"/>
         <field name="group_id" ref="connect.group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.fs_fifo access rules -->
-    <record id="access_fs_fifo_admin" model="ir.model.access">
+    <record id="access_fs_fifo_admin" model="ir.access">
         <field name="name">connect.fs_fifo admin</field>
         <field name="model_id" ref="model_connect_fs_fifo"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_fs_fifo_user" model="ir.model.access">
+    <record id="access_fs_fifo_user" model="ir.access">
         <field name="name">connect.fs_fifo user</field>
         <field name="model_id" ref="model_connect_fs_fifo"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_fs_fifo_webhook" model="ir.model.access">
+    <record id="access_fs_fifo_webhook" model="ir.access">
         <field name="name">connect.fs_fifo webhook</field>
         <field name="model_id" ref="model_connect_fs_fifo"/>
         <field name="group_id" ref="connect.group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.freeswitch.template access rules -->
-    <record id="access_freeswitch_template_admin" model="ir.model.access">
+    <record id="access_freeswitch_template_admin" model="ir.access">
         <field name="name">connect.freeswitch.template admin</field>
         <field name="model_id" ref="model_connect_freeswitch_template"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_freeswitch_template_user" model="ir.model.access">
+    <record id="access_freeswitch_template_user" model="ir.access">
         <field name="name">connect.freeswitch.template user</field>
         <field name="model_id" ref="model_connect_freeswitch_template"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_freeswitch_template_webhook" model="ir.model.access">
+    <record id="access_freeswitch_template_webhook" model="ir.access">
         <field name="name">connect.freeswitch.template webhook</field>
         <field name="model_id" ref="model_connect_freeswitch_template"/>
         <field name="group_id" ref="connect.group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.freeswitch.parking.slot access rules -->
-    <record id="access_freeswitch_parking_slot_admin" model="ir.model.access">
+    <record id="access_freeswitch_parking_slot_admin" model="ir.access">
         <field name="name">connect.freeswitch.parking.slot admin</field>
         <field name="model_id" ref="model_connect_freeswitch_parking_slot"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_freeswitch_parking_slot_user" model="ir.model.access">
+    <record id="access_freeswitch_parking_slot_user" model="ir.access">
         <field name="name">connect.freeswitch.parking.slot user</field>
         <field name="model_id" ref="model_connect_freeswitch_parking_slot"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_freeswitch_parking_slot_webhook" model="ir.model.access">
+    <record id="access_freeswitch_parking_slot_webhook" model="ir.access">
         <field name="name">connect.freeswitch.parking.slot webhook</field>
         <field name="model_id" ref="model_connect_freeswitch_parking_slot"/>
         <field name="group_id" ref="connect.group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.firewall.whitelist access rules -->
-    <record id="access_firewall_whitelist_admin" model="ir.model.access">
+    <record id="access_firewall_whitelist_admin" model="ir.access">
         <field name="name">connect.firewall.whitelist admin</field>
         <field name="model_id" ref="model_connect_firewall_whitelist"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
     <!-- connect.firewall.blacklist access rules -->
-    <record id="access_firewall_blacklist_admin" model="ir.model.access">
+    <record id="access_firewall_blacklist_admin" model="ir.access">
         <field name="name">connect.firewall.blacklist admin</field>
         <field name="model_id" ref="model_connect_firewall_blacklist"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
     <!-- connect.firewall.event access rules -->
-    <record id="access_firewall_event_admin" model="ir.model.access">
+    <record id="access_firewall_event_admin" model="ir.access">
         <field name="name">connect.firewall.event admin</field>
         <field name="model_id" ref="model_connect_firewall_event"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">rd</field>
     </record>
 
     <!-- connect.firewall.agent access rules -->
-    <record id="access_firewall_agent_admin" model="ir.model.access">
+    <record id="access_firewall_agent_admin" model="ir.access">
         <field name="name">connect.firewall.agent admin</field>
         <field name="model_id" ref="model_connect_firewall_agent"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">ru</field>
     </record>
 
     <!-- connect.freeswitch.exten access rules -->
-    <record id="access_freeswitch_exten_user" model="ir.model.access">
+    <record id="access_freeswitch_exten_user" model="ir.access">
         <field name="name">connect.freeswitch.exten user</field>
         <field name="model_id" ref="model_connect_freeswitch_exten"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_freeswitch_exten_admin" model="ir.model.access">
+    <record id="access_freeswitch_exten_admin" model="ir.access">
         <field name="name">connect.freeswitch.exten admin</field>
         <field name="model_id" ref="model_connect_freeswitch_exten"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_freeswitch_exten_webhook" model="ir.model.access">
+    <record id="access_freeswitch_exten_webhook" model="ir.access">
         <field name="name">connect.freeswitch.exten webhook</field>
         <field name="model_id" ref="model_connect_freeswitch_exten"/>
         <field name="group_id" ref="connect.group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.freeswitch.callflow access rules -->
-    <record id="access_freeswitch_callflow_user" model="ir.model.access">
+    <record id="access_freeswitch_callflow_user" model="ir.access">
         <field name="name">connect.freeswitch.callflow user</field>
         <field name="model_id" ref="model_connect_freeswitch_callflow"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_freeswitch_callflow_admin" model="ir.model.access">
+    <record id="access_freeswitch_callflow_admin" model="ir.access">
         <field name="name">connect.freeswitch.callflow admin</field>
         <field name="model_id" ref="model_connect_freeswitch_callflow"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_freeswitch_callflow_webhook" model="ir.model.access">
+    <record id="access_freeswitch_callflow_webhook" model="ir.access">
         <field name="name">connect.freeswitch.callflow webhook</field>
         <field name="model_id" ref="model_connect_freeswitch_callflow"/>
         <field name="group_id" ref="connect.group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.freeswitch.callflow_choice access rules -->
-    <record id="access_freeswitch_callflow_choice_user" model="ir.model.access">
+    <record id="access_freeswitch_callflow_choice_user" model="ir.access">
         <field name="name">connect.freeswitch.callflow_choice user</field>
         <field name="model_id" ref="model_connect_freeswitch_callflow_choice"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_freeswitch_callflow_choice_admin" model="ir.model.access">
+    <record id="access_freeswitch_callflow_choice_admin" model="ir.access">
         <field name="name">connect.freeswitch.callflow_choice admin</field>
         <field name="model_id" ref="model_connect_freeswitch_callflow_choice"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_freeswitch_callflow_choice_webhook" model="ir.model.access">
+    <record id="access_freeswitch_callflow_choice_webhook" model="ir.access">
         <field name="name">connect.freeswitch.callflow_choice webhook</field>
         <field name="model_id" ref="model_connect_freeswitch_callflow_choice"/>
         <field name="group_id" ref="connect.group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.freeswitch.number access rules -->
-    <record id="access_freeswitch_number_user" model="ir.model.access">
+    <record id="access_freeswitch_number_user" model="ir.access">
         <field name="name">connect.freeswitch.number user</field>
         <field name="model_id" ref="model_connect_freeswitch_number"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_freeswitch_number_admin" model="ir.model.access">
+    <record id="access_freeswitch_number_admin" model="ir.access">
         <field name="name">connect.freeswitch.number admin</field>
         <field name="model_id" ref="model_connect_freeswitch_number"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_freeswitch_number_webhook" model="ir.model.access">
+    <record id="access_freeswitch_number_webhook" model="ir.access">
         <field name="name">connect.freeswitch.number webhook</field>
         <field name="model_id" ref="model_connect_freeswitch_number"/>
         <field name="group_id" ref="connect.group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.freeswitch.endpoint access rules -->
-    <record id="access_freeswitch_endpoint_user" model="ir.model.access">
+    <record id="access_freeswitch_endpoint_user" model="ir.access">
         <field name="name">connect.freeswitch.endpoint user</field>
         <field name="model_id" ref="model_connect_freeswitch_endpoint"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">ru</field>
+        <field name="domain">[('connect_user_id.user', '=', user.id)]</field>
     </record>
 
-    <record id="access_freeswitch_endpoint_admin" model="ir.model.access">
+    <record id="access_freeswitch_endpoint_admin" model="ir.access">
         <field name="name">connect.freeswitch.endpoint admin</field>
         <field name="model_id" ref="model_connect_freeswitch_endpoint"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_freeswitch_endpoint_webhook" model="ir.model.access">
+    <record id="access_freeswitch_endpoint_webhook" model="ir.access">
         <field name="name">connect.freeswitch.endpoint webhook</field>
         <field name="model_id" ref="model_connect_freeswitch_endpoint"/>
         <field name="group_id" ref="connect.group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
     <!-- connect.freeswitch.endpoint record rules -->
-    <record id="rule_freeswitch_endpoint_user" model="ir.rule">
-        <field name="name">FreeSWITCH Endpoint: user sees own endpoints</field>
-        <field name="model_id" ref="model_connect_freeswitch_endpoint"/>
-        <field name="domain_force">[('connect_user_id.user', '=', user.id)]</field>
-        <field name="groups" eval="[(4, ref('connect.group_user'))]"/>
-    </record>
 
-    <record id="rule_freeswitch_endpoint_admin" model="ir.rule">
-        <field name="name">FreeSWITCH Endpoint: admin sees all</field>
-        <field name="model_id" ref="model_connect_freeswitch_endpoint"/>
-        <field name="domain_force">[(1, '=', 1)]</field>
-        <field name="groups" eval="[(4, ref('connect.group_admin'))]"/>
-    </record>
 
     <!-- connect.freeswitch.outgoing_callerid access rules -->
-    <record id="access_freeswitch_outgoing_callerid_user" model="ir.model.access">
+    <record id="access_freeswitch_outgoing_callerid_user" model="ir.access">
         <field name="name">connect.freeswitch.outgoing_callerid user</field>
         <field name="model_id" ref="model_connect_freeswitch_outgoing_callerid"/>
         <field name="group_id" ref="connect.group_user"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
-    <record id="access_freeswitch_outgoing_callerid_admin" model="ir.model.access">
+    <record id="access_freeswitch_outgoing_callerid_admin" model="ir.access">
         <field name="name">connect.freeswitch.outgoing_callerid admin</field>
         <field name="model_id" ref="model_connect_freeswitch_outgoing_callerid"/>
         <field name="group_id" ref="connect.group_admin"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="True"/>
-        <field name="perm_create" eval="True"/>
-        <field name="perm_unlink" eval="True"/>
+        <field name="operation">crud</field>
     </record>
 
-    <record id="access_freeswitch_outgoing_callerid_webhook" model="ir.model.access">
+    <record id="access_freeswitch_outgoing_callerid_webhook" model="ir.access">
         <field name="name">connect.freeswitch.outgoing_callerid webhook</field>
         <field name="model_id" ref="model_connect_freeswitch_outgoing_callerid"/>
         <field name="group_id" ref="connect.group_webhook"/>
-        <field name="perm_read" eval="True"/>
-        <field name="perm_write" eval="False"/>
-        <field name="perm_create" eval="False"/>
-        <field name="perm_unlink" eval="False"/>
+        <field name="operation">r</field>
     </record>
 
 </odoo>

@@ -9,7 +9,7 @@ import xmlrpc.client
 
 from odoo import api, fields, models
 from odoo.addons.connect.models.license import ODUIST_MODULES
-from odoo.addons.connect.models.settings import PROTECTED_FIELDS
+from odoo.addons.connect.models.settings import PROTECTED_FIELDS, get_system_param
 
 from ..constants import FREESWITCH_XMLRPC_PUBLIC_PORT, FREESWITCH_XMLRPC_USER
 
@@ -329,7 +329,7 @@ class Settings(models.Model):
         (ADR-025). Returns '' when web.base.url or the token is missing —
         callers then leave recording disabled (fail-closed).
         """
-        base_url = self.env['ir.config_parameter'].sudo().get_param(
+        base_url = get_system_param(self.env, 
             'web.base.url') or ''
         token = self.sudo().get_param('freeswitch_webhook_token') or ''
         if not base_url or not token:
@@ -340,7 +340,7 @@ class Settings(models.Model):
     @api.model
     def get_voicemail_webhook_url(self):
         """Voicemail upload base URL including the auth token path segment."""
-        base_url = self.env['ir.config_parameter'].sudo().get_param(
+        base_url = get_system_param(self.env, 
             'web.base.url') or ''
         token = self.sudo().get_param('freeswitch_webhook_token') or ''
         if not base_url or not token:

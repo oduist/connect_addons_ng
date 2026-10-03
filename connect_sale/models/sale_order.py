@@ -1,6 +1,6 @@
 import logging
 
-from odoo import api, fields, models
+from odoo import api, fields, models, release
 
 logger = logging.getLogger(__name__)
 
@@ -38,5 +38,8 @@ class SaleOrder(models.Model):
             call = self.env['connect.call'].sudo().browse(self.env.context['connect_call_id'])
             call.sale_order = recs[0]
         if recs:
-            self.env.registry.clear_cache()
+            if release.version_info[0] >= 20:
+                self.env.transaction.invalidate_ormcache()
+            else:
+                self.env.registry.clear_cache()
         return recs

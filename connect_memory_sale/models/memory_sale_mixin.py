@@ -3,7 +3,7 @@ import uuid
 
 from odoo import api, fields, models
 
-from odoo.addons.connect.models.license import ODUIST_MODULES
+from odoo.addons.connect.models.license import ODUIST_MODULES, get_system_param
 
 # Register connect_memory_sale in Connect's licensed-module registry so it is
 # enforced by its own license (mirrors the base module's append).
@@ -79,7 +79,7 @@ class MemorySaleMixin(models.AbstractModel):
 
     @api.model
     def _memory_sale_source(self, record):
-        base_url = self.env["ir.config_parameter"].sudo().get_param("web.base.url") or ""
+        base_url = get_system_param(self.env, "web.base.url") or ""
         record_name = ""
         if "name" in record._fields and record.name:
             record_name = record.name

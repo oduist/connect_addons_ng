@@ -1,6 +1,6 @@
 import logging
 
-from odoo import api, fields, models
+from odoo import api, fields, models, release
 
 from odoo.addons.connect.models.settings import debug, MAX_EXTEN_LEN
 from odoo.addons.connect.models.res_partner import strip_number, format_number
@@ -56,19 +56,28 @@ class Lead(models.Model):
         if call and recs:
             call.lead = recs[0]
         if recs:
-            self.env.registry.clear_cache()
+            if release.version_info[0] >= 20:
+                self.env.transaction.invalidate_ormcache()
+            else:
+                self.env.registry.clear_cache()
         return recs
 
     def write(self, values):
         res = super().write(values)
         if res:
-            self.env.registry.clear_cache()
+            if release.version_info[0] >= 20:
+                self.env.transaction.invalidate_ormcache()
+            else:
+                self.env.registry.clear_cache()
         return res
 
     def unlink(self):
         res = super().unlink()
         if res:
-            self.env.registry.clear_cache()
+            if release.version_info[0] >= 20:
+                self.env.transaction.invalidate_ormcache()
+            else:
+                self.env.registry.clear_cache()
         return res
 
     @api.depends('phone', 'mobile', 'country_id', 'partner_id', 'partner_id.phone', 'partner_id.mobile')

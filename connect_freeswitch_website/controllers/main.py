@@ -33,7 +33,7 @@ class ConnectFreeswitchWebsite(http.Controller):
         schedule = number.schedule_id
         status = schedule.get_status()
         env = request.env
-        tz = pytz.timezone(schedule.calendar_id.tz or 'UTC')
+        tz = pytz.timezone(schedule.tz or 'UTC')
         today = datetime.now(tz).date()
 
         def local(dt_utc):
@@ -79,7 +79,7 @@ class ConnectFreeswitchWebsite(http.Controller):
             days = max(1, min(int(days), MAX_DAYS))
         except (TypeError, ValueError):
             days = 10
-        tz = pytz.timezone(schedule.calendar_id.tz or 'UTC')
+        tz = pytz.timezone(schedule.tz or 'UTC')
         today = datetime.now(tz).date()
         day_list = []
         for day in schedule.get_day_data(today, days):

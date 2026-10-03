@@ -8,13 +8,10 @@
          unlink_invoice() runs as the Connect user (their own rights), not
          the webhook user. So the webhook user never creates, writes or
          unlinks account.move directly, only needs read. -->
-    <record id="access_account_move_webhook" model="ir.model.access">
+    <record id="access_account_move_webhook" model="ir.access">
         <field name="name">account.move webhook</field>
         <field name="model_id" ref="account.model_account_move"/>
         <field name="group_id" ref="connect.group_webhook"/>
-        <field name="perm_read" eval="1"/>
-        <field name="perm_create" eval="0"/>
-        <field name="perm_write" eval="0"/>
-        <field name="perm_unlink" eval="0"/>
+        <field name="operation">r</field>
     </record>
 </odoo>

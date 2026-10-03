@@ -5,7 +5,7 @@ from xml.dom import minidom
 
 from odoo import http
 from odoo.http import request, Response
-from odoo.addons.connect.models.settings import debug
+from odoo.addons.connect.models.settings import debug, get_system_param
 
 from ..constants import FREESWITCH_XMLRPC_INTERNAL_PORT, FREESWITCH_XMLRPC_USER
 from .token_auth import check_fs_webhook_auth, unauthorized_response
@@ -386,7 +386,7 @@ class FreeSwitchXMLController(http.Controller):
         parking_slot = ParkingSlot.search(
             [('exten', '=', destination), ('active', '=', True)], limit=1)
         if parking_slot:
-            webhook_url = request.env['ir.config_parameter'].sudo().get_param(
+            webhook_url = get_system_param(request.env, 
                 'web.base.url') or ''
             webhook_token = request.env['connect.settings'].sudo().get_param(
                 'freeswitch_webhook_token') or ''

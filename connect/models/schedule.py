@@ -5,7 +5,8 @@ from datetime import datetime, timedelta, time
 import pytz
 from markupsafe import Markup, escape
 
-from odoo import api, fields, models
+from odoo import api, fields, models, release
+from .license import get_system_param
 from odoo.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,16 @@ class Schedule(models.Model):
         ondelete='restrict',
         help='Weekly working hours and timezone. The calendar\'s global '
              'time off entries act as public holidays.')
-    tz = fields.Selection(related='calendar_id.tz')
+    if release.version_info[0] >= 20:
+        # Odoo 20 removed the tz field from resource.calendar (calendars
+        # became timezone-agnostic; the timezone moved to the resource /
+        # company), so the schedule owns its timezone directly.
+        tz = fields.Selection(
+            selection=lambda self: [(t, t) for t in pytz.all_timezones],
+            string='Timezone', required=True,
+            default=lambda self: self.env.user.tz or 'UTC')
+    else:
+        tz = fields.Selection(related='calendar_id.tz')
     special_day_ids = fields.Many2many(
         'connect.schedule.special_day',
         'connect_schedule_special_day_rel', 'schedule_id', 'special_day_id',
@@ -56,12 +66,12 @@ class Schedule(models.Model):
 
     def _get_tz(self):
         self.ensure_one()
-        return pytz.timezone(self.calendar_id.tz or 'UTC')
+        return pytz.timezone(self.tz or 'UTC')
 
     @api.model
     def _get_horizon_days(self):
         try:
-            return int(self.env['ir.config_parameter'].sudo().get_param(
+            return int(get_system_param(self.env, 
                 HORIZON_PARAM, DEFAULT_HORIZON_DAYS))
         except (TypeError, ValueError):
             return DEFAULT_HORIZON_DAYS

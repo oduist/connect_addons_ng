@@ -5,6 +5,7 @@ import urllib.parse
 import logging
 
 from odoo import models, fields, api, release
+from odoo.addons.connect.models.settings import get_system_param
 from odoo.exceptions import ValidationError
 from elevenlabs import ToolRequestModel
 from elevenlabs.core.api_error import ApiError
@@ -56,7 +57,7 @@ class ElevenlabsAgentTool(models.Model):
         ]
 
     def get_tool_url(self):
-        api_url = self.env['ir.config_parameter'].sudo().get_param('connect.api_url')
+        api_url = get_system_param(self.env, 'connect.api_url')
         if self.path:
             # We return Odoo URL for internal tools.
             return urllib.parse.urljoin(api_url, self.path)

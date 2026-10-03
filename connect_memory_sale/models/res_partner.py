@@ -4,6 +4,7 @@ from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models
+from odoo.addons.connect.models.settings import get_system_param
 
 _logger = logging.getLogger(__name__)
 
@@ -23,10 +24,9 @@ class ResPartner(models.Model):
         mixin = self.env["connect.memory.sale.mixin"]
         if not self.env["connect.memory.mixin"]._memory_enabled():  # master switch
             return
-        ICP = self.env["ir.config_parameter"].sudo()
-        months = int(ICP.get_param("connect_memory_sale.digest_period_months", "6") or 6)
-        min_inv = int(ICP.get_param("connect_memory_sale.digest_min_invoices", "3") or 3)
-        batch = int(ICP.get_param("connect_memory_sale.digest_batch_size", "50") or 50)
+        months = int(get_system_param(self.env, "connect_memory_sale.digest_period_months", "6") or 6)
+        min_inv = int(get_system_param(self.env, "connect_memory_sale.digest_min_invoices", "3") or 3)
+        batch = int(get_system_param(self.env, "connect_memory_sale.digest_batch_size", "50") or 50)
         week_ago = fields.Datetime.now() - timedelta(days=7)
         date_from = fields.Date.context_today(self) - relativedelta(months=months)
         company_currency = self.env.company.currency_id

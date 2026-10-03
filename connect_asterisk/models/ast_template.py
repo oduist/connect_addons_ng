@@ -44,11 +44,17 @@ class AsteriskTemplate(models.Model):
     def write(self, vals):
         result = super().write(vals)
         if 'content' in vals:
-            self.env.registry.clear_cache()
+            if release.version_info[0] >= 20:
+                self.env.transaction.invalidate_ormcache()
+            else:
+                self.env.registry.clear_cache()
         return result
 
     def unlink(self):
-        self.env.registry.clear_cache()
+        if release.version_info[0] >= 20:
+            self.env.transaction.invalidate_ormcache()
+        else:
+            self.env.registry.clear_cache()
         return super().unlink()
 
     def reset_to_default(self):

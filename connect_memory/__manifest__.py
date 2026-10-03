@@ -33,7 +33,7 @@ their own data.
         'connect',
     ],
     'data': [
-        'security/ir.model.access.csv',
+        'security/ir.access.csv',
         'data/memory_data.xml',
         'views/memory_outbox_views.xml',
         'views/memory_inbox_views.xml',

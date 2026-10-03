@@ -1,6 +1,6 @@
 import logging
 
-from odoo import api, fields, models
+from odoo import api, fields, models, release
 
 from odoo.addons.connect.models.settings import debug, MAX_EXTEN_LEN
 from odoo.addons.connect.models.res_partner import strip_number
@@ -43,7 +43,10 @@ class Ticket(models.Model):
             )
             call.ticket = recs[0]
         if recs:
-            self.env.registry.clear_cache()
+            if release.version_info[0] >= 20:
+                self.env.transaction.invalidate_ormcache()
+            else:
+                self.env.registry.clear_cache()
         return recs
 
     def _search_ticket_by_number(self, number):

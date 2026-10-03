@@ -11,7 +11,7 @@ import openai
 from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError, UserError
 
-from odoo.addons.connect.models.license import ODUIST_MODULES
+from odoo.addons.connect.models.license import ODUIST_MODULES, get_system_param, set_system_param
 ODUIST_MODULES.append('connect')
 
 
@@ -120,18 +120,16 @@ class Settings(models.Model):
     def _get_instance_data(self):
         for rec in self:
             rec.instance_uid = (
-                self.env["ir.config_parameter"].sudo().get_param("connect.instance_uid")
+                get_system_param(self.env, "connect.instance_uid")
             )
             rec.api_url = (
-                self.env["ir.config_parameter"].sudo().get_param("connect.api_url")
+                get_system_param(self.env, "connect.api_url")
             )
             rec.web_base_url = (
-                self.env["ir.config_parameter"].sudo().get_param("web.base.url")
+                get_system_param(self.env, "web.base.url")
             )
             rec.call_duration_limit = int(
-                self.env["ir.config_parameter"]
-                .sudo()
-                .get_param("connect.call_duration_limit", "7200")
+                get_system_param(self.env, "connect.call_duration_limit", "7200")
             )
 
     @api.model
@@ -183,17 +181,15 @@ class Settings(models.Model):
         api_url = self.get_param("api_url")
         if not api_url:
             web_base_url = (
-                self.env["ir.config_parameter"].sudo().get_param("web.base.url")
+                get_system_param(self.env, "web.base.url")
             )
-            self.env["ir.config_parameter"].set_param("connect.api_url", web_base_url)
+            set_system_param(self.env, "connect.api_url", web_base_url)
         installation_date = (
-            self.env["ir.config_parameter"]
-            .sudo()
-            .get_param("connect.installation_date")
+            get_system_param(self.env, "connect.installation_date")
         )
         if not installation_date:
             installation_date = fields.Datetime.now()
-            self.env["ir.config_parameter"].set_param(
+            set_system_param(self.env, 
                 "connect.installation_date", installation_date
             )
 
@@ -311,7 +307,9 @@ class Settings(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        if release.version_info[0] >= 17:
+        if release.version_info[0] >= 20:
+            self.env.transaction.invalidate_ormcache()
+        elif release.version_info[0] >= 17:
             self.env.registry.clear_cache()
         else:
             self.clear_caches()
@@ -334,7 +332,9 @@ class Settings(models.Model):
                 )
         if changed_fields:
             self.with_context(skip_protected_fields=True).sudo().write(changed_fields)
-        if release.version_info[0] >= 17:
+        if release.version_info[0] >= 20:
+            self.env.transaction.invalidate_ormcache()
+        elif release.version_info[0] >= 17:
             self.env.registry.clear_cache()
         else:
             self.clear_caches()

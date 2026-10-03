@@ -2,6 +2,7 @@ import logging
 import uuid
 
 from odoo import api, models, tools
+from odoo.addons.connect.models.settings import get_system_param
 
 _logger = logging.getLogger(__name__)
 
@@ -129,7 +130,7 @@ class MailThread(models.AbstractModel):
         lang = (contacts[:1].lang or commercial.lang) if contacts else commercial.lang
 
         outbox = self.env["connect.memory.outbox"]
-        base_url = self.env["ir.config_parameter"].sudo().get_param(
+        base_url = get_system_param(self.env, 
             "web.base.url") or ""
         occurred = message.date.isoformat() + "Z" if message.date else False
         actor_ref = ("user:%s" % internal_users[0].id) if is_internal \

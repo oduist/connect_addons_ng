@@ -146,7 +146,9 @@ class User(models.Model):
         for connect_user in recs:
             connect_user.manage_group()
         if recs and not self.env.context.get('no_clear_cache'):
-            if release.version_info[0] >= 17:
+            if release.version_info[0] >= 20:
+                self.env.transaction.invalidate_ormcache()
+            elif release.version_info[0] >= 17:
                 self.env.registry.clear_cache()
             else:
                 self.clear_caches()
@@ -157,7 +159,9 @@ class User(models.Model):
             rec.manage_group('remove')
         res = super(User, self).unlink()
         if res and not self.env.context.get('no_clear_cache'):
-            if release.version_info[0] >= 17:
+            if release.version_info[0] >= 20:
+                self.env.transaction.invalidate_ormcache()
+            elif release.version_info[0] >= 17:
                 self.env.registry.clear_cache()
             else:
                 self.clear_caches()
@@ -169,7 +173,9 @@ class User(models.Model):
         res = super().write(vals)
         self.manage_group()
         if res and not self.env.context.get('no_clear_cache'):
-            if release.version_info[0] >= 17:
+            if release.version_info[0] >= 20:
+                self.env.transaction.invalidate_ormcache()
+            elif release.version_info[0] >= 17:
                 self.env.registry.clear_cache()
             else:
                 self.clear_caches()
