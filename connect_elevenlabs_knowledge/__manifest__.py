@@ -4,7 +4,7 @@
     'description': """Integrate ElevenLabs Knowledge""",
     'currency': 'EUR',
     'price': '0',
-    'version': '19.0.1.0.0',
+    'version': '20.0.1.0.0',
     'category': 'pHONE',
     'live_test_url': 'https://connect-demo-18.oduist.com/',
     'author': 'Oduist',

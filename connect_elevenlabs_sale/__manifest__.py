@@ -2,7 +2,7 @@
 
 {
     'name': 'Oduist Connect ElevenLabs Sale',
-    'version': '19.0.1.0.0',
+    'version': '20.0.1.0.0',
     'author': 'Oduist',
     'maintainer': 'Oduist',
     'live_test_url': 'https://connect-demo-18.oduist.com/',

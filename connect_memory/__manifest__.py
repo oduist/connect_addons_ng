@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Memory',
-    'version': '19.0.1.0.3',
+    'version': '20.0.1.0.3',
     'category': 'Phone',
     'summary': 'External AI memory (Hindsight, Cognee)',
     'description': """

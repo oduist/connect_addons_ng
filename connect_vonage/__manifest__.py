@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Vonage',
-    'version': '19.0.1.0.1',
+    'version': '20.0.1.0.1',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Vonage integration for Oduist Connect',

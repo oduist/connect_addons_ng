@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Pipecat',
-    'version': '19.0.1.0.0',
+    'version': '20.0.1.0.0',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Pipecat AI voice agents for FreeSWITCH',

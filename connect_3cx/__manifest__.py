@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect 3CX',
-    'version': '19.0.1.0.0',
+    'version': '20.0.1.0.0',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': '3CX integration for Oduist Connect',
