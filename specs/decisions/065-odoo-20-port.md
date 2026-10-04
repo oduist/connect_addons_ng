@@ -59,6 +59,34 @@ schedule form on Odoo 20 — there is nowhere else to inherit it from.
   cross-branch invariant; the compat helpers keep the diff to XML/security
   assets plus the manifest version prefix.
 
+## Owl 3 frontend port (amendment, 2026-10-04)
+
+Odoo 20 ships Owl 3 (3.0.0-alpha.49). Three breaks hit every connect
+widget; JS/XML assets may differ per series, so the 20.0 branch carries
+the Owl 3 form with no cross-version shims:
+
+- `useState` is gone → `this.state = proxy({...})`.
+- `useRef("name")` + `t-ref="name"` + `.el` are gone →
+  `this.fooRef = signal.ref()`, `t-ref="this.fooRef"`, read via
+  `this.fooRef()`.
+- `static props`/`defaultProps` throw (Odoo's owl2→3 layer) →
+  `props = useProps({...})` with `t` schemas; `standardFieldProps` is
+  already a `t` schema in Odoo 20 so spreads keep working.
+- Template expressions no longer resolve bare component members (the
+  render context only exposes `this`): every `state.x`, `props.x` and
+  bare handler name in the 43 Owl templates got a `this.` prefix, and the
+  Owl 2 `and`/`or`/`not` word-operators became `&&`/`||`/`!`.
+- `t-model` now requires a signal → the two dial inputs use
+  `t-att-value` + `t-on-input` instead.
+- `useEffect` (Owl 2 deps signature) → `useLayoutEffect` from the
+  compatibility layer.
+- `web.FormPhoneField` no longer exists; the per-provider phone-field
+  template inheritances were replaced by extending the new
+  `PhoneField.actionButtons` getter (the standard Call button is routed
+  through `connect.settings.originate_call`; Twilio/Infobip/Telnyx append
+  their WhatsApp buttons). The old `phone_field.xml` files are kept empty
+  so manifests stay aligned.
+
 ## Consequences
 
 The compat-helper arms and the `>= 20` branches must be backported verbatim

@@ -2,7 +2,7 @@
 
 import { registry } from "@web/core/registry";
 import { rpc } from "@web/core/network/rpc";
-import { Component, useState, useRef, onWillStart, markup } from "@odoo/owl";
+import {Component, markup, onWillStart, proxy, signal} from "@odoo/owl";
 
 /**
  * The "Book" client action: a two-pane documentation viewer.
@@ -11,19 +11,18 @@ import { Component, useState, useRef, onWillStart, markup } from "@odoo/owl";
  */
 export class BookApp extends Component {
     static template = "connect_book.BookApp";
-    static props = { "*": true };
     //: JSON endpoint the book pulls its pages from. Subclasses override it
     //  (e.g. the Admin Guide reads /connect_book/admin) -- everything else is shared.
     static endpoint = "/connect_book/book";
 
     setup() {
-        this.state = useState({
+        this.state = proxy({
             modules: [],
             activeId: null,
             search: "",
             loaded: false,
         });
-        this.contentRef = useRef("content");
+        this.contentRef = signal.ref();
 
         onWillStart(async () => {
             const data = await rpc(this.constructor.endpoint);
@@ -90,8 +89,8 @@ export class BookApp extends Component {
         this.state.activeId = id;
         // A new page starts at its own beginning: carrying the previous page's
         // scroll position over drops the reader into the middle of the text.
-        if (this.contentRef.el) {
-            this.contentRef.el.scrollTop = 0;
+        if (this.contentRef()) {
+            this.contentRef().scrollTop = 0;
         }
     }
 

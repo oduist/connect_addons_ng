@@ -8,8 +8,8 @@
     -->
     <t t-name="connect_twilio.favorites" owl="1">
         <div class="o_csp_scroll">
-            <div t-if="state.favorites.length" class="o_csp_favgrid">
-                <t t-foreach="state.favorites" t-as="favorite" t-key="favorite.id">
+            <div t-if="this.state.favorites.length" class="o_csp_favgrid">
+                <t t-foreach="this.state.favorites" t-as="favorite" t-key="favorite.id">
                     <t t-if="favorite.partner">
                         <t t-set="avatar" t-value="'/web/image?model=res.partner&amp;field=avatar_128&amp;id=' + favorite.partner[0]"/>
                         <t t-set="caller_list" t-value="favorite.partner[1].split(',')"/>
@@ -23,20 +23,16 @@
                         <!-- No record to take an avatar from, so the tile is a
                              coloured initial; there is no default image file. -->
                         <t t-set="avatar" t-value="false"/>
-                        <t t-set="caller_id" t-value="favorite.name or favorite.phone_number"/>
+                        <t t-set="caller_id" t-value="favorite.name || favorite.phone_number"/>
                     </t>
-                    <button class="o_csp_favcell" t-attf-title="Call {{ favorite.phone_number }}"
-                            t-on-click="() => this._onClickContactCall(favorite.phone_number)">
+                    <button class="o_csp_favcell" t-attf-title="Call {{ favorite.phone_number }}" t-on-click="() =&gt; this._onClickContactCall(favorite.phone_number)">
                         <img t-if="avatar" class="o_csp_av o_csp_av_md" alt="Avatar" t-att-src="avatar"/>
-                        <span t-else="" class="o_csp_av o_csp_av_md o_csp_av_ph"
-                              t-attf-style="background:{{ tone(caller_id) }}" t-out="initial(caller_id)"/>
+                        <span t-else="" class="o_csp_av o_csp_av_md o_csp_av_ph" t-attf-style="background:{{ this.tone(caller_id) }}" t-out="this.initial(caller_id)"/>
                         <div>
                             <div class="o_csp_n" t-out="caller_id"/>
                             <div class="o_csp_favsub" t-out="favorite.phone_number"/>
                         </div>
-                        <span class="o_csp_rowbtn o_csp_favdel" role="button"
-                              aria-label="Remove from Favourites" title="Remove from Favourites"
-                              t-on-click="(ev) => this._onClickRemoveFavorite(ev, favorite.id)">
+                        <span class="o_csp_rowbtn o_csp_favdel" role="button" aria-label="Remove from Favourites" title="Remove from Favourites" t-on-click="(ev) =&gt; this._onClickRemoveFavorite(ev, favorite.id)">
                             <t t-call="connect_twilio.icon_trash"/>
                         </span>
                     </button>
@@ -45,8 +41,8 @@
             <div t-else="" class="o_csp_empty">
                 No favourites yet. Star a call in Recent to keep the number here.
             </div>
-            <div t-if="props.callerId" class="o_csp_callerid">
-                Calls you place show <b t-out="props.callerId"/>.
+            <div t-if="this.props.callerId" class="o_csp_callerid">
+                Calls you place show <b t-out="this.props.callerId"/>.
             </div>
         </div>
     </t>

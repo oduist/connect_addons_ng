@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
 import { registry } from "@web/core/registry";
-import { EventBus } from "@odoo/owl";
+import {EventBus} from "@odoo/owl";
 import { PhoneSystray } from "./phone_systray";
 import { PhonePanel } from "./phone_panel";
 import { VertoClient } from "./verto_client";

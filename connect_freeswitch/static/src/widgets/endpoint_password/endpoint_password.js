@@ -1,7 +1,7 @@
 /** @odoo-module **/
 "use strict"
 
-import {Component, useState} from "@odoo/owl"
+import {Component, proxy, t, useProps} from "@odoo/owl"
 import {registry} from "@web/core/registry"
 import {useService} from "@web/core/utils/hooks"
 import {_t} from "@web/core/l10n/translation"
@@ -16,11 +16,13 @@ import {standardFieldProps} from "@web/views/fields/standard_field_props"
  */
 export class EndpointPasswordField extends Component {
     static template = "connect_freeswitch.EndpointPasswordField"
-    static props = {...standardFieldProps}
+    props = useProps({
+        ...standardFieldProps,
+    })
 
     setup() {
         this.notification = useService("notification")
-        this.state = useState({revealed: false})
+        this.state = proxy({revealed: false})
     }
 
     get value() {

@@ -1,21 +1,21 @@
 /** @odoo-module **/
 
 import {useService} from "@web/core/utils/hooks"
-import {Component, useState, onWillStart} from "@odoo/owl"
+import {Component, onWillStart, proxy, t, useProps} from "@odoo/owl"
 import {user} from "@web/core/user"
 
 const uid = user.userId
 
 class CallDetail extends Component {
     static template = 'connect_vonage.call_detail'
-    static props = {
-        call: Object
-    }
+    props = useProps({
+        call: t.object(),
+    })
 
     constructor() {
         super(...arguments)
         this.user = uid
-        this.state = useState({
+        this.state = proxy({
             call: this.props.call,
         })
     }
@@ -88,9 +88,9 @@ class CallDetail extends Component {
 
 export class Calls extends Component {
     static template = 'connect_vonage.calls'
-    static props = {
-        bus: Object,
-    }
+    props = useProps({
+        bus: t.object(),
+    })
     static components = {CallDetail}
 
     constructor() {
@@ -105,7 +105,7 @@ export class Calls extends Component {
         this.notification = useService('notification')
         this.user = uid
         this.favorites = []
-        this.state = useState({
+        this.state = proxy({
             calls: [],
             call: null,
         })

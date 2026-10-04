@@ -1,25 +1,25 @@
 /** @odoo-module **/
 
-import { Component, useState, useRef, onMounted, onWillUnmount, onWillUpdateProps } from "@odoo/owl";
+import {Component, onMounted, onWillUnmount, onWillUpdateProps, proxy, signal, t, useProps} from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 
 
 export class PhoneDialpad extends Component {
     static template = "connect_freeswitch.PhoneDialpad";
-    static props = {
-        close: Function,
-        vertoClient: { type: Object, optional: true },
-        state: String,
-        callState: String,
-        callerName: { type: String, optional: true },
-        callerNumber: { type: String, optional: true },
-    };
+    props = useProps({
+        close: t.function(),
+        vertoClient: t.object().optional(),
+        state: t.string(),
+        callState: t.string(),
+        callerName: t.string().optional(),
+        callerNumber: t.string().optional(),
+    })
 
     setup() {
         this.orm = useService("orm");
         this.notification = useService("notification");
-        this.state = useState({
+        this.state = proxy({
             number: "",
             muted: false,
             callDuration: 0,
@@ -29,12 +29,12 @@ export class PhoneDialpad extends Component {
             recordingPath: "",
         });
 
-        this.numberInput = useRef("numberInput");
+        this.numberInput = signal.ref();
         this.durationInterval = null;
         this.lastRecordingCallId = null;
 
         onMounted(() => {
-            this.numberInput.el?.focus();
+            this.numberInput()?.focus();
             this._syncRecordingForProps(this.props);
         });
 
@@ -283,13 +283,13 @@ export class PhoneDialpad extends Component {
 
 export class PhoneSystray extends Component {
     static template = "connect_freeswitch.PhoneSystray";
-    static props = {
-        bus: Object,
-        displayMode: String,
-    };
+    props = useProps({
+        bus: t.object(),
+        displayMode: t.string(),
+    })
 
     setup() {
-        this.state = useState({
+        this.state = proxy({
             vertoState: "disconnected",
             callState: "idle",
         });

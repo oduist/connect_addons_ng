@@ -1,16 +1,16 @@
 /** @odoo-module **/
 
 import {useService} from "@web/core/utils/hooks"
-import {Component, useState, onWillStart} from "@odoo/owl"
+import {Component, onWillStart, proxy, t, useProps} from "@odoo/owl"
 import {user} from "@web/core/user"
 
 const uid = user.userId
 
 export class Favorites extends Component {
     static template = 'connect_infobip.favorites'
-    static props = {
-        bus: Object,
-    }
+    props = useProps({
+        bus: t.object(),
+    })
 
     constructor() {
         super(...arguments)
@@ -22,7 +22,7 @@ export class Favorites extends Component {
         this.orm = useService('orm')
         this.action = useService('action')
         this.user = uid
-        this.state = useState({
+        this.state = proxy({
             favorites: [],
         })
 

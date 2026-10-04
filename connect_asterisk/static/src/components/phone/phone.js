@@ -6,7 +6,7 @@ import {Calls} from "@connect/components/calls/calls"
 import {Favorites} from "@connect_asterisk/components/favorites/favorites"
 import {Contacts} from "@connect_asterisk/components/contacts/contacts"
 import {browser, dialTone, setFocus, maskNumber} from "@connect_asterisk/js/utils"
-import {Component, useState, useRef, onWillStart, onMounted, markup} from "@odoo/owl"
+import {Component, markup, onMounted, onWillStart, proxy, signal, t, useProps} from "@odoo/owl"
 import {useDebounced} from "@web/core/utils/timing"
 import {user} from "@web/core/user"
 
@@ -14,9 +14,9 @@ const uid = user.userId
 
 export class Phone extends Component {
     static template = 'connect_asterisk.phone'
-    static props = {
-        bus: Object,
-    }
+    props = useProps({
+        bus: t.object(),
+    })
     static components = {Calls, Favorites, Contacts}
 
     constructor() {
@@ -45,7 +45,7 @@ export class Phone extends Component {
             ended: 'ended'
         }
         this.title = 'Phone'
-        this.state = useState({
+        this.state = proxy({
             isActive: true,
             isDisplay: false,
             isDisplayLastState: false,
@@ -83,9 +83,9 @@ export class Phone extends Component {
         })
         this.callDuration = 0
         this.callDurationTimerInstance = null
-        this.phoneInput = useRef('phone-input')
+        this.phoneInput = signal.ref()
 
-        this.userInput = useRef('user-input')
+        this.userInput = signal.ref()
         this.user = uid
         this.phone_configs = {
             phone_sip_protocol: '',
@@ -113,8 +113,8 @@ export class Phone extends Component {
         this.mousePosition = {}
         this.offset = [0, 0]
         this.isDown = false
-        this.phoneRoot = useRef("phone-root")
-        this.phoneHeader = useRef("phone-header")
+        this.phoneRoot = signal.ref()
+        this.phoneHeader = signal.ref()
         // BroadcastChannel
         this.bc = new BroadcastChannel("phone")
         this.contactSearch = 'all'
@@ -227,8 +227,8 @@ export class Phone extends Component {
             }
             this.initUserAgent()
 
-            const phoneRoot = this.phoneRoot.el
-            this.phoneHeader.el.addEventListener("mousedown", function (e) {
+            const phoneRoot = this.phoneRoot()
+            this.phoneHeader().addEventListener("mousedown", function (e) {
                 self.isDown = true
                 self.offset = [
                     phoneRoot.offsetLeft - e.clientX,
@@ -784,7 +784,7 @@ export class Phone extends Component {
         this.state.isPartner = false
         this.state.phoneNumber = ''
         this.state.xPhoneInfoDisplay = ''
-        this.phoneInput.el.value = this.state.phoneNumber
+        this.phoneInput().value = this.state.phoneNumber
         this.bus.trigger('busTraySetState', {isDisplay: this.state.isDisplay, inCall: this.state.inCall})
         this.state.activeTab = this.lastActiveTab
         if (this.lastActiveTab === this.tabs.calls) {
@@ -901,7 +901,7 @@ export class Phone extends Component {
                 this.state.activeTab = this.tabs.phone
                 this.bus.trigger('busTraySetState', {isDisplay: this.state.isDisplay, inCall: this.state.inCall})
             } else {
-                setFocus(this.phoneInput.el)
+                setFocus(this.phoneInput())
             }
         } else {
             this.notify('Missing configs! Check "User / Preferences"!', {sticky: false})
@@ -920,7 +920,7 @@ export class Phone extends Component {
             }
             this.state.callPhoneNumber = this.state.phoneNumber.replace(/\(|\)|-| /gm, '')
             this.state.phoneNumber = ''
-            this.phoneInput.el.value = this.state.phoneNumber
+            this.phoneInput().value = this.state.phoneNumber
             this.prepareCall({phone: this.state.callPhoneNumber})
         } else {
             this.notify("The phone call has no number!", {sticky: false})
@@ -944,7 +944,7 @@ export class Phone extends Component {
         this.state.isContacts = false
         this.state.isCalls = false
         this.state.isFavorites = false
-        setFocus(this.phoneInput.el)
+        setFocus(this.phoneInput())
     }
 
     _onClickContacts(ev) {
@@ -998,7 +998,7 @@ export class Phone extends Component {
         this.state.isCalls = false
         this.state.isKeypad = true
         this.state.isDialingPanel = false
-        setFocus(this.phoneInput.el)
+        setFocus(this.phoneInput())
     }
 
     _onClickTransfer(ev) {
@@ -1050,7 +1050,7 @@ export class Phone extends Component {
         this.state.phone_status = this.status.ended
         await this.endCall()
         if (this.lastActiveTab === this.tabs.phone) {
-            setFocus(this.phoneInput.el)
+            setFocus(this.phoneInput())
         }
     }
 
@@ -1074,7 +1074,7 @@ export class Phone extends Component {
         this.state.inIncoming = false
         await this.endCall()
         if (this.lastActiveTab === this.tabs.phone) {
-            setFocus(this.phoneInput.el)
+            setFocus(this.phoneInput())
         }
     }
 
@@ -1092,17 +1092,17 @@ export class Phone extends Component {
             }
         } else {
             this.state.phoneNumber += ev.target.textContent
-            this.phoneInput.el.value = this.state.phoneNumber
+            this.phoneInput().value = this.state.phoneNumber
         }
-        this.phoneInput.el.focus()
+        this.phoneInput().focus()
     }
 
     _onClickBackSpace(ev) {
-        setFocus(this.phoneInput.el)
+        setFocus(this.phoneInput())
         this.state.phoneNumber = this.state.phoneNumber.slice(0, -1)
-        this.phoneInput.el.value = this.state.phoneNumber
+        this.phoneInput().value = this.state.phoneNumber
         if (this.state.isContactList) {
-            this.bus.trigger('busContactSearchQuery', {searchQuery: this.phoneInput.el.value})
+            this.bus.trigger('busContactSearchQuery', {searchQuery: this.phoneInput().value})
         }
         if (this.state.phoneNumber === '') this.state.isContactList = false
     }
@@ -1122,11 +1122,11 @@ export class Phone extends Component {
             if (ev.key === "Enter") {
                 this._onClickMakeCall()
             } else {
-                // this.phoneInput.el.value = this.phoneInput.el.value.replace(/\(|\)|-| /gm, '')
-                this.state.phoneNumber = this.phoneInput.el.value
+                // this.phoneInput().value = this.phoneInput().value.replace(/\(|\)|-| /gm, '')
+                this.state.phoneNumber = this.phoneInput().value
                 this.state.isContactList = this.state.phoneNumber !== ''
                 this.bus.trigger('busContactSetState', {isContact: true})
-                this.bus.trigger('busContactSearchQuery', {searchQuery: this.phoneInput.el.value})
+                this.bus.trigger('busContactSearchQuery', {searchQuery: this.phoneInput().value})
             }
         }
     }

@@ -1,22 +1,22 @@
 /** @odoo-module **/
 
-import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odoo/owl";
+import {Component, onMounted, onWillStart, onWillUnmount, proxy, t, useProps} from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 
 
 export class ParkingPanel extends Component {
     static template = "connect_freeswitch.ParkingPanel";
-    static props = {
-        bus: Object,
-        vertoClient: { optional: true },
-        callState: String,
-    };
+    props = useProps({
+        bus: t.object(),
+        vertoClient: t.any().optional(),
+        callState: t.string(),
+    })
 
     setup() {
         this.orm = useService("orm");
         this.notification = useService("notification");
-        this.state = useState({
+        this.state = proxy({
             slots: [],
             loading: false,
         });

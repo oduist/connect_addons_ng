@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState, onMounted, onWillUnmount } from "@odoo/owl";
+import {Component, onMounted, onWillUnmount, proxy, t, useProps} from "@odoo/owl";
 import { PhoneDialpad } from "./phone_systray";
 import { ParkingPanel } from "./parking_panel";
 
@@ -8,15 +8,15 @@ import { ParkingPanel } from "./parking_panel";
 export class PhonePanel extends Component {
     static template = "connect_freeswitch.PhonePanel";
     static components = { PhoneDialpad, ParkingPanel };
-    static props = {
-        bus: Object,
-        displayMode: String,
-        getVertoClient: Function,
-        connect: Function,
-    };
+    props = useProps({
+        bus: t.object(),
+        displayMode: t.string(),
+        getVertoClient: t.function(),
+        connect: t.function(),
+    })
 
     setup() {
-        this.state = useState({
+        this.state = proxy({
             showDialpad: false,
             activeTab: "dialer",
             vertoState: "disconnected",

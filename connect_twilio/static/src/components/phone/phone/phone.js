@@ -6,7 +6,7 @@ import {Recents} from "@connect_twilio/components/phone/recents/recents"
 import {Favorites} from "@connect_twilio/components/phone/favorites/favorites"
 import {Contacts} from "@connect_twilio/components/phone/contacts/contacts"
 import {contactInitial, contactTone, dialTone, setFocus} from "@connect_twilio/js/utils"
-import {Component, useState, useRef, onWillStart, onMounted, onPatched, onWillUnmount} from "@odoo/owl"
+import {Component, onMounted, onPatched, onWillStart, onWillUnmount, proxy, signal, t, useProps} from "@odoo/owl"
 import {useDebounced} from "@web/core/utils/timing"
 import {user} from "@web/core/user"
 
@@ -44,10 +44,10 @@ function explainTwilioError(error) {
 
 export class Phone extends Component {
     static template = 'connect_twilio.phone'
-    static props = {
-        bus: Object,
-        token_data: Object
-    }
+    props = useProps({
+        bus: t.object(),
+        token_data: t.object(),
+    })
 
     static components = {Recents, Contacts, Favorites}
 
@@ -87,7 +87,7 @@ export class Phone extends Component {
             ended: 'ended'
         }
         this.title = 'Connect'
-        this.state = useState({
+        this.state = proxy({
             isActive: true,
             isDisplay: false,
             isDisplayLastState: false,
@@ -134,7 +134,7 @@ export class Phone extends Component {
         })
         this.callDuration = 0
         this.callDurationTimerInstance = null
-        this.phoneInput = useRef('connect-phone-input')
+        this.phoneInput = signal.ref()
 
         this.user = uid
         this.sipRegistered = false
@@ -150,8 +150,8 @@ export class Phone extends Component {
         this.mousePosition = {}
         this.offset = [0, 0]
         this.isDown = false
-        this.phoneRoot = useRef("phone-root")
-        this.phoneHeader = useRef("phone-header")
+        this.phoneRoot = signal.ref()
+        this.phoneHeader = signal.ref()
         // BroadcastChannel
         this.bc = new BroadcastChannel("connect")
         this.contactSearch = 'all'
@@ -216,8 +216,8 @@ export class Phone extends Component {
         onMounted(() => {
             this.initUserAgent()
 
-            const phoneRoot = this.phoneRoot.el
-            this.phoneHeader.el.addEventListener("mousedown", function (e) {
+            const phoneRoot = this.phoneRoot()
+            this.phoneHeader().addEventListener("mousedown", function (e) {
                 self.isDown = true
                 // Measured, not read off offsetLeft: the panel is zoomed, so
                 // its own coordinates and the pointer's are not the same
@@ -417,7 +417,7 @@ export class Phone extends Component {
      * bottom one.
      */
     _clampToViewport(left, top) {
-        const rect = this.phoneRoot.el.getBoundingClientRect()
+        const rect = this.phoneRoot().getBoundingClientRect()
         const cx = document.documentElement.clientWidth
         const cy = document.documentElement.clientHeight
         return [
@@ -434,7 +434,7 @@ export class Phone extends Component {
      * the panel lands short of the pointer, by more the further it is dragged.
      */
     _moveTo(left, top) {
-        const el = this.phoneRoot.el
+        const el = this.phoneRoot()
         const [x, y] = this._clampToViewport(left, top)
         const zoom = parseFloat(getComputedStyle(el).zoom) || 1
         el.style.left = (x / zoom) + "px"
@@ -450,7 +450,7 @@ export class Phone extends Component {
      * to be.
      */
     _keepOnScreen() {
-        const el = this.phoneRoot.el
+        const el = this.phoneRoot()
         if (!el || (!el.style.left && !el.style.top)) {
             return
         }
@@ -1260,8 +1260,8 @@ export class Phone extends Component {
         this.state.phoneNumber = ''
         this.state.dialMatch = null
         this.state.xPhoneInfoDisplay = ''
-        if (this.phoneInput.el) {
-            this.phoneInput.el.value = this.state.phoneNumber
+        if (this.phoneInput()) {
+            this.phoneInput().value = this.state.phoneNumber
         }
         this.bus.trigger('busTrayState', {isDisplay: this.state.isDisplay, inCall: this.state.inCall})
         this.state.activeTab = this.lastActiveTab
@@ -1390,7 +1390,7 @@ export class Phone extends Component {
                 this.state.activeTab = this.tabs.phone
                 this.bus.trigger('busTraySetState', {isDisplay: this.state.isDisplay, inCall: this.state.inCall})
             } else {
-                setFocus(this.phoneInput.el)
+                setFocus(this.phoneInput())
             }
         } else {
             this.notify('Missing configs! Check "User / Preferences"!', {sticky: false})
@@ -1406,8 +1406,8 @@ export class Phone extends Component {
             this.state.callPhoneNumber = this.state.phoneNumber.replace(/\(|\)|-| /gm, '')
             this.state.phoneNumber = ''
             this.state.dialMatch = null
-            if (this.phoneInput.el) {
-                this.phoneInput.el.value = this.state.phoneNumber
+            if (this.phoneInput()) {
+                this.phoneInput().value = this.state.phoneNumber
             }
             this.prepareCall({phone: this.state.callPhoneNumber})
         } else {
@@ -1432,7 +1432,7 @@ export class Phone extends Component {
         this.state.isContacts = false
         this.state.isCalls = false
         this.state.isFavorites = false
-        setFocus(this.phoneInput.el)
+        setFocus(this.phoneInput())
     }
 
     _onClickContacts(ev) {
@@ -1490,10 +1490,10 @@ export class Phone extends Component {
         // on this call, not the number that started it.
         this.state.phoneNumber = ''
         this.state.dialMatch = null
-        if (this.phoneInput.el) {
-            this.phoneInput.el.value = ''
+        if (this.phoneInput()) {
+            this.phoneInput().value = ''
         }
-        setFocus(this.phoneInput.el)
+        setFocus(this.phoneInput())
     }
 
     _onClickForward(ev) {
@@ -1534,7 +1534,7 @@ export class Phone extends Component {
         this.state.phone_status = this.status.ended
         await this.endCall()
         if (this.lastActiveTab === this.tabs.phone) {
-            setFocus(this.phoneInput.el)
+            setFocus(this.phoneInput())
         }
     }
 
@@ -1558,7 +1558,7 @@ export class Phone extends Component {
         this.state.inIncoming = false
         await this.endCall()
         if (this.lastActiveTab === this.tabs.phone) {
-            setFocus(this.phoneInput.el)
+            setFocus(this.phoneInput())
         }
     }
 
@@ -1576,26 +1576,26 @@ export class Phone extends Component {
                 this.bc.postMessage({event: "tbcDtmf", params: {key}})
             }
             this.state.phoneNumber += key
-            if (this.phoneInput.el) {
-                this.phoneInput.el.value = this.state.phoneNumber
+            if (this.phoneInput()) {
+                this.phoneInput().value = this.state.phoneNumber
             }
         } else {
             this.state.phoneNumber += key
-            if (this.phoneInput.el) {
-                this.phoneInput.el.value = this.state.phoneNumber
+            if (this.phoneInput()) {
+                this.phoneInput().value = this.state.phoneNumber
             }
             this._updateDialMatch(this.state.phoneNumber)
         }
-        if (this.phoneInput.el) {
-            this.phoneInput.el.focus()
+        if (this.phoneInput()) {
+            this.phoneInput().focus()
         }
     }
 
     _onClickBackSpace(ev) {
-        setFocus(this.phoneInput.el)
+        setFocus(this.phoneInput())
         this.state.phoneNumber = this.state.phoneNumber.slice(0, -1)
-        if (this.phoneInput.el) {
-            this.phoneInput.el.value = this.state.phoneNumber
+        if (this.phoneInput()) {
+            this.phoneInput().value = this.state.phoneNumber
         }
         if (this.state.isContactList) {
             this.bus.trigger('busContactSearchQuery', {searchQuery: this.state.phoneNumber})
@@ -1620,10 +1620,10 @@ export class Phone extends Component {
             if (ev.key === "Enter") {
                 this._onClickMakeCall()
             } else {
-                this.state.phoneNumber = this.phoneInput.el.value
+                this.state.phoneNumber = this.phoneInput().value
                 this.state.isContactList = this.state.phoneNumber !== ''
                 this.bus.trigger('busContactSetState', {isContact: true})
-                this.bus.trigger('busContactSearchQuery', {searchQuery: this.phoneInput.el.value})
+                this.bus.trigger('busContactSearchQuery', {searchQuery: this.phoneInput().value})
                 this._updateDialMatch(this.state.phoneNumber)
             }
         }

@@ -14,30 +14,26 @@
         differently: an extension on one side, a number on the other.
     -->
     <t t-name="connect_twilio.contacts" owl="1">
-        <div t-if="state.isContactMode" class="o_csp_search">
+        <div t-if="this.state.isContactMode" class="o_csp_search">
             <t t-call="connect_twilio.icon_search"/>
-            <input t-ref="contact-input" placeholder="Name, number or extension"
-                   autocomplete="off" t-on-keyup="_onSearchContact"/>
-            <button t-if="searchQuery" class="o_csp_rowbtn" aria-label="Clear" title="Clear"
-                    t-on-click="_onClickClearSearchContact">
+            <input t-ref="this.contactInput" placeholder="Name, number or extension" autocomplete="off" t-on-keyup="this._onSearchContact"/>
+            <button t-if="this.searchQuery" class="o_csp_rowbtn" aria-label="Clear" title="Clear" t-on-click="this._onClickClearSearchContact">
                 <t t-call="connect_twilio.icon_close"/>
             </button>
         </div>
 
         <div class="o_csp_scroll">
             <!-- Colleagues -->
-            <t t-if="state.users.length">
+            <t t-if="this.state.users.length">
                 <div class="o_csp_sectionhead">
-                    Colleagues <span class="o_csp_count" t-out="state.users.length"/>
+                    Colleagues <span class="o_csp_count" t-out="this.state.users.length"/>
                 </div>
-                <t t-foreach="state.users" t-as="pbxUser" t-key="pbxUser.id">
-                    <div class="o_csp_row" t-attf-title="{{ actionLabel }} {{ pbxUser.exten_number }}"
-                         t-on-click="() => this._onClickContact(pbxUser.exten_number)">
-                        <img class="o_csp_av" alt="Avatar"
-                             t-attf-src="/web/image?model=res.users&amp;field=avatar_128&amp;id={{ pbxUser.user_id }}"/>
+                <t t-foreach="this.state.users" t-as="pbxUser" t-key="pbxUser.id">
+                    <div class="o_csp_row" t-attf-title="{{ this.actionLabel }} {{ pbxUser.exten_number }}" t-on-click="() =&gt; this._onClickContact(pbxUser.exten_number)">
+                        <img class="o_csp_av" alt="Avatar" t-attf-src="/web/image?model=res.users&amp;field=avatar_128&amp;id={{ pbxUser.user_id }}"/>
                         <div class="o_csp_rowmain">
                             <div class="o_csp_n">
-                                <t t-foreach="highlight(pbxUser.name)" t-as="part" t-key="part_index">
+                                <t t-foreach="this.highlight(pbxUser.name)" t-as="part" t-key="part_index">
                                     <mark t-if="part.match" t-out="part.text"/>
                                     <t t-else="" t-out="part.text"/>
                                 </t>
@@ -46,8 +42,8 @@
                                 <span class="o_csp_ext" t-out="pbxUser.exten_number"/>
                             </div>
                         </div>
-                        <button class="o_csp_callbtn" t-attf-aria-label="{{ actionLabel }} {{ pbxUser.name }}">
-                            <t t-if="isForward" t-call="connect_twilio.icon_arrow_right"/>
+                        <button class="o_csp_callbtn" t-attf-aria-label="{{ this.actionLabel }} {{ pbxUser.name }}">
+                            <t t-if="this.isForward" t-call="connect_twilio.icon_arrow_right"/>
                             <t t-else="" t-call="connect_twilio.icon_phone"/>
                         </button>
                     </div>
@@ -55,20 +51,17 @@
             </t>
 
             <!-- Customers -->
-            <t t-if="state.partners.length">
+            <t t-if="this.state.partners.length">
                 <div class="o_csp_sectionhead">
-                    Customers <span class="o_csp_count" t-out="state.partners.length"/>
+                    Customers <span class="o_csp_count" t-out="this.state.partners.length"/>
                 </div>
-                <t t-foreach="state.partners" t-as="partner" t-key="partner.id">
-                    <t t-set="number" t-value="partnerNumber(partner)"/>
-                    <div class="o_csp_row" t-attf-title="{{ actionLabel }} {{ number }}"
-                         t-on-click="() => this._onClickContact(number)">
-                        <img class="o_csp_av" alt="Avatar" title="Open the contact"
-                             t-attf-src="/web/image?model=res.partner&amp;field=avatar_128&amp;id={{ partner.id }}"
-                             t-on-click="(ev) => this._onClickOpenPartner(ev, partner.id)"/>
+                <t t-foreach="this.state.partners" t-as="partner" t-key="partner.id">
+                    <t t-set="number" t-value="this.partnerNumber(partner)"/>
+                    <div class="o_csp_row" t-attf-title="{{ this.actionLabel }} {{ number }}" t-on-click="() =&gt; this._onClickContact(number)">
+                        <img class="o_csp_av" alt="Avatar" title="Open the contact" t-attf-src="/web/image?model=res.partner&amp;field=avatar_128&amp;id={{ partner.id }}" t-on-click="(ev) =&gt; this._onClickOpenPartner(ev, partner.id)"/>
                         <div class="o_csp_rowmain">
                             <div class="o_csp_n">
-                                <t t-foreach="highlight(partner.name)" t-as="part" t-key="part_index">
+                                <t t-foreach="this.highlight(partner.name)" t-as="part" t-key="part_index">
                                     <mark t-if="part.match" t-out="part.text"/>
                                     <t t-else="" t-out="part.text"/>
                                 </t>
@@ -76,9 +69,8 @@
                             <div t-if="number" class="o_csp_m" t-out="number"/>
                             <div t-else="" class="o_csp_m">No phone number</div>
                         </div>
-                        <button t-if="number" class="o_csp_callbtn"
-                                t-attf-aria-label="{{ actionLabel }} {{ partner.name }}">
-                            <t t-if="isForward" t-call="connect_twilio.icon_arrow_right"/>
+                        <button t-if="number" class="o_csp_callbtn" t-attf-aria-label="{{ this.actionLabel }} {{ partner.name }}">
+                            <t t-if="this.isForward" t-call="connect_twilio.icon_arrow_right"/>
                             <t t-else="" t-call="connect_twilio.icon_phone"/>
                         </button>
                     </div>
@@ -86,9 +78,9 @@
             </t>
 
             <!-- Dialling something that matches nobody is still a valid thing to do -->
-            <t t-if="isForward">
+            <t t-if="this.isForward">
                 <div class="o_csp_sectionhead">Or dial a number</div>
-                <div class="o_csp_row" t-on-click="_contactCall">
+                <div class="o_csp_row" t-on-click="this._contactCall">
                     <span class="o_csp_av"><t t-call="connect_twilio.icon_keypad"/></span>
                     <div class="o_csp_rowmain">
                         <div class="o_csp_n">Forward to what you typed</div>
@@ -97,9 +89,9 @@
                 </div>
             </t>
 
-            <div t-if="!state.users.length and !state.partners.length and !isForward" class="o_csp_empty">
-                <t t-if="searchQuery">
-                    Nobody matches “<t t-out="searchQuery"/>”. Press the green button to dial it anyway.
+            <div t-if="!this.state.users.length &amp;&amp; !this.state.partners.length &amp;&amp; !this.isForward" class="o_csp_empty">
+                <t t-if="this.searchQuery">
+                    Nobody matches “<t t-out="this.searchQuery"/>”. Press the green button to dial it anyway.
                 </t>
                 <t t-else="">Type a name, a number or an extension.</t>
             </div>

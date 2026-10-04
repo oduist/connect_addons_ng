@@ -2,7 +2,7 @@
 
 import {useService} from "@web/core/utils/hooks"
 import {setFocus} from "@connect_asterisk/js/utils"
-import {Component, useState, useRef, onWillStart} from "@odoo/owl"
+import {Component, onWillStart, proxy, signal, t, useProps} from "@odoo/owl"
 
 const searching = {
     all: 'all',
@@ -12,13 +12,13 @@ const searching = {
 
 export class Contacts extends Component {
     static template = 'connect_asterisk.contacts'
-    static props = {
-        bus: Object,
-        isTransfer: {type: Boolean, optional: true},
-        isContact: {type: Boolean, optional: true},
-        isForward: {type: Boolean, optional: true},
-        contactSearch: {type: String, optional: true},
-    }
+    props = useProps({
+        bus: t.object(),
+        isTransfer: t.boolean().optional(),
+        isContact: t.boolean().optional(),
+        isForward: t.boolean().optional(),
+        contactSearch: t.string().optional(),
+    })
 
     constructor() {
         super(...arguments)
@@ -36,8 +36,8 @@ export class Contacts extends Component {
         super.setup()
         this.orm = useService('orm')
         this.action = useService('action')
-        this.contactInput = useRef('contact-input')
-        this.state = useState({
+        this.contactInput = signal.ref()
+        this.state = proxy({
             isContactMode: false,
             partners: [],
             users: this.users,
@@ -57,9 +57,9 @@ export class Contacts extends Component {
         this.state.partners = []
         this.state.users = []
         this.searchQuery = ''
-        if (this.contactInput.el) {
-            this.contactInput.el.value = ''
-            setFocus(this.contactInput.el)
+        if (this.contactInput()) {
+            this.contactInput().value = ''
+            setFocus(this.contactInput())
         }
     }
 
@@ -79,8 +79,8 @@ export class Contacts extends Component {
 
     _onClickClearSearchContact(ev) {
         this._contactSearchQuery({searchQuery: ''})
-        this.contactInput.el.value = ''
-        setFocus(this.contactInput.el)
+        this.contactInput().value = ''
+        setFocus(this.contactInput())
     }
 
     _contactSearchQuery({searchQuery = ''}) {

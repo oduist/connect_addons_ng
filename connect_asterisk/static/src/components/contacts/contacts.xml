@@ -3,14 +3,14 @@
 
     <t t-name="connect_asterisk.contacts" owl="1">
         <div>
-            <div t-attf-class="{{ state.isContactMode ? '' : 'o_hide' }} o_phone_number_content">
-                <input class="o_phone_number_input" placeholder="Enter name or number" t-ref="contact-input" t-on-keyup="_onSearchContact" autocomplete="off"/>
-                <div aria-label="Clear" class="fa fa-times-circle o_phone_number_back" role="img" title="Clear" t-on-click="_onClickClearSearchContact"/>
+            <div t-attf-class="{{ this.state.isContactMode ? '' : 'o_hide' }} o_phone_number_content">
+                <input class="o_phone_number_input" placeholder="Enter name or number" t-ref="this.contactInput" t-on-keyup="this._onSearchContact" autocomplete="off"/>
+                <div aria-label="Clear" class="fa fa-times-circle o_phone_number_back" role="img" title="Clear" t-on-click="this._onClickClearSearchContact"/>
             </div>
             <div class="o_dial_contact_list">
                 <table class="o_contact_table">
                     <!-- Users -->
-                    <t t-foreach="state.users" t-as="user" t-key="user.id">
+                    <t t-foreach="this.state.users" t-as="user" t-key="user.id">
                         <tr>
                             <td class="o_contact_avatar">
                                 <img alt="Avatar" class="o_contact_avatar" t-attf-src="/web/image?model=res.users&amp;field=avatar_128&amp;id={{ user.user[0] }}"/>
@@ -26,13 +26,13 @@
                             <td class="o_contact_call_button">
                                 <div class="d-flex">
                                     <div style="width: 40px; height: 30px;">
-                                        <button t-if="isTransfer" t-attf-title="Transfer to {{user.exten_number}}" t-on-click="() => this._onClickMakeTransfer(user.exten_number)">
+                                        <button t-if="this.isTransfer" t-attf-title="Transfer to {{user.exten_number}}" t-on-click="() =&gt; this._onClickMakeTransfer(user.exten_number)">
                                             <i class="fa icon-dialer_sip"/>
                                         </button>
-                                        <button t-if="isContact" t-attf-title="Call to {{user.exten_number}}" t-on-click="() => this._onClickMakeCall(user.exten_number)">
+                                        <button t-if="this.isContact" t-attf-title="Call to {{user.exten_number}}" t-on-click="() =&gt; this._onClickMakeCall(user.exten_number)">
                                             <i class="fa icon-dialer_sip"/>
                                         </button>
-                                        <button t-if="isForward" t-attf-title="Forward to {{user.exten_number}}" t-on-click="() => this._onClickMakeForward(user.exten_number)">
+                                        <button t-if="this.isForward" t-attf-title="Forward to {{user.exten_number}}" t-on-click="() =&gt; this._onClickMakeForward(user.exten_number)">
                                             <i class="fa icon-dialer_sip"/>
                                         </button>
                                     </div>
@@ -41,12 +41,12 @@
                         </tr>
                     </t>
                     <!-- Partners -->
-                    <t t-foreach="state.partners" t-as="partner" t-key="partner.id">
+                    <t t-foreach="this.state.partners" t-as="partner" t-key="partner.id">
                         <tr>
-                            <td class="o_contact_avatar" t-on-click="() => this._openPartner(partner.id)">
+                            <td class="o_contact_avatar" t-on-click="() =&gt; this._openPartner(partner.id)">
                                 <img alt="Avatar" class="o_contact_avatar" t-attf-src="/web/image?model=res.partner&amp;field=avatar_128&amp;id={{ partner.id }}"/>
                             </td>
-                            <td class="o_contact_info" t-on-click="() => this._openPartner(partner.id)">
+                            <td class="o_contact_info" t-on-click="() =&gt; this._openPartner(partner.id)">
                                 <div>
                                     <span><t t-out="partner.name"/></span>
                                     <div t-if="partner.phone_sanitized">
@@ -58,13 +58,13 @@
                                 <div class="d-flex">
                                     <div style="width: 40px; height: 30px;">
                                         <t t-if="partner.phone_sanitized">
-                                            <button t-if="isTransfer" t-attf-title="Transfer to {{partner.phone_sanitized}}" t-on-click="() => this._onClickMakeTransfer(partner.phone_sanitized)">
+                                            <button t-if="this.isTransfer" t-attf-title="Transfer to {{partner.phone_sanitized}}" t-on-click="() =&gt; this._onClickMakeTransfer(partner.phone_sanitized)">
                                                 <i class="fa icon-phone"/>
                                             </button>
-                                            <button t-if="isContact" t-attf-title="Call to {{partner.phone_sanitized}}" t-on-click="() => this._onClickMakeCall(partner.phone_sanitized)">
+                                            <button t-if="this.isContact" t-attf-title="Call to {{partner.phone_sanitized}}" t-on-click="() =&gt; this._onClickMakeCall(partner.phone_sanitized)">
                                                 <i class="fa icon-phone"/>
                                             </button>
-                                            <button t-if="isForward" t-attf-title="Forward to {{partner.phone_sanitized}}" t-on-click="() => this._onClickMakeForward(partner.phone_sanitized)">
+                                            <button t-if="this.isForward" t-attf-title="Forward to {{partner.phone_sanitized}}" t-on-click="() =&gt; this._onClickMakeForward(partner.phone_sanitized)">
                                                 <i class="fa icon-phone"/>
                                             </button>
                                         </t>

@@ -2,9 +2,8 @@
 <templates xml:space="preserve">
 
     <t t-name="connect_vonage.active_calls_popup" owl="1">
-        <div t-if="state.isDisplay" class="o_active_calls">
-            <div t-if="state.calls.length > 0" class="o_list_view" t-on-mouseover="_onMouseOver"
-                 t-on-mouseout="_onMouseOut">
+        <div t-if="this.state.isDisplay" class="o_active_calls">
+            <div t-if="this.state.calls.length &gt; 0" class="o_list_view" t-on-mouseover="this._onMouseOver" t-on-mouseout="this._onMouseOut">
                 <div class="table-responsive">
                     <table class="o_list_table table table-sm table-hover table-striped o_list_table_ungrouped">
                         <thead>
@@ -18,13 +17,13 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <t t-foreach="state.calls" t-as="call" t-key="call.id">
-                                <tr class="table-body d-flex" t-on-click="() => this._OpenActiveCallForm(call.id)">
+                            <t t-foreach="this.state.calls" t-as="call" t-key="call.id">
+                                <tr class="table-body d-flex" t-on-click="() =&gt; this._OpenActiveCallForm(call.id)">
                                     <td t-attf-title="{{call.caller ? call.caller : ''}}"><t t-out="call.caller"/></td>
                                     <td t-attf-title="{{call.called ? call.called : ''}}"><t t-out="call.called"/></td>
                                     <td t-attf-title="{{call.caller_user ? call.caller_user[1] : ''}}"><t t-if="call.caller_user" t-out="call.caller_user[1]"/></td>
                                     <td t-attf-title="{{call.called_users ? call.called_users[1] : ''}}"><t t-if="call.called_users" t-out="call.called_users[1]"/></td>
-                                    <td class="partner-td" t-attf-title="{{call.partner ? call.partner[1] : ''}}" t-on-click="(ev) => this._openPartnerForm(ev, call.partner)">
+                                    <td class="partner-td" t-attf-title="{{call.partner ? call.partner[1] : ''}}" t-on-click="(ev) =&gt; this._openPartnerForm(ev, call.partner)">
                                         <t t-if="call.partner" t-out="call.partner[1]"/>
                                     </td>
                                     <td t-attf-title="{{call.direction ? call.direction : ''}}">

@@ -2,18 +2,18 @@
 "use strict"
 import {useService} from "@web/core/utils/hooks"
 import {browser} from "@connect_twilio/js/utils"
-import {Component, useState, onMounted, onWillStart, markup} from "@odoo/owl"
+import {Component, markup, onMounted, onWillStart, proxy, t, useProps} from "@odoo/owl"
 
 export class PhoneSysTray extends Component {
     static template = 'connect_twilio.menu'
-    static props = {
-        bus: Object
-    }
+    props = useProps({
+        bus: t.object(),
+    })
 
     constructor() {
         super(...arguments)
         this.bus = this.props.bus
-        this.state = useState({
+        this.state = proxy({
             isDisplay: false,
             inCall: false,
             exception: null,

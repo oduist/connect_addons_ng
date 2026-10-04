@@ -1,6 +1,6 @@
 /** @odoo-module **/
 "use strict"
-import {Component, useState, useRef, onMounted, onWillUnmount} from "@odoo/owl"
+import {Component, onMounted, onWillUnmount, proxy, signal, t, useProps} from "@odoo/owl"
 import {useService} from "@web/core/utils/hooks"
 import {loadJS} from "@web/core/assets"
 
@@ -8,17 +8,17 @@ const LIB_URL = '/connect_livekit/static/lib/livekit-client.umd.min.js'
 
 export class LivekitPhone extends Component {
     static template = 'connect_livekit.phone'
-    static props = {
-        bus: Object,
-        config: Object,
-    }
+    props = useProps({
+        bus: t.object(),
+        config: t.object(),
+    })
 
     setup() {
         this.orm = useService("orm")
         this.busService = useService("bus_service")
         this.notification = useService("notification")
-        this.audioRef = useRef("lkAudio")
-        this.state = useState({
+        this.audioRef = signal.ref()
+        this.state = proxy({
             display: false,
             // idle | dialing | ringing | in-call
             status: 'idle',
@@ -114,8 +114,8 @@ export class LivekitPhone extends Component {
                     this.state.status = 'in-call'
                     this.setTrayState()
                     const media = track.attach()
-                    if (this.audioRef.el) {
-                        this.audioRef.el.appendChild(media)
+                    if (this.audioRef()) {
+                        this.audioRef().appendChild(media)
                     }
                 }
             })
@@ -216,8 +216,8 @@ export class LivekitPhone extends Component {
         this.state.peer = ''
         this.state.roomName = ''
         this.state.muted = false
-        if (this.audioRef.el) {
-            this.audioRef.el.innerHTML = ''
+        if (this.audioRef()) {
+            this.audioRef().innerHTML = ''
         }
         this.setTrayState()
     }

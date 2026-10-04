@@ -5,27 +5,27 @@ import {AutoComplete} from "@web/core/autocomplete/autocomplete"
 import {_t} from "@web/core/l10n/translation"
 import {registry} from "@web/core/registry"
 import {useService} from "@web/core/utils/hooks"
-import {Component, onWillStart, onWillUnmount, useEffect, useState} from "@odoo/owl"
+import {Component, onWillStart, onWillUnmount, proxy, t, useLayoutEffect, useProps} from "@odoo/owl"
 import {standardFieldProps} from "@web/views/fields/standard_field_props"
 
 export class TelnyxVoiceField extends Component {
     static template = "connect_telnyx.TelnyxVoiceField"
     static components = {AutoComplete}
-    static props = {
+    props = useProps({
         ...standardFieldProps,
-        languageField: {type: String},
-        providerField: {type: String},
-        speedField: {type: String, optional: true},
-        textField: {type: String, optional: true},
-    }
+        languageField: t.string(),
+        providerField: t.string(),
+        speedField: t.string().optional(),
+        textField: t.string().optional(),
+    })
 
     setup() {
         this.orm = useService("orm")
-        this.state = useState({displayValue: this.rawValue, revision: 0, playing: false})
+        this.state = proxy({displayValue: this.rawValue, revision: 0, playing: false})
         this.audio = null
         onWillStart(() => this.loadDisplayValue())
         onWillUnmount(() => this.stopSample())
-        useEffect(
+        useLayoutEffect(
             (voiceId) => {
                 if (voiceId !== this.state.voiceId) {
                     this.loadDisplayValue()

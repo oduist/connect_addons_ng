@@ -11,20 +11,18 @@
         start or is running". Red only ever ends something.
     -->
     <t t-name="connect_twilio.phone" owl="1">
-        <div t-attf-class="o_connect_softphone {{ state.isDisplay ? '' : 'o_hide' }}"
-             t-ref="phone-root">
+        <div t-attf-class="o_connect_softphone {{ this.state.isDisplay ? '' : 'o_hide' }}" t-ref="this.phoneRoot">
 
             <!-- ============================ header ============================ -->
-            <div class="o_csp_hd" t-ref="phone-header">
-                <span t-attf-class="o_csp_dot {{ headerDotClass }}"/>
-                <span class="o_csp_who" t-out="headerTitle"/>
-                <span t-if="headerSub" class="o_csp_sub" t-out="headerSub"/>
+            <div class="o_csp_hd" t-ref="this.phoneHeader">
+                <span t-attf-class="o_csp_dot {{ this.headerDotClass }}"/>
+                <span class="o_csp_who" t-out="this.headerTitle"/>
+                <span t-if="this.headerSub" class="o_csp_sub" t-out="this.headerSub"/>
                 <span class="o_csp_spacer"/>
-                <button t-if="state.isForward" class="o_csp_iconbtn" aria-label="Cancel forward"
-                        title="Cancel forward" t-on-click="_onClickForwardBack">
+                <button t-if="this.state.isForward" class="o_csp_iconbtn" aria-label="Cancel forward" title="Cancel forward" t-on-click="this._onClickForwardBack">
                     <t t-call="connect_twilio.icon_close"/>
                 </button>
-                <button t-else="" class="o_csp_iconbtn" aria-label="Hide" title="Hide" t-on-click="_onClickClose">
+                <button t-else="" class="o_csp_iconbtn" aria-label="Hide" title="Hide" t-on-click="this._onClickClose">
                     <t t-call="connect_twilio.icon_minimise"/>
                 </button>
             </div>
@@ -33,11 +31,11 @@
             <div class="o_csp_bd">
 
                 <!-- the call that stays on screen while forwarding or sending tones -->
-                <div t-if="screen === 'forward' or screen === 'dtmf'" class="o_csp_onair">
+                <div t-if="this.screen === 'forward' || this.screen === 'dtmf'" class="o_csp_onair">
                     <span class="o_csp_dot o_csp_dot_ring"/>
                     <span>on the line</span>
-                    <span class="o_csp_onair_who" t-out="liveCallName"/>
-                    <span class="o_csp_onair_t" t-out="state.callDurationTime"/>
+                    <span class="o_csp_onair_who" t-out="this.liveCallName"/>
+                    <span class="o_csp_onair_t" t-out="this.state.callDurationTime"/>
                 </div>
 
                 <!--
@@ -46,76 +44,71 @@
                     the input and writes into it from endCall() and the
                     backspace handler.
                 -->
-                <div t-attf-class="o_csp_dialfield {{ screen === 'contacts' ? 'o_csp_dialfield_sm' : '' }} {{ showDialField ? '' : 'o_hide' }}">
+                <div t-attf-class="o_csp_dialfield {{ this.screen === 'contacts' ? 'o_csp_dialfield_sm' : '' }} {{ this.showDialField ? '' : 'o_hide' }}">
                     <div class="o_csp_num">
-                        <input class="o_csp_val" type="tel" t-ref="connect-phone-input"
-                               t-on-keyup="debounceEnterPhoneNumber"
-                               placeholder="Name, number or extension" autocomplete="off"/>
-                        <button t-if="state.phoneNumber" class="o_csp_bsp" aria-label="Backspace"
-                                title="Backspace" t-on-click="_onClickBackSpace">
+                        <input class="o_csp_val" type="tel" t-ref="this.phoneInput" t-on-keyup="this.debounceEnterPhoneNumber" placeholder="Name, number or extension" autocomplete="off"/>
+                        <button t-if="this.state.phoneNumber" class="o_csp_bsp" aria-label="Backspace" title="Backspace" t-on-click="this._onClickBackSpace">
                             <t t-call="connect_twilio.icon_backspace"/>
                         </button>
                     </div>
-                    <div t-if="screen === 'dtmf'" class="o_csp_match o_csp_match_muted">
-                        Tones sent to <t t-out="liveCallName"/>
+                    <div t-if="this.screen === 'dtmf'" class="o_csp_match o_csp_match_muted">
+                        Tones sent to <t t-out="this.liveCallName"/>
                     </div>
-                    <div t-elif="state.dialMatch" class="o_csp_match">
-                        <b t-out="state.dialMatch.name"/>
-                        <span t-if="state.dialMatch.exten" class="o_csp_ext" t-out="state.dialMatch.exten"/>
-                        <t t-elif="state.dialMatch.sub">· <t t-out="state.dialMatch.sub"/></t>
+                    <div t-elif="this.state.dialMatch" class="o_csp_match">
+                        <b t-out="this.state.dialMatch.name"/>
+                        <span t-if="this.state.dialMatch.exten" class="o_csp_ext" t-out="this.state.dialMatch.exten"/>
+                        <t t-elif="this.state.dialMatch.sub">· <t t-out="this.state.dialMatch.sub"/></t>
                     </div>
                 </div>
 
-                <div t-if="screen === 'keypad' or screen === 'dtmf'" class="o_csp_keys">
-                    <button class="o_csp_key" t-on-click="_onClickKeypadButton">
+                <div t-if="this.screen === 'keypad' || this.screen === 'dtmf'" class="o_csp_keys">
+                    <button class="o_csp_key" t-on-click="this._onClickKeypadButton">
                         <span class="o_csp_key_d">1</span><span class="o_csp_key_l"/>
                     </button>
-                    <button class="o_csp_key" t-on-click="_onClickKeypadButton">
+                    <button class="o_csp_key" t-on-click="this._onClickKeypadButton">
                         <span class="o_csp_key_d">2</span><span class="o_csp_key_l">ABC</span>
                     </button>
-                    <button class="o_csp_key" t-on-click="_onClickKeypadButton">
+                    <button class="o_csp_key" t-on-click="this._onClickKeypadButton">
                         <span class="o_csp_key_d">3</span><span class="o_csp_key_l">DEF</span>
                     </button>
-                    <button class="o_csp_key" t-on-click="_onClickKeypadButton">
+                    <button class="o_csp_key" t-on-click="this._onClickKeypadButton">
                         <span class="o_csp_key_d">4</span><span class="o_csp_key_l">GHI</span>
                     </button>
-                    <button class="o_csp_key" t-on-click="_onClickKeypadButton">
+                    <button class="o_csp_key" t-on-click="this._onClickKeypadButton">
                         <span class="o_csp_key_d">5</span><span class="o_csp_key_l">JKL</span>
                     </button>
-                    <button class="o_csp_key" t-on-click="_onClickKeypadButton">
+                    <button class="o_csp_key" t-on-click="this._onClickKeypadButton">
                         <span class="o_csp_key_d">6</span><span class="o_csp_key_l">MNO</span>
                     </button>
-                    <button class="o_csp_key" t-on-click="_onClickKeypadButton">
+                    <button class="o_csp_key" t-on-click="this._onClickKeypadButton">
                         <span class="o_csp_key_d">7</span><span class="o_csp_key_l">PQRS</span>
                     </button>
-                    <button class="o_csp_key" t-on-click="_onClickKeypadButton">
+                    <button class="o_csp_key" t-on-click="this._onClickKeypadButton">
                         <span class="o_csp_key_d">8</span><span class="o_csp_key_l">TUV</span>
                     </button>
-                    <button class="o_csp_key" t-on-click="_onClickKeypadButton">
+                    <button class="o_csp_key" t-on-click="this._onClickKeypadButton">
                         <span class="o_csp_key_d">9</span><span class="o_csp_key_l">WXYZ</span>
                     </button>
-                    <button class="o_csp_key" t-on-click="_onClickKeypadButton">
+                    <button class="o_csp_key" t-on-click="this._onClickKeypadButton">
                         <span class="o_csp_key_d">*</span><span class="o_csp_key_l"/>
                     </button>
-                    <button class="o_csp_key" t-on-click="_onClickKeypadButton">
+                    <button class="o_csp_key" t-on-click="this._onClickKeypadButton">
                         <span class="o_csp_key_d">0</span><span class="o_csp_key_l">+</span>
                     </button>
-                    <button class="o_csp_key" t-on-click="_onClickKeypadButton">
+                    <button class="o_csp_key" t-on-click="this._onClickKeypadButton">
                         <span class="o_csp_key_d">#</span><span class="o_csp_key_l"/>
                     </button>
                 </div>
 
                 <!-- idle keypad: SMS / call / WhatsApp -->
-                <div t-if="screen === 'keypad'" class="o_csp_dialbar">
-                    <button t-if="state.phoneNumber" class="o_csp_mini" aria-label="Send SMS" title="Send SMS"
-                            t-on-click="_onClickSendSms">
+                <div t-if="this.screen === 'keypad'" class="o_csp_dialbar">
+                    <button t-if="this.state.phoneNumber" class="o_csp_mini" aria-label="Send SMS" title="Send SMS" t-on-click="this._onClickSendSms">
                         <t t-call="connect_twilio.icon_sms"/>
                     </button>
-                    <button class="o_csp_fab" aria-label="Call" title="Call" t-on-click="_onClickMakeCall">
+                    <button class="o_csp_fab" aria-label="Call" title="Call" t-on-click="this._onClickMakeCall">
                         <t t-call="connect_twilio.icon_phone"/>
                     </button>
-                    <button t-if="state.phoneNumber" class="o_csp_mini" aria-label="Send WhatsApp" title="Send WhatsApp"
-                            t-on-click="_onClickSendWhatsapp">
+                    <button t-if="this.state.phoneNumber" class="o_csp_mini" aria-label="Send WhatsApp" title="Send WhatsApp" t-on-click="this._onClickSendWhatsapp">
                         <t t-call="connect_twilio.icon_whatsapp"/>
                     </button>
                 </div>
@@ -126,59 +119,54 @@
                     the bus before the screen changes, so a component that
                     t-if'd into existence afterwards would never hear it.
                 -->
-                <div t-attf-class="o_csp_screen {{ showContacts ? '' : 'o_hide' }}">
-                    <Contacts bus="bus" isForward="state.isForward"/>
+                <div t-attf-class="o_csp_screen {{ this.showContacts ? '' : 'o_hide' }}">
+                    <Contacts bus="this.bus" isForward="this.state.isForward"/>
                 </div>
 
                 <!-- DTMF: the only way back is the call itself -->
-                <div t-if="screen === 'dtmf'" class="o_csp_hangbar">
-                    <button class="o_csp_hang o_csp_hang_quiet" t-on-click="_onClickDialingPanel">
+                <div t-if="this.screen === 'dtmf'" class="o_csp_hangbar">
+                    <button class="o_csp_hang o_csp_hang_quiet" t-on-click="this._onClickDialingPanel">
                         Back to the call
                     </button>
                 </div>
 
                 <!-- recent -->
-                <div t-if="screen === 'recents'" class="o_csp_screen">
-                    <Recents bus="bus"/>
+                <div t-if="this.screen === 'recents'" class="o_csp_screen">
+                    <Recents bus="this.bus"/>
                 </div>
 
                 <!-- favourites -->
-                <div t-if="screen === 'favorites'" class="o_csp_screen">
-                    <Favorites bus="bus" callerId="callerId"/>
+                <div t-if="this.screen === 'favorites'" class="o_csp_screen">
+                    <Favorites bus="this.bus" callerId="this.callerId"/>
                 </div>
 
                 <!-- ========================= incoming ========================= -->
-                <t t-if="screen === 'incoming'">
+                <t t-if="this.screen === 'incoming'">
                     <div class="o_csp_stage">
-                        <img t-if="stageAvatar" class="o_csp_av o_csp_av_lg" alt="Avatar" t-att-src="stageAvatar"/>
-                        <span t-else="" class="o_csp_av o_csp_av_lg o_csp_av_ph"
-                              t-attf-style="background:{{ tone(stageLabel) }}" t-out="initial(stageLabel)"/>
+                        <img t-if="this.stageAvatar" class="o_csp_av o_csp_av_lg" alt="Avatar" t-att-src="this.stageAvatar"/>
+                        <span t-else="" class="o_csp_av o_csp_av_lg o_csp_av_ph" t-attf-style="background:{{ this.tone(this.stageLabel) }}" t-out="this.initial(this.stageLabel)"/>
                         <div>
-                            <div t-if="state.callerId.partnerName" class="o_csp_stage_name"
-                                 t-out="state.callerId.partnerName"/>
+                            <div t-if="this.state.callerId.partnerName" class="o_csp_stage_name" t-out="this.state.callerId.partnerName"/>
                             <div class="o_csp_stage_number">
-                                <t t-if="state.isWhatsapp"><t t-call="connect_twilio.icon_whatsapp"/></t>
-                                <t t-out="state.callerId.phoneNumber"/>
+                                <t t-if="this.state.isWhatsapp"><t t-call="connect_twilio.icon_whatsapp"/></t>
+                                <t t-out="this.state.callerId.phoneNumber"/>
                             </div>
                         </div>
                         <div class="o_csp_gap"/>
                         <div class="o_csp_ringing"><span class="o_csp_dot o_csp_dot_ring"/>Ringing</div>
                         <div class="o_csp_quick">
                             <div class="o_csp_quickitem">
-                                <button t-if="state.isPartner" aria-label="Open contact" title="Open contact"
-                                        t-on-click="() => this._openPartner(state.callerId.partnerId)">
+                                <button t-if="this.state.isPartner" aria-label="Open contact" title="Open contact" t-on-click="() =&gt; this._openPartner(this.state.callerId.partnerId)">
                                     <t t-call="connect_twilio.icon_contact"/>
                                 </button>
-                                <button t-else="" aria-label="Create contact" title="Create contact"
-                                        t-on-click="_createPartner">
+                                <button t-else="" aria-label="Create contact" title="Create contact" t-on-click="this._createPartner">
                                     <t t-call="connect_twilio.icon_contact_add"/>
                                 </button>
-                                <span class="o_csp_lbl"><t t-if="state.isPartner">Contact</t><t t-else="">Create</t></span>
+                                <span class="o_csp_lbl"><t t-if="this.state.isPartner">Contact</t><t t-else="">Create</t></span>
                             </div>
                             <div class="o_csp_quickitem">
-                                <button aria-label="Mute ringer" t-att-title="state.isSoundMute ? 'Unmute ringer' : 'Mute ringer'"
-                                        t-on-click="_onClickSoundMute">
-                                    <t t-if="state.isSoundMute" t-call="connect_twilio.icon_volume_off"/>
+                                <button aria-label="Mute ringer" t-att-title="this.state.isSoundMute ? 'Unmute ringer' : 'Mute ringer'" t-on-click="this._onClickSoundMute">
+                                    <t t-if="this.state.isSoundMute" t-call="connect_twilio.icon_volume_off"/>
                                     <t t-else="" t-call="connect_twilio.icon_volume"/>
                                 </button>
                                 <span class="o_csp_lbl">Ringer</span>
@@ -187,114 +175,93 @@
                         <div class="o_csp_gap"/>
                     </div>
                     <div class="o_csp_answerbar">
-                        <button class="o_csp_ans o_csp_ans_no" aria-label="Reject call" title="Reject"
-                                t-on-click="_onClickRejectIncoming">
+                        <button class="o_csp_ans o_csp_ans_no" aria-label="Reject call" title="Reject" t-on-click="this._onClickRejectIncoming">
                             <t t-call="connect_twilio.icon_close"/>Decline
                         </button>
-                        <button class="o_csp_ans o_csp_ans_yes" aria-label="Take call" title="Accept"
-                                t-on-click="_onClickAcceptIncoming">
+                        <button class="o_csp_ans o_csp_ans_yes" aria-label="Take call" title="Accept" t-on-click="this._onClickAcceptIncoming">
                             <t t-call="connect_twilio.icon_phone"/>Answer
                         </button>
                     </div>
                 </t>
 
                 <!-- ========================== in call ========================== -->
-                <t t-if="screen === 'incall'">
+                <t t-if="this.screen === 'incall'">
                     <div class="o_csp_stage">
-                        <img t-if="stageAvatar" class="o_csp_av o_csp_av_lg" alt="Avatar" t-att-src="stageAvatar"/>
-                        <span t-else="" class="o_csp_av o_csp_av_lg o_csp_av_ph"
-                              t-attf-style="background:{{ tone(stageLabel) }}" t-out="initial(stageLabel)"/>
+                        <img t-if="this.stageAvatar" class="o_csp_av o_csp_av_lg" alt="Avatar" t-att-src="this.stageAvatar"/>
+                        <span t-else="" class="o_csp_av o_csp_av_lg o_csp_av_ph" t-attf-style="background:{{ this.tone(this.stageLabel) }}" t-out="this.initial(this.stageLabel)"/>
                         <div>
-                            <div t-if="state.callerId.partnerName" class="o_csp_stage_name"
-                                 t-out="state.callerId.partnerName"/>
+                            <div t-if="this.state.callerId.partnerName" class="o_csp_stage_name" t-out="this.state.callerId.partnerName"/>
                             <div class="o_csp_stage_number">
-                                <t t-if="state.isWhatsapp"><t t-call="connect_twilio.icon_whatsapp"/></t>
-                                <t t-out="state.callerId.phoneNumber"/>
+                                <t t-if="this.state.isWhatsapp"><t t-call="connect_twilio.icon_whatsapp"/></t>
+                                <t t-out="this.state.callerId.phoneNumber"/>
                             </div>
                         </div>
                         <div class="o_csp_gap"/>
-                        <div t-if="state.callDurationTime" class="o_csp_timer" t-out="state.callDurationTime"/>
+                        <div t-if="this.state.callDurationTime" class="o_csp_timer" t-out="this.state.callDurationTime"/>
                         <div t-else="" class="o_csp_status">Connecting…</div>
-                        <div t-if="isRecordingOn()" class="o_csp_reclive">
+                        <div t-if="this.isRecordingOn()" class="o_csp_reclive">
                             <span class="o_csp_dot o_csp_dot_rec"/>Recording
                         </div>
-                        <div t-if="state.recordingError" class="o_csp_recerr" t-out="state.recordingError"/>
+                        <div t-if="this.state.recordingError" class="o_csp_recerr" t-out="this.state.recordingError"/>
                         <!-- the leg this call was forwarded to -->
-                        <div t-if="state.xTransferPartner" class="o_csp_leg"
-                             t-on-click="() => this._openPartner(state.xTransferPartner.partnerId)">
+                        <div t-if="this.state.xTransferPartner" class="o_csp_leg" t-on-click="() =&gt; this._openPartner(this.state.xTransferPartner.partnerId)">
                             <t t-call="connect_twilio.icon_forward"/>
-                            <span t-out="state.xTransferPartner.partnerName"/>
-                            <span class="o_csp_leg_num" t-out="state.xTransferPartner.phoneNumber"/>
+                            <span t-out="this.state.xTransferPartner.partnerName"/>
+                            <span class="o_csp_leg_num" t-out="this.state.xTransferPartner.phoneNumber"/>
                         </div>
-                        <div t-elif="state.xTransferInfo" class="o_csp_leg">
+                        <div t-elif="this.state.xTransferInfo" class="o_csp_leg">
                             <t t-call="connect_twilio.icon_forward"/>
-                            <span t-out="state.xTransferInfo"/>
+                            <span t-out="this.state.xTransferInfo"/>
                         </div>
                         <div class="o_csp_gap"/>
                     </div>
 
                     <div class="o_csp_ctrls">
-                        <button t-if="state.isCallForwarded" class="o_csp_ctrl" title="Cancel forward"
-                                t-on-click="_cancelForward">
+                        <button t-if="this.state.isCallForwarded" class="o_csp_ctrl" title="Cancel forward" t-on-click="this._cancelForward">
                             <t t-call="connect_twilio.icon_close"/>Cancel fwd
                         </button>
-                        <button t-else="" class="o_csp_ctrl" title="Forward the call"
-                                t-att-disabled="state.phone_status !== status.accepted"
-                                t-on-click="_onClickForward">
+                        <button t-else="" class="o_csp_ctrl" title="Forward the call" t-att-disabled="this.state.phone_status !== this.status.accepted" t-on-click="this._onClickForward">
                             <t t-call="connect_twilio.icon_forward"/>Forward
                         </button>
 
-                        <button class="o_csp_ctrl" title="Send tones"
-                                t-att-disabled="state.phone_status !== status.accepted"
-                                t-on-click="_onClickKeypad">
+                        <button class="o_csp_ctrl" title="Send tones" t-att-disabled="this.state.phone_status !== this.status.accepted" t-on-click="this._onClickKeypad">
                             <t t-call="connect_twilio.icon_keypad"/>Keypad
                         </button>
 
-                        <button t-if="state.isPartner" class="o_csp_ctrl" title="Open contact"
-                                t-on-click="() => this._openPartner(state.callerId.partnerId)">
+                        <button t-if="this.state.isPartner" class="o_csp_ctrl" title="Open contact" t-on-click="() =&gt; this._openPartner(this.state.callerId.partnerId)">
                             <t t-call="connect_twilio.icon_contact"/>Contact
                         </button>
-                        <button t-else="" class="o_csp_ctrl" title="Create contact" t-on-click="_createPartner">
+                        <button t-else="" class="o_csp_ctrl" title="Create contact" t-on-click="this._createPartner">
                             <t t-call="connect_twilio.icon_contact_add"/>Create
                         </button>
 
-                        <button t-if="state.phone_status === status.accepted"
-                                t-attf-class="o_csp_ctrl {{ state.isMicrophoneMute ? 'o_csp_ctrl_active' : '' }}"
-                                t-att-title="state.isMicrophoneMute ? 'Unmute microphone' : 'Mute microphone'"
-                                t-on-click="_onClickMicrophoneMute">
-                            <t t-if="state.isMicrophoneMute" t-call="connect_twilio.icon_mic_off"/>
+                        <button t-if="this.state.phone_status === this.status.accepted" t-attf-class="o_csp_ctrl {{ this.state.isMicrophoneMute ? 'o_csp_ctrl_active' : '' }}" t-att-title="this.state.isMicrophoneMute ? 'Unmute microphone' : 'Mute microphone'" t-on-click="this._onClickMicrophoneMute">
+                            <t t-if="this.state.isMicrophoneMute" t-call="connect_twilio.icon_mic_off"/>
                             <t t-else="" t-call="connect_twilio.icon_mic"/>
-                            <t t-if="state.isMicrophoneMute">Muted</t><t t-else="">Mute</t>
+                            <t t-if="this.state.isMicrophoneMute">Muted</t><t t-else="">Mute</t>
                         </button>
-                        <button t-else=""
-                                t-attf-class="o_csp_ctrl {{ state.isSoundMute ? 'o_csp_ctrl_active' : '' }}"
-                                t-att-title="state.isSoundMute ? 'Unmute sound' : 'Mute sound'"
-                                t-on-click="_onClickSoundMute">
-                            <t t-if="state.isSoundMute" t-call="connect_twilio.icon_volume_off"/>
+                        <button t-else="" t-attf-class="o_csp_ctrl {{ this.state.isSoundMute ? 'o_csp_ctrl_active' : '' }}" t-att-title="this.state.isSoundMute ? 'Unmute sound' : 'Mute sound'" t-on-click="this._onClickSoundMute">
+                            <t t-if="this.state.isSoundMute" t-call="connect_twilio.icon_volume_off"/>
                             <t t-else="" t-call="connect_twilio.icon_volume"/>
                             Sound
                         </button>
 
-                        <button t-attf-class="o_csp_ctrl {{ isRecordingOn() ? 'o_csp_ctrl_active' : 'o_csp_ctrl_off' }}"
-                                t-att-aria-pressed="isRecordingOn() ? 'true' : 'false'"
-                                t-att-title="getRecordingTitle()"
-                                t-att-disabled="isRecordingButtonDisabled()"
-                                t-on-click="_onClickRecordingToggle">
+                        <button t-attf-class="o_csp_ctrl {{ this.isRecordingOn() ? 'o_csp_ctrl_active' : 'o_csp_ctrl_off' }}" t-att-aria-pressed="this.isRecordingOn() ? 'true' : 'false'" t-att-title="this.getRecordingTitle()" t-att-disabled="this.isRecordingButtonDisabled()" t-on-click="this._onClickRecordingToggle">
                             <t t-call="connect_twilio.icon_record"/>
-                            <t t-if="isRecordingOn()">Stop rec</t><t t-else="">Record</t>
+                            <t t-if="this.isRecordingOn()">Stop rec</t><t t-else="">Record</t>
                         </button>
                     </div>
 
                     <div class="o_csp_hangbar">
-                        <button class="o_csp_hang" aria-label="End Call" title="End Call" t-on-click="_onClickEndCall">
+                        <button class="o_csp_hang" aria-label="End Call" title="End Call" t-on-click="this._onClickEndCall">
                             <t t-call="connect_twilio.icon_hangup"/>End call
                         </button>
                     </div>
                 </t>
 
                 <!-- leaving the forward picker must not drop the call -->
-                <div t-if="screen === 'forward'" class="o_csp_hangbar">
-                    <button class="o_csp_hang o_csp_hang_quiet" t-on-click="_onClickForwardBack">
+                <div t-if="this.screen === 'forward'" class="o_csp_hangbar">
+                    <button class="o_csp_hang o_csp_hang_quiet" t-on-click="this._onClickForwardBack">
                         Back to the call
                     </button>
                 </div>
@@ -302,18 +269,15 @@
             </div>
 
             <!-- =========================== tab bar =========================== -->
-            <nav t-if="!isCallScreen" class="o_csp_tabs">
-                <button t-attf-class="o_csp_tab {{ state.activeTab === tabs.phone ? 'o_csp_tab_sel' : '' }}"
-                        aria-label="Keypad" title="Keypad" t-on-click="_onClickPhone">
+            <nav t-if="!this.isCallScreen" class="o_csp_tabs">
+                <button t-attf-class="o_csp_tab {{ this.state.activeTab === this.tabs.phone ? 'o_csp_tab_sel' : '' }}" aria-label="Keypad" title="Keypad" t-on-click="this._onClickPhone">
                     <t t-call="connect_twilio.icon_keypad"/>Keypad
                 </button>
-                <button t-attf-class="o_csp_tab {{ state.activeTab === tabs.calls ? 'o_csp_tab_sel' : '' }}"
-                        aria-label="Recent" title="Recent" t-on-click="_onClickHistory">
+                <button t-attf-class="o_csp_tab {{ this.state.activeTab === this.tabs.calls ? 'o_csp_tab_sel' : '' }}" aria-label="Recent" title="Recent" t-on-click="this._onClickHistory">
                     <t t-call="connect_twilio.icon_recent"/>Recent
                 </button>
-                <button t-attf-class="o_csp_tab {{ state.activeTab === tabs.favorites ? 'o_csp_tab_sel' : '' }}"
-                        aria-label="Favourites" title="Favourites" t-on-click="_onClickFavorites">
-                    <t t-if="state.activeTab === tabs.favorites" t-call="connect_twilio.icon_star_filled"/>
+                <button t-attf-class="o_csp_tab {{ this.state.activeTab === this.tabs.favorites ? 'o_csp_tab_sel' : '' }}" aria-label="Favourites" title="Favourites" t-on-click="this._onClickFavorites">
+                    <t t-if="this.state.activeTab === this.tabs.favorites" t-call="connect_twilio.icon_star_filled"/>
                     <t t-else="" t-call="connect_twilio.icon_star"/>
                     Favourites
                 </button>

@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
 import {useService} from "@web/core/utils/hooks"
-import {Component, useState, onWillStart} from "@odoo/owl"
+import {Component, onWillStart, proxy, t, useProps} from "@odoo/owl"
 import {user} from "@web/core/user"
 import {contactInitial, contactTone} from "@connect_twilio/js/utils"
 
@@ -9,12 +9,13 @@ const uid = user.userId
 
 export class Favorites extends Component {
     static template = 'connect_twilio.favorites'
-    static props = {
-        bus: Object,
-        // The number the far end sees for calls this user places. Shown under
-        // the grid, where "who am I calling as?" is the natural next question.
-        callerId: {type: String, optional: true},
-    }
+    props = useProps({
+        bus: t.object(),
+        // The number the far end sees for calls this user places. Shown
+        // under the grid, where "who am I calling as?" is the natural
+        // next question.
+        callerId: t.string().optional(),
+    })
 
     constructor() {
         super(...arguments)
@@ -26,7 +27,7 @@ export class Favorites extends Component {
         this.orm = useService('orm')
         this.action = useService('action')
         this.user = uid
-        this.state = useState({
+        this.state = proxy({
             favorites: [],
         })
 

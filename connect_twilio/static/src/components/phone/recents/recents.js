@@ -1,7 +1,7 @@
 /** @odoo-module **/
 
 import {useService} from "@web/core/utils/hooks"
-import {Component, useState, onWillStart, onWillDestroy} from "@odoo/owl"
+import {Component, onWillDestroy, onWillStart, proxy, t, useProps} from "@odoo/owl"
 import {user} from "@web/core/user"
 import {contactInitial, contactTone} from "@connect_twilio/js/utils"
 
@@ -45,9 +45,9 @@ const OUTCOMES = {
  */
 export class Recents extends Component {
     static template = 'connect_twilio.recents'
-    static props = {
-        bus: Object,
-    }
+    props = useProps({
+        bus: t.object(),
+    })
 
     constructor() {
         super(...arguments)
@@ -61,7 +61,7 @@ export class Recents extends Component {
         this.notification = useService('notification')
         this.user = uid
         this.favorites = []
-        this.state = useState({
+        this.state = proxy({
             calls: [],
             query: '',
         })

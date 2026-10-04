@@ -2,7 +2,7 @@
 
 import {useService} from "@web/core/utils/hooks"
 import {setFocus} from "@connect_twilio/js/utils"
-import {Component, useState, useRef, useEffect, onWillStart} from "@odoo/owl"
+import {Component, onWillStart, proxy, signal, t, useLayoutEffect, useProps} from "@odoo/owl"
 
 const searching = {
     all: 'all',
@@ -12,12 +12,12 @@ const searching = {
 
 export class Contacts extends Component {
     static template = 'connect_twilio.contacts'
-    static props = {
-        bus: Object,
-        isContact: {type: Boolean, optional: true},
-        isForward: {type: Boolean, optional: true},
-        contactSearch: {type: String, optional: true},
-    }
+    props = useProps({
+        bus: t.object(),
+        isContact: t.boolean().optional(),
+        isForward: t.boolean().optional(),
+        contactSearch: t.string().optional(),
+    })
 
     constructor() {
         super(...arguments)
@@ -33,8 +33,8 @@ export class Contacts extends Component {
         super.setup()
         this.orm = useService('orm')
         this.action = useService('action')
-        this.contactInput = useRef('contact-input')
-        this.state = useState({
+        this.contactInput = signal.ref()
+        this.state = proxy({
             isContactMode: false,
             partners: [],
             users: this.users,
@@ -47,10 +47,10 @@ export class Contacts extends Component {
         // set. The input is behind a t-if, so at the moment _onClickForward
         // announces the mode over the bus there is nothing in the DOM to
         // focus yet; this runs after the patch that puts it there.
-        useEffect(
+        useLayoutEffect(
             (isContactMode) => {
-                if (isContactMode && this.contactInput.el) {
-                    this.contactInput.el.focus()
+                if (isContactMode && this.contactInput()) {
+                    this.contactInput().focus()
                 }
             },
             () => [this.state.isContactMode],
@@ -103,8 +103,8 @@ export class Contacts extends Component {
         this.state.partners = []
         this.state.users = []
         this.state.searchQuery = ''
-        if (this.contactInput.el) {
-            this.contactInput.el.value = ''
+        if (this.contactInput()) {
+            this.contactInput().value = ''
         }
     }
 
@@ -122,9 +122,9 @@ export class Contacts extends Component {
 
     _onClickClearSearchContact(ev) {
         this._contactSearchQuery({searchQuery: ''})
-        if (this.contactInput.el) {
-            this.contactInput.el.value = ''
-            setFocus(this.contactInput.el)
+        if (this.contactInput()) {
+            this.contactInput().value = ''
+            setFocus(this.contactInput())
         }
     }
 

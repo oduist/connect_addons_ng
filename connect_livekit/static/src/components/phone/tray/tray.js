@@ -1,15 +1,15 @@
 /** @odoo-module **/
 "use strict"
-import {Component, useState, onMounted} from "@odoo/owl"
+import {Component, onMounted, proxy, t, useProps} from "@odoo/owl"
 
 export class LivekitPhoneSysTray extends Component {
     static template = 'connect_livekit.menu'
-    static props = {
-        bus: Object,
-    }
+    props = useProps({
+        bus: t.object(),
+    })
 
     setup() {
-        this.state = useState({
+        this.state = proxy({
             inCall: false,
         })
         onMounted(() => {

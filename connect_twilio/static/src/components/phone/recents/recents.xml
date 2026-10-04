@@ -9,22 +9,15 @@
     <t t-name="connect_twilio.recents" owl="1">
         <div class="o_csp_search">
             <t t-call="connect_twilio.icon_search"/>
-            <input placeholder="Search calls" autocomplete="off"
-                   t-att-value="state.query" t-on-input="_onSearch"/>
+            <input placeholder="Search calls" autocomplete="off" t-att-value="this.state.query" t-on-input="this._onSearch"/>
         </div>
         <div class="o_csp_scroll">
-            <t t-foreach="days" t-as="day" t-key="day.key">
+            <t t-foreach="this.days" t-as="day" t-key="day.key">
                 <div class="o_csp_daylabel" t-out="day.label"/>
                 <t t-foreach="day.calls" t-as="call" t-key="call.id">
-                    <div class="o_csp_row" t-attf-title="Call {{ call.number }}"
-                         t-on-click="() => this._onClickCall(call)">
-                        <img t-if="call.avatar" class="o_csp_av" alt="Avatar" t-att-src="call.avatar"
-                             title="Open the call record"
-                             t-on-click="(ev) => this._onClickDetail(ev, call)"/>
-                        <span t-else="" class="o_csp_av o_csp_av_ph" t-attf-style="background:{{ call.tone }}"
-                              title="Open the call record"
-                              t-on-click="(ev) => this._onClickDetail(ev, call)"
-                              t-out="call.initial"/>
+                    <div class="o_csp_row" t-attf-title="Call {{ call.number }}" t-on-click="() =&gt; this._onClickCall(call)">
+                        <img t-if="call.avatar" class="o_csp_av" alt="Avatar" t-att-src="call.avatar" title="Open the call record" t-on-click="(ev) =&gt; this._onClickDetail(ev, call)"/>
+                        <span t-else="" class="o_csp_av o_csp_av_ph" t-attf-style="background:{{ call.tone }}" title="Open the call record" t-on-click="(ev) =&gt; this._onClickDetail(ev, call)" t-out="call.initial"/>
                         <div class="o_csp_rowmain">
                             <div class="o_csp_n" t-out="call.name"/>
                             <div class="o_csp_m">
@@ -42,18 +35,15 @@
                             </div>
                         </div>
                         <span class="o_csp_rowend" t-out="call.time"/>
-                        <button t-attf-class="o_csp_rowbtn {{ call.favorite ? 'o_csp_rowbtn_on' : '' }}"
-                                t-att-title="call.favorite ? 'Remove from Favourites' : 'Add to Favourites'"
-                                t-att-aria-pressed="call.favorite ? 'true' : 'false'"
-                                t-on-click="(ev) => this._onClickFavorite(ev, call)">
+                        <button t-attf-class="o_csp_rowbtn {{ call.favorite ? 'o_csp_rowbtn_on' : '' }}" t-att-title="call.favorite ? 'Remove from Favourites' : 'Add to Favourites'" t-att-aria-pressed="call.favorite ? 'true' : 'false'" t-on-click="(ev) =&gt; this._onClickFavorite(ev, call)">
                             <t t-if="call.favorite" t-call="connect_twilio.icon_star_filled"/>
                             <t t-else="" t-call="connect_twilio.icon_star"/>
                         </button>
                     </div>
                 </t>
             </t>
-            <div t-if="!days.length" class="o_csp_empty">
-                <t t-if="state.query">No call matches “<t t-out="state.query"/>”.</t>
+            <div t-if="!this.days.length" class="o_csp_empty">
+                <t t-if="this.state.query">No call matches “<t t-out="this.state.query"/>”.</t>
                 <t t-else="">No calls yet. The ones you place and take show up here.</t>
             </div>
         </div>

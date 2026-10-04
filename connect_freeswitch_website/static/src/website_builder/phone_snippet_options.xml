@@ -3,11 +3,7 @@
 
 <t t-name="connect_freeswitch_website.PhoneStatusOption">
     <BuilderRow label.translate="Phone Number">
-        <BuilderMany2One
-            action="'connectPhoneNumber'"
-            model="'connect.freeswitch.number'"
-            domain="[['schedule_enabled', '=', true], ['schedule_id', '!=', false]]"
-            allowUnselect="false"/>
+        <BuilderMany2One action="'connectPhoneNumber'" model="'connect.freeswitch.number'" domain="[['schedule_enabled', '=', true], ['schedule_id', '!=', false]]" allowUnselect="false"/>
     </BuilderRow>
     <BuilderRow label.translate="Show Time" tooltip.translate="Show until when the number is available, or when it opens again">
         <BuilderCheckbox dataAttributeAction="'showTime'" dataAttributeActionValue="'true'"/>
@@ -22,11 +18,7 @@
 
 <t t-name="connect_freeswitch_website.PhoneOpeningHoursOption">
     <BuilderRow label.translate="Phone Number">
-        <BuilderMany2One
-            action="'connectPhoneNumber'"
-            model="'connect.freeswitch.number'"
-            domain="[['schedule_enabled', '=', true], ['schedule_id', '!=', false]]"
-            allowUnselect="false"/>
+        <BuilderMany2One action="'connectPhoneNumber'" model="'connect.freeswitch.number'" domain="[['schedule_enabled', '=', true], ['schedule_id', '!=', false]]" allowUnselect="false"/>
     </BuilderRow>
     <BuilderRow label.translate="Days Ahead">
         <BuilderNumberInput dataAttributeAction="'days'" min="1" max="60"/>

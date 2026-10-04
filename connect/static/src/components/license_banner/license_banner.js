@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, onWillStart, useState } from "@odoo/owl";
+import {Component, onWillStart, proxy} from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
@@ -9,7 +9,7 @@ export class LicenseBanner extends Component {
 
     setup() {
         this.orm = useService("orm");
-        this.state = useState({
+        this.state = proxy({
             visible: false,
             status: null,
             message: "",

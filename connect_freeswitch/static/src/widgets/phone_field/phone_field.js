@@ -6,6 +6,18 @@ import {PhoneField} from "@web/views/fields/phone/phone_field"
 
 patch(PhoneField.prototype, {
 
+    get actionButtons() {
+        // Odoo 20: web.FormPhoneField template anchors are gone; the field
+        // renders an action-button list instead. Route the standard Call
+        // button through the Connect click-to-call dispatcher.
+        const buttons = super.actionButtons
+        if (buttons.length) {
+            buttons[0] = {...buttons[0], href: undefined, onSelected: (ev) => this._onClickCallButton(ev)}
+        }
+        return buttons
+    },
+
+
     setup() {
         super.setup()
     },

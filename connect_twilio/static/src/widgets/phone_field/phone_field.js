@@ -8,6 +8,22 @@ import {user} from "@web/core/user"
 
 patch(PhoneField.prototype, {
 
+    get actionButtons() {
+        // Odoo 20: web.FormPhoneField template anchors are gone; the field
+        // renders an action-button list instead. Route the standard Call
+        // button through the Connect click-to-call dispatcher.
+        const buttons = super.actionButtons
+        if (buttons.length) {
+            buttons[0] = {...buttons[0], href: undefined, onSelected: (ev) => this._onClickCallButton(ev)}
+        }
+        if (this.value) {
+            buttons.push({icon: "phone", name: "WhatsApp Call", onSelected: (ev) => this._onClickWhatsappCallButton(ev)})
+            buttons.push({icon: "phone", name: "WhatsApp Message", onSelected: (ev) => this._onClickWhatsappMessageButton(ev)})
+        }
+        return buttons
+    },
+
+
     setup() {
         super.setup()
         this.action = useService("action")

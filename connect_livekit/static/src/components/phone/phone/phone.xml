@@ -1,62 +1,59 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
 
-    <div t-name="connect_livekit.phone" owl="1"
-         t-attf-class="lk-phone {{state.display ? '' : 'd-none'}}">
+    <div t-name="connect_livekit.phone" owl="1" t-attf-class="lk-phone {{this.state.display ? '' : 'd-none'}}">
         <div class="lk-phone-header">
             <span class="lk-phone-title">LiveKit Phone</span>
-            <button class="lk-phone-close" title="Close" t-on-click="close">
+            <button class="lk-phone-close" title="Close" t-on-click="this.close">
                 <i class="fa fa-times"/>
             </button>
         </div>
 
         <div class="lk-phone-body">
-            <t t-if="state.status === 'idle'">
-                <input type="text" class="lk-phone-number" placeholder="+15551234567"
-                       t-model="state.number"
-                       t-on-keydown="onNumberKeydown"/>
-                <button class="lk-btn lk-btn-call" t-on-click="dial">
+            <t t-if="this.state.status === 'idle'">
+                <input type="text" class="lk-phone-number" placeholder="+15551234567" t-att-value="this.state.number" t-on-input="(ev) =&gt; this.state.number = ev.target.value" t-on-keydown="this.onNumberKeydown"/>
+                <button class="lk-btn lk-btn-call" t-on-click="this.dial">
                     <i class="fa fa-phone"/> Call
                 </button>
             </t>
 
-            <t t-if="state.status === 'dialing'">
-                <div class="lk-phone-peer"><t t-esc="state.peer"/></div>
+            <t t-if="this.state.status === 'dialing'">
+                <div class="lk-phone-peer"><t t-esc="this.state.peer"/></div>
                 <div class="lk-phone-status">Calling…</div>
-                <button class="lk-btn lk-btn-hangup" t-on-click="hangup">
+                <button class="lk-btn lk-btn-hangup" t-on-click="this.hangup">
                     <i class="fa fa-phone"/> Cancel
                 </button>
             </t>
 
-            <t t-if="state.status === 'ringing'">
-                <div class="lk-phone-peer"><t t-esc="state.peer"/></div>
+            <t t-if="this.state.status === 'ringing'">
+                <div class="lk-phone-peer"><t t-esc="this.state.peer"/></div>
                 <div class="lk-phone-status">Incoming call…</div>
                 <div class="lk-phone-actions">
-                    <button class="lk-btn lk-btn-call" t-on-click="accept">
+                    <button class="lk-btn lk-btn-call" t-on-click="this.accept">
                         <i class="fa fa-phone"/> Accept
                     </button>
-                    <button class="lk-btn lk-btn-hangup" t-on-click="decline">
+                    <button class="lk-btn lk-btn-hangup" t-on-click="this.decline">
                         <i class="fa fa-phone"/> Decline
                     </button>
                 </div>
             </t>
 
-            <t t-if="state.status === 'in-call'">
-                <div class="lk-phone-peer"><t t-esc="state.peer"/></div>
+            <t t-if="this.state.status === 'in-call'">
+                <div class="lk-phone-peer"><t t-esc="this.state.peer"/></div>
                 <div class="lk-phone-status">In call</div>
                 <div class="lk-phone-actions">
-                    <button class="lk-btn" t-on-click="toggleMute">
-                        <i t-attf-class="fa {{state.muted ? 'fa-microphone-slash' : 'fa-microphone'}}"/>
-                        <t t-esc="state.muted ? 'Unmute' : 'Mute'"/>
+                    <button class="lk-btn" t-on-click="this.toggleMute">
+                        <i t-attf-class="fa {{this.state.muted ? 'fa-microphone-slash' : 'fa-microphone'}}"/>
+                        <t t-esc="this.state.muted ? 'Unmute' : 'Mute'"/>
                     </button>
-                    <button class="lk-btn lk-btn-hangup" t-on-click="hangup">
+                    <button class="lk-btn lk-btn-hangup" t-on-click="this.hangup">
                         <i class="fa fa-phone"/> Hang Up
                     </button>
                 </div>
             </t>
         </div>
 
-        <div t-ref="lkAudio" class="lk-phone-audio"/>
+        <div t-ref="this.audioRef" class="lk-phone-audio"/>
     </div>
 
 </templates>

@@ -1,17 +1,17 @@
 /** @odoo-module **/
 import {useService} from "@web/core/utils/hooks"
 
-import {Component, useState} from "@odoo/owl"
+import {Component, proxy, t, useProps} from "@odoo/owl"
 
 export class ConnectActiveCallsPopup extends Component {
     static template = 'connect.active_calls_popup'
-    static props = {
-        bus: Object,
-    }
+    props = useProps({
+        bus: t.any(),
+    })
 
     constructor() {
         super(...arguments)
-        this.state = useState({
+        this.state = proxy({
             isDisplay: false,
             calls: [],
         })
