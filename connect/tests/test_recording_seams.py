@@ -56,3 +56,24 @@ class TestRecordingSeams(TransactionCase):
         self.assertIn(rec._get_media_src(
             self.env["connect.settings"].sudo().get_param("proxy_recordings")
         ), rec.recording_widget)
+
+    def test_media_download_url_defaults_to_media_url(self):
+        rec = self._recording(media_url="https://example.com/RE1.mp3")
+        self.assertEqual(
+            rec._get_media_download_url(), "https://example.com/RE1.mp3")
+
+    def test_voicemail_src_and_download_defaults(self):
+        call = self.env["connect.call"].create({
+            "caller": "+15550001111",
+            "called": "+15550002222",
+            "voicemail_url": "https://example.com/VM1.mp3",
+        })
+        self.assertEqual(
+            call._get_voicemail_src(False), "https://example.com/VM1.mp3")
+        self.assertEqual(
+            call._get_voicemail_src(True),
+            "/connect/voicemail/{}".format(call.id))
+        self.assertEqual(
+            call._get_voicemail_download_url(), "https://example.com/VM1.mp3")
+        call.voicemail_url = "/web/content/1"
+        self.assertEqual(call._get_voicemail_src(True), "/web/content/1")

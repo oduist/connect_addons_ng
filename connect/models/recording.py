@@ -94,7 +94,8 @@ class Recording(models.Model):
         # Bounded download: media_url points at the provider's
         # recording store; without a timeout a hung endpoint
         # pins the worker.
-        response = requests.get(self.media_url, stream=True, timeout=30)
+        response = requests.get(
+            self._get_media_download_url(), stream=True, timeout=30)
         response.raise_for_status()
         for chunk in response.iter_content(chunk_size=8192):
             if chunk:
@@ -295,6 +296,18 @@ class Recording(models.Model):
                 return '/connect/recording/{}'.format(self.id)
             return self.media_url
         return ''
+
+    def _get_media_download_url(self):
+        """Return the provider URL to download this recording from now.
+
+        Called only when the audio is actually fetched (proxy playback and
+        transcription), never while rendering a list or form, so a provider
+        override may call its API here. Seam: providers whose stored link is
+        short-lived (connect_telnyx: 10-minute signed URLs) override this to
+        request a fresh link.
+        """
+        self.ensure_one()
+        return self.media_url
 
     def get_attachment_media_url(self):
         self.ensure_one()

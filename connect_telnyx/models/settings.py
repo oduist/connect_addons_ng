@@ -481,6 +481,21 @@ class Settings(models.Model):
                 "Telnyx API returned an invalid JSON response."
             ) from exc
 
+    @api.model
+    def telnyx_get_recording_download_url(self, recording_id):
+        """Return a fresh download link for a stored Telnyx recording.
+
+        Telnyx keeps the recording, but every link it hands out (webhook
+        ``RecordingUrl`` and ``download_urls``) is a signed S3 URL valid for
+        10 minutes, so a link must be requested right before each download.
+        Returns '' when the recording has no downloadable file.
+        """
+        response = self.sudo().telnyx_api_request(
+            'GET', 'recordings/{}'.format(recording_id))
+        recording = response.get('data', response) or {}
+        urls = recording.get('download_urls') or {}
+        return urls.get('mp3') or urls.get('wav') or ''
+
     def telnyx_sync(self):
         if not self.sudo().get_param("telnyx_api_key"):
             raise ValidationError("You must set the Telnyx API key!")
