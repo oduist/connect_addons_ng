@@ -80,8 +80,8 @@ class Recording(models.Model):
     def _fetch_media_to(self, temp_file):
         """Write this recording's audio into an open binary file object.
 
-        Seam: storage add-ons (connect_s3) override this to read the audio
-        from their own backend instead of the provider's URL.
+        Seam: storage add-ons (connect_twilio's S3 storage) override this to
+        read the audio from their own backend instead of the provider's URL.
         """
         self.ensure_one()
         if self.recording_attachment:
@@ -285,8 +285,8 @@ class Recording(models.Model):
     def _get_media_src(self, proxy_recordings):
         """Return the URL the player should point at, '' when there is none.
 
-        Seam: storage add-ons (connect_s3) override this to hand out a
-        backend-specific URL, e.g. an S3 presigned URL.
+        Seam: storage add-ons (connect_twilio's S3 storage) override this to
+        hand out a backend-specific URL, e.g. an S3 presigned URL.
         """
         self.ensure_one()
         if self.recording_attachment:

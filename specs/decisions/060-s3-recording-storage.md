@@ -107,3 +107,30 @@ key layout Twilio writes were never seen. The parser is deliberately permissive
 is **unverified against production Twilio**. Closing this needs a live run with
 real AWS keys, the Console toggle flipped and a recorded call; `parse_s3_key` is
 the first thing to adjust if playback 404s.
+
+## Amendment (2026-10): folded into `connect_twilio`
+
+The feature never gained a second consumer: it remains Twilio's External S3
+Storage and nothing else. A separate module only added an install step, a
+licence entry and a dependency edge for something every Twilio customer who
+wants it already has `connect_twilio` for, so `connect_s3` is merged into
+`connect_twilio` (19.0.2.5.0). The code moves as is (`models/s3_utils.py`,
+`models/s3_settings.py`, `models/s3_recording.py`, `controllers/s3_media.py`,
+`views/s3_settings_views.xml`, `tests/test_s3_*.py`, docs under
+`connect_twilio/docs/s3-recording-storage*.md`); behaviour, fields, menu and
+external-id names are unchanged.
+
+- **`boto3` stays optional.** It is no longer declared in
+  `external_dependencies`, because that would make it mandatory for every
+  Twilio installation. Both imports were already lazy; `_get_s3_client()` now
+  raises a `ValidationError` naming the missing package, and the provisioning
+  action builds the client before importing `botocore`.
+- **Existing databases** are migrated by
+  `connect_twilio/migrations/19.0.2.5.0/pre-migration.py`: every `connect_s3`
+  external id moves to `connect_twilio` (per-model duplicates such as
+  `model_connect_settings` keep the `connect_twilio` copy), constraint and
+  relation rows are re-pointed, and `connect_s3` is marked `uninstalled`, so
+  stored settings, the view, the action and the menu keep their ids.
+- The Option 2 note above still holds: a provider-agnostic offload would be a
+  new module, and `s3_utils.py` remains free of Odoo, boto3 and Twilio imports.
+

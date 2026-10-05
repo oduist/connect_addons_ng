@@ -26,7 +26,11 @@ Two consequences worth knowing before you start:
 | Recording player | Audio streams from your bucket. Once a lifecycle rule deletes a file, the player says **Recording expired** and the transcript and summary are kept. |
 | Transcription | OpenAI transcription reads the audio from S3, so summaries keep working after the switch. |
 
-It owns no models of its own: it extends `connect.settings` and
-`connect.recording`, and subclasses the core media controller.
+S3 storage is part of the **Twilio** module (`connect_twilio`); there is no
+separate module to install. It adds no models of its own: it extends
+`connect.settings` and `connect.recording`, and subclasses the core media
+controller. The `boto3` Python package is needed on the Odoo server only once
+S3 storage is used.
 
-See [Setup](setup.md) for the step-by-step, and ADR-060 for the design.
+See [S3 Storage Setup](s3-recording-storage-setup.md) for the step-by-step, and
+ADR-060 for the design.

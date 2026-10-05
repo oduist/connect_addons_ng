@@ -47,8 +47,9 @@ The usual cause is **External Storage** on the Twilio account (Voice >
 Settings > Recording storage): Twilio writes the audio to your own S3 bucket
 and keeps only the metadata, so the Twilio API no longer serves the file and
 the bucket rejects an unauthenticated request. Either turn External Storage
-off so Twilio stores the media, or install **`connect_s3`**, which owns that
-setup and reads the audio back from the bucket.
+off so Twilio stores the media, or configure
+[S3 Recording Storage](s3-recording-storage.md), which owns that setup and reads
+the audio back from the bucket.
 
 ## Troubleshooting
 

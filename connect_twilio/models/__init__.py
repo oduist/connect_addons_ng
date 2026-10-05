@@ -14,3 +14,6 @@ from . import domain
 from . import whatsapp_sender
 from . import message_content_template
 from . import message_configuration
+from . import s3_utils
+from . import s3_settings
+from . import s3_recording

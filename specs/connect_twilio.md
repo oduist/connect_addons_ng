@@ -4,16 +4,24 @@
 
 - **Name:** Oduist Connect Twilio
 - **Technical:** `connect_twilio`
-- **Version:** 19.0.2.4.1
+- **Version:** 19.0.2.5.0
 - **Depends:** `connect`
-- **Python deps:** `twilio`
+- **Python deps:** `twilio`; optional `boto3` for S3 recording storage
+  (imported lazily, see [connect_twilio_s3.md](connect_twilio_s3.md))
 - **Application:** False
 - **License:** Other proprietary
 - **post_init_hook:** stamps the module install date and refreshes the Oduist
   license status (`update_license_status`)
 - **Migrations:** `migrations/19.0.2.0.1/post-migration.py` — drops the obsolete
   `is_default` column from `connect_twilio_number` (outbound defaults are owned
-  by `connect.twilio.outgoing_callerid`)
+  by `connect.twilio.outgoing_callerid`);
+  `migrations/19.0.2.5.0/pre-migration.py` — folds the former `connect_s3`
+  module into `connect_twilio` (moves its external ids, marks it uninstalled)
+- **S3 recording storage:** Twilio External S3 Storage (settings, bucket
+  provisioning, Twilio AWS credential, S3 read path) lives in
+  `models/s3_*.py`, `controllers/s3_media.py` and
+  `views/s3_settings_views.xml`; it is specified separately in
+  [connect_twilio_s3.md](connect_twilio_s3.md)
 
 ## Overview
 
@@ -1055,7 +1063,7 @@ hear the event and the forward picker would render without its search box.
 ```
 connect_twilio
   depends: ['connect']
-  python:  ['twilio']
+  python:  ['twilio']          (boto3 optional, S3 recording storage only)
 ```
 
 **Note:** `openai` is NOT a dependency of `connect_twilio`. It is a dependency of core

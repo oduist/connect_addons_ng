@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Seams that storage add-ons (connect_s3) override.
+"""Seams that storage add-ons (connect_twilio S3 storage) override.
 
 These lock the default behavior in place so an add-on that calls super()
 keeps getting the documented fallbacks.
