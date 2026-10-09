@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Telnyx',
-    'version': '19.0.1.4.7',
+    'version': '19.0.1.4.8',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Telnyx integration for Oduist Connect',
