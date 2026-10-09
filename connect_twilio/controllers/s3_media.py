@@ -4,7 +4,7 @@ import logging
 from odoo import http
 
 from odoo.addons.connect.controllers.main import ConnectController
-from odoo.addons.connect_s3.models import s3_utils
+from odoo.addons.connect_twilio.models import s3_utils
 
 logger = logging.getLogger(__name__)
 

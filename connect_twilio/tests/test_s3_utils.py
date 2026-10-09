@@ -5,7 +5,7 @@ from datetime import datetime
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
-from odoo.addons.connect_s3.models import s3_utils
+from odoo.addons.connect_twilio.models import s3_utils
 
 
 @tagged("post_install", "-at_install")

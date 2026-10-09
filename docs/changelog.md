@@ -24,6 +24,13 @@ version bumps, repository moves — is deliberately left out.
 
 ## 2026-10
 
+### Changed
+- **connect_twilio** — S3 recording storage is now part of the Twilio module
+  instead of the separate **connect_s3** app. Nothing to install: upgrading
+  **connect_twilio** carries existing S3 settings over unchanged, and the
+  **S3 Storage** menu stays where it was. The `boto3` package is still needed
+  only on servers that use S3 storage.
+
 ### Fixed
 - **connect_freeswitch, connect_twilio, connect_telnyx, connect_infobip** —
   Giving a user an extension works again on every series. Saving an extension

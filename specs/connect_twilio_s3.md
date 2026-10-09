@@ -1,21 +1,18 @@
-# Connect S3 Module Specification
+# Twilio S3 Recording Storage Specification
 
 ## Module Info
 
-- **Name:** Oduist Connect S3 Recording Storage
-- **Technical:** `connect_s3`
-- **Version:** 19.0.1.0.0
-- **Depends:** `connect`, `connect_twilio`
-- **External dependencies:** `boto3` (python)
-- **Application:** False
-- **License:** Other proprietary
-- **post_init_hook:** stamps the module install date and refreshes the Oduist
-  license status (mirrors the per-module hook pattern of the connect suite)
+- **Part of:** `connect_twilio` (since 19.0.2.5.0). It was the separate
+  `connect_s3` module (19.0.1.0.0) until it was folded into `connect_twilio`;
+  see the amendment in ADR-060 and *Migration from connect_s3* below.
+- **Optional Python dependency:** `boto3`, imported lazily and not declared in
+  `external_dependencies`: it is needed only once S3 storage is configured, and
+  a missing package fails at the button with a clear message.
 - **ADR:** [060-s3-recording-storage](decisions/060-s3-recording-storage.md)
 
 ## Overview
 
-`connect_s3` stores Twilio call recordings in a customer-owned AWS S3 bucket
+The S3 storage part of `connect_twilio` stores Twilio call recordings in a customer-owned AWS S3 bucket
 instead of Twilio's cloud, so the customer owns the media lifecycle and avoids
 Twilio storage charges.
 
@@ -61,10 +58,10 @@ Twilio  ──writes audio──▶  s3://<bucket>/<prefix>/...
    │                              ▲
    │ RecordingUrl (S3 https URL)  │ boto3 get_object / presigned URL
    ▼                              │
-connect.recording.media_url ──▶ connect_s3 read path ──▶ player / transcription
+connect.recording.media_url ──▶ S3 read path ──▶ player / transcription
 ```
 
-`connect_s3` owns **no models of its own**. It extends two existing models
+S3 storage owns **no models of its own**. It extends two existing models
 (`connect.settings`, `connect.recording`) and one controller
 (`ConnectController`). Consequently it ships **no `ir.model.access.csv`** — there
 is no new model to grant access on. Everything it exposes in the UI is gated on
@@ -72,7 +69,7 @@ is no new model to grant access on. Everything it exposes in the UI is gated on
 
 ---
 
-## Models (connect_s3/models/)
+## Models (connect_twilio/models/)
 
 ### 1. `s3_utils.py` — pure helpers (no Odoo, no boto3 imports)
 
@@ -92,10 +89,10 @@ isolation, without a database or AWS.
 Module constant: `S3_BUCKET_PREFIX = "oduist-connect-"`. It must stay in sync
 with the ARNs in `build_iam_policy`.
 
-### 2. `settings.py` — `_inherit = 'connect.settings'`
+### 2. `s3_settings.py` — `_inherit = 'connect.settings'`
 
-Registers `'connect_s3'` in `ODUIST_MODULES` (`connect/models/license.py`) for
-license tracking, following the pattern of every other module.
+Licensed as part of `connect_twilio`; it no longer registers a module of its
+own in `ODUIST_MODULES`.
 
 **Fields**
 
@@ -118,7 +115,7 @@ license tracking, following the pattern of every other module.
 **Protected-field masking.** `aws_secret_access_key` follows the established
 pattern: the real value carries `groups="base.group_erp_manager"`, the UI binds
 to `display_aws_secret_access_key`, and `write()` copies the typed value across
-and overwrites the display field with asterisks. `connect_s3` declares its own
+and overwrites the display field with asterisks. `s3_settings.py` declares its own
 `S3_PROTECTED_FIELDS = ["display_aws_secret_access_key"]` and its own `write()`
 override, exactly as `connect_twilio` does with `TWILIO_PROTECTED_FIELDS` — the
 core `PROTECTED_FIELDS` list is not touched.
@@ -149,7 +146,7 @@ The Twilio account credentials these actions use (`account_sid`, `auth_token`)
 live on `connect_twilio`'s `connect.settings` extension — available because of
 the hard dependency.
 
-### 3. `recording.py` — `_inherit = 'connect.recording'`
+### 3. `s3_recording.py` — `_inherit = 'connect.recording'`
 
 **Fields**
 
@@ -184,12 +181,12 @@ series branches" invariant is unaffected.
 | `_fetch_media_to(temp_file)` | `transcribe_recording()` | Write `recording_attachment` bytes if present, else stream `media_url` with `requests.get(..., timeout=30)`. |
 | `_get_media_src(proxy_recordings)` | `_get_recording_widget()` | Attachment URL, else `/connect/recording/<id>` when proxying, else the raw `media_url`, else `''`. |
 
-Without these, `connect_s3` would have to copy both methods wholesale and drift
+Without these, the S3 storage would have to copy both methods wholesale and drift
 from core on every future change.
 
 ---
 
-## Controllers — connect_s3/controllers/main.py
+## Controllers — connect_twilio/controllers/s3_media.py
 
 `class ConnectS3Controller(ConnectController)` — inherits the core controller
 from `odoo.addons.connect.controllers.main` and overrides one method.
@@ -216,7 +213,7 @@ the Twilio token. `ConnectS3Controller._serve_media` simply falls through to
 
 ---
 
-## Views — connect_s3/views/settings.xml
+## Views — connect_twilio/views/s3_settings_views.xml
 
 - `ir.actions.server` `s3_settings_action` → `action = model.open_s3_form()`
 - `menuitem` `s3_settings_menu`, `parent="connect.menu_connect_settings"`,
@@ -256,7 +253,7 @@ No new models, therefore no `ir.model.access.csv`. Access is controlled by:
 
 ---
 
-## Tests — connect_s3/tests/
+## Tests — connect_twilio/tests/test_s3_*.py
 
 | File | Covers |
 |------|--------|
@@ -270,13 +267,24 @@ No test contacts AWS or Twilio — the boto3 client is stubbed.
 
 ## Documentation
 
-- `connect_s3/docs/index.md` — module overview (what it does, mixed mode,
-  expiry indicator)
-- `connect_s3/docs/setup.md` — the full setup walkthrough: AWS IAM user and
-  policy, Odoo settings, the manual Twilio Console step
-- `connect_s3/mkdocs.yml` — per-module docs config
-- root `mkdocs.yml` — an `!include ./connect_s3/mkdocs.yml` entry in `nav`
+- `connect_twilio/docs/s3-recording-storage.md` — overview (what it does,
+  mixed mode, expiry indicator)
+- `connect_twilio/docs/s3-recording-storage-setup.md` — the full setup
+  walkthrough: AWS IAM user and policy, Odoo settings, the manual Twilio Console
+  step
+- both pages are in the `connect_twilio/mkdocs.yml` nav
 - `requirements.txt` — `boto3`
+
+## Migration from connect_s3
+
+`connect_twilio/migrations/19.0.2.5.0/pre-migration.py` runs when an existing
+database upgrades `connect_twilio` and finds a `connect_s3` module record. It
+moves every `connect_s3` external id to `connect_twilio` (dropping the per-model
+duplicates both modules had, such as `model_connect_settings`), re-points
+`ir_model_constraint`/`ir_model_relation` rows, and marks `connect_s3`
+`uninstalled`. Field definitions, selection values, the settings view, action
+and menu therefore keep their database ids, and the stored S3 settings and
+recordings are untouched. Upgrading `connect_twilio` is the only step required.
 
 ---
 

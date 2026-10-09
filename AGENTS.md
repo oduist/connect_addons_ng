@@ -10,8 +10,7 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 
 - **`connect`** — Technology-agnostic core: the shared call/message ledger (`connect.call`, `connect.channel`, `connect.recording`, `connect.message`), PBX people (`connect.user`), common settings, OpenAI transcription/summarization, partner integration. **Never imports provider-specific code and holds NO PBX-configuration models.**
 - **`connect_book`** — the documentation, served inside Odoo (ADR-059). `connect.book` is an abstract model that reads every installed `connect*` module's own `docs/` folder and its `mkdocs.yml` `nav` — the same source the documentation site is built from — and assembles two client actions: **User Guide** (`connect.group_user`) and **Admin Guide** (`connect.group_admin`). A page's audience comes from an explicit `Admin Guide:`/`User Guide:` nav section, else the `docs/admin/` or `docs/user/` path prefix, else admin. Ships a dependency-free Markdown renderer covering the MkDocs subset in use (`!!!` admonitions, `=== "tabs"`). **Documentation** submenu under the Connect app. Depends `['connect', 'web']`.
-- **`connect_twilio`** — Twilio integration. Owns its PBX configuration: `connect.twilio.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,twiml,domain}`, WhatsApp, sms.composer, webhook handlers, Twilio Voice JS SDK phone widget. **Twilio** submenu under the Connect app (incl. Messages).
-- **`connect_s3`** — Twilio External S3 recording storage. Owns **no** models; extends `connect.settings` (AWS config, bucket provisioning via boto3, Twilio AWS credential management) and `connect.recording` (read media back from S3, `recording_expired`), and subclasses the core media controller. Twilio writes recordings into the customer's bucket itself; Odoo only configures and reads. Mixed mode: pre-switch recordings stay on Twilio. Menu under Connect → Configuration → **S3 Storage**. Depends `['connect', 'connect_twilio']`. See ADR-060.
+- **`connect_twilio`** — Twilio integration. Owns its PBX configuration: `connect.twilio.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,twiml,domain}`, WhatsApp, sms.composer, webhook handlers, Twilio Voice JS SDK phone widget. **Twilio** submenu under the Connect app (incl. Messages). Also carries **S3 recording storage** (Twilio External S3 Storage; formerly the separate `connect_s3` module, ADR-060): extends `connect.settings` (AWS config, bucket provisioning via lazily imported boto3, Twilio AWS credential management) and `connect.recording` (read media back from S3, `recording_expired`), and subclasses the core media controller. Twilio writes recordings into the customer's bucket itself; Odoo only configures and reads. Mixed mode: pre-switch recordings stay on Twilio. Menu under Connect → Configuration → **S3 Storage**.
 - **`connect_freeswitch`** — FreeSWITCH integration. Owns `connect.freeswitch.{exten,callflow,callflow_choice,number,endpoint,outgoing_callerid}` plus gateways/routes/FIFO/parking/firewall, Verto WebRTC client, XML dialplan generation. **FreeSWITCH** submenu under the Connect app.
 - **`connect_freeswitch_website`** — website widgets for FreeSWITCH number working schedules (ADR-037): Phone Status and Phone Opening Hours snippets + public JSON endpoints under `/freeswitch/schedule/*`. The only module that may depend on `website`; not auto-installed. Core `connect` owns the schedule engine (`connect.schedule` on top of `resource.calendar`).
 - **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). Owns `connect.asterisk.{endpoint,number}`; AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). **Asterisk** submenu under the Connect app. See ADR-026.
@@ -34,7 +33,7 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_project`** — provider-agnostic Project bridge — links `connect.call` to `project.task`/`project.project` (by partner, open task first); depends `connect` + `project`.
 - **`connect_helpdesk`** — provider-agnostic Helpdesk bridge (Odoo **Enterprise** `helpdesk`). Extends `connect.call` (`ticket` → `helpdesk.ticket`), `helpdesk.ticket` (`connect_calls`, stored/indexed `phone_normalized`, `get_ticket_by_number()`) and `connect.settings` (the `auto_create_tickets_*` toggles incl. default team/assignee). Matches open tickets by number at call start and auto-creates tickets at call end, mirroring `connect_crm`; posts AI summaries to ticket chatter. Owns no models and no menu — a **Helpdesk** page on the Connect settings form plus stat button/list column on tickets. Depends `['connect', 'helpdesk']`.
 
-Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_vonage` and `connect_3cx` all depend on `connect` but are independent of each other. `connect_dograh` and `connect_pipecat` depend on `connect` + `connect_freeswitch` (FreeSWITCH add-ons). `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046), as does `connect_s3` (S3 recording storage, ADR-060). `connect_crm`, `connect_hr`, `connect_sale`, `connect_account`, `connect_project` and `connect_helpdesk` are likewise independent, provider-agnostic bridges that only depend on `connect` plus their respective host app. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module). `connect_memory` depends on `connect`; the domain module `connect_memory_sale` depends on `connect_memory` + `sale` + `account`.
+Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_vonage` and `connect_3cx` all depend on `connect` but are independent of each other. `connect_dograh` and `connect_pipecat` depend on `connect` + `connect_freeswitch` (FreeSWITCH add-ons). `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046). `connect_crm`, `connect_hr`, `connect_sale`, `connect_account`, `connect_project` and `connect_helpdesk` are likewise independent, provider-agnostic bridges that only depend on `connect` plus their respective host app. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module). `connect_memory` depends on `connect`; the domain module `connect_memory_sale` depends on `connect_memory` + `sale` + `account`.
 
 ## Architecture
 
@@ -84,7 +83,7 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/architecture.md` — Authoritative design specification (boundaries, extension pattern, data flow)
 - `specs/connect_core.md` — Core module spec (models, fields, methods, security, views)
 - `specs/connect_twilio.md` — Twilio module spec (models, webhooks, controllers, frontend)
-- `specs/connect_s3.md` — S3 recording storage module spec (settings extension, media read path, Twilio credentials)
+- `specs/connect_twilio_s3.md` — Twilio S3 recording storage spec (settings extension, media read path, Twilio credentials, migration from `connect_s3`)
 - `specs/connect_freeswitch.md` — FreeSWITCH module spec (models, dialplan, firewall, controllers, frontend)
 - `specs/connect_asterisk.md` — Asterisk module spec (models, agent contract, controllers, frontend)
 - `specs/connect_telnyx.md` — Telnyx module spec (models, TeXML routing, controllers, frontend)
@@ -364,7 +363,6 @@ committed in the main repository with the implementation they verify.
 connect_addons_ng/
 ├── connect/tests/test_*.py
 ├── connect_twilio/tests/test_*.py
-├── connect_s3/tests/test_*.py
 ├── connect_freeswitch/tests/test_*.py
 ├── connect_freeswitch_website/tests/test_*.py
 ├── connect_asterisk/tests/test_*.py
@@ -426,7 +424,6 @@ Use oduflow to run Odoo tests in the target environment. In the normal
 ```bash
 oduflow run_odoo_tests connect
 oduflow run_odoo_tests connect_twilio
-oduflow run_odoo_tests connect_s3
 oduflow run_odoo_tests connect_freeswitch
 oduflow run_odoo_tests connect_asterisk
 oduflow run_odoo_tests connect_freeswitch_website

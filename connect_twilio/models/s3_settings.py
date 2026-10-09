@@ -5,11 +5,7 @@ import requests
 from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError
 
-from odoo.addons.connect.models.license import ODUIST_MODULES
-
 from . import s3_utils
-
-ODUIST_MODULES.append('connect_s3')
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +111,7 @@ class Settings(models.Model):
             "res_id": rec.id,
             "name": "S3 Storage",
             "view_mode": "form",
-            "view_id": self.env.ref("connect_s3.connect_s3_settings_form").id,
+            "view_id": self.env.ref("connect_twilio.connect_s3_settings_form").id,
             "target": "current",
         }
 
@@ -127,11 +123,16 @@ class Settings(models.Model):
     def _get_s3_client(self):
         """boto3 S3 client built from the singleton settings.
 
-        Imported lazily so the module still loads when boto3 is missing; the
-        manifest declares it, but a stale environment should fail at the button
-        rather than at registry load.
+        Imported lazily: boto3 is only needed once S3 storage is configured,
+        so Twilio users who never enable it do not need the package installed.
         """
-        import boto3
+        try:
+            import boto3
+        except ImportError as e:
+            raise ValidationError(
+                "S3 recording storage needs the 'boto3' Python package. "
+                "Install it on the Odoo server and restart Odoo."
+            ) from e
         rec = self.env["connect.settings"].sudo().search([], limit=1)
         return boto3.client(
             "s3",
@@ -146,11 +147,13 @@ class Settings(models.Model):
         Idempotent — re-running it on an existing bucket re-applies the
         configuration instead of failing.
         """
-        from botocore.exceptions import ClientError
         self.ensure_one()
         if not (self.aws_s3_bucket and self.aws_region):
             raise ValidationError("Set S3 bucket name and region first.")
+        # The client is built first so a missing boto3 fails with a clear
+        # message; botocore ships with boto3.
         s3 = self._get_s3_client()
+        from botocore.exceptions import ClientError
         prefix = self._effective_s3_prefix()
         bucket = self.aws_s3_bucket_name
         try:
@@ -206,8 +209,8 @@ class Settings(models.Model):
     def _twilio_auth(self):
         """(account_sid, auth_token) for the Twilio accounts API.
 
-        Both fields are added to connect.settings by connect_twilio, which is a
-        hard dependency of this module.
+        Both fields are added to connect.settings by connect_twilio's own
+        settings model (models/settings.py).
         """
         settings = self.env["connect.settings"].sudo()
         return settings.get_param("account_sid"), settings.get_param("auth_token")

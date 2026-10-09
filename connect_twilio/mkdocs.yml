@@ -11,4 +11,6 @@ nav:
   - Call Flows & TwiML Apps: call-flows-twiml.md
   - Messaging (SMS & WhatsApp): messaging.md
   - Webhooks & Security: webhooks-security.md
+  - S3 Recording Storage: s3-recording-storage.md
+  - S3 Storage Setup: s3-recording-storage-setup.md
   - Maintenance: maintenance.md
