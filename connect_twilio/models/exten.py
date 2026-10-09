@@ -112,6 +112,31 @@ class Exten(models.Model):
         return self.env[self.model].browse(self.res_id).exists()
 
     @api.model
+    def _repair_dst_links(self):
+        """Point each destination back at the extension that reaches it.
+
+        Builds before the _set_dst fix stored model/res_id on the extension
+        but never wrote the back-link on the destination, so the list
+        showed "1001 -> user" while the user still had no extension number
+        and every inbound number routed to them answered 404. Saving the
+        extension again does not help (an unchanged destination is not
+        sent), so the upgrade migration runs it once. Idempotent; a destination
+        whose back-link already points at an extension that reaches it is
+        left alone.
+        """
+        for rec in self.search([('model', '!=', False), ('res_id', '!=', 0)]):
+            dst = rec._stored_dst()
+            if not dst:
+                continue
+            field_name = self._dst_exten_field(dst)
+            if not field_name:
+                continue
+            current = dst[field_name]
+            if current == rec or (current and current._stored_dst() == dst):
+                continue
+            dst[field_name] = rec
+
+    @api.model
     def _check_number_available(self, number):
         """Refuse a number another extension already carries.
 

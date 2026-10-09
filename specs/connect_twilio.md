@@ -445,6 +445,16 @@ did nothing, so moving an extension to another user — or clearing its
 destination — left the first user still pointing at it, with a stale extension
 number for the caller ID and the directory to read.
 
+`_repair_dst_links()` re-points every destination at the extension that
+reaches it. Builds before the `_set_dst` fix (which reads `dst` once, before
+the write) stored `model`/`res_id` on the extension but lost the back-link on
+the destination, so the extension list showed "1001 → user" while the user had
+no extension number and inbound numbers routed to them answered 404. Re-saving
+the extension does not help — an unchanged destination is not sent — so each
+provider's upgrade migration calls it once. It is idempotent and leaves a
+destination alone when its back-link already names an extension that reaches
+it.
+
 ---
 
 ### 11. user_callflow.py - `connect.twilio.user_callflow` + `connect.twilio.user_callflow_call` (own models, ADR-031)
