@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Telnyx
 - **Technical:** `connect_telnyx`
-- **Version:** 19.0.1.4.7
+- **Version:** 19.0.1.4.8
 - **Depends:** `connect`
 - **Python deps:** `telnyx`, `nacl` (PyNaCl)
 - **Application:** False
@@ -235,7 +235,9 @@ AI-assistant synchronization failures,
 `_ensure_telnyx_messaging_profile()`, `originate_call()` (core
 dispatcher override for the `'telnyx'` key; originates via
 `POST /texml/Accounts/{sid}/Calls` with the mandatory `ApplicationSid`
-of the number application), `_sync_telnyx_tts_voices()` /
+of the number application, sent through `telnyx_api_request()` with
+PascalCase field names because the SDK method's signature is unstable
+across `telnyx` releases), `_sync_telnyx_tts_voices()` /
 `telnyx_sync_tts_voices()` (cache/refresh the account voice catalog),
 `telnyx_get_voice_options(language, provider, search, limit, include_basic)`
 (bounded autocomplete query over the cache; a voice whose language or
