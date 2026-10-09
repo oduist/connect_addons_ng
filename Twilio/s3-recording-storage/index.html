@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" data-base="../">
+<html lang="en" data-theme="dark" data-base="../../">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Overview — Oduist Connect Documentation</title>
+    <title>S3 Recording Storage — Oduist Connect Documentation</title>
     
       <meta name="description" content="Telephony integration platform for Odoo">
     
-      <link rel="icon" href="../assets/img/logo.png">
+      <link rel="icon" href="../../assets/img/logo.png">
     <script>
       (function () {
         var stored = null;
@@ -22,7 +22,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
     
-      <link rel="stylesheet" href="../assets/app.css">
+      <link rel="stylesheet" href="../../assets/app.css">
     
   </head>
   <body>
@@ -33,9 +33,9 @@
               aria-label="Open navigation">☰</button>
     
 
-    <a class="docs-header__brand" href="..">
+    <a class="docs-header__brand" href="../..">
       
-        <img src="../assets/img/logo.png" alt="" width="24" height="24">
+        <img src="../../assets/img/logo.png" alt="" width="24" height="24">
       
       <span>Oduist Connect Documentation</span>
     </a>
@@ -71,12 +71,12 @@
     <div class="docs-crumbs__inner">
       <ol class="docs-crumbs__list">
         
-          <li><a href="..">Home</a></li>
+          <li><a href="../..">Home</a></li>
         
         
           <li>
             
-              <a href="./">S3 Recording Storage</a>
+              <a href="../">Twilio</a>
             
           </li>
         
@@ -99,69 +99,19 @@
       
     
       
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
         
   
     <li class="docs-nav__item">
       <details open>
-        <summary class="docs-nav__section">S3 Recording Storage</summary>
+        <summary class="docs-nav__section">Twilio</summary>
         <ul class="docs-nav__list">
           
             
   
     <li class="docs-nav__item">
-      <a class="docs-nav__link docs-nav__link--active"
-         href="./"
-         aria-current="page">
+      <a class="docs-nav__link"
+         href="../"
+         >
         Overview
       </a>
     </li>
@@ -172,9 +122,117 @@
   
     <li class="docs-nav__item">
       <a class="docs-nav__link"
-         href="setup/"
+         href="../installation/"
          >
-        Setup
+        Installation
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../configuration/"
+         >
+        Account Configuration
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../users-and-sip/"
+         >
+        Users, SIP & Web Phone
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../numbers-and-routing/"
+         >
+        Numbers & Call Routing
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../call-flows-twiml/"
+         >
+        Call Flows & TwiML Apps
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../messaging/"
+         >
+        Messaging (SMS & WhatsApp)
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../webhooks-security/"
+         >
+        Webhooks & Security
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link docs-nav__link--active"
+         href="./"
+         aria-current="page">
+        S3 Recording Storage
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../s3-recording-storage-setup/"
+         >
+        S3 Storage Setup
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../maintenance/"
+         >
+        Maintenance
       </a>
     </li>
   
@@ -185,6 +243,54 @@
     </li>
   
 
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
       
     
       
@@ -235,9 +341,13 @@ download and transcription.</p>
 </tr>
 </tbody>
 </table>
-<p>It owns no models of its own: it extends <code>connect.settings</code> and
-<code>connect.recording</code>, and subclasses the core media controller.</p>
-<p>See <a href="setup/">Setup</a> for the step-by-step, and ADR-060 for the design.</p>
+<p>S3 storage is part of the <strong>Twilio</strong> module (<code>connect_twilio</code>); there is no
+separate module to install. It adds no models of its own: it extends
+<code>connect.settings</code> and <code>connect.recording</code>, and subclasses the core media
+controller. The <code>boto3</code> Python package is needed on the Odoo server only once
+S3 storage is used.</p>
+<p>See <a href="../s3-recording-storage-setup/">S3 Storage Setup</a> for the step-by-step, and
+ADR-060 for the design.</p>
   </article>
 
       </main>
@@ -281,16 +391,16 @@ download and transcription.</p>
   
     <nav class="docs-pager" aria-label="Page navigation">
       
-        <a class="docs-pager__link" href="../Project/security/">
+        <a class="docs-pager__link" href="../webhooks-security/">
           <span class="docs-pager__label">Previous</span>
-          <span>Security</span>
+          <span>Webhooks & Security</span>
         </a>
       
       
         <a class="docs-pager__link docs-pager__link--next"
-           href="setup/">
+           href="../s3-recording-storage-setup/">
           <span class="docs-pager__label">Next</span>
-          <span>Setup</span>
+          <span>S3 Storage Setup</span>
         </a>
       
     </nav>
@@ -299,16 +409,16 @@ download and transcription.</p>
   <div class="docs-footer__meta">
     <span>Copyright &copy; Oduist OÜ</span>
     
-      <a href="https://github.com/oduist/connect_addons_ng/edit/19.0/connect_s3/docs/index.md" rel="noopener" target="_blank">Edit on GitHub</a>
+      <a href="https://github.com/oduist/connect_addons_ng/edit/19.0/connect_twilio/docs/s3-recording-storage.md" rel="noopener" target="_blank">Edit on GitHub</a>
     
   </div>
 </footer>
 
     
-      <script src="../assets/vendor/lunr.min.js"></script>
-      <script type="module" src="../assets/theme.js"></script>
+      <script src="../../assets/vendor/lunr.min.js"></script>
+      <script type="module" src="../../assets/theme.js"></script>
       
-        <script src="../search/main.js"></script>
+        <script src="../../search/main.js"></script>
       
     
   </body>

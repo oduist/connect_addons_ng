@@ -87,6 +87,14 @@ from the changes themselves rather than from commit subjects. Work nobody
 outside the repository would notice — refactoring, formatting, tests, CI,
 version bumps, repository moves — is deliberately left out.</p>
 <h2 id="2026-10">2026-10</h2>
+<h3 id="changed">Changed</h3>
+<ul>
+<li><strong>connect_twilio</strong> — S3 recording storage is now part of the Twilio module
+  instead of the separate <strong>connect_s3</strong> app. Nothing to install: upgrading
+  <strong>connect_twilio</strong> carries existing S3 settings over unchanged, and the
+  <strong>S3 Storage</strong> menu stays where it was. The <code>boto3</code> package is still needed
+  only on servers that use S3 storage.</li>
+</ul>
 <h3 id="fixed">Fixed</h3>
 <ul>
 <li><strong>connect_freeswitch, connect_twilio, connect_telnyx, connect_infobip</strong> —
@@ -103,7 +111,7 @@ version bumps, repository moves — is deliberately left out.</p>
   are covered too. Opening a call list does not contact Telnyx.</li>
 </ul>
 <h2 id="2026-09">2026-09</h2>
-<h3 id="changed">Changed</h3>
+<h3 id="changed_1">Changed</h3>
 <ul>
 <li><strong>connect_twilio</strong> — The web phone takes a tenth less room on screen. The
   panel is now drawn at its full size and displayed slightly smaller, with the
@@ -164,7 +172,7 @@ version bumps, repository moves — is deliberately left out.</p>
 <li><strong>connect_freeswitch</strong> — Fallback routing for call queues, so a queue nobody
   answers hands the call on instead of dropping it.</li>
 </ul>
-<h3 id="changed_1">Changed</h3>
+<h3 id="changed_2">Changed</h3>
 <ul>
 <li>Every module's Apps Store page was rebuilt in the Aurora house style, and the
   Accounting, HR, Project and Sales bridges got one for the first time.</li>
@@ -226,7 +234,7 @@ model separation that lets them run side by side.</p>
 <li>The documentation site, published from the repository.</li>
 <li>An Apps Store page for every module.</li>
 </ul>
-<h3 id="changed_2">Changed</h3>
+<h3 id="changed_3">Changed</h3>
 <ul>
 <li><strong>Provider model separation.</strong> Extensions, numbers, call flows, caller IDs and
   endpoints are now owned by each provider instead of shared, so a FreeSWITCH
@@ -267,7 +275,7 @@ model separation that lets them run side by side.</p>
 <li><strong>connect_freeswitch</strong> — Endpoint authentication passwords are generated as
   passphrases instead of being set by hand.</li>
 </ul>
-<h3 id="changed_3">Changed</h3>
+<h3 id="changed_4">Changed</h3>
 <ul>
 <li>Caller IDs are normalised to E.164 before a contact is matched, so the same
   number written three ways still finds one contact.</li>
@@ -339,7 +347,7 @@ model separation that lets them run side by side.</p>
 <li><strong>connect_twilio</strong> — The Twilio integration became a module of its own.</li>
 <li><strong>connect_freeswitch</strong> — Call detail records are read from FreeSWITCH.</li>
 </ul>
-<h3 id="changed_4">Changed</h3>
+<h3 id="changed_5">Changed</h3>
 <ul>
 <li><strong>The platform was split into a technology-agnostic core plus provider
   modules.</strong> <code>connect</code> keeps the shared call, message and recording history and
@@ -395,6 +403,10 @@ There is no holding area: a change is recorded against the month it ships in.</p
             <ul class="docs-toc__list docs-toc__list--nested">
               
                 <li>
+                  <a class="docs-toc__link" href="#changed">Changed</a>
+                </li>
+              
+                <li>
                   <a class="docs-toc__link" href="#fixed">Fixed</a>
                 </li>
               
@@ -408,7 +420,7 @@ There is no holding area: a change is recorded against the month it ships in.</p
             <ul class="docs-toc__list docs-toc__list--nested">
               
                 <li>
-                  <a class="docs-toc__link" href="#changed">Changed</a>
+                  <a class="docs-toc__link" href="#changed_1">Changed</a>
                 </li>
               
                 <li>
@@ -429,7 +441,7 @@ There is no holding area: a change is recorded against the month it ships in.</p
                 </li>
               
                 <li>
-                  <a class="docs-toc__link" href="#changed_1">Changed</a>
+                  <a class="docs-toc__link" href="#changed_2">Changed</a>
                 </li>
               
                 <li>
@@ -450,7 +462,7 @@ There is no holding area: a change is recorded against the month it ships in.</p
                 </li>
               
                 <li>
-                  <a class="docs-toc__link" href="#changed_2">Changed</a>
+                  <a class="docs-toc__link" href="#changed_3">Changed</a>
                 </li>
               
                 <li>
@@ -475,7 +487,7 @@ There is no holding area: a change is recorded against the month it ships in.</p
                 </li>
               
                 <li>
-                  <a class="docs-toc__link" href="#changed_3">Changed</a>
+                  <a class="docs-toc__link" href="#changed_4">Changed</a>
                 </li>
               
                 <li>
@@ -534,7 +546,7 @@ There is no holding area: a change is recorded against the month it ships in.</p
                 </li>
               
                 <li>
-                  <a class="docs-toc__link" href="#changed_4">Changed</a>
+                  <a class="docs-toc__link" href="#changed_5">Changed</a>
                 </li>
               
             </ul>

@@ -205,6 +205,30 @@
             
   
     <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../s3-recording-storage/"
+         >
+        S3 Recording Storage
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
+      <a class="docs-nav__link"
+         href="../s3-recording-storage-setup/"
+         >
+        S3 Storage Setup
+      </a>
+    </li>
+  
+
+          
+            
+  
+    <li class="docs-nav__item">
       <a class="docs-nav__link docs-nav__link--active"
          href="./"
          aria-current="page">
@@ -219,8 +243,6 @@
     </li>
   
 
-      
-    
       
     
       
@@ -334,8 +356,9 @@ standard account.</p>
 Settings &gt; Recording storage): Twilio writes the audio to your own S3 bucket
 and keeps only the metadata, so the Twilio API no longer serves the file and
 the bucket rejects an unauthenticated request. Either turn External Storage
-off so Twilio stores the media, or install <strong><code>connect_s3</code></strong>, which owns that
-setup and reads the audio back from the bucket.</p>
+off so Twilio stores the media, or configure
+<a href="../s3-recording-storage/">S3 Recording Storage</a>, which owns that setup and reads
+the audio back from the bucket.</p>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <table>
 <thead>
@@ -457,9 +480,9 @@ setup and reads the audio back from the bucket.</p>
   
     <nav class="docs-pager" aria-label="Page navigation">
       
-        <a class="docs-pager__link" href="../webhooks-security/">
+        <a class="docs-pager__link" href="../s3-recording-storage-setup/">
           <span class="docs-pager__label">Previous</span>
-          <span>Webhooks & Security</span>
+          <span>S3 Storage Setup</span>
         </a>
       
       
