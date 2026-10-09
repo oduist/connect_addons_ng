@@ -142,7 +142,9 @@ Order: `id desc`
 | `_get_name()` | Compute display name from caller/called |
 | `_get_ref()` | Compute reference to linked record |
 | `_get_recording_data()` | Compute recording/widget fields |
-| `_get_voicemail_widget()` | HTML audio player for voicemail |
+| `_get_voicemail_widget()` | HTML audio player for voicemail, pointing at `_get_voicemail_src()` |
+| `_get_voicemail_src(proxy_recordings)` | Player source: a local `/...` URL as is, else `/connect/voicemail/<id>` when proxying, else the raw `voicemail_url`. Must not call provider APIs |
+| `_get_voicemail_download_url()` | Provider URL the voicemail proxy downloads from now (default `voicemail_url`); overridden by providers with short-lived links |
 | `_get_voicemail_icon()` | Voicemail indicator icon |
 | `_get_duration_human()` | Human-readable duration string |
 | `register_call()` | Post call summary to partner chatter |
@@ -304,7 +306,10 @@ Order: `id desc`
 
 | Method | Description |
 |--------|-------------|
-| `_get_recording_widget()` | HTML audio player with proxy URL |
+| `_get_recording_widget()` | HTML audio player pointing at `_get_media_src()` |
+| `_get_media_src(proxy_recordings)` | Audio source for the player: attachment URL when audio is stored on the record, else `/connect/recording/<id>` proxy or the raw `media_url`. Must not call provider APIs |
+| `_get_media_download_url()` | Provider URL to download the audio from now (default `media_url`). Called only by the proxy route and `_fetch_media_to`, never while rendering; providers with short-lived links override it (connect_telnyx) |
+| `_fetch_media_to(temp_file)` | Write the audio bytes into a temp file: decode `recording_attachment` if present, else download `_get_media_download_url()` |
 | `_compute_users()` | Combine caller, called, and answered Odoo users for list display |
 | `_get_list_view_summary()` | Truncated summary for list views |
 | `_get_duration_human()` | Human-readable duration |
@@ -575,8 +580,8 @@ regeneration hooks.
 | Route | Method | Auth | Description |
 |-------|--------|------|-------------|
 | `/connect/transcript/<id>` | POST | - | Receive transcript callback |
-| `/connect/recording/<id>` | GET | user | Serve proxied recording audio |
-| `/connect/voicemail/<id>` | GET | user | Serve proxied voicemail audio |
+| `/connect/recording/<id>` | GET | user | Serve proxied recording audio from `_get_media_download_url()`, fetched with `connect.settings.get_media_auth()` credentials |
+| `/connect/voicemail/<id>` | GET | user | Serve proxied voicemail audio from `_get_voicemail_download_url()`, fetched with `connect.settings.get_media_auth()` credentials |
 | `/connect/<uid>/` | GET | - | Health check endpoint |
 
 **Notes:**

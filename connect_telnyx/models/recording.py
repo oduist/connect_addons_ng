@@ -79,6 +79,33 @@ class Recording(models.Model):
         })
         return self
 
+    def _telnyx_refreshes_link(self):
+        """True when the audio stays at Telnyx behind a short-lived link."""
+        self.ensure_one()
+        return bool(
+            self.telnyx_recording_id and self.media_url
+            and not self.recording_attachment)
+
+    def _get_media_src(self, proxy_recordings):
+        # The stored media_url is a signed link valid for 10 minutes. Always
+        # point the player at the proxy route, which requests a fresh link on
+        # playback; no Telnyx API call happens while a list or form renders.
+        if self._telnyx_refreshes_link():
+            return '/connect/recording/{}'.format(self.id)
+        return super()._get_media_src(proxy_recordings)
+
+    def _get_media_download_url(self):
+        if not self._telnyx_refreshes_link():
+            return super()._get_media_download_url()
+        try:
+            return self.env['connect.settings'].sudo()\
+                .telnyx_get_recording_download_url(self.telnyx_recording_id)
+        except Exception as e:
+            logger.warning(
+                'Cannot refresh Telnyx recording link for recording %s: %s',
+                self.id, e)
+            return super()._get_media_download_url()
+
     @api.model
     def telnyx_prepare_data(self, rec):
         """Map a Telnyx recording resource to connect.recording values."""
@@ -88,6 +115,7 @@ class Recording(models.Model):
             media_url = getattr(urls, 'mp3', None) or getattr(urls, 'wav', None) or ''
         data = {
             'sid': rec.id,
+            'telnyx_recording_id': rec.id,
             'media_url': media_url,
             'duration': int(getattr(rec, 'duration_millis', 0) or 0) // 1000,
             'source': getattr(rec, 'source', None) or '',
@@ -118,6 +146,7 @@ class Recording(models.Model):
         )
         data = {
             'sid': params['RecordingSid'],
+            'telnyx_recording_id': params['RecordingSid'],
             'call_sid': params['CallSid'],
             'media_url': params.get('RecordingUrl'),
             'duration': params.get('RecordingDuration'),
