@@ -1,5 +1,7 @@
 import json
 import logging
+from urllib.parse import urlparse
+
 from werkzeug.exceptions import NotFound
 from odoo import http, release
 from odoo.api import SUPERUSER_ID
@@ -28,14 +30,20 @@ class ConnectController(http.Controller):
         recording = http.request.env['connect.recording'].browse(record_id)
         if not recording.exists() or not recording.media_url:
             return http.Response(status=404)
-        return self._serve_media(recording.media_url)
+        media_url = recording._get_media_download_url()
+        if not media_url:
+            return http.Response(status=404)
+        return self._serve_media(media_url)
 
     @http.route('/connect/voicemail/<int:record_id>', type='http', auth='user')
     def serve_voicemail(self, record_id):
         call = http.request.env['connect.call'].browse(record_id)
         if not call.exists() or not call.voicemail_url:
             return http.Response(status=404)
-        return self._serve_media(call.voicemail_url)
+        media_url = call._get_voicemail_download_url()
+        if not media_url:
+            return http.Response(status=404)
+        return self._serve_media(media_url)
 
     def _serve_media(self, media_url):
         """Proxy provider media to the browser.
@@ -46,7 +54,8 @@ class ConnectController(http.Controller):
         went wrong in the log instead of answering a bare 404.
         """
         import requests as req
-        media_name = '{}.wav'.format(media_url.split('/')[-1])
+        # Signed URLs carry a query string; keep it out of the file name.
+        media_name = '{}.wav'.format(urlparse(media_url).path.split('/')[-1])
         auth = http.request.env['connect.settings'].sudo().get_media_auth(
             media_url)
         try:

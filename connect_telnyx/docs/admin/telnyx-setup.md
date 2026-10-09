@@ -349,10 +349,21 @@ byte for byte, so a reverse proxy must forward the form body without decoding
 and re-encoding it. If a Dial action signature is invalid, Odoo rejects it and
 silently hangs up the remaining leg instead of playing an error message.
 
-Recording callbacks may contain short-lived signed download URLs. Odoo keeps
-the URL on the recording record for playback, but redacts it from Telnyx debug
-payloads so temporary download credentials are not persisted in
-`connect.debug`.
+Call and voicemail recordings stay in Telnyx storage. Every download link
+Telnyx hands out — the one in the recording callback and the one returned by
+its recordings API — is a signed URL that expires after **10 minutes**; the
+recording itself remains available after that. Odoo therefore stores the
+Telnyx recording ID and requests a fresh link from the Telnyx API each time
+the audio is played or sent for transcription. Lists and forms only show a
+player that points at Odoo (`/connect/recording/<id>`,
+`/connect/voicemail/<id>`), so opening a call list makes no Telnyx API calls,
+and playback always goes through Odoo regardless of **Proxy Recordings**. The
+signed URLs are also redacted from Telnyx debug payloads so temporary download
+credentials are not persisted in `connect.debug`.
+
+Deleting a recording in the Telnyx Portal or through its API makes it
+unplayable in Odoo. Assistant recordings are different: their audio is copied
+into Odoo when the call ends (see above).
 
 For outbound calls placed from the Telnyx web phone or a SIP credential, Odoo
 applies the originating PBX user's **Record Calls** setting to the generated

@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Telnyx
 - **Technical:** `connect_telnyx`
-- **Version:** 19.0.1.4.4
+- **Version:** 19.0.1.4.7
 - **Depends:** `connect`
 - **Python deps:** `telnyx`, `nacl` (PyNaCl)
 - **Application:** False
@@ -316,7 +316,21 @@ is explicitly excluded from the OpenAI transcription queue. The webhook's
 TeXML `CallSid` relation remains authoritative when the recording API returns
 an unmatched UUID `call_leg_id`, so API enrichment cannot orphan the recording.
 Raw Telnyx webhook debug payloads redact `RecordingUrl` before they are stored
-in `connect.debug`; the unmodified URL is still used for recording playback.
+in `connect.debug`.
+
+Telnyx recording links (webhook `RecordingUrl`, API `download_urls`) are signed
+for 10 minutes while the recording itself stays in Telnyx storage. The webhook
+handlers therefore store the recording resource ID — `telnyx_recording_id` on
+`connect.recording`, `telnyx_voicemail_recording_id` on `connect.call` — and
+override the core seams: `_get_media_src()` / `_get_voicemail_src()` always
+return the Odoo proxy route without any API call (safe while lists render),
+and `_get_media_download_url()` / `_get_voicemail_download_url()` call
+`connect.settings.telnyx_get_recording_download_url()` (`GET
+/v2/recordings/{id}`, mp3 preferred) when the proxy or transcription actually
+fetches the audio, falling back to the stored URL if the API call fails.
+Attachment-backed (AI) recordings are untouched. Migration `19.0.1.4.7` fills
+`telnyx_recording_id` from `sid` for older rows whose `sid` is a UUID and whose
+`media_url` is a signed S3 URL.
 
 ### user.py - `_inherit = 'connect.user'`
 

@@ -32,6 +32,11 @@ version bumps, repository moves — is deliberately left out.
   extension list showed "1001 → user", the user form showed no extension, and
   every inbound number routed to that user was answered with 404. Extensions
   already saved this way are repaired when the module is upgraded.
+- **connect_telnyx** — Call and voicemail recordings keep playing after the
+  first 10 minutes. Telnyx only hands out download links that expire after 10
+  minutes, so the player now asks Telnyx for a fresh link each time it is
+  played, and transcription does the same. Recordings made before the update
+  are covered too. Opening a call list does not contact Telnyx.
 
 ## 2026-09
 

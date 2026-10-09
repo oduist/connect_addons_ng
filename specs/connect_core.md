@@ -149,7 +149,9 @@ Order: `id desc`
 | `_get_name()` | Compute display name from caller/called |
 | `_get_ref()` | Compute reference to linked record |
 | `_get_recording_data()` | Compute recording/widget fields |
-| `_get_voicemail_widget()` | HTML audio player for voicemail |
+| `_get_voicemail_widget()` | HTML audio player for voicemail, pointing at `_get_voicemail_src()` |
+| `_get_voicemail_src(proxy_recordings)` | Player source: a local `/...` URL as is, else `/connect/voicemail/<id>` when proxying, else the raw `voicemail_url`. Must not call provider APIs |
+| `_get_voicemail_download_url()` | Provider URL the voicemail proxy downloads from now (default `voicemail_url`); overridden by providers with short-lived links |
 | `_get_voicemail_icon()` | Voicemail indicator icon |
 | `_get_duration_human()` | Human-readable duration string |
 | `register_call()` | Post call summary to partner chatter |
@@ -341,7 +343,8 @@ Order: `id desc`
 | `_get_recording_widget()` | HTML audio player with proxy URL |
 | `_get_media_src(proxy_recordings)` | Audio source for the player: attachment URL when audio is stored on the record, else `/connect/recording/<id>` proxy or the raw `media_url` |
 | `get_attachment_media_url()` | `/web/content` URL for the stored `recording_attachment` (uses `recording_filename`) |
-| `_fetch_media_to(temp_file)` | Write the audio bytes into a temp file: decode `recording_attachment` if present, else download `media_url` |
+| `_get_media_download_url()` | Provider URL to download the audio from now (default `media_url`). Called only by the proxy route and `_fetch_media_to`, never while rendering; providers with short-lived links override it (connect_telnyx) |
+| `_fetch_media_to(temp_file)` | Write the audio bytes into a temp file: decode `recording_attachment` if present, else download `_get_media_download_url()` |
 | `create()` | Override: flags new recordings `transcription_pending` when `transcript_calls` is enabled (async queue, see Crons) |
 | `_compute_users()` | Combine caller, called, and answered Odoo users for list display |
 | `_get_list_view_summary()` | Truncated summary for list views |
@@ -667,8 +670,8 @@ validated RS256 against a public key stored in
 | Route | Method | Auth | Description |
 |-------|--------|------|-------------|
 | `/connect/transcript/<id>` | POST | public, `csrf=False` | Receive transcript callback; guarded by the recording's `transcription_token` (request rejected with 404 unless the token matches) |
-| `/connect/recording/<id>` | GET | user | Serve proxied recording audio |
-| `/connect/voicemail/<id>` | GET | user | Serve proxied voicemail audio |
+| `/connect/recording/<id>` | GET | user | Serve proxied recording audio from `_get_media_download_url()` |
+| `/connect/voicemail/<id>` | GET | user | Serve proxied voicemail audio from `_get_voicemail_download_url()` |
 | `/connect/<uid>/` | GET, POST | public, `csrf=False` | Health check endpoint |
 
 **Notes:**
@@ -882,7 +885,7 @@ sharing.
 | `test_message.py` | Message creation, type/direction/status computation and icons, phone formatting, ref, `get_receive_message_values`, media-widget rendering and URL-scheme safety, retry |
 | `test_recording.py` | Recording lifecycle, users union, widget, analysis sync to the call, transcription (attachment and mock flows, pricing, queue/cron, deletion behavior) |
 | `test_recording_controls.py` | Softphone runtime recording RPCs: dispatch, access and active-call checks |
-| `test_recording_seams.py` | The storage seams `connect_s3` overrides (`_fetch_media_to`, `_get_media_src`, attachment URL) |
+| `test_recording_seams.py` | The storage and link seams providers override (`_fetch_media_to`, `_get_media_src`, `_get_media_download_url`, voicemail source/download, attachment URL) |
 | `test_res_partner.py` | Partner lookup by number, `api_get_partner`, call/message counters, `connect_user` compute |
 | `test_schedule.py` | Working-schedule evaluation engine (special days, leaves, attendances, slots) |
 | `test_settings.py` | Settings singleton `get_param`/`set_param`, defaults, `open_settings_form`, API URL validation, protected-field writes, bus notify |
