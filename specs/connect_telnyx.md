@@ -408,7 +408,7 @@ dst-Reference mechanics (copy of Twilio/FS); `dst` selection:
 `connect.telnyx.ai_assistant`;
 renders `connect.user` destinations via `telnyx_render()`.
 
-An extension refuses a number another extension already carries, and refuses to be a second extension for a destination that already has one (`_check_number_available()` / `_check_destination_available()`); leaving a destination goes through `_stored_dst()`. All three are part of the duplicated block — see the `connect.twilio.exten` section of `specs/connect_twilio.md` for what each used to do silently.
+An extension refuses a number another extension already carries, and refuses to be a second extension for a destination that already has one (`_check_number_available()` / `_check_destination_available()`); leaving a destination goes through `_stored_dst()`, and `_repair_dst_links()` (run once by the upgrade migration) restores back-links that builds before the `_set_dst` fix lost. All four are part of the duplicated block — see the `connect.twilio.exten` section of `specs/connect_twilio.md` for what each used to do silently.
 
 ### user_callflow.py, message_configuration.py
 
