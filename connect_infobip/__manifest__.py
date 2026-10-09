@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect Infobip',
-    'version': '18.0.1.2.0',
+    'version': '18.0.1.2.2',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Infobip integration for Oduist Connect',
