@@ -97,3 +97,14 @@ class TestInfobipExten(InfobipTestCommon):
             current_exten=self.connect_user.infobip_exten)
         self.assertEqual(result['type'], 'ir.actions.act_window')
         self.assertEqual(result['res_model'], 'connect.infobip.exten')
+
+    def test_repair_relinks_a_destination_missing_its_back_link(self):
+        # State left by builds before the _set_dst fix: the extension names
+        # the user, the user names no extension (inbound DIDs answered 404).
+        user = self._create_connect_user('relink_user')
+        exten = self.env['connect.infobip.exten'].create({
+            'number': '8290', 'model': 'connect.user', 'res_id': user.id})
+        user.infobip_exten = False
+        self.assertFalse(user.infobip_exten)
+        self.env['connect.infobip.exten']._repair_dst_links()
+        self.assertEqual(user.infobip_exten, exten)

@@ -22,6 +22,17 @@ from the changes themselves rather than from commit subjects. Work nobody
 outside the repository would notice — refactoring, formatting, tests, CI,
 version bumps, repository moves — is deliberately left out.
 
+## 2026-10
+
+### Fixed
+- **connect_freeswitch, connect_twilio, connect_telnyx, connect_infobip** —
+  Giving a user an extension works again on every series. Saving an extension
+  with a destination could fail with *'NoneType' object has no attribute
+  '_name'*, or save while leaving the user without an extension number — the
+  extension list showed "1001 → user", the user form showed no extension, and
+  every inbound number routed to that user was answered with 404. Extensions
+  already saved this way are repaired when the module is upgraded.
+
 ## 2026-09
 
 ### Changed
