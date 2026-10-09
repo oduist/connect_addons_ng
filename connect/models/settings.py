@@ -268,6 +268,16 @@ class Settings(models.Model):
             'provider on the Connect user (Connect > Users).')
 
     @api.model
+    def get_media_auth(self, media_url):
+        """Credentials for fetching provider media, or None for anonymous.
+
+        Provider modules override this: a recording URL often needs the
+        provider's own API credentials, and without them the media proxy
+        silently answers 404 and the browser reports a 0-second recording.
+        """
+        return None
+
+    @api.model
     def get_param(self, param, default=False):
         # Sudo-find the singleton so config reads do not require the caller to
         # hold connect.settings model access (the model is admin-only). Secret

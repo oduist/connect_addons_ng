@@ -93,13 +93,8 @@ class Call(models.Model):
     def _get_voicemail_widget(self):
         proxy_recordings = self.env['connect.settings'].sudo().get_param('proxy_recordings')
         for rec in self:
-            if rec.voicemail_url:
-                if rec.voicemail_url.startswith('/'):
-                    media_url = rec.voicemail_url
-                elif proxy_recordings:
-                    media_url = '/connect/voicemail/{}'.format(rec.id)
-                else:
-                    media_url = rec.voicemail_url
+            media_url = rec._get_voicemail_src(proxy_recordings)
+            if media_url:
                 # voicemail_url is webhook-supplied; escape it before it
                 # lands in the sanitize=False Html field (stored XSS).
                 rec.voicemail_widget = '<audio id="sound_file" preload="auto" ' \
@@ -108,6 +103,31 @@ class Call(models.Model):
                     '</audio>'.format(escape(media_url))
             else:
                 rec.voicemail_widget = ''
+
+    def _get_voicemail_src(self, proxy_recordings):
+        """Return the URL the voicemail player should point at, '' if none.
+
+        Runs while rendering, so it must not call provider APIs. Seam:
+        providers with short-lived links (connect_telnyx) always return the
+        proxy route, which fetches a fresh link on playback.
+        """
+        self.ensure_one()
+        if not self.voicemail_url:
+            return ''
+        if self.voicemail_url.startswith('/'):
+            return self.voicemail_url
+        if proxy_recordings:
+            return '/connect/voicemail/{}'.format(self.id)
+        return self.voicemail_url
+
+    def _get_voicemail_download_url(self):
+        """Return the provider URL to download the voicemail from now.
+
+        Called only by the proxy route on playback. Seam: see
+        connect.recording._get_media_download_url().
+        """
+        self.ensure_one()
+        return self.voicemail_url
 
     @api.depends('voicemail_url')
     def _get_voicemail_icon(self):

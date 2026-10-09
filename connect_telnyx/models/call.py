@@ -62,6 +62,11 @@ class Call(models.Model):
         string='Telnyx Price Fetched', default=False, readonly=True,
         help='Indicates if call price has been fetched from Telnyx detail records'
     )
+    telnyx_voicemail_recording_id = fields.Char(
+        string='Telnyx Voicemail Recording ID', readonly=True, copy=False,
+        help='Telnyx recording resource of the voicemail. Its download links '
+             'expire after 10 minutes, so playback requests a fresh one.',
+    )
 
     @api.model
     def on_telnyx_call_status(self, params):
@@ -169,9 +174,32 @@ class Call(models.Model):
                     'voicemail_duration': int(
                         params.get('RecordingDuration')
                     ),
+                    'telnyx_voicemail_recording_id': params.get(
+                        'RecordingSid'),
                 }
             )
         return True
+
+    def _get_voicemail_src(self, proxy_recordings):
+        # The stored RecordingUrl expires after 10 minutes. Always point the
+        # player at the proxy route, which requests a fresh link on playback;
+        # no Telnyx API call happens while the call is rendered.
+        if self.telnyx_voicemail_recording_id and self.voicemail_url:
+            return '/connect/voicemail/{}'.format(self.id)
+        return super()._get_voicemail_src(proxy_recordings)
+
+    def _get_voicemail_download_url(self):
+        if not self.telnyx_voicemail_recording_id:
+            return super()._get_voicemail_download_url()
+        try:
+            return self.env['connect.settings'].sudo()\
+                .telnyx_get_recording_download_url(
+                    self.telnyx_voicemail_recording_id)
+        except Exception as e:
+            logger.warning(
+                'Cannot refresh Telnyx voicemail link for call %s: %s',
+                self.id, e)
+            return super()._get_voicemail_download_url()
 
     def save_telnyx_call_price(self, call, params):
         """Mark call as needing cost fetch (processed by the cron job)."""
