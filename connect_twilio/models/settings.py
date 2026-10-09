@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import re
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError
@@ -85,6 +85,27 @@ class Settings(models.Model):
         string="Fetch Call Prices",
         help="Enable fetching call prices from Twilio API after call completion."
     )
+
+    @api.model
+    def get_media_auth(self, media_url):
+        """Twilio API credentials, and only for Twilio's own hosts.
+
+        Recording media needs HTTP Basic auth whenever the account requires
+        it. The host check is not cosmetic: an account with External Storage
+        hands out a bucket URL of its own, and the Twilio auth token must not
+        be sent there (that media needs the bucket's credentials, which
+        Connect does not hold -- the player will report a 0-second recording
+        and the proxy logs the upstream status).
+        """
+        host = (urlparse(media_url or '').hostname or '').lower()
+        if host != 'twilio.com' and not host.endswith('.twilio.com'):
+            return super().get_media_auth(media_url)
+        settings = self.sudo()
+        account_sid = settings.get_param('account_sid')
+        auth_token = settings.get_param('auth_token')
+        if not (account_sid and auth_token):
+            return super().get_media_auth(media_url)
+        return (account_sid, auth_token)
 
     @api.model
     def get_client(self):

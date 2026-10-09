@@ -4,9 +4,20 @@
 
 - **Name:** Oduist Connect Twilio
 - **Technical:** `connect_twilio`
-- **Version:** 19.0.2.0.0
+- **Version:** 19.0.2.5.0
 - **Depends:** `connect`
-- **Python deps:** `twilio`
+- **Python deps:** `twilio`; optional `boto3` for S3 recording storage
+  (imported lazily, see [connect_twilio_s3.md](connect_twilio_s3.md))
+- **Media credentials:** `get_media_auth()` returns the account SID/auth
+  token for `*.twilio.com` recording URLs only, so the core media proxy can
+  fetch Twilio-hosted audio and never sends the token to a bucket URL
+- **S3 recording storage:** Twilio External S3 Storage (settings, bucket
+  provisioning, Twilio AWS credential, S3 read path) lives in
+  `models/s3_*.py`, `controllers/s3_media.py` and
+  `views/s3_settings_views.xml`; it is specified separately in
+  [connect_twilio_s3.md](connect_twilio_s3.md). `migrations/19.0.2.5.0`
+  folds a `connect_s3` module, if one was ever installed, into
+  `connect_twilio`
 - **Application:** False
 - **License:** LGPL-3
 
@@ -704,7 +715,7 @@ The phone widget uses the Twilio Voice JavaScript SDK (`@twilio/voice-sdk`) to:
 ```
 connect_twilio
   depends: ['connect']
-  python:  ['twilio']
+  python:  ['twilio']          (boto3 optional, S3 recording storage only)
 ```
 
 **Note:** `openai` is NOT a dependency of `connect_twilio`. It is a dependency of core
