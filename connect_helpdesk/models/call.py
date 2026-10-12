@@ -177,21 +177,11 @@ class HelpdeskCall(models.Model):
         fields.append('ticket')
         return fields
 
-    @api.constrains('summary')
-    def register_helpdesk_ticket_call_summary(self):
-        if not self.env['oduist.license'].check_license(
-            'connect_helpdesk', silent=True,
-        ):
-            return False
-        register_summary = self.env['connect.settings'].sudo().get_param(
-            'register_summary',
-        )
-        if not register_summary:
-            return
-        reload_view = False
-        for rec in self:
-            if rec.ticket and rec.summary:
-                self.register_summary_to_rec(rec.ticket, rec.summary)
-                reload_view = True
-        if reload_view:
-            self.env['connect.settings'].connect_reload_view('helpdesk.ticket')
+    def _get_registration_targets(self):
+        targets = super()._get_registration_targets()
+        if not self.env['oduist.license'].check_license('connect_helpdesk', silent=True):
+            return targets
+        record = self.ticket
+        if record:
+            targets.append(record)
+        return targets

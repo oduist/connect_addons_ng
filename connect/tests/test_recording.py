@@ -199,7 +199,7 @@ class TestRecording(ConnectTestCommon):
             summary_text='<p>Persistent summary</p>',
         ) as mock_client:
             mock_client.audio.transcriptions.create.return_value.segments = [
-                MagicMock(start=0, text='Persistent transcript'),
+                MagicMock(start=0, text='Persistent transcript of a call about the order delivery'),
             ]
             with patch(
                 'odoo.addons.connect.models.recording.requests.get',
@@ -229,7 +229,7 @@ class TestRecording(ConnectTestCommon):
 
         with self.mock_openai_client() as mock_client:
             mock_client.audio.transcriptions.create.return_value.segments = [
-                MagicMock(start=0, text='Transcript before summary error'),
+                MagicMock(start=0, text='Transcript before summary error about the order delivery'),
             ]
             with patch(
                 'odoo.addons.connect.models.recording.requests.get',
@@ -259,7 +259,7 @@ class TestRecording(ConnectTestCommon):
 
         with self.mock_openai_client() as mock_client:
             mock_client.audio.transcriptions.create.return_value.segments = [
-                MagicMock(start=0, text='Orphan transcript'),
+                MagicMock(start=0, text='Orphan transcript of a call about the order delivery'),
             ]
             with patch(
                 'odoo.addons.connect.models.recording.requests.get',
@@ -313,11 +313,13 @@ class TestRecording(ConnectTestCommon):
         self.recording.transcription_pending = True
         with self.mock_connect_reload_view():
             self.recording.update_transcript({
-                'transcript': 'Hello world',
+                'transcript': 'Hello world, this is a test call about the order.',
                 'summary': '<p>Summary</p>',
                 'transcription_price': 0.003,
             })
-        self.assertEqual(self.recording.transcript, 'Hello world')
+        self.assertEqual(
+            self.recording.transcript,
+            'Hello world, this is a test call about the order.')
         self.assertEqual(self.recording.summary, '<p>Summary</p>')
         self.assertEqual(self.recording.transcription_price, '0.003')
         self.assertFalse(self.recording.transcription_pending)
@@ -326,11 +328,13 @@ class TestRecording(ConnectTestCommon):
         """Test update_transcript updates linked call analysis."""
         with self.mock_connect_reload_view():
             self.recording.update_transcript({
-                'transcript': 'Test',
+                'transcript': 'Test call about the order delivery tomorrow morning please.',
                 'summary': '<p>Call Summary</p>',
             })
         self.assertEqual(self.call.summary, '<p>Call Summary</p>')
-        self.assertEqual(self.call.transcript, 'Test')
+        self.assertEqual(
+            self.call.transcript,
+            'Test call about the order delivery tomorrow morning please.')
         self.assertFalse(self.recording.transcription_price)
 
     def test_create_with_transcription_enabled(self):

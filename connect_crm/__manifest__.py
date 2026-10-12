@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect CRM',
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.0.3',
     'category': 'Phone',
     'summary': 'CRM integration for Oduist Connect',
     'depends': ['connect', 'crm', 'utm'],
