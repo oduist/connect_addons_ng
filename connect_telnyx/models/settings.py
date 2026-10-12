@@ -877,25 +877,32 @@ class Settings(models.Model):
         application = self.env['connect.telnyx.number'].get_number_app()
         if not application.sid:
             application.update_telnyx_app(client)
-        call_kwargs = {
-            'application_sid': application.sid,
-            'url': texml_url,
-            'url_method': 'POST',
-            'texml': str(texml),
-            'to': to,
-            'from_': callerId,
-            'status_callback': status_url,
-            'status_callback_event': 'initiated answered completed',
+        # Posted directly rather than via client.texml.accounts.calls.calls():
+        # that SDK method has changed shape across telnyx releases (flat
+        # kwargs, params=, body=) and the body= variant sends the keys
+        # without their API aliases. The TeXML API takes PascalCase names.
+        payload = {
+            'ApplicationSid': application.sid,
+            'Url': texml_url,
+            'UrlMethod': 'POST',
+            'Texml': str(texml),
+            'To': to,
+            'From': callerId,
+            'StatusCallback': status_url,
+            'StatusCallbackEvent': 'initiated answered completed',
         }
         if record:
-            call_kwargs.update({
-                'record': True,
-                'recording_channels': 'dual',
-                'recording_status_callback': record_status_url,
-                'recording_status_callback_event': 'completed',
+            payload.update({
+                'Record': True,
+                'RecordingChannels': 'dual',
+                'RecordingStatusCallback': record_status_url,
+                'RecordingStatusCallbackEvent': 'completed',
             })
-        channel = client.texml.accounts.calls.calls(account_sid, **call_kwargs)
-        channel_sid = getattr(channel, 'sid', None)
+        response = self.telnyx_api_request(
+            'POST', 'texml/Accounts/{}/Calls'.format(account_sid),
+            payload=payload) or {}
+        channel_sid = (response.get('sid')
+                       or (response.get('data') or {}).get('sid'))
         if channel_sid:
             self.env["connect.channel"].sudo().create(
                 {

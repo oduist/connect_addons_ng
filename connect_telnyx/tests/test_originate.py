@@ -27,35 +27,32 @@ class TestTelnyxOriginate(TelnyxTestCommon):
         cls.caller = cls._create_web_phone_user(
             'telnyx_originate', originate_provider='telnyx')
 
-    def _client(self, captured):
-        class Calls:
-            @staticmethod
-            def calls(account_sid, **kwargs):
-                captured['account_sid'] = account_sid
-                captured.update(kwargs)
-                return type('Call', (), {'sid': 'call-sid-test'})()
+    def _originate(self, captured, **kwargs):
+        """Run originate_call, capturing the TeXML calls request."""
 
-        class Accounts:
-            calls = Calls()
+        def api_response(_self, method, path, payload=None, **kw):
+            if path == 'whoami':
+                return {'data': {'organization_id': 'org-resolved'}}
+            captured['method'] = method
+            captured['path'] = path
+            captured.update(payload or {})
+            return {'sid': 'call-sid-test', 'status': 'queued'}
 
-        class Texml:
-            accounts = Accounts()
-
-        class Client:
-            texml = Texml()
-
-        return Client()
+        with patch.object(Settings, 'get_telnyx_client', autospec=True,
+                          return_value=object()), patch.object(
+                              Settings, 'telnyx_api_request', autospec=True,
+                              side_effect=api_response):
+            self.env['connect.settings'].originate_call(
+                '+15559998888', user=self.caller.user, **kwargs)
 
     def test_originate_sends_the_application_sid(self):
         captured = {}
-        with patch.object(Settings, 'get_telnyx_client', autospec=True,
-                          return_value=self._client(captured)):
-            self.env['connect.settings'].originate_call(
-                '+15559998888', user=self.caller.user)
-        self.assertEqual(captured['account_sid'], 'account-test')
-        self.assertEqual(captured['application_sid'], 'number-app-sid')
-        self.assertEqual(captured['from_'], '+15550001234')
-        self.assertIn('client-telnyx_originate', captured['to'])
+        self._originate(captured)
+        self.assertEqual(captured['method'], 'POST')
+        self.assertEqual(captured['path'], 'texml/Accounts/account-test/Calls')
+        self.assertEqual(captured['ApplicationSid'], 'number-app-sid')
+        self.assertEqual(captured['From'], '+15550001234')
+        self.assertIn('client-telnyx_originate', captured['To'])
         channel = self.env['connect.channel'].search(
             [('sid', '=', 'call-sid-test')])
         self.assertEqual(len(channel), 1)
@@ -64,38 +61,23 @@ class TestTelnyxOriginate(TelnyxTestCommon):
     def test_originate_omits_empty_custom_headers(self):
         """Telnyx rejects an X- header with an empty value."""
         captured = {}
-        with patch.object(Settings, 'get_telnyx_client', autospec=True,
-                          return_value=self._client(captured)):
-            self.env['connect.settings'].originate_call(
-                '+15559998888', user=self.caller.user)
-        self.assertNotIn('=&', captured['to'])
-        self.assertFalse(captured['to'].endswith('='))
-        self.assertIn('X-autoAnswer=yes', captured['to'])
-        self.assertNotIn('X-Partner', captured['to'])
+        self._originate(captured)
+        self.assertNotIn('=&', captured['To'])
+        self.assertFalse(captured['To'].endswith('='))
+        self.assertIn('X-autoAnswer=yes', captured['To'])
+        self.assertNotIn('X-Partner', captured['To'])
 
     def test_originate_keeps_custom_headers_that_have_a_value(self):
         captured = {}
         partner = self.env['res.partner'].create({'name': 'Callee'})
-        with patch.object(Settings, 'get_telnyx_client', autospec=True,
-                          return_value=self._client(captured)):
-            self.env['connect.settings'].originate_call(
-                '+15559998888', res_model='res.partner', res_id=partner.id,
-                user=self.caller.user)
-        self.assertIn('X-Partner={}'.format(partner.id), captured['to'])
-        self.assertIn('X-CallerName=Callee', captured['to'])
-        self.assertNotIn('=&', captured['to'])
+        self._originate(
+            captured, res_model='res.partner', res_id=partner.id)
+        self.assertIn('X-Partner={}'.format(partner.id), captured['To'])
+        self.assertIn('X-CallerName=Callee', captured['To'])
+        self.assertNotIn('=&', captured['To'])
 
     def test_originate_resolves_a_missing_account_sid(self):
         self.settings.set_param('telnyx_account_sid', False)
         captured = {}
-
-        def api_response(_self, method, path, **kwargs):
-            return {'data': {'organization_id': 'org-resolved'}}
-
-        with patch.object(Settings, 'get_telnyx_client', autospec=True,
-                          return_value=self._client(captured)), patch.object(
-                              Settings, 'telnyx_api_request', autospec=True,
-                              side_effect=api_response):
-            self.env['connect.settings'].originate_call(
-                '+15559998888', user=self.caller.user)
-        self.assertEqual(captured['account_sid'], 'org-resolved')
+        self._originate(captured)
+        self.assertEqual(captured['path'], 'texml/Accounts/org-resolved/Calls')
