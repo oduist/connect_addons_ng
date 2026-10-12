@@ -10,3 +10,4 @@ from . import test_schedule
 from . import test_settings
 from . import test_user
 from . import test_recording_seams
+from . import test_call_origin

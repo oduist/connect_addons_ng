@@ -59,7 +59,7 @@ Links calls to sale orders.
 | `create_sale_order_button()` | UI action: if not already linked, links (or creates via the target form) a sale order for the call's partner; opens the order form (existing or blank `New Sale Order` with `default_partner_id`/`connect_call_id` in context) |
 | `unlink_sale_order()` | UI action: clear `sale_order` on this call |
 | `get_widget_fields()` | Override: adds `'sale_order'` to the active-calls widget field list |
-| `register_sale_order_call_summary()` | `@api.constrains('summary')`: if the call has a summary, a linked order, and `register_summary` is enabled in settings, post the summary to the order's chatter |
+| `_get_registration_targets()` | Adds the linked order to the core registration targets (license-gated), so the call log and, with **Register Summary**, the summary reach it and its contact once — no separate `summary` constrains (ADR-065) |
 
 **`process_call_event()` behavior:**
 
@@ -159,7 +159,7 @@ unlink `sale.order` directly — read access is the full requirement.
 |---|---|
 | `connect.call.process_call_event()` | Override — match `call.partner` to an open `sale.order` at call start |
 | `connect.call.get_widget_fields()` | Override — exposes `sale_order` in the active-calls widget |
-| `connect.call.register_summary_to_rec()` | Called from `register_sale_order_call_summary()` to post the summary to the order |
+| `connect.call.register_summary_to_rec()` | Called by core `register_call_summary()` for each registration record, including this module's to post the summary to the order |
 | `connect.settings.get_param('register_summary')` | Gate for posting call summaries |
 | `connect.debug` | Not used directly by this bridge (no number-matching to log) |
 | `connect.group_webhook` | Security group granted read-only access to `sale.order` |

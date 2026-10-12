@@ -91,13 +91,17 @@ class ConnectTestCommon(TransactionCase):
     @contextmanager
     def mock_openai_client(
         self,
-        transcript_text='Test transcript',
+        transcript_text='Hello, I am calling about the delivery of my order tomorrow.',
         summary_text='Test summary',
         transcript_duration=60,
     ):
         mock_client = MagicMock()
         mock_transcript = MagicMock()
-        mock_transcript.segments = []
+        # One segment long enough to pass the summary word threshold.
+        segment = MagicMock()
+        segment.start = 0
+        segment.text = transcript_text
+        mock_transcript.segments = [segment] if transcript_text else []
         mock_transcript.duration = transcript_duration
         mock_client.audio.transcriptions.create.return_value = mock_transcript
 
