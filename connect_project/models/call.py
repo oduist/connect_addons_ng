@@ -83,17 +83,11 @@ class ProjectCall(models.Model):
         fields.append('project')
         return fields
 
-    @api.constrains('summary')
-    def register_project_call_summary(self):
+    def _get_registration_targets(self):
+        targets = super()._get_registration_targets()
         if not self.env['oduist.license'].check_license('connect_project', silent=True):
-            return False
-        if not self.env['connect.settings'].sudo().get_param('register_summary'):
-            return
-        reload_view = False
-        for rec in self:
-            target = rec.task or rec.project
-            if target and rec.summary:
-                self.register_summary_to_rec(target, rec.summary)
-                reload_view = True
-        if reload_view:
-            self.env['connect.settings'].connect_reload_view('project.task')
+            return targets
+        record = self.task or self.project
+        if record:
+            targets.append(record)
+        return targets

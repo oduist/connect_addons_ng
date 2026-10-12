@@ -72,6 +72,8 @@ for easy access from other models.
 | `set_param()` | Singleton parameter write |
 | `get_media_auth(media_url)` | Credentials for the media proxy to fetch provider audio; `None` in core, overridden per provider (ADR-060) |
 | `open_settings_form(view_xmlid="connect.connect_settings_form", name="General Settings")` | UI action opening the settings singleton through the given form view. Parametrized so each provider module's Settings menu opens the same record through its own standalone view (e.g. `connect_twilio.twilio_settings_form`). |
+| `_register_hook()` | Wraps the composed `originate_call()` once per registry (base_automation technique, `functools.wraps` keeps the api decorations) so every provider calls `_remember_originate_origin()` first (ADR-065) |
+| `_remember_originate_origin(number, res_model, res_id, user)` | Store `{model, res_id, number digits, at}` on the user's `connect.user.originate_origin` when `res_model` is a mail.thread record; failures are logged, never raised |
 | `originate_call(number, res_model=None, res_id=None, user=None, **kwargs)` | Click-to-call dispatcher. Resolves the provider via `_get_originate_provider()`; provider modules override and chain via `super()` — each handles the call when its key matches, otherwise falls through. The core base raises a `UserError` when no provider can handle the call. |
 | `_get_originate_provider(user=None)` | Resolve the provider key for the user: explicit `connect.user.originate_provider` → the only installed provider (single `selection_add` entry) → `UserError` (none installed, or several installed and no choice made). |
 | `_get_message_provider(user=None)` | Same resolution logic for messaging: explicit `connect.user.message_provider` → the only installed messaging provider → `UserError`. Used by provider overrides of `connect.message.send()`. |
@@ -138,6 +140,9 @@ Order: `id desc`
 | `voicemail_icon` | Html | Computed |
 | `voicemail_widget` | Html | Computed |
 | `ref` | Reference | Computed - linked business record |
+| `origin_model` | Char | Model of the record a click-to-call was started from (indexed) |
+| `origin_res_id` | Many2oneReference | Id of that record (`model_field='origin_model'`) |
+| `origin_ref` | Reference | Computed **Called From** link to the origin record (any model); shown on the call form |
 | `has_error` | Boolean | |
 | `error_code` | Char | |
 | `error_message` | Text | |
@@ -154,10 +159,13 @@ Order: `id desc`
 | `_get_voicemail_download_url()` | Provider URL the voicemail proxy downloads from now (default `voicemail_url`); overridden by providers with short-lived links |
 | `_get_voicemail_icon()` | Voicemail indicator icon |
 | `_get_duration_human()` | Human-readable duration string |
-| `register_call()` | Post call summary to partner chatter |
+| `register_call()` | At call end, post the call log line to every record of `_get_registration_records()` |
 | `register_call_post_message()` | Helper for chatter message creation |
 | `register_summary_to_rec()` | Write summary to linked record |
-| `register_partner_call_summary()` | Constrains: auto-register on partner change |
+| `register_call_summary()` | Constrains `summary`: when **Register Summary** is on, post the summary to every record of `_get_registration_records()` |
+| `_get_registration_targets()` | Records whose chatter gets the call log and summary: the click-to-call origin and the call's `partner`. Bridge modules append their linked record (lead, ticket, order, invoice, task/project, employee) |
+| `_get_registration_records()` | Targets plus each target's contact (`_get_record_contact()`: first `partner_id`/`partner` many2one to `res.partner`), mail.thread only, deduplicated by (model, id) |
+| `_get_origin_record()` / `_assign_originate_origin()` | Resolve the origin; claim the calling PBX user's pending origin for an outgoing call whose `called` matches (called from `process_call_event()`) |
 | `create_partner_button()` | UI: create partner from call number |
 | `transfer_button()` | UI: open transfer wizard |
 | `redial()` | Re-initiate call (calls originate on settings) |
@@ -344,6 +352,7 @@ Order: `id desc`
 | `_get_media_src(proxy_recordings)` | Audio source for the player: attachment URL when audio is stored on the record, else `/connect/recording/<id>` proxy or the raw `media_url` |
 | `get_attachment_media_url()` | `/web/content` URL for the stored `recording_attachment` (uses `recording_filename`) |
 | `_get_media_download_url()` | Provider URL to download the audio from now (default `media_url`). Called only by the proxy route and `_fetch_media_to`, never while rendering; providers with short-lived links override it (connect_telnyx) |
+| `_is_summarizable(transcript)` | False below `MIN_SUMMARY_WORDS` (8) words, timestamps ignored. `transcribe_recording()` skips the summary request and `update_transcript()` drops an incoming summary for such transcripts, so "too short to summarize" answers never reach a chatter |
 | `_fetch_media_to(temp_file)` | Write the audio bytes into a temp file: decode `recording_attachment` if present, else download `_get_media_download_url()` |
 | `create()` | Override: flags new recordings `transcription_pending` when `transcript_calls` is enabled (async queue, see Crons) |
 | `_compute_users()` | Combine caller, called, and answered Odoo users for list display |
@@ -416,6 +425,7 @@ links).
 | `name` | Char | Computed (stored) from `user.name` |
 | `user` | Many2one | `res.users`, Required, `domain=[('share','=',False)]` |
 | `record_calls` | Boolean | Default: True |
+| `originate_origin` | Char | JSON of the pending click-to-call origin (`model`, `res_id`, last 9 digits of the number, time). Written with SQL by `_set_originate_origin()` to avoid `write()` side effects; claimed and cleared by `_pop_originate_origin(number)` within 10 minutes |
 | `voicemail_enabled` | Boolean | |
 | `voicemail_prompt` | Text | Jinja2 template |
 | `missed_calls_notify` | Boolean | |

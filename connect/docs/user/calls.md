@@ -102,6 +102,22 @@ Each call record shows:
 | **Transcript** | Full AI-generated transcript, retained even when the audio recording is deleted. |
 | **Summary** | AI-generated call summary, if transcription is enabled. |
 
+### Where Calls Are Logged
+
+When a call ends, a line with its status, duration and participants is posted
+to the chatter of:
+
+- the record you clicked the number on (a lead, sales order, ticket, partner or
+  any other record with a chatter), shown as **Called From** on the call;
+- that record's contact, if it has one;
+- the call's contact (matched by number);
+- records linked by installed bridge modules, such as the lead found by
+  `connect_crm`.
+
+Each record gets the line once, even when it appears in several of these
+roles. With **Register Summary** enabled, the AI summary follows the same
+path. Calls too short to summarize get no summary.
+
 ### Partner Linking
 
 If a call's number matches a contact in Odoo, the partner is automatically linked. If not, use the **Create Partner** button on the call record to create a new contact from the call.

@@ -71,7 +71,7 @@ Links calls to helpdesk tickets.
 | `create_ticket_button()` | UI action: create/link a ticket from the call form. Raises `ValidationError` if the `connect_helpdesk` license is not active |
 | `unlink_ticket()` | UI action: unlink the ticket from this call |
 | `get_widget_fields()` | Override: adds `'ticket'` to widget field list |
-| `register_helpdesk_ticket_call_summary()` | Constrains `summary`: if call has summary + ticket + config, post summary to ticket chatter |
+| `_get_registration_targets()` | Adds the linked ticket to the core registration targets (license-gated), so the call log and, with **Register Summary**, the summary reach it and its contact once — no separate `summary` constrains (ADR-065) |
 
 **Semantic note on auto-create timing:**
 Phone→ticket *matching* (attaching an existing ticket to an active call) runs

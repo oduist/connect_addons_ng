@@ -71,7 +71,7 @@ Links calls to CRM leads and UTM sources.
 | `create_lead_button()` | UI action: create/link a lead from the call form |
 | `unlink_crm_lead()` | UI action: unlink the lead from this call |
 | `get_widget_fields()` | Override: adds `'lead'` to widget field list |
-| `register_crm_lead_call_summary()` | Constrains `summary`: if call has summary + lead + config, post summary to lead chatter |
+| `_get_registration_targets()` | Adds the linked lead to the core registration targets (license-gated), so the call log and, with **Register Summary**, the summary reach it and its contact once — no separate `summary` constrains (ADR-065) |
 
 **Semantic note on auto-create timing:**
 The old module hooked `on_call_status()` which fired on every status change. The new
@@ -201,7 +201,7 @@ behaviour) remains a possible future addition:
 | `connect.call.process_call_event()` | Override — match phone to lead/source at call start |
 | `connect.call.register_call()` | Override — run auto-create lead logic at call end |
 | `connect.call.get_widget_fields()` | Override — exposes `lead` in active calls widget |
-| `connect.call.register_summary_to_rec()` | Called from `register_crm_lead_call_summary()` to post summary to lead |
+| `connect.call.register_summary_to_rec()` | Called by core `register_call_summary()` for each registration record, including this module's to post summary to lead |
 | `connect.settings.get_param()` | Read CRM auto-create config values |
 | `connect.twilio.message_configuration` | `crm.lead` routing destination added by the `connect_crm_twilio` bridge (auto-installed with connect_twilio) |
 | `connect.group_webhook` | Security group for webhook-triggered lead creation |

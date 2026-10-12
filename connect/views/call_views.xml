@@ -45,6 +45,7 @@
                             <field name="caller" widget="phone"/>
                             <field name="called" widget="phone"/>
                             <field name="partner"/>
+                            <field name="origin_ref" invisible="not origin_ref"/>
                             <field name="duration_human" string="Duration"/>
                         </group>
                         <group string="Users">

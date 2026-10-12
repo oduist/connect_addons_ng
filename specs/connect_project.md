@@ -63,7 +63,7 @@ Links calls to tasks/projects.
 | `create_task_button()` | UI action: opens the linked task's form, or a blank "New Task" form pre-filled with `default_partner_id` and a `default_name` derived from the caller |
 | `unlink_task()` | UI action: clears **both** `task` and `project` on this call |
 | `get_widget_fields()` | Override: adds `'task'` and `'project'` to the active-calls widget field list |
-| `register_project_call_summary()` | `@api.constrains('summary')`: posts the summary to `task` if set, else to `project` (`target = rec.task or rec.project`), gated by `register_summary` |
+| `_get_registration_targets()` | Adds `task`, else `project` to the core registration targets (license-gated), so the call log and, with **Register Summary**, the summary reach it and its contact once — no separate `summary` constrains (ADR-065) |
 
 **`process_call_event()` lookup order (by-partner, open task first):**
 
@@ -237,7 +237,7 @@ both models.
 |---|---|
 | `connect.call.process_call_event()` | Override — match `call.partner` to an open task, else a project, at call start |
 | `connect.call.get_widget_fields()` | Override — exposes `task`/`project` in the active-calls widget |
-| `connect.call.register_summary_to_rec()` | Called from `register_project_call_summary()` to post the summary to the task or project |
+| `connect.call.register_summary_to_rec()` | Called by core `register_call_summary()` for each registration record, including this module's to post the summary to the task or project |
 | `connect.recording` | Extended with `task`/`project` back-fill on `create()`, powering the "Recorded Calls" pages |
 | `connect.settings.get_param('register_summary')` | Gate for posting call summaries |
 | `connect.group_webhook` | Security group granted read-only access to `project.task` and `project.project` |

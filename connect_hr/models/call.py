@@ -49,16 +49,11 @@ class HrCall(models.Model):
         fields.append('employee')
         return fields
 
-    @api.constrains('summary')
-    def register_hr_employee_call_summary(self):
+    def _get_registration_targets(self):
+        targets = super()._get_registration_targets()
         if not self.env['oduist.license'].check_license('connect_hr', silent=True):
-            return False
-        if not self.env['connect.settings'].sudo().get_param('register_summary'):
-            return
-        reload_view = False
-        for rec in self:
-            if rec.employee and rec.summary:
-                self.register_summary_to_rec(rec.employee, rec.summary)
-                reload_view = True
-        if reload_view:
-            self.env['connect.settings'].connect_reload_view('hr.employee')
+            return targets
+        record = self.employee
+        if record:
+            targets.append(record)
+        return targets

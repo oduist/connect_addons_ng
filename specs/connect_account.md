@@ -65,7 +65,7 @@ Links calls to invoices.
 | `_get_ref()` | Override: returns `account.move,<id>` if `invoice` is set, else falls through to `super()` |
 | `unlink_invoice()` | UI action: clear `invoice` on this call |
 | `get_widget_fields()` | Override: adds `'invoice'` to the active-calls widget field list |
-| `register_account_move_call_summary()` | `@api.constrains('summary')`: if the call has a summary, a linked invoice, and `register_summary` is enabled in settings, post the summary to the invoice's chatter |
+| `_get_registration_targets()` | Adds the linked invoice to the core registration targets (license-gated), so the call log and, with **Register Summary**, the summary reach it and its contact once — no separate `summary` constrains (ADR-065) |
 
 **`process_call_event()` behavior:**
 
@@ -157,7 +157,7 @@ read access is the full requirement.
 |---|---|
 | `connect.call.process_call_event()` | Override — match `call.partner` to an open customer invoice at call start |
 | `connect.call.get_widget_fields()` | Override — exposes `invoice` in the active-calls widget |
-| `connect.call.register_summary_to_rec()` | Called from `register_account_move_call_summary()` to post the summary to the invoice |
+| `connect.call.register_summary_to_rec()` | Called by core `register_call_summary()` for each registration record, including this module's to post the summary to the invoice |
 | `connect.settings.get_param('register_summary')` | Gate for posting call summaries |
 | `connect.group_webhook` | Security group granted read-only access to `account.move` |
 | `ODUIST_MODULES` / `check_license('connect_account')` | License tracking registration; every hook checks the license (`silent=True`) before acting |

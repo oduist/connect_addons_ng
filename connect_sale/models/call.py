@@ -68,16 +68,11 @@ class SaleCall(models.Model):
         fields.append('sale_order')
         return fields
 
-    @api.constrains('summary')
-    def register_sale_order_call_summary(self):
+    def _get_registration_targets(self):
+        targets = super()._get_registration_targets()
         if not self.env['oduist.license'].check_license('connect_sale', silent=True):
-            return False
-        if not self.env['connect.settings'].sudo().get_param('register_summary'):
-            return
-        reload_view = False
-        for rec in self:
-            if rec.sale_order and rec.summary:
-                self.register_summary_to_rec(rec.sale_order, rec.summary)
-                reload_view = True
-        if reload_view:
-            self.env['connect.settings'].connect_reload_view('sale.order')
+            return targets
+        record = self.sale_order
+        if record:
+            targets.append(record)
+        return targets

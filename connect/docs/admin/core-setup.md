@@ -24,7 +24,7 @@ Connect uses OpenAI for automatic call transcription and summarization.
 | **Transcription Provider** | Currently supports OpenAI. |
 | **OpenAI API Key** | Your OpenAI API key. Masked in the UI for non-managers. |
 | **Summary Model** | OpenAI model used for call summaries. Defaults to GPT-5.4 mini; GPT-4o remains available. |
-| **Register Summary** | Automatically post call summaries to the partner's chatter. |
+| **Register Summary** | Post call summaries to the chatter of the record the call was started from, the call's contact, and records linked by installed bridge modules (lead, ticket, order...). |
 | **Summary Prompt** | Custom prompt for call summarization. Default: "Summarise this phone call". |
 
 !!! info "How transcription works"
@@ -35,7 +35,9 @@ Connect uses OpenAI for automatic call transcription and summarization.
     5. The transcript is sent to the selected summary model with the summary prompt
     6. The transcript and summary are saved permanently on the call record
     7. If **Delete Recording After Transcription** is enabled, the successfully processed Odoo recording is deleted
-    8. If enabled, the summary is posted to the partner's chatter
+    8. If enabled, the summary is posted to the same chatters as the call log
+       (see *Calls → Where calls are logged*). Very short transcripts
+       (under eight words) are not summarized.
 
     The scheduled action must be active for automatic processing. Sanitized
     development or staging databases may have scheduled actions disabled. A

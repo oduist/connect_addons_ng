@@ -1,3 +1,4 @@
+import functools
 import inspect
 import json
 import logging
@@ -217,6 +218,58 @@ class Settings(models.Model):
             "view_id": self.env.ref(view_xmlid).id,
             "target": "current",
         }
+
+    def _register_hook(self):
+        """Wrap the final originate_call() so every provider records where
+        the click-to-call came from.
+
+        Provider modules override originate_call() and the one that handles
+        the call never reaches this base class, so the origin cannot be
+        captured in the method body. The fully composed class is patched
+        once per registry instead (the same technique base_automation uses);
+        functools.wraps keeps the method's api decorations for call_kw.
+        """
+        res = super()._register_hook()
+        cls = type(self)
+        original = cls.originate_call
+        if getattr(original, '_connect_remembers_origin', False):
+            return res
+
+        @functools.wraps(original)
+        def originate_call(self, number=None, res_model=None, res_id=None,
+                           *args, **kwargs):
+            user = kwargs.get('user') or (args[0] if args else None)
+            self._remember_originate_origin(number, res_model, res_id, user)
+            return original(self, number, res_model, res_id, *args, **kwargs)
+
+        originate_call._connect_remembers_origin = True
+        cls.originate_call = originate_call
+        return res
+
+    @api.model
+    def _remember_originate_origin(self, number, res_model, res_id, user=None):
+        """Remember the record a click-to-call was started from, so the
+        outgoing call can post its log and summary to that record's chatter
+        (connect.call._assign_originate_origin)."""
+        try:
+            if not (number and res_model and res_id) or res_model not in self.env:
+                return
+            record = self.env[res_model].sudo().browse(int(res_id)).exists()
+            if not record or not hasattr(record, 'message_post'):
+                return
+            if isinstance(user, int):
+                user = self.env['res.users'].browse(user)
+            connect_user = (user or self.env.user).sudo().connect_user[:1]
+            if not connect_user:
+                return
+            connect_user._set_originate_origin({
+                'model': res_model,
+                'res_id': record.id,
+                'number': connect_user._originate_digits(number),
+                'at': fields.Datetime.to_string(fields.Datetime.now()),
+            })
+        except Exception:
+            logger.exception('Cannot remember the click-to-call origin')
 
     @api.model
     def originate_call(self, number, res_model=None, res_id=None, user=None, **kwargs):

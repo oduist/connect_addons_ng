@@ -55,6 +55,14 @@ class Call(models.Model):
     else:
         voicemail_widget = fields.Char(compute='_get_voicemail_widget', string='VoiceMail')
     ref = fields.Reference(selection=[('res.partner', 'Partner')], compute='_get_ref')
+    # The record a click-to-call was started from (any mail.thread model).
+    # Its chatter, and its contact's, receive the call log and the summary.
+    origin_model = fields.Char(string='Origin Model', readonly=True, index=True)
+    origin_res_id = fields.Many2oneReference(
+        string='Origin Record ID', model_field='origin_model', readonly=True)
+    origin_ref = fields.Reference(
+        string='Called From', selection='_selection_origin_models',
+        compute='_compute_origin_ref')
     has_error = fields.Boolean(index=True)
     error_code = fields.Char(readonly=True)
     error_message = fields.Text(readonly=True)
@@ -68,6 +76,82 @@ class Call(models.Model):
             except Exception:
                 logger.exception('Call name compute error:')
                 rec.name = str(rec.id)
+
+    @api.model
+    def _selection_origin_models(self):
+        return [(m.model, m.name) for m in self.env['ir.model'].sudo().search([])]
+
+    @api.depends('origin_model', 'origin_res_id')
+    def _compute_origin_ref(self):
+        for rec in self:
+            origin = rec._get_origin_record()
+            rec.origin_ref = '{},{}'.format(origin._name, origin.id) if origin else False
+
+    def _get_origin_record(self):
+        """The click-to-call origin record, or None if unset or deleted."""
+        self.ensure_one()
+        if not (self.origin_model and self.origin_res_id) or self.origin_model not in self.env:
+            return None
+        return self.env[self.origin_model].sudo().browse(self.origin_res_id).exists() or None
+
+    def _assign_originate_origin(self):
+        """Claim the pending click-to-call origin of the calling PBX user."""
+        for call in self:
+            if call.origin_model or call.direction != 'outgoing':
+                continue
+            pbx_user = call.caller_pbx_user or call.caller_user.connect_user[:1]
+            if not pbx_user:
+                continue
+            origin = pbx_user.sudo()._pop_originate_origin(call.called)
+            if origin:
+                call.write({
+                    'origin_model': origin['model'],
+                    'origin_res_id': origin['res_id'],
+                })
+
+    def _get_registration_targets(self):
+        """Records whose chatter receives this call's log and summary.
+
+        Core returns the click-to-call origin and the call's partner. Bridge
+        modules (connect_crm, connect_sale, ...) append their linked record.
+        Contacts of these records are added and duplicates removed by
+        _get_registration_records().
+        """
+        self.ensure_one()
+        targets = []
+        origin = self._get_origin_record()
+        if origin:
+            targets.append(origin)
+        if self.partner:
+            targets.append(self.partner)
+        return targets
+
+    @api.model
+    def _get_record_contact(self, record):
+        """The contact (res.partner) a record points to, if it has one."""
+        if record._name == 'res.partner':
+            return None
+        for fname in ('partner_id', 'partner'):
+            field = record._fields.get(fname)
+            if field and field.type == 'many2one' and field.comodel_name == 'res.partner':
+                return record[fname] or None
+        return None
+
+    def _get_registration_records(self):
+        """Registration targets plus their contacts, chatter-capable and
+        without duplicates, in a stable order."""
+        self.ensure_one()
+        records, seen = [], set()
+        for target in self._get_registration_targets():
+            for rec in (target, self._get_record_contact(target)):
+                if not rec or not hasattr(rec, 'message_post'):
+                    continue
+                key = (rec._name, rec.id)
+                if key in seen:
+                    continue
+                seen.add(key)
+                records.append(rec)
+        return records
 
     def _get_ref(self):
         for rec in self:
@@ -243,6 +327,13 @@ class Call(models.Model):
                 'error_message': error_data.get('error_message'),
             })
 
+        # Link an outgoing click-to-call to the record it was started from,
+        # before the call is registered in any chatter.
+        try:
+            channel.call._assign_originate_origin()
+        except Exception:
+            logger.exception('Cannot assign the click-to-call origin')
+
         # Register call when ALL channels have ended
         if channel.status in CALL_END_STATUSES:
             all_ended = all(
@@ -289,11 +380,14 @@ class Call(models.Model):
                         notify_users.append(user)
             if channel.call.partner:
                 message.insert(3, 'partner: {}, '.format(channel.call.partner.name))
+            records = channel.call._get_registration_records()
+            if records:
                 final_message = ' '.join(message)
                 if final_message.endswith(', '):
                     final_message = final_message[:-2] + '.'
-                channel.call.register_call_post_message(
-                    channel.call.partner, body=final_message, subtype_xmlid='mail.mt_note')
+                for record in records:
+                    channel.call.register_call_post_message(
+                        record, body=final_message, subtype_xmlid='mail.mt_note')
             statuses = ['completed']
             if channel.call.direction == 'incoming' and channel.call.status not in statuses and notify_users:
                 debug(self, 'Missed call notification to users: {}'.format(notify_users))
@@ -329,17 +423,21 @@ class Call(models.Model):
             logger.error('Cannot register summary: %s', e)
 
     @api.constrains('summary')
-    def register_partner_call_summary(self):
-        reload_view = False
+    def register_call_summary(self):
+        """Post the summary to every registration record (origin, partner,
+        bridge records and their contacts), once per record."""
         register_summary = self.env['connect.settings'].sudo().get_param('register_summary')
         if not register_summary:
             return
+        reload_models = set()
         for rec in self:
-            if rec.partner and rec.summary:
-                self.register_summary_to_rec(rec.partner, rec.summary)
-                reload_view = True
-        if reload_view:
-            self.env['connect.settings'].connect_reload_view('res.partner')
+            if not rec.summary:
+                continue
+            for record in rec._get_registration_records():
+                self.register_summary_to_rec(record, rec.summary)
+                reload_models.add(record._name)
+        for model in reload_models:
+            self.env['connect.settings'].connect_reload_view(model)
 
     def create_partner_button(self):
         self.ensure_one()

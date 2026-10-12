@@ -57,7 +57,7 @@ Links calls to HR employees.
 | `_get_ref()` | Override: returns `hr.employee,<id>` if `employee` is set, else falls through to `super()` |
 | `unlink_employee()` | UI action: clear `employee` on this call |
 | `get_widget_fields()` | Override: adds `'employee'` to the active-calls widget field list |
-| `register_hr_employee_call_summary()` | `@api.constrains('summary')`: if the call has a summary, a linked employee, and `register_summary` is enabled in settings, post the summary to the employee's chatter |
+| `_get_registration_targets()` | Adds the linked employee to the core registration targets (license-gated), so the call log and, with **Register Summary**, the summary reach it and its contact once — no separate `summary` constrains (ADR-065) |
 
 **`process_call_event()` behavior:**
 
@@ -118,7 +118,7 @@ bridges' lookup helpers.
 **Why read-only suffices:** `process_call_event()` only sets `call.employee` — a
 field on `connect.call`, already writable by the webhook user through core
 security — it never creates or writes `hr.employee` records; the lookup itself runs
-unrestricted (ORM search, not a write). `register_hr_employee_call_summary()` posts
+unrestricted (ORM search, not a write). core `register_call_summary()` posts
 to the chatter via `register_summary_to_rec()`, which runs with elevated rights
 (mirrors the core pattern used by `connect_crm`). There is no create button and
 `unlink_employee()` clears a field on `connect.call`, run as the interactive Connect
@@ -155,7 +155,7 @@ full requirement, so no broader grant is added.
 |---|---|
 | `connect.call.process_call_event()` | Override — match caller/called number to `hr.employee` at call start |
 | `connect.call.get_widget_fields()` | Override — exposes `employee` in the active-calls widget |
-| `connect.call.register_summary_to_rec()` | Called from `register_hr_employee_call_summary()` to post the summary to the employee |
+| `connect.call.register_summary_to_rec()` | Called by core `register_call_summary()` for each registration record, including this module's to post the summary to the employee |
 | `connect.settings.get_param('register_summary')` | Gate for posting call summaries |
 | `connect.debug` | Logs employee-by-number matches (`_search_employee_by_number`) |
 | `connect.group_webhook` | Security group granted read-only access to `hr.employee` |

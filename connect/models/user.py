@@ -1,4 +1,8 @@
+import json
 import logging
+import re
+from datetime import timedelta
+
 from odoo import fields, models, api, release
 from odoo.exceptions import ValidationError
 if release.version_info[0] >= 19:
@@ -6,6 +10,12 @@ if release.version_info[0] >= 19:
 from .settings import debug
 
 logger = logging.getLogger(__name__)
+
+# How long a click-to-call origin waits for its outgoing call to show up.
+ORIGINATE_ORIGIN_TTL = timedelta(minutes=10)
+# Numbers are compared on their trailing digits, so a missing country code or
+# formatting on either side does not prevent the match.
+ORIGINATE_MATCH_DIGITS = 9
 
 
 class User(models.Model):
@@ -17,6 +27,10 @@ class User(models.Model):
     name = fields.Char(compute='_get_name', store=True)
     user = fields.Many2one('res.users', string='Odoo User', required=True, domain=[('share', '=', False)])
     record_calls = fields.Boolean(default=True)
+    originate_origin = fields.Char(
+        readonly=True, copy=False,
+        help='JSON of the record the last click-to-call was started from '
+             '(model, id, number, time), until the outgoing call claims it.')
     voicemail_enabled = fields.Boolean()
     voicemail_prompt = fields.Text(
         default="Hello, this is {{user.name}}. I'm unable to take your call right now. Please leave a message after the tone.")
@@ -248,3 +262,43 @@ class User(models.Model):
     def get_user_by_uri(self, userinfo):
         """Lookup connect.user by SIP/client URI. No-op in core; overridden by provider modules."""
         return self.env['connect.user']
+
+    def _set_originate_origin(self, payload):
+        """Store (or clear) the pending click-to-call origin.
+
+        Written with SQL on purpose: connect.user.write() clears the whole
+        registry cache and runs provider sync hooks, which a click-to-call
+        must not trigger.
+        """
+        self.ensure_one()
+        self.env.cr.execute(
+            "UPDATE connect_user SET originate_origin = %s WHERE id = %s",
+            (json.dumps(payload) if payload else None, self.id),
+        )
+        self.invalidate_recordset(['originate_origin'])
+
+    @api.model
+    def _originate_digits(self, number):
+        return re.sub(r'\D', '', number or '')[-ORIGINATE_MATCH_DIGITS:]
+
+    def _pop_originate_origin(self, number):
+        """Return {'model', 'res_id'} if the pending origin belongs to a call
+        to ``number`` started recently, and clear it."""
+        self.ensure_one()
+        if not self.originate_origin:
+            return None
+        try:
+            pending = json.loads(self.originate_origin)
+            started = fields.Datetime.to_datetime(pending['at'])
+        except (ValueError, KeyError, TypeError):
+            self._set_originate_origin(None)
+            return None
+        if fields.Datetime.now() - started > ORIGINATE_ORIGIN_TTL:
+            self._set_originate_origin(None)
+            return None
+        digits = self._originate_digits(number)
+        if not digits or digits != pending.get('number'):
+            return None
+        self._set_originate_origin(None)
+        return {'model': pending.get('model'), 'res_id': pending.get('res_id')}
+

@@ -25,6 +25,12 @@ version bumps, repository moves — is deliberately left out.
 ## 2026-10
 
 ### Changed
+- **connect** — A call started by clicking a number on a record (a lead, order,
+  ticket or anything with a chatter) is now logged in that record's chatter and
+  its contact's, together with the AI summary, in addition to the call's own
+  contact. Records found by the CRM, Sales, Helpdesk, Accounting, Project and HR
+  bridges get both too, and every record gets them once. The call form shows
+  where the call was made from.
 - **connect_twilio** — S3 recording storage is now part of the Twilio module
   instead of the separate **connect_s3** app. Nothing to install: upgrading
   **connect_twilio** carries existing S3 settings over unchanged, and the
@@ -32,6 +38,8 @@ version bumps, repository moves — is deliberately left out.
   only on servers that use S3 storage.
 
 ### Fixed
+- **connect** — Very short calls no longer post a "transcript is too short to
+  summarize" note as their summary.
 - **connect_freeswitch, connect_twilio, connect_telnyx, connect_infobip** —
   Giving a user an extension works again on every series. Saving an extension
   with a destination could fail with *'NoneType' object has no attribute
