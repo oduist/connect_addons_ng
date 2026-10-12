@@ -199,7 +199,7 @@ class TestRecording(ConnectTestCommon):
             summary_text='<p>Persistent summary</p>',
         ) as mock_client:
             mock_client.audio.transcriptions.create.return_value.segments = [
-                MagicMock(start=0, text='Persistent transcript'),
+                MagicMock(start=0, text='Persistent transcript of a call about the order delivery'),
             ]
             with patch(
                 'odoo.addons.connect.models.recording.requests.get',
@@ -229,7 +229,7 @@ class TestRecording(ConnectTestCommon):
 
         with self.mock_openai_client() as mock_client:
             mock_client.audio.transcriptions.create.return_value.segments = [
-                MagicMock(start=0, text='Transcript before summary error'),
+                MagicMock(start=0, text='Transcript before summary error about the order delivery'),
             ]
             with patch(
                 'odoo.addons.connect.models.recording.requests.get',
@@ -259,7 +259,7 @@ class TestRecording(ConnectTestCommon):
 
         with self.mock_openai_client() as mock_client:
             mock_client.audio.transcriptions.create.return_value.segments = [
-                MagicMock(start=0, text='Orphan transcript'),
+                MagicMock(start=0, text='Orphan transcript of a call about the order delivery'),
             ]
             with patch(
                 'odoo.addons.connect.models.recording.requests.get',
