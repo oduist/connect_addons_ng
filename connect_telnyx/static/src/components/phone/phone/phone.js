@@ -13,6 +13,26 @@ import {_t} from "@web/core/l10n/translation"
 
 const uid = user.userId
 
+// TelnyxRTC error codes, see the error catalog in lib/telnyx-webrtc.js.
+// After these the SDK reconnects by itself (autoReconnect is on by
+// default), for example when a laptop wakes up from sleep, so the user is
+// not told about them.
+const TELNYX_RECONNECTING_ERRORS = [
+    45002, // WEBSOCKET_ERROR
+    45004, // GATEWAY_FAILED
+    48001, // NETWORK_OFFLINE
+]
+// The client gave up on its connection or its login. The phone recovers
+// once with a fresh token and client, and tells the user only if that
+// fails as well.
+const TELNYX_CONNECTION_LOST_ERRORS = [
+    45001, // WEBSOCKET_CONNECTION_FAILED
+    45003, // RECONNECTION_EXHAUSTED
+    46001, // LOGIN_FAILED
+    46002, // INVALID_CREDENTIALS
+    46003, // AUTHENTICATION_REQUIRED
+]
+
 // Thin adapter exposing a Twilio-Device-like session API on top of a
 // TelnyxRTC Call, so the phone logic ported from connect_twilio stays
 // close to the original.
@@ -182,6 +202,13 @@ export class Phone extends Component {
         // TelnyxRTC call id -> TelnyxSession adapter
         this.telnyxSessions = {}
         this.lastTokenRefresh = 0
+        // Set while the phone rebuilds its client after losing the
+        // connection; cleared when the client is ready again.
+        this.connectionRecovering = false
+        // Closes the "connection lost" error once the phone is back.
+        this.closeConnectionError = null
+        // Sticky errors on screen, by message: the same one is not stacked.
+        this.shownErrors = new Map()
     }
 
     setup() {
@@ -202,8 +229,18 @@ export class Phone extends Component {
         // Errors are shown even when call popups are switched off: a call
         // that fails silently looks like a broken phone.
         this.notifyError = (message) => {
-            this.notification.add(message, {
-                title: 'Connect', sticky: true, type: 'danger'})
+            if (this.shownErrors.has(message)) {
+                return this.shownErrors.get(message)
+            }
+            const close = this.notification.add(message, {
+                title: 'Connect', sticky: true, type: 'danger',
+                onClose: () => this.shownErrors.delete(message),
+            })
+            this.shownErrors.set(message, close)
+            return () => {
+                this.shownErrors.delete(message)
+                close()
+            }
         }
 
         this.debounceEnterPhoneNumber = useDebounced((ev) => {
@@ -221,6 +258,8 @@ export class Phone extends Component {
             this.bus.addEventListener('busPhoneToggleDisplay', ({detail}) => this._busPhoneToggleDisplay(detail))
 
             this.bus.addEventListener('busPhoneHangUp', ({detail}) => this._busPhoneHangUp(detail))
+
+            window.addEventListener("online", () => this._onBrowserOnline())
 
             window.addEventListener("beforeunload", (event) => {
                 if (this.session) {
@@ -490,23 +529,11 @@ export class Phone extends Component {
 
         self.userAgent.on('telnyx.ready', () => {
             self.sipRegistered = true
+            self._onTelnyxConnected()
         })
 
         self.userAgent.on('telnyx.error', (error) => {
-            console.error('Telnyx client error:', error)
-            const message = self.getTelnyxErrorMessage(error)
-            if (message) {
-                self.notifyError(message)
-            }
-            if (self.state.inCall && !self.session) {
-                self.endCall()
-            }
-            // An unusable microphone is not fixed by a fresh token.
-            if (error && error.recoverable !== false) {
-                self.updateToken().catch((refreshError) => {
-                    console.error('Telnyx token refresh failed:', refreshError)
-                })
-            }
+            self._onTelnyxError(error)
         })
 
         self.userAgent.on('telnyx.notification', (notification) => {
@@ -516,6 +543,84 @@ export class Phone extends Component {
         self.userAgent.connect().catch((error) => {
             console.error('Telnyx client connect failed:', error)
         })
+    }
+
+    _onTelnyxError(envelope) {
+        const error = this._unwrapTelnyxError(envelope)
+        const code = error && error.code
+        // Call failures carry the call id; connection failures do not.
+        const isCallError = Boolean(envelope && envelope.callId)
+        if (!isCallError && TELNYX_RECONNECTING_ERRORS.includes(code) && !error.fatal) {
+            console.warn('Telnyx connection interrupted, the client reconnects:', error)
+            return
+        }
+        console.error('Telnyx client error:', envelope)
+        if (this.state.inCall && !this.session) {
+            this.endCall()
+        }
+        if (!isCallError && TELNYX_CONNECTION_LOST_ERRORS.includes(code)) {
+            this._recoverTelnyxConnection(envelope)
+            return
+        }
+        const message = this.getTelnyxErrorMessage(envelope)
+        if (message) {
+            this.notifyError(message)
+        }
+        // An unusable microphone is not fixed by a fresh token.
+        if (envelope && envelope.recoverable !== false) {
+            this.updateToken().catch((refreshError) => {
+                console.error('Telnyx token refresh failed:', refreshError)
+            })
+        }
+    }
+
+    _recoverTelnyxConnection(envelope) {
+        if (this.connectionRecovering) {
+            // The fresh client failed as well.
+            this._notifyConnectionLost(envelope)
+            return
+        }
+        this.connectionRecovering = true
+        this.lastTokenRefresh = 0
+        this.updateToken().catch((refreshError) => {
+            console.error('Telnyx token refresh failed:', refreshError)
+            this._notifyConnectionLost(envelope)
+        })
+    }
+
+    _notifyConnectionLost(envelope) {
+        if (this.closeConnectionError) {
+            return
+        }
+        const error = this._unwrapTelnyxError(envelope)
+        const message = [45001, 45003].includes(error && error.code)
+            ? _t(
+                "The phone lost its connection to Telnyx and could not " +
+                "reconnect. It reconnects by itself when the network is " +
+                "back; reload the page if it does not.")
+            : this.getTelnyxErrorMessage(envelope)
+        this.closeConnectionError = this.notifyError(message)
+    }
+
+    _onTelnyxConnected() {
+        this.connectionRecovering = false
+        // The phone is back: a "connection lost" error still on screen is
+        // no longer true.
+        if (this.closeConnectionError) {
+            this.closeConnectionError()
+            this.closeConnectionError = null
+        }
+    }
+
+    _onBrowserOnline() {
+        // Once the client has given up, the SDK no longer retries: rebuild
+        // it when the network returns.
+        if (this.connectionRecovering || this.closeConnectionError) {
+            this.lastTokenRefresh = 0
+            this.updateToken().catch((refreshError) => {
+                console.error('Telnyx token refresh failed:', refreshError)
+            })
+        }
     }
 
     _onTelnyxNotification(notification) {
@@ -704,12 +809,17 @@ export class Phone extends Component {
         }
     }
 
-    getTelnyxErrorMessage(error) {
-        // The client reports call failures wrapped in an envelope:
+    _unwrapTelnyxError(error) {
+        // The client reports failures wrapped in an envelope:
         // {error, callId, sessionId, recoverable}.
         while (error && error.error) {
             error = error.error
         }
+        return error
+    }
+
+    getTelnyxErrorMessage(error) {
+        error = this._unwrapTelnyxError(error)
         const name = error && (error.name || error.code)
         if (name === 'MEDIA_MICROPHONE_PERMISSION_DENIED' || name === 42001
                 || name === 'NotAllowedError') {

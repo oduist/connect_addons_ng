@@ -1,6 +1,6 @@
 {
     'name': 'Oduist Connect',
-    'version': '18.0.4.5.0',
+    'version': '18.0.4.5.1',
     'author': 'Oduist',
     'category': 'Phone',
     'summary': 'Communication platform for Odoo',
