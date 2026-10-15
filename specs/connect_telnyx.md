@@ -4,7 +4,7 @@
 
 - **Name:** Oduist Connect Telnyx
 - **Technical:** `connect_telnyx`
-- **Version:** 19.0.1.4.8
+- **Version:** 19.0.1.4.9
 - **Depends:** `connect`
 - **Python deps:** `telnyx`, `nacl` (PyNaCl)
 - **Application:** False
@@ -586,6 +586,16 @@ bundle `lib/telnyx-webrtc.js`, global `TelnyxWebRTC.TelnyxRTC`):
   404/`UNALLOCATED_NUMBER` case additionally calls
   `connect.settings.telnyx_check_call_failure()` and shows a sticky
   danger notification when the account balance is exhausted (ADR-040).
+  Connection errors are handled by `_onTelnyxError()`: the SDK's
+  self-healing ones (45002 `WEBSOCKET_ERROR`, 45004 `GATEWAY_FAILED`,
+  48001 `NETWORK_OFFLINE`, non-fatal, typically after a laptop wakes from
+  sleep) are only logged, because `autoReconnect` restores the socket.
+  A connection the client gave up on (45001, 45003
+  `RECONNECTION_EXHAUSTED`) or a rejected login (46001-46003) is rebuilt
+  once with a fresh token (`_recoverTelnyxConnection()`); only if that
+  fails too does the user get one sticky error, which `telnyx.ready`
+  closes again, and the browser `online` event triggers another rebuild.
+  `notifyError()` never stacks a sticky error that is already on screen.
   Odoo's error-handler registry consumes only the SDK's expected
   `StaleRequestError` cancellation when a background tab resumes and the
   signaling socket generation changes; other client and media errors keep
