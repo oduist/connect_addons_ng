@@ -1,0 +1,4 @@
+site_name: ElevenLabs Knowledge
+nav:
+  - Overview: index.md
+  - Managing the Knowledge Base: knowledge-base.md

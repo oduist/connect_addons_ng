@@ -1,4 +1,16 @@
-# Documentation build dependencies (MkDocs Material).
-# mkdocs-material pulls in mkdocs, pymdown-extensions and the rest of the
-# stack used by mkdocs.yml (admonition, pymdownx.*, tables, attr_list).
-mkdocs-material==9.7.6
+# Documentation build dependencies. This is the whole toolchain — there is no
+# Node here and nothing to compile; see docs/README.md.
+mkdocs==1.6.1
+
+# The site's look. Aurora lives in its own repository and ships its stylesheet
+# already compiled, so building the docs needs no Node and no build step here.
+# Pinned to a tag: bump it to adopt a theme change.
+mkdocs-theme-aurora @ git+https://github.com/oduist/mkdocs-theme-aurora@v2.0.0
+
+# mkdocs.yml's markdown_extensions use pymdownx.details, pymdownx.superfences
+# and pymdownx.tabbed. The Material theme package used to pull this in
+# transitively, so it was never pinned here.
+pymdown-extensions==11.0.1
+
+# Aggregates each module's docs/ folder into one site (see root mkdocs.yml).
+mkdocs-monorepo-plugin==1.1.2

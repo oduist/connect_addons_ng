@@ -1,0 +1,8 @@
+# Per-module documentation config, aggregated by the root mkdocs.yml via the
+# mkdocs-monorepo-plugin (!include). docs_dir defaults to ./docs relative to
+# this file, i.e. connect_crm/docs/.
+site_name: CRM
+nav:
+  - Overview: index.md
+  - Configuration & Lead Routing: configuration.md
+  - Security: security.md

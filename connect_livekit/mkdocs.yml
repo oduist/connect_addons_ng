@@ -1,0 +1,7 @@
+# Per-module docs config, aggregated by root mkdocs.yml via mkdocs-monorepo-plugin.
+site_name: LiveKit
+nav:
+  - Admin Guide:
+      - LiveKit Integration: admin/livekit-setup.md
+  - User Guide:
+      - Video Meetings: user/meetings.md

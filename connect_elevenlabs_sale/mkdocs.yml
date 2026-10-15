@@ -1,0 +1,4 @@
+site_name: ElevenLabs Sales
+nav:
+  - Overview: index.md
+  - Agent Tools & Setup: tools.md

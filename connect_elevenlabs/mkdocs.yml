@@ -1,0 +1,11 @@
+# Per-module documentation config, aggregated by the root mkdocs.yml via the
+# mkdocs-monorepo-plugin (!include). docs_dir defaults to ./docs relative to
+# this file, i.e. connect_elevenlabs/docs/.
+site_name: ElevenLabs
+nav:
+  - Overview: index.md
+  - Installation: installation.md
+  - Account Configuration: configuration.md
+  - Agents, Tools & Voices: agents.md
+  - Webhooks & Security: webhooks-security.md
+  - Maintenance: maintenance.md
