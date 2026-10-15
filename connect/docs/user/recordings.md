@@ -5,14 +5,15 @@
 If call recording is enabled for your account, calls are automatically recorded. Recordings appear:
 
 - **On the call record** — Inline audio player in the call form
+- **On the recording record** — Audio player on the **Details** tab
 - **In the recordings list** — Navigate to **Connect > Calls > Recordings**
 
 ### Playback
 
 Click the play button on any recording to listen in your browser. You can also download recordings for offline access.
 
-Caller and called numbers use the standard phone control on an individual
-recording form, so a dialable number can be used for click-to-call there. The
+Caller and called numbers use the standard phone control on the **Info** tab of
+an individual recording form, so a dialable number can be used for click-to-call there. The
 recording list shows those numbers as plain text.
 
 ### Recording Settings
@@ -65,14 +66,14 @@ When transcription is enabled, recordings are automatically processed:
 
 ### Viewing Transcripts
 
-The linked call keeps the transcript and summary permanently. On a retained
-recording record, you'll also see:
+The linked call keeps the transcript and summary permanently. A retained
+recording record opens with the **Summary** at the top (shown once there is
+one) and two tabs below it:
 
-| Field | Description |
-|-------|-------------|
-| **Transcript** | Full text of the conversation. |
-| **Summary** | AI-generated summary of the call. |
-| **Transcription Price** | Estimated Whisper speech-to-text cost in USD, based on OpenAI's processed duration. |
+| Tab | Content |
+|-----|---------|
+| **Info** | The call, contact, caller and called users and numbers, start time, duration, status, and the transcription error if transcription failed. |
+| **Details** | The audio player, the full **Transcript**, and technical data: channel, SIDs, media URL, source, recording price, and **Transcription Price** (estimated Whisper speech-to-text cost in USD, based on OpenAI's processed duration). |
 
 The transcript and summary remain available on the linked call even if the
 recording is later deleted. The price remains on retained recording records.
@@ -85,9 +86,12 @@ You can manually trigger transcription by clicking the **Transcribe** button
 on a recording record. Once the manual attempt finishes, the recording is
 removed from the automatic queue so it is not sent to OpenAI twice.
 
-### Partner Chatter Integration
+### Chatter Integration
 
-When **Register Summary** is enabled in settings, call summaries are automatically posted to the partner's chatter feed. This provides a timeline of all call interactions visible on the contact record.
+When **Register Summary** is enabled in settings, call summaries are posted to
+the chatters listed in *Calls → Where Calls Are Logged*: the record the call was
+made from, its contact, the call's contact, and records linked by bridge
+modules. This provides a timeline of call interactions on those records.
 
 ## Browsing Recordings
 

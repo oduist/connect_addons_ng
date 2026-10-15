@@ -25,6 +25,11 @@ version bumps, repository moves — is deliberately left out.
 ## 2026-10
 
 ### Changed
+- **connect** — The recording form leads with the AI summary and splits the
+  rest into an **Info** tab (call, contact, users, numbers, time, duration,
+  status) and a **Details** tab (audio player, transcript, SIDs, media URL,
+  costs). ElevenLabs agent summary, recording and transcript follow the same
+  layout.
 - **connect** — A call started by clicking a number on a record (a lead, order,
   ticket or anything with a chatter) is now logged in that record's chatter and
   its contact's, together with the AI summary, in addition to the call's own

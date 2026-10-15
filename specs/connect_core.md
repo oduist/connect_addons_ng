@@ -812,7 +812,7 @@ All models get list (tree) and form views. Key view details:
 | `call_views.xml` | Plain caller/called values in lists; form phone widgets, recording widget, durable transcript/summary, partner button, chatter |
 | `channel_views.xml` | Plain caller/called values in the list; form phone widgets for caller/called and computed numbers (admin menu entry) |
 | `message_views.xml` | Plain from/to values in the list; form phone widgets, media widget, direction/status icons (menu entry lives in connect_twilio) |
-| `recording_views.xml` | Plain caller/called values in the list; form phone widgets, audio player, transcript, summary, and optional Partner and Users list columns |
+| `recording_views.xml` | Plain caller/called values in the list with optional Partner and Users columns. Form: `summary` group on top (invisible when empty), then a notebook — **Info** (`call_info`: call, partner, users, phone-widget numbers; `call_status`: start, duration, status, transcription error) and **Details** (`recording` player, `transcript`, `technical` SIDs/media URL/source, `costs`). Named groups are the extension anchors (connect_elevenlabs) |
 | `user_views.xml` | List + form with voicemail, summary prompt, originate provider |
 | `debug_views.xml` | List (read-only) |
 | `settings.xml` | Core settings form (general, registration, transcription/OpenAI). Provider settings forms live in their own modules and open the same singleton via the parametrized `open_settings_form()`. |

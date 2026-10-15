@@ -27,41 +27,52 @@
                             class="btn-primary" icon="fa-microphone"/>
                 </header>
                 <sheet>
-                    <group>
-                        <group string="Recording">
-                            <field name="recording_widget" nolabel="1" colspan="2"/>
-                        </group>
-                    </group>
-                    <group>
-                        <group string="Call Info">
-                            <field name="call"/>
-                            <field name="channel"/>
-                            <field name="partner"/>
-                            <field name="caller_user"/>
-                            <field name="called_user"/>
-                            <field name="caller_number" widget="phone"/>
-                            <field name="called_number" widget="phone"/>
-                            <field name="duration_human" string="Duration"/>
-                            <field name="status"/>
-                            <field name="start_time"/>
-                        </group>
-                        <group string="Details">
-                            <field name="sid"/>
-                            <field name="call_sid"/>
-                            <field name="media_url"/>
-                            <field name="source"/>
-                            <field name="price"/>
-                            <field name="price_unit"/>
-                            <field name="transcription_price"/>
-                            <field name="transcription_error" invisible="not transcription_error"/>
-                        </group>
-                    </group>
-                    <group string="Transcript" invisible="not transcript">
-                        <field name="transcript" nolabel="1" colspan="2"/>
-                    </group>
-                    <group string="Summary" invisible="not summary">
+                    <group name="summary" string="Summary" invisible="not summary">
                         <field name="summary" nolabel="1" colspan="2"/>
                     </group>
+                    <notebook>
+                        <page name="info" string="Info">
+                            <group>
+                                <group name="call_info">
+                                    <field name="call"/>
+                                    <field name="partner"/>
+                                    <field name="caller_user"/>
+                                    <field name="called_user"/>
+                                    <field name="caller_number" widget="phone"/>
+                                    <field name="called_number" widget="phone"/>
+                                </group>
+                                <group name="call_status">
+                                    <field name="start_time"/>
+                                    <field name="duration_human" string="Duration"/>
+                                    <field name="status"/>
+                                    <field name="transcription_error"
+                                           invisible="not transcription_error"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page name="details" string="Details">
+                            <group name="recording" string="Recording">
+                                <field name="recording_widget" nolabel="1" colspan="2"/>
+                            </group>
+                            <group name="transcript" string="Transcript" invisible="not transcript">
+                                <field name="transcript" nolabel="1" colspan="2"/>
+                            </group>
+                            <group>
+                                <group name="technical" string="Technical">
+                                    <field name="channel"/>
+                                    <field name="sid"/>
+                                    <field name="call_sid"/>
+                                    <field name="media_url"/>
+                                    <field name="source"/>
+                                </group>
+                                <group name="costs" string="Costs">
+                                    <field name="price"/>
+                                    <field name="price_unit"/>
+                                    <field name="transcription_price"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
                 </sheet>
                 <chatter/>
             </form>

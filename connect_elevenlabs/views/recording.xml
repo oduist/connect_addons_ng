@@ -16,17 +16,22 @@
         <field name="model">connect.recording</field>
         <field name="inherit_id" ref="connect.view_connect_recording_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//sheet" position="inside">
-                <group string="Agent Summary" invisible="not elevenlabs_summary">
+            <group name="summary" position="after">
+                <group name="elevenlabs_summary" string="Agent Summary"
+                       invisible="not elevenlabs_summary">
                     <field name="elevenlabs_summary" nolabel="1" colspan="2"/>
                 </group>
-                <group string="Agent Recording" invisible="not elevenlabs_transcript">
+            </group>
+            <group name="transcript" position="after">
+                <group name="elevenlabs_recording" string="Agent Recording"
+                       invisible="not elevenlabs_transcript">
                     <field name="elevenlabs_recording_widget" nolabel="1" colspan="2"/>
                 </group>
-                <group string="Agent Transcript" invisible="not elevenlabs_transcript">
+                <group name="elevenlabs_transcript" string="Agent Transcript"
+                       invisible="not elevenlabs_transcript">
                     <field name="elevenlabs_transcript" nolabel="1" colspan="2"/>
                 </group>
-            </xpath>
+            </group>
         </field>
     </record>
 </odoo>
