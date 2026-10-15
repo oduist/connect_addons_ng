@@ -371,6 +371,17 @@ TeXML `<Dial>`. Telnyx may identify that user in different webhook fields;
 Odoo normalizes those variants before selecting the caller ID and recording
 policy.
 
+### Connection interruptions
+
+The web phone stays quiet while it can reconnect by itself. When the
+connection to Telnyx drops — a laptop wakes from sleep, Wi-Fi changes, the
+network is briefly offline — the Telnyx client reconnects automatically and
+no error is shown. If the client gives up, the phone rebuilds it once with a
+fresh login; only when that fails as well does a single red notification say
+that the phone could not reconnect. It disappears as soon as the phone is
+connected again, which it retries when the browser reports the network is
+back.
+
 ### Call-failure notifications
 
 When an outbound web-phone call fails before it is answered, the Telnyx

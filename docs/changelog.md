@@ -38,6 +38,10 @@ version bumps, repository moves — is deliberately left out.
   only on servers that use S3 storage.
 
 ### Fixed
+- **connect_telnyx** — The web phone no longer fills the screen with "Phone
+  error: An error occurred on the WebSocket connection" notifications after a
+  laptop wakes from sleep. It reconnects quietly and shows one error only if it
+  really cannot get back, which closes once it is connected again.
 - **connect** — Very short calls no longer post a "transcript is too short to
   summarize" note as their summary.
 - **connect_freeswitch, connect_twilio, connect_telnyx, connect_infobip** —
