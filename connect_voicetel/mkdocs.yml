@@ -1,0 +1,17 @@
+# Per-module documentation config, aggregated by the root mkdocs.yml via the
+# mkdocs-monorepo-plugin (!include). docs_dir defaults to ./docs relative to
+# this file, i.e. connect_voicetel/docs/.
+site_name: VoiceTel
+nav:
+  - Admin Guide:
+    - Overview: index.md
+    - Installation: installation.md
+    - Account Configuration: configuration.md
+    - Users, SIP & Browser Phone: users-and-sip.md
+    - Numbers & Call Routing: numbers-and-routing.md
+    - Call Flows & VoiceML Apps: call-flows-voiceml.md
+    - Messaging (SMS): messaging.md
+    - Webhooks & Security: webhooks-security.md
+    - Maintenance: maintenance.md
+  - User Guide:
+    - Browser Phone: user/browser-phone.md

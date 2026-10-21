@@ -24,6 +24,14 @@ version bumps, repository moves — is deliberately left out.
 
 ## 2026-10
 
+### Added
+- **connect_voicetel** — New provider module for **VoiceTel VoiceML**
+  (Twilio-compatible). Numbers, extensions, call flows and outgoing caller IDs
+  sync with the VoiceML account; calls, recordings and SMS flow both ways with
+  signed webhooks. The browser phone registers over SIP/WSS on the tenant's
+  `*.vml.voice.tel` domain, sharing one SIP credential with desk phones and the
+  VoiceML Phone apps. See the VoiceTel section in the documentation.
+
 ### Changed
 - **connect** — The recording form leads with the AI summary and splits the
   rest into an **Info** tab (call, contact, users, numbers, time, duration,

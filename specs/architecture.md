@@ -10,17 +10,18 @@
 
 2. **PBX configuration models are fully owned per provider (ADR-031).** Extensions,
    call flows, numbers, endpoints and outgoing caller IDs are **independent models in
-   the provider modules** (`connect.twilio.*`, `connect.freeswitch.*`,
-   `connect.asterisk.*`) — not shared core models. Each telephony system lives in its
+   the provider modules** (`connect.twilio.*`, `connect.voicetel.*`,
+   `connect.freeswitch.*`, `connect.asterisk.*`) — not shared core models. Each telephony system lives in its
    own numbering plan; there is no call path between providers. The shared code these
    models carry (exten dst-Reference mechanics, callflow language list, E.164
    caller-ID constraint) is **duplicated on purpose — no mixins** (owner decision):
    fixes to those areas must be applied in `connect_twilio`,
-   `connect_freeswitch` AND `connect_telnyx`.
+   `connect_freeswitch`, `connect_telnyx` AND `connect_voicetel`.
 
 3. **Integration modules still extend core models via `_inherit`.** Modules like
-   `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`,
-   `connect_infobip`, `connect_bird` and `connect_3cx` add adapter fields,
+   `connect_twilio`, `connect_voicetel`, `connect_freeswitch`,
+   `connect_asterisk`, `connect_telnyx`, `connect_infobip`, `connect_bird` and
+   `connect_3cx` add adapter fields,
    methods, and webhook handlers to the shared core models (`connect.call`,
    `connect.channel`, `connect.user`, `connect.settings`). They never redefine
    core models. A provider module may own **no** PBX configuration models at

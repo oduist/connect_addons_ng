@@ -59,6 +59,7 @@ nav:
   - Pipecat: '!include ./connect_pipecat/mkdocs.yml'
   - Asterisk: '!include ./connect_asterisk/mkdocs.yml'
   - Telnyx: '!include ./connect_telnyx/mkdocs.yml'
+  - VoiceTel: '!include ./connect_voicetel/mkdocs.yml'
   - 3CX: '!include ./connect_3cx/mkdocs.yml'
   - LiveKit: '!include ./connect_livekit/mkdocs.yml'
   - Infobip: '!include ./connect_infobip/mkdocs.yml'
