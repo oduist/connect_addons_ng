@@ -3,9 +3,13 @@ import os
 import tempfile
 from unittest.mock import patch
 
+from odoo import release
 from odoo.exceptions import AccessError
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
+
+# res.users.groups_id was renamed to group_ids in Odoo 19.
+GROUPS_FIELD = "group_ids" if release.version_info[0] >= 19 else "groups_id"
 
 from odoo.addons.connect_book.models.connect_book import (
     AUDIENCE_ADMIN,
@@ -27,7 +31,7 @@ class TestConnectBook(TransactionCase):
         # role so the tests that call get_book()/get_admin_book() directly on
         # self.book behave like a real Connect administrator.
         self.env.user.write({
-            "group_ids": [(4, self.env.ref("connect.group_admin").id)]
+            GROUPS_FIELD: [(4, self.env.ref("connect.group_admin").id)]
         })
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
@@ -224,7 +228,7 @@ class TestConnectBook(TransactionCase):
         user = self.env["res.users"].create({
             "name": "No Connect Role",
             "login": "no.connect.role@example.com",
-            "group_ids": [(6, 0, [self.env.ref("base.group_user").id])],
+            GROUPS_FIELD: [(6, 0, [self.env.ref("base.group_user").id])],
         })
         with self.assertRaises(AccessError):
             self.env["connect.book"].with_user(user).get_book()
@@ -233,7 +237,7 @@ class TestConnectBook(TransactionCase):
         user = self.env["res.users"].create({
             "name": "Connect User",
             "login": "connect.user.admin.book@example.com",
-            "group_ids": [(6, 0, [
+            GROUPS_FIELD: [(6, 0, [
                 self.env.ref("base.group_user").id,
                 self.env.ref("connect.group_user").id,
             ])],
@@ -245,7 +249,7 @@ class TestConnectBook(TransactionCase):
         user = self.env["res.users"].create({
             "name": "Connect User",
             "login": "connect.user.book@example.com",
-            "group_ids": [(6, 0, [
+            GROUPS_FIELD: [(6, 0, [
                 self.env.ref("base.group_user").id,
                 self.env.ref("connect.group_user").id,
             ])],
