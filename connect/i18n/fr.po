@@ -1,0 +1,1830 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* connect
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0-20261124\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-25 09:20+0000\n"
+"PO-Revision-Date: 2026-11-25 00:00+0000\n"
+"Last-Translator: Oduist\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.connect_settings_form
+msgid "API"
+msgstr "API"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__api_fallback_url
+msgid "API Fallback URL"
+msgstr "URL de secours de l'API"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.connect_settings_form
+msgid "API Key"
+msgstr "Clé API"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__api_url
+msgid "API URL"
+msgstr "URL de l'API"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__message_needaction
+#: model:ir.model.fields,field_description:connect.field_connect_channel__message_needaction
+#: model:ir.model.fields,field_description:connect.field_connect_recording__message_needaction
+msgid "Action Needed"
+msgstr "Nécessite une action"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_user__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__activity_ids
+#: model:ir.model.fields,field_description:connect.field_connect_recording__activity_ids
+msgid "Activities"
+msgstr "Activités"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__activity_exception_decoration
+#: model:ir.model.fields,field_description:connect.field_connect_recording__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Indicateur d’exception d’activité"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__activity_state
+#: model:ir.model.fields,field_description:connect.field_connect_recording__activity_state
+msgid "Activity State"
+msgstr "Statut de l'activité"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__activity_type_icon
+#: model:ir.model.fields,field_description:connect.field_connect_recording__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Icône de type d'activité"
+
+#. module: connect
+#: model:res.groups,name:connect.group_admin
+msgid "Admin"
+msgstr "Administrateur"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_slot__allday
+msgid "All Day"
+msgstr "Journée entière"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_oduist_license__all_modules_purchased
+msgid "All Modules Purchased"
+msgstr "Tous les modules achetés"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__answered_pbx_user
+msgid "Answered PBX User"
+msgstr "Utilisateur PBX ayant répondu"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__answered_user
+msgid "Answered User"
+msgstr "Utilisateur ayant répondu"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__answered_user_img
+msgid "Answered User Avatar"
+msgstr "Avatar de l'utilisateur ayant répondu"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__message_attachment_count
+#: model:ir.model.fields,field_description:connect.field_connect_channel__message_attachment_count
+#: model:ir.model.fields,field_description:connect.field_connect_recording__message_attachment_count
+msgid "Attachment Count"
+msgstr "Nombre de pièces jointes"
+
+#. module: connect
+#. odoo-python
+#: code:addons/connect/models/schedule.py:0
+#: model:ir.actions.act_window,name:connect.action_connect_schedule_slot
+#: model:ir.ui.menu,name:connect.menu_connect_availability
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_schedule_form
+msgid "Availability"
+msgstr "Disponibilité"
+
+#. module: connect
+#. odoo-python
+#: code:addons/connect/models/schedule.py:0
+#: model:ir.model.fields.selection,name:connect.selection__connect_schedule_slot__slot_type__available
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_schedule_slot_search
+msgid "Available"
+msgstr "Disponible"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/components/calls/calls.xml:0
+msgid "Avatar"
+msgstr "Avatar"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.oduist_license_form
+msgid "BUY ALL MODULES"
+msgstr "ACHETER TOUS LES MODULES"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_channel__duration_billing
+msgid "Bill Minutes"
+msgstr "Minutes facturées"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_message_form
+msgid "Body"
+msgstr "Corps"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.oduist_license_form
+msgid "Buy Module"
+msgstr "Acheter le module"
+
+#. module: connect
+#: model:ir.model,name:connect.model_connect_call
+#: model:ir.model.fields,field_description:connect.field_connect_channel__call
+#: model:ir.model.fields,field_description:connect.field_connect_recording__call
+msgid "Call"
+msgstr "Appel"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__call_duration_limit
+msgid "Call Duration Limit (seconds)"
+msgstr "Limite de durée d'appel (secondes)"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_form
+msgid "Call Info"
+msgstr "Informations sur l'appel"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.connect_settings_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_user_form
+msgid "Call Settings"
+msgstr "Paramètres des appels"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__call_type
+#: model:ir.model.fields,field_description:connect.field_connect_channel__call_type
+msgid "Call Type"
+msgstr "Type d'appel"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/services/active_calls/active_calls_popup.xml:0
+#: model:ir.model.fields,field_description:connect.field_connect_call__called
+#: model:ir.model.fields,field_description:connect.field_connect_channel__called
+msgid "Called"
+msgstr "Appelé"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__origin_ref
+msgid "Called From"
+msgstr "Appelé depuis"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_channel__called_number
+#: model:ir.model.fields,field_description:connect.field_connect_recording__called_number
+msgid "Called Number"
+msgstr "Numéro appelé"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_channel__called_pbx_user
+msgid "Called PBX User"
+msgstr "Utilisateur PBX appelé"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__called_pbx_users
+msgid "Called Pbx Users"
+msgstr "Utilisateurs PBX appelés"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/services/active_calls/active_calls_popup.xml:0
+#: model:ir.model.fields,field_description:connect.field_connect_channel__called_user
+#: model:ir.model.fields,field_description:connect.field_connect_recording__called_user
+msgid "Called User"
+msgstr "Utilisateur appelé"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__called_users
+msgid "Called Users"
+msgstr "Utilisateurs appelés"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/services/active_calls/active_calls_popup.xml:0
+#: model:ir.model.fields,field_description:connect.field_connect_call__caller
+#: model:ir.model.fields,field_description:connect.field_connect_channel__caller
+msgid "Caller"
+msgstr "Appelant"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_channel__caller_number
+#: model:ir.model.fields,field_description:connect.field_connect_recording__caller_number
+msgid "Caller Number"
+msgstr "Numéro de l'appelant"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__caller_pbx_user
+#: model:ir.model.fields,field_description:connect.field_connect_channel__caller_pbx_user
+msgid "Caller PBX User"
+msgstr "Utilisateur PBX appelant"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/services/active_calls/active_calls_popup.xml:0
+#: model:ir.model.fields,field_description:connect.field_connect_call__caller_user
+#: model:ir.model.fields,field_description:connect.field_connect_channel__caller_user
+#: model:ir.model.fields,field_description:connect.field_connect_recording__caller_user
+msgid "Caller User"
+msgstr "Utilisateur appelant"
+
+#. module: connect
+#: model:ir.actions.act_window,name:connect.action_connect_call
+#: model:ir.actions.act_window,name:connect.action_connect_call_partner
+#: model:ir.ui.menu,name:connect.menu_connect_calls
+#: model:ir.ui.menu,name:connect.menu_connect_calls_list
+#: model_terms:ir.ui.view,arch_db:connect.view_partner_form_connect
+msgid "Calls"
+msgstr "Appels"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_transfer_wizard_form
+msgid "Cancel"
+msgstr "Annuler"
+
+#. module: connect
+#: model:ir.model,name:connect.model_connect_channel
+#: model:ir.model.fields,field_description:connect.field_connect_recording__channel
+msgid "Channel"
+msgstr "Canal"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_channel_form
+msgid "Channel Info"
+msgstr "Informations sur le canal"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__call_sid
+msgid "Channel SID"
+msgstr "SID du canal"
+
+#. module: connect
+#: model:ir.actions.act_window,name:connect.action_connect_channel
+#: model:ir.model.fields,field_description:connect.field_connect_call__channels
+#: model:ir.ui.menu,name:connect.menu_connect_channels
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_form
+msgid "Channels"
+msgstr "Canaux"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/components/calls/calls.xml:0
+msgid "Click to view detail"
+msgstr "Cliquer pour voir le détail"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_user__originate_provider
+msgid "Click-to-call Provider"
+msgstr "Fournisseur de clic-pour-appeler"
+
+#. module: connect
+#. odoo-python
+#: code:addons/connect/models/schedule.py:0
+#: model:ir.model.fields.selection,name:connect.selection__connect_schedule_slot__slot_type__closed
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_schedule_slot_search
+msgid "Closed"
+msgstr "Fermé"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_channel_form
+msgid "Computed Numbers"
+msgstr "Numéros calculés"
+
+#. module: connect
+#: model:ir.ui.menu,name:connect.menu_connect_settings
+msgid "Configuration"
+msgstr "Configuration"
+
+#. module: connect
+#: model:ir.module.category,name:connect.module_category_connect
+#: model:ir.ui.menu,name:connect.menu_connect_root
+msgid "Connect"
+msgstr "Connect"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_res_partner__connect_calls_count
+#: model:ir.model.fields,field_description:connect.field_res_users__connect_calls_count
+msgid "Connect Calls Count"
+msgstr "Nombre d'appels Connect"
+
+#. module: connect
+#: model:ir.model,name:connect.model_connect_debug
+msgid "Connect Debug"
+msgstr "Débogage Connect"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_mail_mail__connect_message
+#: model:ir.model.fields,field_description:connect.field_mail_message__connect_message
+msgid "Connect Message"
+msgstr "Message Connect"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_res_partner__connect_messages_count
+#: model:ir.model.fields,field_description:connect.field_res_users__connect_messages_count
+msgid "Connect Messages Count"
+msgstr "Nombre de messages Connect"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_res_partner__connect_recorded_calls
+#: model:ir.model.fields,field_description:connect.field_res_users__connect_recorded_calls
+msgid "Connect Recorded Calls"
+msgstr "Appels Connect enregistrés"
+
+#. module: connect
+#: model:ir.model,name:connect.model_connect_user
+#: model:ir.model.fields,field_description:connect.field_res_partner__connect_user
+#: model:ir.model.fields,field_description:connect.field_res_users__connect_user
+msgid "Connect User"
+msgstr "Utilisateur Connect"
+
+#. module: connect
+#: model:ir.actions.server,name:connect.cron_generate_schedule_slots_ir_actions_server
+msgid "Connect: generate working schedule availability slots"
+msgstr "Connect : générer les créneaux de disponibilité de l'horaire de travail"
+
+#. module: connect
+#: model:ir.actions.server,name:connect.cron_transcribe_recordings_ir_actions_server
+msgid "Connect: transcribe pending recordings"
+msgstr "Connect : transcrire les enregistrements en attente"
+
+#. module: connect
+#: model:ir.model,name:connect.model_res_partner
+msgid "Contact"
+msgstr "Contact"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_recording_form
+msgid "Costs"
+msgstr "Coûts"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/components/calls/calls.xml:0
+msgid "Create Customer"
+msgstr "Créer un client"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_form
+msgid "Create Partner"
+msgstr "Créer un partenaire"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__create_uid
+#: model:ir.model.fields,field_description:connect.field_connect_channel__create_uid
+#: model:ir.model.fields,field_description:connect.field_connect_debug__create_uid
+#: model:ir.model.fields,field_description:connect.field_connect_favorite__create_uid
+#: model:ir.model.fields,field_description:connect.field_connect_message__create_uid
+#: model:ir.model.fields,field_description:connect.field_connect_recording__create_uid
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__create_uid
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_slot__create_uid
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_special_day__create_uid
+#: model:ir.model.fields,field_description:connect.field_connect_settings__create_uid
+#: model:ir.model.fields,field_description:connect.field_connect_transfer_wizard__create_uid
+#: model:ir.model.fields,field_description:connect.field_connect_user__create_uid
+#: model:ir.model.fields,field_description:connect.field_oduist_license__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__create_date
+#: model:ir.model.fields,field_description:connect.field_connect_channel__create_date
+#: model:ir.model.fields,field_description:connect.field_connect_debug__create_date
+#: model:ir.model.fields,field_description:connect.field_connect_favorite__create_date
+#: model:ir.model.fields,field_description:connect.field_connect_message__create_date
+#: model:ir.model.fields,field_description:connect.field_connect_recording__create_date
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__create_date
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_slot__create_date
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_special_day__create_date
+#: model:ir.model.fields,field_description:connect.field_connect_settings__create_date
+#: model:ir.model.fields,field_description:connect.field_connect_transfer_wizard__create_date
+#: model:ir.model.fields,field_description:connect.field_connect_user__create_date
+#: model:ir.model.fields,field_description:connect.field_oduist_license__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/components/calls/calls.xml:0
+msgid "Customer"
+msgstr "Client"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_special_day__date
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_tree
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_debug_tree
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_message_tree
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_recording_tree
+msgid "Date"
+msgstr "Date"
+
+#. module: connect
+#: model:ir.actions.act_window,name:connect.action_connect_debug
+#: model:ir.ui.menu,name:connect.menu_connect_debug
+msgid "Debug Log"
+msgstr "Journal de débogage"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__debug_mode
+msgid "Debug Mode"
+msgstr "Mode débogage"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__delete_recording_after_transcription
+msgid "Delete Recording After Transcription"
+msgstr "Supprimer l'enregistrement après la transcription"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_settings__delete_recording_after_transcription
+msgid ""
+"Delete the Odoo recording and its attachment after a successful "
+"transcription and summary. The transcript and summary remain on the linked "
+"call."
+msgstr "Supprime l'enregistrement Odoo et sa pièce jointe après une transcription et un résumé réussis. La transcription et le résumé restent sur l'appel lié."
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_recording_form
+msgid "Details"
+msgstr "Détails"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/services/active_calls/active_calls_popup.xml:0
+#: model:ir.model.fields,field_description:connect.field_connect_call__direction
+#: model:ir.model.fields,field_description:connect.field_connect_channel__technical_direction
+#: model:ir.model.fields,field_description:connect.field_connect_message__direction
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_channel_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_channel_tree
+msgid "Direction"
+msgstr "Direction"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__direction_display
+msgid "Direction Display"
+msgstr "Affichage de la direction"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__display_name
+#: model:ir.model.fields,field_description:connect.field_connect_channel__display_name
+#: model:ir.model.fields,field_description:connect.field_connect_debug__display_name
+#: model:ir.model.fields,field_description:connect.field_connect_favorite__display_name
+#: model:ir.model.fields,field_description:connect.field_connect_message__display_name
+#: model:ir.model.fields,field_description:connect.field_connect_recording__display_name
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__display_name
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_slot__display_name
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_special_day__display_name
+#: model:ir.model.fields,field_description:connect.field_connect_settings__display_name
+#: model:ir.model.fields,field_description:connect.field_connect_transfer_wizard__display_name
+#: model:ir.model.fields,field_description:connect.field_connect_user__display_name
+#: model:ir.model.fields,field_description:connect.field_oduist_license__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__display_openai_api_key
+msgid "Display Openai Api Key"
+msgstr "Afficher la clé API OpenAI"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__duration_human
+#: model:ir.model.fields,field_description:connect.field_connect_channel__duration_human
+#: model:ir.model.fields,field_description:connect.field_connect_recording__duration
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_tree
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_channel_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_channel_tree
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_recording_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_recording_tree
+msgid "Duration"
+msgstr "Durée"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_channel_form
+msgid "Duration & Users"
+msgstr "Durée et utilisateurs"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__duration_human
+msgid "Duration Human"
+msgstr "Durée lisible"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.oduist_license_form
+msgid "Email for notifications"
+msgstr "E-mail pour les notifications"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_oduist_license__subscribe_email
+msgid "Email for subscription notifications"
+msgstr "E-mail pour les notifications d'abonnement"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_settings__number_search_operation__=
+msgid "Equal"
+msgstr "Égal à"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_channel__recording_state__error
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_message_form
+msgid "Error"
+msgstr "Erreur"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__error_code
+#: model:ir.model.fields,field_description:connect.field_connect_message__error_code
+msgid "Error Code"
+msgstr "Code d'erreur"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__error_message
+#: model:ir.model.fields,field_description:connect.field_connect_message__error_message
+msgid "Error Message"
+msgstr "Message d'erreur"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/components/calls/calls.xml:0
+#: model:ir.model,name:connect.model_connect_favorite
+msgid "Favorite"
+msgstr "Favori"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__message_follower_ids
+#: model:ir.model.fields,field_description:connect.field_connect_channel__message_follower_ids
+#: model:ir.model.fields,field_description:connect.field_connect_recording__message_follower_ids
+msgid "Followers"
+msgstr "Abonnés"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__message_partner_ids
+#: model:ir.model.fields,field_description:connect.field_connect_channel__message_partner_ids
+#: model:ir.model.fields,field_description:connect.field_connect_recording__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Abonnés (Partenaires)"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_call__activity_type_icon
+#: model:ir.model.fields,help:connect.field_connect_recording__activity_type_icon
+msgid "Font awesome icon e.g. fa-tasks"
+msgstr "Icône Font Awesome par ex. fa-tasks"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__from_number
+msgid "From"
+msgstr "De"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__from_city
+msgid "From City"
+msgstr "Ville d'origine"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__from_country
+msgid "From Country"
+msgstr "Pays d'origine"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__from_state
+msgid "From State"
+msgstr "Région d'origine"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__from_zip
+msgid "From ZIP"
+msgstr "Code postal d'origine"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_settings__openai_summary_model__gpt-4o
+msgid "GPT-4o"
+msgstr "GPT-4o"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_settings__openai_summary_model__gpt-5_4-mini
+msgid "GPT-5.4 mini"
+msgstr "GPT-5.4 mini"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.connect_settings_form
+msgid "General"
+msgstr "Général"
+
+#. module: connect
+#: model:ir.actions.server,name:connect.connect_settings_action
+msgid "General Settings"
+msgstr "Paramètres généraux"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_message_form
+msgid "Geographic Info"
+msgstr "Informations géographiques"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_user__greeting_message
+msgid "Greeting Message"
+msgstr "Message d'accueil"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__has_error
+#: model:ir.model.fields,field_description:connect.field_connect_message__has_error
+msgid "Has Error"
+msgstr "A une erreur"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__has_message
+#: model:ir.model.fields,field_description:connect.field_connect_channel__has_message
+#: model:ir.model.fields,field_description:connect.field_connect_recording__has_message
+msgid "Has Message"
+msgstr "A un message"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__id
+#: model:ir.model.fields,field_description:connect.field_connect_channel__id
+#: model:ir.model.fields,field_description:connect.field_connect_debug__id
+#: model:ir.model.fields,field_description:connect.field_connect_favorite__id
+#: model:ir.model.fields,field_description:connect.field_connect_message__id
+#: model:ir.model.fields,field_description:connect.field_connect_recording__id
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__id
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_slot__id
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_special_day__id
+#: model:ir.model.fields,field_description:connect.field_connect_settings__id
+#: model:ir.model.fields,field_description:connect.field_connect_transfer_wizard__id
+#: model:ir.model.fields,field_description:connect.field_connect_user__id
+#: model:ir.model.fields,field_description:connect.field_oduist_license__id
+msgid "ID"
+msgstr "ID"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__activity_exception_icon
+#: model:ir.model.fields,field_description:connect.field_connect_recording__activity_exception_icon
+msgid "Icon"
+msgstr "Icône"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_call__activity_exception_icon
+#: model:ir.model.fields,help:connect.field_connect_recording__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Icône pour indiquer une activité d'exception."
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_call__message_needaction
+#: model:ir.model.fields,help:connect.field_connect_channel__message_needaction
+#: model:ir.model.fields,help:connect.field_connect_recording__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si coché, de nouveaux messages demandent votre attention."
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_call__message_has_error
+#: model:ir.model.fields,help:connect.field_connect_call__message_has_sms_error
+#: model:ir.model.fields,help:connect.field_connect_channel__message_has_error
+#: model:ir.model.fields,help:connect.field_connect_channel__message_has_sms_error
+#: model:ir.model.fields,help:connect.field_connect_recording__message_has_error
+#: model:ir.model.fields,help:connect.field_connect_recording__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si coché, certains messages ont une erreur de livraison."
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__caller_user_img
+#: model:ir.model.fields,field_description:connect.field_connect_message__sender_user_img
+msgid "Image"
+msgstr "Image"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__parent_message
+msgid "In Reply To"
+msgstr "En réponse à"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_message__direction__incoming
+msgid "Incoming"
+msgstr "Entrant"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.oduist_license_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_recording_form
+msgid "Info"
+msgstr "Infos"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.oduist_license_form
+msgid "Installed"
+msgstr "Installé"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__instance_uid
+#: model:ir.model.fields,field_description:connect.field_oduist_license__instance_uid
+msgid "Instance UID"
+msgstr "UID de l'instance"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__message_is_follower
+#: model:ir.model.fields,field_description:connect.field_connect_channel__message_is_follower
+#: model:ir.model.fields,field_description:connect.field_connect_recording__message_is_follower
+msgid "Is Follower"
+msgstr "Est un abonné"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_user__originate_origin
+msgid ""
+"JSON of the record the last click-to-call was started from (model, id, "
+"number, time), until the outgoing call claims it."
+msgstr "JSON de l'enregistrement depuis lequel le dernier clic-pour-appeler a été lancé (modèle, id, numéro, date), jusqu'à ce que l'appel sortant le prenne en charge."
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_oduist_license__license_token
+msgid "JWT license token from oduist.com. Leave empty to use 30-day trial."
+msgstr "Jeton de licence JWT de oduist.com. Laisser vide pour utiliser l'essai de 30 jours."
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_user__language
+msgid "Language"
+msgstr "Langue"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__write_uid
+#: model:ir.model.fields,field_description:connect.field_connect_channel__write_uid
+#: model:ir.model.fields,field_description:connect.field_connect_debug__write_uid
+#: model:ir.model.fields,field_description:connect.field_connect_favorite__write_uid
+#: model:ir.model.fields,field_description:connect.field_connect_message__write_uid
+#: model:ir.model.fields,field_description:connect.field_connect_recording__write_uid
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__write_uid
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_slot__write_uid
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_special_day__write_uid
+#: model:ir.model.fields,field_description:connect.field_connect_settings__write_uid
+#: model:ir.model.fields,field_description:connect.field_connect_transfer_wizard__write_uid
+#: model:ir.model.fields,field_description:connect.field_connect_user__write_uid
+#: model:ir.model.fields,field_description:connect.field_oduist_license__write_uid
+msgid "Last Updated by"
+msgstr "Mis à jour par"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__write_date
+#: model:ir.model.fields,field_description:connect.field_connect_channel__write_date
+#: model:ir.model.fields,field_description:connect.field_connect_debug__write_date
+#: model:ir.model.fields,field_description:connect.field_connect_favorite__write_date
+#: model:ir.model.fields,field_description:connect.field_connect_message__write_date
+#: model:ir.model.fields,field_description:connect.field_connect_recording__write_date
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__write_date
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_slot__write_date
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_special_day__write_date
+#: model:ir.model.fields,field_description:connect.field_connect_settings__write_date
+#: model:ir.model.fields,field_description:connect.field_connect_transfer_wizard__write_date
+#: model:ir.model.fields,field_description:connect.field_connect_user__write_date
+#: model:ir.model.fields,field_description:connect.field_oduist_license__write_date
+msgid "Last Updated on"
+msgstr "Mis à jour le"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.oduist_license_form
+msgid "Latest"
+msgstr "Dernier"
+
+#. module: connect
+#: model:ir.actions.server,name:connect.oduist_license_action
+#: model:ir.ui.menu,name:connect.license_menu
+msgid "License"
+msgstr "Licence"
+
+#. module: connect
+#: model:ir.model,name:connect.model_oduist_license
+msgid "License Configuration"
+msgstr "Configuration de la licence"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_ir_module_module__oduist_license_status
+#: model_terms:ir.ui.view,arch_db:connect.oduist_license_form
+msgid "License Status"
+msgstr "Statut de la licence"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_oduist_license__license_token
+msgid "License Token"
+msgstr "Jeton de licence"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_settings__number_search_operation__like
+msgid "Like"
+msgstr "Contient"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__list_view_summary
+msgid "List View Summary"
+msgstr "Résumé de la vue liste"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__media_widget
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_message_form
+msgid "Media"
+msgstr "Média"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__media_content_type
+msgid "Media Content Type"
+msgstr "Type de contenu du média"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__media_url
+#: model:ir.model.fields,field_description:connect.field_connect_recording__media_url
+msgid "Media Url"
+msgstr "URL du média"
+
+#. module: connect
+#: model:ir.model,name:connect.model_connect_message
+#: model:ir.model,name:connect.model_mail_message
+#: model:ir.model.fields,field_description:connect.field_connect_debug__message
+msgid "Message"
+msgstr "Message"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__body
+msgid "Message Body"
+msgstr "Corps du message"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__message_has_error
+#: model:ir.model.fields,field_description:connect.field_connect_channel__message_has_error
+#: model:ir.model.fields,field_description:connect.field_connect_recording__message_has_error
+msgid "Message Delivery error"
+msgstr "Erreur d'envoi du message"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_message_form
+msgid "Message Info"
+msgstr "Informations sur le message"
+
+#. module: connect
+#: model:ir.model,name:connect.model_mail_notification
+msgid "Message Notifications"
+msgstr "Notifications par message"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__message_sid
+msgid "Message SID"
+msgstr "SID du message"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__message_type
+msgid "Message Type"
+msgstr "Type de message"
+
+#. module: connect
+#: model:ir.actions.act_window,name:connect.action_connect_message
+#: model:ir.actions.act_window,name:connect.action_connect_message_partner
+#: model:ir.model.fields,field_description:connect.field_connect_call__message_ids
+#: model:ir.model.fields,field_description:connect.field_connect_channel__message_ids
+#: model:ir.model.fields,field_description:connect.field_connect_recording__message_ids
+#: model_terms:ir.ui.view,arch_db:connect.view_partner_form_connect
+msgid "Messages"
+msgstr "Messages"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_user__message_provider
+msgid "Messaging Provider"
+msgstr "Fournisseur de messagerie"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_user__message_provider
+msgid ""
+"Messaging module used to send SMS/WhatsApp for this user. Leave empty when "
+"only one messaging module is installed."
+msgstr "Module de messagerie utilisé pour envoyer des SMS/WhatsApp pour cet utilisateur. Laisser vide lorsqu'un seul module de messagerie est installé."
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__duration_minutes
+#: model:ir.model.fields,field_description:connect.field_connect_channel__duration_minutes
+msgid "Minutes"
+msgstr "Minutes"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_user__missed_calls_notify
+msgid "Missed Calls Notify"
+msgstr "Notification des appels manqués"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_debug__model
+msgid "Model"
+msgstr "Modèle"
+
+#. module: connect
+#: model:ir.model,name:connect.model_ir_module_module
+#: model_terms:ir.ui.view,arch_db:connect.oduist_license_form
+msgid "Module"
+msgstr "Module"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_ir_module_module__oduist_module_price
+msgid "Module Price"
+msgstr "Prix du module"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_ir_module_module__oduist_module_purchased
+msgid "Module Purchased"
+msgstr "Module acheté"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__my_activity_date_deadline
+#: model:ir.model.fields,field_description:connect.field_connect_recording__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "Échéance de mon activité"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__name
+#: model:ir.model.fields,field_description:connect.field_connect_favorite__name
+#: model:ir.model.fields,field_description:connect.field_connect_message__name
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__name
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_slot__name
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_special_day__name
+#: model:ir.model.fields,field_description:connect.field_connect_settings__name
+#: model:ir.model.fields,field_description:connect.field_connect_user__name
+#: model:ir.model.fields,field_description:connect.field_oduist_license__name
+msgid "Name"
+msgstr "Nom"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__activity_date_deadline
+#: model:ir.model.fields,field_description:connect.field_connect_recording__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Échéance de la prochaine activité"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__activity_summary
+#: model:ir.model.fields,field_description:connect.field_connect_recording__activity_summary
+msgid "Next Activity Summary"
+msgstr "Résumé de l'activité suivante"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__activity_type_id
+#: model:ir.model.fields,field_description:connect.field_connect_recording__activity_type_id
+msgid "Next Activity Type"
+msgstr "Type d'activités à venir"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/services/active_calls/active_calls_popup.xml:0
+msgid "No active calls."
+msgstr "Aucun appel actif."
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_mail_notification__notification_type
+msgid "Notification Type"
+msgstr "Type de notification"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_user__missed_calls_notify
+msgid "Notify user on missed calls."
+msgstr "Notifier l'utilisateur des appels manqués."
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__number_search_operation
+msgid "Number Search Operation"
+msgstr "Opérateur de recherche de numéro"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__message_needaction_counter
+#: model:ir.model.fields,field_description:connect.field_connect_channel__message_needaction_counter
+#: model:ir.model.fields,field_description:connect.field_connect_recording__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Nombre d'actions"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__num_media
+msgid "Number of Media Items"
+msgstr "Nombre de médias"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__message_has_error_counter
+#: model:ir.model.fields,field_description:connect.field_connect_channel__message_has_error_counter
+#: model:ir.model.fields,field_description:connect.field_connect_recording__message_has_error_counter
+msgid "Number of errors"
+msgstr "Nombre d'erreurs"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_call__message_needaction_counter
+#: model:ir.model.fields,help:connect.field_connect_channel__message_needaction_counter
+#: model:ir.model.fields,help:connect.field_connect_recording__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Nombre de messages nécessitant une action"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_call__message_has_error_counter
+#: model:ir.model.fields,help:connect.field_connect_channel__message_has_error_counter
+#: model:ir.model.fields,help:connect.field_connect_recording__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Nombre de messages avec des erreurs d'envoi"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__web_base_url
+msgid "Odoo URL"
+msgstr "URL d'Odoo"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_user__user
+msgid "Odoo User"
+msgstr "Utilisateur Odoo"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_oduist_license__oduist_modules
+msgid "Oduist Modules"
+msgstr "Modules Oduist"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_channel__recording_state__off
+msgid "Off"
+msgstr "Désactivé"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_channel__recording_state__on
+msgid "On"
+msgstr "Activé"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_settings__transcript_provider__openai
+msgid "Open AI"
+msgstr "OpenAI"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/components/calls/calls.xml:0
+msgid "Open in History"
+msgstr "Ouvrir dans l'historique"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.connect_settings_form
+msgid "OpenAI"
+msgstr "OpenAI"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__openai_api_key
+msgid "Openai Api Key"
+msgstr "Clé API OpenAI"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__openai_summary_model
+msgid "Openai Summary Model"
+msgstr "Modèle de résumé OpenAI"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_resource_calendar_leaves__prompt_message
+msgid ""
+"Optional message played to callers when an inbound call arrives during this "
+"public holiday / closure."
+msgstr "Message facultatif diffusé aux appelants lorsqu'un appel entrant arrive pendant ce jour férié ou cette fermeture."
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_user_form
+msgid "Organization"
+msgstr "Organisation"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__origin_model
+msgid "Origin Model"
+msgstr "Modèle d'origine"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__origin_res_id
+msgid "Origin Record ID"
+msgstr "ID de l'enregistrement d'origine"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_user__originate_origin
+msgid "Originate Origin"
+msgstr "Origine du lancement d'appel"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_message__direction__outgoing
+msgid "Outgoing"
+msgstr "Sortant"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_res_users__pin_code
+msgid "PIN code"
+msgstr "Code PIN"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__parent_call
+msgid "Parent Call"
+msgstr "Appel parent"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_channel__parent_channel
+msgid "Parent Channel"
+msgstr "Canal parent"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_channel__parent_sid
+msgid "Parent SID"
+msgstr "SID parent"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/services/active_calls/active_calls_popup.xml:0
+#: model:ir.model.fields,field_description:connect.field_connect_call__partner
+#: model:ir.model.fields,field_description:connect.field_connect_channel__partner
+#: model:ir.model.fields,field_description:connect.field_connect_favorite__partner
+#: model:ir.model.fields,field_description:connect.field_connect_message__partner
+#: model:ir.model.fields,field_description:connect.field_connect_recording__partner
+#: model:ir.model.fields.selection,name:connect.selection__connect_call__ref__res_partner
+msgid "Partner"
+msgstr "Partenaire"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__partner_img
+#: model:ir.model.fields,field_description:connect.field_connect_message__partner_img
+msgid "Partner Image"
+msgstr "Image du partenaire"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_call__call_type__phone
+#: model:ir.model.fields.selection,name:connect.selection__connect_channel__call_type__phone
+msgid "Phone"
+msgstr "Téléphone"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_favorite__phone_number
+#: model:ir.model.fields,field_description:connect.field_connect_transfer_wizard__phone_number
+msgid "Phone Number"
+msgstr "Numéro de téléphone"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__preview_html
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_schedule_form
+msgid "Preview"
+msgstr "Aperçu"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__price
+#: model:ir.model.fields,field_description:connect.field_ir_module_module__oduist_module_show_price
+msgid "Price"
+msgstr "Prix"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__price_unit
+msgid "Price Unit"
+msgstr "Prix unitaire"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_resource_calendar_leaves__prompt_message
+msgid "Prompt Message"
+msgstr "Message d'annonce"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_user_form
+msgid "Provider default"
+msgstr "Par défaut du fournisseur"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_user__voice
+msgid ""
+"Provider-specific TTS voice name (e.g. \"Woman\" for Twilio, "
+"\"Polly.Joanna\" for Twilio/Telnyx). Leave empty to use the provider default"
+" voice."
+msgstr "Nom de la voix TTS propre au fournisseur (par ex. « Woman » pour Twilio, « Polly.Joanna » pour Twilio/Telnyx). Laisser vide pour utiliser la voix par défaut du fournisseur."
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__proxy_recordings
+msgid "Proxy Recordings"
+msgstr "Enregistrements en proxy"
+
+#. module: connect
+#. odoo-python
+#: code:addons/connect/models/schedule.py:0
+#: model:ir.model.fields.selection,name:connect.selection__connect_schedule_slot__slot_type__holiday
+msgid "Public Holiday"
+msgstr "Jour férié"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__holiday_ids
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_schedule_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_schedule_slot_search
+msgid "Public Holidays"
+msgstr "Jours fériés"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__recording_icon
+msgid "R"
+msgstr "R"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_settings__proxy_recordings
+msgid "Re-stream recordings using Odoo user auth."
+msgstr "Rediffuser les enregistrements avec l'authentification de l'utilisateur Odoo."
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_tree
+msgid "Rec"
+msgstr "Enr."
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_oduist_license__subscribe_to_security_alerts
+msgid ""
+"Receive immediate notifications regarding critical security vulnerabilities "
+"or urgent issues with your installed modules."
+msgstr "Recevez des notifications immédiates concernant les vulnérabilités de sécurité critiques ou les problèmes urgents liés à vos modules installés."
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_oduist_license__subscribe_to_onboarding
+msgid ""
+"Receive step-by-step guidance for system setup. Usage data is analyzed to "
+"provide relevant tips and streamline your configuration process based on "
+"active features."
+msgstr "Recevez des conseils pas à pas pour la configuration du système. Les données d'utilisation sont analysées afin de fournir des astuces pertinentes et de simplifier votre processus de configuration en fonction des fonctionnalités actives."
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_user__record_calls
+msgid "Record Calls"
+msgstr "Enregistrer les appels"
+
+#. module: connect
+#: model:ir.model,name:connect.model_connect_recording
+#: model:ir.model.fields,field_description:connect.field_connect_call__recording
+#: model:ir.model.fields,field_description:connect.field_connect_recording__recording_widget
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_recording_form
+msgid "Recording"
+msgstr "Enregistrement"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__recording_attachment
+msgid "Recording Attachment"
+msgstr "Pièce jointe de l'enregistrement"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_channel__recording_control_error
+msgid "Recording Control Error"
+msgstr "Erreur de contrôle d'enregistrement"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_channel__recording_control_path
+msgid "Recording Control Path"
+msgstr "Chemin de contrôle d'enregistrement"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_channel__recording_control_ref
+msgid "Recording Control Ref"
+msgstr "Référence de contrôle d'enregistrement"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__recording_filename
+msgid "Recording Filename"
+msgstr "Nom du fichier d'enregistrement"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_channel__recording_state
+msgid "Recording State"
+msgstr "État de l'enregistrement"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__recording_widget
+msgid "Recording Widget"
+msgstr "Widget d'enregistrement"
+
+#. module: connect
+#: model:ir.actions.act_window,name:connect.action_connect_recording
+#: model:ir.ui.menu,name:connect.menu_connect_recordings
+msgid "Recordings"
+msgstr "Enregistrements"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__ref
+msgid "Ref"
+msgstr "Réf."
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__ref
+msgid "Reference"
+msgstr "Référence"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_schedule_form
+msgid "Regenerate Availability"
+msgstr "Régénérer les disponibilités"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__register_summary
+msgid "Register Summary"
+msgstr "Enregistrer le résumé"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_settings__register_summary
+msgid "Register summary at partner of reference chat."
+msgstr "Enregistrer le résumé sur le partenaire du chat de référence."
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_oduist_license__registration_number
+msgid "Registration Number"
+msgstr "Numéro d'enregistrement"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_oduist_license__registration_number
+msgid "Registration number from license server"
+msgstr "Numéro d'enregistrement du serveur de licences"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__res_id
+msgid "Res"
+msgstr "ID de ressource"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__res_model
+msgid "Res Model"
+msgstr "Modèle de la ressource"
+
+#. module: connect
+#: model:ir.model,name:connect.model_resource_calendar_leaves
+msgid "Resource Time Off Detail"
+msgstr "Détails des congés des ressources"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__activity_user_id
+#: model:ir.model.fields,field_description:connect.field_connect_recording__activity_user_id
+msgid "Responsible User"
+msgstr "Utilisateur responsable"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_message_form
+msgid "Retry"
+msgstr "Réessayer"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_channel__sid
+#: model:ir.model.fields,field_description:connect.field_connect_recording__sid
+msgid "SID"
+msgstr "SID"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__message_has_sms_error
+#: model:ir.model.fields,field_description:connect.field_connect_channel__message_has_sms_error
+#: model:ir.model.fields,field_description:connect.field_connect_recording__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr "Erreur d'envoi SMS"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_slot__schedule_id
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_schedule_slot_search
+msgid "Schedule"
+msgstr "Horaire"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__scheduled_datetime
+msgid "Scheduled Datetime"
+msgstr "Date et heure planifiées"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__duration
+#: model:ir.model.fields,field_description:connect.field_connect_channel__duration
+msgid "Seconds"
+msgstr "Secondes"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__sender_user
+msgid "Sender User"
+msgstr "Utilisateur expéditeur"
+
+#. module: connect
+#: model:ir.model,name:connect.model_connect_settings
+#: model:ir.ui.menu,name:connect.menu_connect_settings_general
+msgid "Settings"
+msgstr "Paramètres"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__slot_ids
+msgid "Slot"
+msgstr "Créneaux"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_slot__slot_type
+msgid "Slot Type"
+msgstr "Type de créneau"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__source
+msgid "Source"
+msgstr "Source"
+
+#. module: connect
+#: model:ir.model,name:connect.model_connect_schedule_special_day
+#: model:ir.model.fields.selection,name:connect.selection__connect_schedule_slot__slot_type__special
+msgid "Special Working Day"
+msgstr "Journée de travail spéciale"
+
+#. module: connect
+#: model:ir.actions.act_window,name:connect.action_connect_schedule_special_day
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__special_day_ids
+#: model:ir.ui.menu,name:connect.menu_connect_schedule_special_day
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_schedule_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_schedule_slot_search
+msgid "Special Working Days"
+msgstr "Journées de travail spéciales"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_slot__start
+msgid "Start"
+msgstr "Début"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__start_time
+msgid "Start Time"
+msgstr "Heure de début"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_channel__recording_state__starting
+msgid "Starting"
+msgstr "Démarrage"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__status
+#: model:ir.model.fields,field_description:connect.field_connect_channel__status
+#: model:ir.model.fields,field_description:connect.field_connect_message__status
+#: model:ir.model.fields,field_description:connect.field_connect_recording__status
+msgid "Status"
+msgstr "Statut"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_message__status_display
+msgid "Status Display"
+msgstr "Affichage du statut"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_call__activity_state
+#: model:ir.model.fields,help:connect.field_connect_recording__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr "Statut basé sur les activités\nEn retard : la date d'échéance est déjà dépassée\nAujourd'hui : la date d'activité est aujourd'hui\nPlanifiée : activités futures"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_oduist_license__subscribe_to_updates
+msgid ""
+"Stay updated on new features, product releases, and the latest AI "
+"advancements within the Odoo ecosystem."
+msgstr "Restez informé des nouvelles fonctionnalités, des sorties de produits et des dernières avancées en IA dans l'écosystème Odoo."
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_slot__stop
+msgid "Stop"
+msgstr "Fin"
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_channel__recording_state__stopping
+msgid "Stopping"
+msgstr "Arrêt"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_oduist_license__subscribe_email
+msgid "Subscribe Email"
+msgstr "E-mail d'abonnement"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_oduist_license__subscribe_to_security_alerts
+msgid "Subscribe to Critical Security Alerts"
+msgstr "S'abonner aux alertes de sécurité critiques"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_oduist_license__subscribe_to_onboarding
+msgid "Subscribe to Personalized Onboarding Support"
+msgstr "S'abonner à l'assistance d'intégration personnalisée"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_oduist_license__subscribe_to_updates
+msgid "Subscribe to Product News & AI Tips and Tricks"
+msgstr "S'abonner aux actualités produit et aux astuces IA"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__summary
+#: model:ir.model.fields,field_description:connect.field_connect_recording__summary
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_recording_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_recording_tree
+msgid "Summary"
+msgstr "Résumé"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.connect_settings_form
+msgid "Summary Model"
+msgstr "Modèle de résumé"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__summary_prompt
+#: model:ir.model.fields,field_description:connect.field_connect_user__summary_prompt
+#: model_terms:ir.ui.view,arch_db:connect.connect_settings_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_user_form
+msgid "Summary Prompt"
+msgstr "Prompt de résumé"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_user__language
+msgid ""
+"TTS language the telephony provider uses to speak this user's greeting "
+"message and voicemail prompt."
+msgstr "Langue TTS utilisée par le fournisseur de téléphonie pour prononcer le message d'accueil et l'annonce de messagerie vocale de cet utilisateur."
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_recording_form
+msgid "Technical"
+msgstr "Technique"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_user__originate_provider
+msgid ""
+"Telephony module used to originate calls for this user. Leave empty when "
+"only one telephony module is installed."
+msgstr "Module de téléphonie utilisé pour lancer les appels de cet utilisateur. Laisser vide lorsqu'un seul module de téléphonie est installé."
+
+#. module: connect
+#: model:ir.model.constraint,message:connect.constraint_connect_user_user_uniq
+msgid "This Odoo user account is already defined!"
+msgstr "Ce compte utilisateur Odoo est déjà défini !"
+
+#. module: connect
+#: model:ir.model.constraint,message:connect.constraint_res_users_user_pin_code_unique
+msgid "This PIN code is already used!"
+msgstr "Ce code PIN est déjà utilisé !"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_schedule__tz
+msgid ""
+"This field is used in order to define in which timezone the resources will "
+"work."
+msgstr "Ce champ est utilisé pour définir dans quel fuseau horaire les ressources travailleront."
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__tz
+msgid "Timezone"
+msgstr "Fuseau horaire"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_channel__to
+#: model:ir.model.fields,field_description:connect.field_connect_message__to_number
+msgid "To"
+msgstr "Vers"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/services/active_calls/active_calls_tray.xml:0
+msgid "Toggle Calls"
+msgstr "Afficher/masquer les appels"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_recording_form
+msgid "Transcribe"
+msgstr "Transcrire"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__transcript
+#: model:ir.model.fields,field_description:connect.field_connect_recording__transcript
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_form
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_recording_form
+msgid "Transcript"
+msgstr "Transcription"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__transcript_calls
+msgid "Transcript Calls"
+msgstr "Transcrire les appels"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_settings__transcript_provider
+msgid "Transcript Provider"
+msgstr "Fournisseur de transcription"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.connect_settings_form
+msgid "Transcription"
+msgstr "Transcription"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__transcription_error
+msgid "Transcription Error"
+msgstr "Erreur de transcription"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__transcription_pending
+msgid "Transcription Pending"
+msgstr "Transcription en attente"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__transcription_price
+msgid "Transcription Price"
+msgstr "Prix de la transcription"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.connect_settings_form
+msgid "Transcription Settings"
+msgstr "Paramètres de transcription"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_recording__transcription_token
+msgid "Transcription Token"
+msgstr "Jeton de transcription"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_form
+#: model_terms:ir.ui.view,arch_db:connect.view_transfer_wizard_form
+msgid "Transfer"
+msgstr "Transférer"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_transfer_wizard_form
+msgid "Transfer Call"
+msgstr "Transférer l'appel"
+
+#. module: connect
+#: model:ir.model,name:connect.model_connect_transfer_wizard
+msgid "Transfer Wizard"
+msgstr "Assistant de transfert"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_mail_mail__message_type
+#: model:ir.model.fields,field_description:connect.field_mail_message__message_type
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_schedule_slot_search
+msgid "Type"
+msgstr "Type"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_call__activity_exception_decoration
+#: model:ir.model.fields,help:connect.field_connect_recording__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Type d'activité d'exception enregistrée."
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.oduist_license_form
+msgid "UPDATE LICENSE / PRICING"
+msgstr "METTRE À JOUR LA LICENCE / LES TARIFS"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_oduist_license__instance_uid
+msgid "Unique identifier for this Odoo instance"
+msgstr "Identifiant unique de cette instance Odoo"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_mail_mail__message_type
+#: model:ir.model.fields,help:connect.field_mail_message__message_type
+msgid ""
+"Used to categorize message generator\n"
+"'email': generated by an incoming email e.g. mailgateway\n"
+"'comment': generated by user input e.g. through discuss or composer\n"
+"'email_outgoing': generated by a mailing\n"
+"'notification': generated by system e.g. tracking messages\n"
+"'auto_comment': generated by automated notification mechanism e.g. acknowledgment\n"
+"'user_notification': generated for a specific recipient"
+msgstr "Utilisé pour catégoriser les générateurs de messages\n'e-mail' : généré par un e-mail entrant, par exemple mailgateway\n'comment' : généré par la contribution d'un utilisateur, par exemple via discussion ou composer\n'email_outgoing' : généré par un mailing\n'notification' : généré par un système, par exemple des messages de suivi\n'auto_comment' : généré par un mécanisme de notification automatisé, par exemple un accusé de réception\n'user_notification' : généré pour un destinataire spécifique"
+
+#. module: connect
+#. odoo-javascript
+#: code:addons/connect/static/src/components/calls/calls.xml:0
+#: model:ir.model,name:connect.model_res_users
+#: model:ir.model.fields,field_description:connect.field_connect_favorite__user
+#: model:res.groups,name:connect.group_user
+msgid "User"
+msgstr "Utilisateur"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_user_form
+msgid "User Info"
+msgstr "Informations utilisateur"
+
+#. module: connect
+#: model:ir.actions.act_window,name:connect.action_connect_user
+#: model:ir.model.fields,field_description:connect.field_connect_recording__users
+#: model:ir.ui.menu,name:connect.menu_connect_users
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_form
+msgid "Users"
+msgstr "Utilisateurs"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__voicemail_icon
+msgid "V"
+msgstr "V"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_tree
+msgid "VM"
+msgstr "MV"
+
+#. module: connect
+#: model:ir.actions.server,name:connect.vacuum_debug_ir_actions_server
+msgid "Vacuum Connect debug"
+msgstr "Purger le débogage Connect"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_user__voice
+msgid "Voice"
+msgstr "Voix"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__voicemail_widget
+msgid "VoiceMail"
+msgstr "Messagerie vocale"
+
+#. module: connect
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_call_form
+msgid "Voicemail"
+msgstr "Messagerie vocale"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__voicemail_duration
+msgid "Voicemail Duration"
+msgstr "Durée de la messagerie vocale"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_user__voicemail_enabled
+msgid "Voicemail Enabled"
+msgstr "Messagerie vocale activée"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_user__voicemail_prompt
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_user_form
+msgid "Voicemail Prompt"
+msgstr "Annonce de messagerie vocale"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_call__voicemail_url
+msgid "Voicemail Url"
+msgstr "URL de la messagerie vocale"
+
+#. module: connect
+#: model:res.groups,name:connect.group_webhook
+msgid "Webhook"
+msgstr "Webhook"
+
+#. module: connect
+#: model:ir.model.fields,help:connect.field_connect_schedule__calendar_id
+msgid ""
+"Weekly working hours and timezone. The calendar's global time off entries "
+"act as public holidays."
+msgstr "Heures de travail hebdomadaires et fuseau horaire. Les entrées de congés globales du calendrier font office de jours fériés."
+
+#. module: connect
+#: model:ir.model.fields.selection,name:connect.selection__connect_call__call_type__whatsapp
+#: model:ir.model.fields.selection,name:connect.selection__connect_channel__call_type__whatsapp
+#: model:ir.model.fields.selection,name:connect.selection__mail_message__message_type__whatsapp
+#: model:ir.model.fields.selection,name:connect.selection__mail_notification__notification_type__whatsapp
+msgid "WhatsApp"
+msgstr "WhatsApp"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_special_day__work_from
+msgid "Work From"
+msgstr "Travail de"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_special_day__work_to
+msgid "Work To"
+msgstr "Travail à"
+
+#. module: connect
+#: model:ir.model.fields,field_description:connect.field_connect_schedule__calendar_id
+msgid "Working Hours"
+msgstr "Heures de travail"
+
+#. module: connect
+#. odoo-python
+#: code:addons/connect/models/schedule.py:0
+#: model:ir.model,name:connect.model_connect_schedule
+#: model:ir.model.fields.selection,name:connect.selection__connect_schedule_slot__slot_type__schedule
+#: model_terms:ir.ui.view,arch_db:connect.view_connect_schedule_slot_search
+msgid "Working Schedule"
+msgstr "Horaire de travail"
+
+#. module: connect
+#: model:ir.model,name:connect.model_connect_schedule_slot
+msgid "Working Schedule Availability Slot"
+msgstr "Créneau de disponibilité de l'horaire de travail"
+
+#. module: connect
+#: model:ir.actions.act_window,name:connect.action_connect_schedule
+#: model:ir.model.fields,field_description:connect.field_connect_schedule_special_day__schedule_ids
+#: model:ir.ui.menu,name:connect.menu_connect_schedule
+msgid "Working Schedules"
+msgstr "Horaires de travail"
+
+#. module: connect
+#: model:ir.ui.menu,name:connect.menu_connect_resource_calendar
+msgid "Working Times"
+msgstr "Temps de travail"

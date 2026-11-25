@@ -2,6 +2,7 @@
 
 import { Component, useState, onWillStart, onMounted, onWillUnmount } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
+import { _t } from "@web/core/l10n/translation";
 
 
 export class ParkingPanel extends Component {
@@ -67,7 +68,7 @@ export class ParkingPanel extends Component {
             await this._park(slot);
         } else {
             this.notification.add(
-                "No active call to park. Connect first, then press Park on a free slot.",
+                _t("No active call to park. Connect first, then press Park on a free slot."),
                 { type: "info" },
             );
         }
@@ -76,7 +77,7 @@ export class ParkingPanel extends Component {
     async _park(slot) {
         const uuid = this.props.vertoClient?.currentCall?.callId;
         if (!uuid) {
-            this.notification.add("No active call UUID found.", { type: "warning" });
+            this.notification.add(_t("No active call UUID found."), { type: "warning" });
             return;
         }
         try {
@@ -111,7 +112,7 @@ export class ParkingPanel extends Component {
     }
 
     _notifyError(error) {
-        const msg = error?.data?.message || error?.message || "Operation failed.";
+        const msg = error?.data?.message || error?.message || _t("Operation failed.");
         this.notification.add(msg, { type: "danger" });
     }
 
@@ -127,8 +128,8 @@ export class ParkingPanel extends Component {
             if (slot.parked_caller_name && slot.parked_caller_number) {
                 return `${slot.parked_caller_name} (${slot.parked_caller_number})`;
             }
-            return slot.parked_caller_name || slot.parked_caller_number || "Parked";
+            return slot.parked_caller_name || slot.parked_caller_number || _t("Parked");
         }
-        return "Free";
+        return _t("Free");
     }
 }

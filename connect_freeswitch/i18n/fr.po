@@ -1,0 +1,2223 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* connect_freeswitch
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 18.0-20261124\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-25 09:20+0000\n"
+"PO-Revision-Date: 2026-11-25 00:00+0000\n"
+"Last-Translator: Oduist\n"
+"Language-Team: French\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "**** (min 24 chars, [A-Za-z0-9_-])"
+msgstr "**** (min. 24 caractères, [A-Za-z0-9_-])"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_settings__freeswitch_sofia_log_level__0
+msgid "0 - Minimal"
+msgstr "0 - Minimal"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_settings__freeswitch_sofia_log_level__9
+msgid "9 - Maximum"
+msgstr "9 - Maximum"
+
+#. module: connect_freeswitch
+#: model:ir.model.constraint,message:connect_freeswitch.constraint_connect_freeswitch_parking_slot_exten_unique
+msgid "A parking slot with this extension already exists."
+msgstr "Un emplacement de parcage utilisant cette extension existe déjà."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_settings__freeswitch_log_level__alert
+msgid "ALERT"
+msgstr "ALERT"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__account_id
+msgid "Account/Extension"
+msgstr "Compte/Extension"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_blacklist__active
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_whitelist__active
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__active
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__active
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__active
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__active
+msgid "Active"
+msgstr "Actif"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_calls
+msgid "Active Calls"
+msgstr "Appels actifs"
+
+#. module: connect_freeswitch
+#: model_terms:ir.actions.act_window,help:connect_freeswitch.action_fs_parking_slot
+msgid "Add a parking slot"
+msgstr "Ajouter un emplacement de parcage"
+
+#. module: connect_freeswitch
+#: model_terms:ir.actions.act_window,help:connect_freeswitch.action_firewall_blacklist
+msgid ""
+"Add an IP or subnet here to block it permanently. Temporary auto-bans live "
+"in the kernel only and are visible in the firewall dashboard."
+msgstr "Ajoutez ici une IP ou un sous-réseau pour le bloquer définitivement. Les bannissements automatiques temporaires existent uniquement dans le noyau et sont visibles dans le tableau de bord du pare-feu."
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_number_form
+msgid "After-hours Routing"
+msgstr "Routage hors horaires"
+
+#. module: connect_freeswitch
+#: model:ir.ui.menu,name:connect_freeswitch.menu_firewall_agent
+msgid "Agent Status"
+msgstr "État de l'agent"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_endpoint__auto_answer_header__alert-info:_;info=alert-autoanswer
+msgid "Alert-Info: ;info=alert-autoanswer"
+msgstr "Alert-Info: ;info=alert-autoanswer"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_endpoint__auto_answer_header__alert-info:_<sip:>;info=alert-autoanswer
+msgid "Alert-Info: <sip:>;info=alert-autoanswer"
+msgstr "Alert-Info: <sip:>;info=alert-autoanswer"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_endpoint__auto_answer_header__alert-info:_info=alert-autoanswer
+msgid "Alert-Info: Info=Alert-Autoanswer"
+msgstr "Alert-Info: Info=Alert-Autoanswer"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_endpoint__auto_answer_header__alert-info:_info=auto_answer
+msgid "Alert-Info: Info=Auto Answer"
+msgstr "Alert-Info: Info=Auto Answer"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_endpoint__auto_answer_header__alert-info:_ring_answer
+msgid "Alert-Info: Ring Answer"
+msgstr "Alert-Info: Ring Answer"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_endpoint__auto_answer_header__alert-info:answer-after=0
+msgid "Alert-Info:answer-after=0"
+msgstr "Alert-Info:answer-after=0"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "Answer"
+msgstr "Répondre"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_endpoint__auto_answer_header__answer-mode:_auto
+msgid "Answer-Mode: Auto"
+msgstr "Answer-Mode: Auto"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__model
+msgid "AppModel"
+msgstr "AppModel"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_endpoint_search
+msgid "Archived"
+msgstr "Archivé"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_event_search
+msgid "Auth Failures"
+msgstr "Échecs d'authentification"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__auth_password
+msgid "Auth Password"
+msgstr "Mot de passe d'authentification"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_event_search
+msgid "Auth Successes"
+msgstr "Authentifications réussies"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__auth_user
+msgid "Auth User"
+msgstr "Utilisateur d'authentification"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__authenticated_count
+msgid "Authenticated Count"
+msgstr "Nombre d'authentifications"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_endpoint_form
+msgid "Authentication"
+msgstr "Authentification"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_event__event_type__auth_fail
+msgid "Authentication Failure"
+msgstr "Échec d'authentification"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_event__event_type__auth_success
+msgid "Authentication Success"
+msgstr "Authentification réussie"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__auto_answer_header
+msgid "Auto-Answer Header"
+msgstr "En-tête de réponse automatique"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_event_search
+msgid "Auto-Bans"
+msgstr "Bannissements automatiques"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__firewall_banned_timeout
+msgid "Auto-ban TTL (sec)"
+msgstr "TTL de bannissement automatique (sec)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_event__event_type__auto_ban
+msgid "Automatic Ban"
+msgstr "Bannissement automatique"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__freeswitch_xmlrpc_password
+msgid ""
+"Automatically generated FreeSWITCH mod_xml_rpc password. This control-plane "
+"credential is never shown or edited in the UI."
+msgstr "Mot de passe mod_xml_rpc de FreeSWITCH généré automatiquement. Cet identifiant du plan de contrôle n'est jamais affiché ni modifié dans l'interface."
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_number_form
+msgid "Availability"
+msgstr "Disponibilité"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_template_form
+msgid "Available Variables"
+msgstr "Variables disponibles"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__is_banned
+msgid "Banned"
+msgstr "Banni"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__bans_count
+msgid "Bans Count"
+msgstr "Nombre de bannissements"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__firewall_service_url
+msgid ""
+"Base URL of the firewall service. Odoo posts sync notifications to "
+"<url>/firewall/sync. For Docker hosts, use host.docker.internal; otherwise "
+"the LAN IP of the host where the service container runs."
+msgstr "URL de base du service pare-feu. Odoo envoie les notifications de synchronisation à <url>/firewall/sync. Sur un hôte Docker, utilisez host.docker.internal ; sinon l'IP LAN de l'hôte sur lequel tourne le conteneur du service."
+
+#. module: connect_freeswitch
+#: model:ir.ui.menu,name:connect_freeswitch.menu_firewall_blacklist
+msgid "Blacklist"
+msgstr "Liste noire"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_event__event_type__blacklist_changed
+msgid "Blacklist Changed"
+msgstr "Liste noire modifiée"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "CHECK STATUS"
+msgstr "VÉRIFIER L'ÉTAT"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_settings__freeswitch_log_level__crit
+msgid "CRIT"
+msgstr "CRIT"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/phone_field/phone_field.xml:0
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+#: model:ir.model,name:connect_freeswitch.model_connect_call
+msgid "Call"
+msgstr "Appeler"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_exten__dst__connect_freeswitch_callflow
+msgid "Call Flow"
+msgstr "Flux d'appel"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_freeswitch_callflow
+#: model:ir.ui.menu,name:connect_freeswitch.menu_freeswitch_callflows
+msgid "Call Flows"
+msgstr "Flux d'appels"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_endpoint__auto_answer_header__call_info:_answer-after=0
+msgid "Call Info: Answer-After=0"
+msgstr "Call Info: Answer-After=0"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Call UUID unavailable"
+msgstr "UUID d'appel indisponible"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_endpoint__auto_answer_header__call-info:_<sip:>;answer-after=0
+msgid "Call-Info: <sip:>;answer-after=0"
+msgstr "Call-Info: <sip:>;answer-after=0"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_endpoint__auto_answer_header__call-info:_auto_answer
+msgid "Call-Info: Auto Answer"
+msgstr "Call-Info: Auto Answer"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_number__closed_destination__callflow
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_number__destination__callflow
+msgid "CallFlow"
+msgstr "Flux d'appel"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__closed_callflow
+msgid "CallFlow (Unavailable)"
+msgstr "Flux d'appel (indisponible)"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_outgoing_callerid_form
+msgid "Caller ID"
+msgstr "Identifiant d'appelant"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__caller_id_in_from
+msgid "Caller Id In From"
+msgstr "Identifiant d'appelant dans l'en-tête From"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_outgoing_callerid__callerid_type__outgoing_callerid
+msgid "CallerID"
+msgstr "Identifiant d'appelant"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_callerid__callerid_type
+msgid "Callerid Type"
+msgstr "Type d'identifiant d'appelant"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow_choice__callflow
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__callflow
+msgid "Callflow"
+msgstr "Flux d'appel"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Calling..."
+msgstr "Appel..."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__firewall_expire_short_timeout
+msgid "Challenge Window (sec)"
+msgstr "Fenêtre de défi (sec)"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_channel
+msgid "Channel"
+msgstr "Canal"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow_choice__choice_digits
+msgid "Choice Digits"
+msgstr "Chiffres de choix"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__choices
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_callflow_form
+msgid "Choices"
+msgstr "Choix"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_fs_parking_slot_form
+msgid "Clear slot state without touching FreeSWITCH?"
+msgstr "Réinitialiser l'état de l'emplacement sans toucher à FreeSWITCH ?"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/parking_panel.xml:0
+msgid "Click an empty slot to park the current call."
+msgstr "Cliquez sur un emplacement libre pour parquer l'appel en cours."
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_endpoint_form
+msgid "Click-to-Call"
+msgstr "Clic-pour-appeler"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_user__originate_provider
+msgid "Click-to-call Provider"
+msgstr "Fournisseur de clic-pour-appeler"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__firewall_tcp_ports
+msgid "Comma-separated TCP ports to protect (SIP, SIPS, WSS)."
+msgstr "Ports TCP à protéger, séparés par des virgules (SIP, SIPS, WSS)."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__firewall_udp_ports
+msgid "Comma-separated UDP ports to protect (SIP)."
+msgstr "Ports UDP à protéger, séparés par des virgules (SIP)."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_template__section__configuration
+#: model:ir.ui.menu,name:connect_freeswitch.menu_freeswitch_config
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_fs_parking_slot_form
+msgid "Configuration"
+msgstr "Configuration"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_user
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__connect_user_id
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_endpoint_form
+msgid "Connect User"
+msgstr "Utilisateur Connect"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Connecting..."
+msgstr "Connexion..."
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_gateway_form
+msgid "Connection"
+msgstr "Connexion"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__content
+msgid "Content"
+msgstr "Contenu"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/endpoint_password/endpoint_password.xml:0
+msgid "Copy password"
+msgstr "Copier le mot de passe"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/endpoint_password/endpoint_password.js:0
+msgid "Could not access the clipboard"
+msgstr "Impossible d'accéder au presse-papiers"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_blacklist__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_whitelist__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow_choice__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_callerid__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__create_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__create_uid
+msgid "Created by"
+msgstr "Créé par"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_blacklist__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_whitelist__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow_choice__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_callerid__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__create_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__create_date
+msgid "Created on"
+msgstr "Créé le"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_fs_parking_slot_form
+msgid "Currently Parked"
+msgstr "Actuellement parqué"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_settings__freeswitch_log_level__debug
+msgid "DEBUG"
+msgstr "DEBUG"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_outgoing_callerid__callerid_type__number
+msgid "DID Number"
+msgstr "Numéro DID"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_callflow__gather_input_type__dtmf
+msgid "DTMF"
+msgstr "DTMF"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "Decline"
+msgstr "Refuser"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_callerid__is_default
+msgid "Default"
+msgstr "Par défaut"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__default_content
+msgid "Default Content"
+msgstr "Contenu par défaut"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_template_form
+msgid "Default Template"
+msgstr "Modèle par défaut"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__firewall_expire_long_timeout
+msgid "Default-Deny TTL (sec)"
+msgstr "TTL de refus par défaut (sec)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__firewall_expire_long_timeout
+msgid "Default-deny duration after a challenge is sent but not answered."
+msgstr "Durée de refus par défaut après l'envoi d'un défi resté sans réponse."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__description
+msgid "Description"
+msgstr "Description"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__dst
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__destination
+msgid "Destination"
+msgstr "Destination"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_number_form
+msgid "Destination (Available)"
+msgstr "Destination (disponible)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__closed_destination
+msgid "Destination (Unavailable)"
+msgstr "Destination (indisponible)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__details
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_event_form
+msgid "Details"
+msgstr "Détails"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_parking_slot__exten
+msgid ""
+"Dialable slot number. SIP phones subscribe to <exten>@domain for BLF. "
+"Dialing this extension parks (if free) or retrieves (if occupied)."
+msgstr "Numéro d'emplacement composable. Les téléphones SIP s'abonnent à <exten>@domain pour le BLF. Composer cette extension parque l'appel (si l'emplacement est libre) ou le récupère (s'il est occupé)."
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "Dialer"
+msgstr "Clavier"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_template__section__dialplan
+msgid "Dialplan"
+msgstr "Plan de numérotation"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_template__section__directory
+msgid "Directory"
+msgstr "Annuaire"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Disconnected"
+msgstr "Déconnecté"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_blacklist__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_whitelist__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow_choice__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_callerid__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__display_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__display_name
+msgid "Display Name"
+msgstr "Nom d'affichage"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_template__description
+msgid "Documents the available Jinja2 context variables for this template"
+msgstr "Documente les variables de contexte Jinja2 disponibles pour ce modèle"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_user__phone_display_mode__dropdown
+msgid "Dropdown"
+msgstr "Liste déroulante"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__dst_name
+msgid "Dst Name"
+msgstr "Nom de destination"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_settings__freeswitch_log_level__err
+msgid "ERR"
+msgstr "ERR"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_callflow__voicemail_enabled
+msgid ""
+"Enable callflow voicemail after no callflow action handles the caller. "
+"Requires a voicemail prompt. FS Queue voicemail is configured separately on "
+"the queue timeout settings."
+msgstr "Active la messagerie vocale du flux d'appel lorsqu'aucune action du flux ne prend en charge l'appelant. Nécessite une annonce de messagerie vocale. La messagerie vocale des files FS se configure séparément dans les paramètres de délai d'attente de la file."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__firewall_enabled
+msgid "Enable the FreeSWITCH firewall service for SIP brute-force protection."
+msgstr "Activer le service pare-feu FreeSWITCH pour la protection contre les attaques par force brute sur SIP."
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "End"
+msgstr "Raccrocher"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_exten__dst__connect_freeswitch_endpoint
+msgid "Endpoint"
+msgstr "Endpoint"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__member_endpoint_ids
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_connect_fs_fifo_form
+msgid "Endpoint Agents"
+msgstr "Endpoints agents"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_endpoint_form
+msgid "Endpoint Name"
+msgstr "Nom de l'endpoint"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/endpoint_password/endpoint_password.js:0
+msgid "Endpoint Password"
+msgstr "Mot de passe de l'endpoint"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_freeswitch_endpoint
+#: model:ir.ui.menu,name:connect_freeswitch.menu_freeswitch_endpoints
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_connect_user_form_freeswitch
+msgid "Endpoints"
+msgstr "Endpoints"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "Enter number"
+msgstr "Saisir le numéro"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Error"
+msgstr "Erreur"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__esl_connected
+msgid "Esl Connected"
+msgstr "ESL connecté"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__firewall_event_retention_days
+msgid "Event Retention (days)"
+msgstr "Rétention des événements (jours)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__event_type
+msgid "Event Type"
+msgstr "Type d'événement"
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/firewall.py:0
+msgid "Event has no IP to unban."
+msgstr "L'événement ne contient aucune IP à débannir."
+
+#. module: connect_freeswitch
+#: model:ir.ui.menu,name:connect_freeswitch.menu_firewall_events
+msgid "Events"
+msgstr "Événements"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__expire_seconds
+msgid "Expire Seconds"
+msgstr "Expiration (secondes)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__exten
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow_choice__exten
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__exten
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__exten
+msgid "Exten"
+msgstr "Extension"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__exten
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_connect_fs_fifo_form
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_connect_fs_fifo_tree
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_callflow_form
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_callflow_tree
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_endpoint_form
+msgid "Extension"
+msgstr "Extension"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__exten_number
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__exten_number
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__number
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__exten_number
+msgid "Extension Number"
+msgstr "Numéro d'extension"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_fs_fifo__fallback_exten_id
+msgid ""
+"Extension to transfer the caller after queue timeout (required when "
+"timeout_action = transfer)."
+msgstr "Extension vers laquelle transférer l'appelant après le délai d'attente de la file (requis lorsque timeout_action = transfer)."
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_freeswitch_exten
+#: model:ir.ui.menu,name:connect_freeswitch.menu_freeswitch_extens
+msgid "Extensions"
+msgstr "Extensions"
+
+#. module: connect_freeswitch
+#: model:ir.ui.menu,name:connect_freeswitch.menu_connect_fs_fifo
+msgid "FIFO Queues"
+msgstr "Files d'attente FIFO"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_fs_fifo
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__fs_fifo_id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__fs_fifo_id
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_exten__dst__connect_fs_fifo
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_number__closed_destination__fs_fifo
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_number__destination__fs_fifo
+msgid "FS Queue"
+msgstr "File d'attente FS"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__closed_fs_fifo_id
+msgid "FS Queue (Unavailable)"
+msgstr "File d'attente FS (indisponible)"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_connect_fs_fifo
+msgid "FS Queues"
+msgstr "Files d'attente FS"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__fallback_exten_id
+msgid "Fallback Exten"
+msgstr "Extension de repli"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_callflow__fs_fifo_id
+msgid ""
+"Fallback queue. Used after ring_users do not answer; also used as default "
+"destination when IVR gets no choice."
+msgstr "File d'attente de repli. Utilisée lorsque les utilisateurs à faire sonner ne répondent pas ; également utilisée comme destination par défaut lorsque le SVI n'obtient aucun choix."
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/firewall.py:0
+#: model:ir.ui.menu,name:connect_freeswitch.menu_firewall_root
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "Firewall"
+msgstr "Pare-feu"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_firewall_agent
+msgid "Firewall Agent"
+msgstr "Agent du pare-feu"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_firewall_blacklist
+msgid "Firewall Blacklist"
+msgstr "Liste noire du pare-feu"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_firewall_blacklist
+msgid "Firewall Blacklist Entry (permanent manual ban)"
+msgstr "Entrée de liste noire du pare-feu (bannissement manuel permanent)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__firewall_enabled
+msgid "Firewall Enabled"
+msgstr "Pare-feu activé"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_firewall_event
+msgid "Firewall Events"
+msgstr "Événements du pare-feu"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_firewall_event
+msgid "Firewall Security Event"
+msgstr "Événement de sécurité du pare-feu"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_firewall_agent
+msgid "Firewall Service Agent (singleton)"
+msgstr "Agent du service pare-feu (singleton)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__display_firewall_service_token
+msgid "Firewall Service Token"
+msgstr "Jeton du service pare-feu"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__firewall_service_token
+msgid "Firewall Service Token (stored)"
+msgstr "Jeton du service pare-feu (stocké)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__firewall_service_url
+msgid "Firewall Service URL"
+msgstr "URL du service pare-feu"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__firewall_tcp_ports
+msgid "Firewall TCP Ports"
+msgstr "Ports TCP du pare-feu"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__firewall_udp_ports
+msgid "Firewall UDP Ports"
+msgstr "Ports UDP du pare-feu"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_firewall_whitelist
+msgid "Firewall Whitelist"
+msgstr "Liste blanche du pare-feu"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_firewall_whitelist
+msgid "Firewall Whitelist Entry"
+msgstr "Entrée de liste blanche du pare-feu"
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/firewall.py:0
+msgid "Firewall service is not configured."
+msgstr "Le service pare-feu n'est pas configuré."
+
+#. module: connect_freeswitch
+#: model:ir.actions.server,name:connect_freeswitch.ir_cron_firewall_event_cleanup_ir_actions_server
+msgid "Firewall: delete old security events"
+msgstr "Pare-feu : supprimer les anciens événements de sécurité"
+
+#. module: connect_freeswitch
+#: model:ir.actions.server,name:connect_freeswitch.ir_cron_firewall_reconcile_ir_actions_server
+msgid "Firewall: reconcile state with the service"
+msgstr "Pare-feu : réconcilier l'état avec le service"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_user__phone_display_mode__float
+msgid "Floating Panel"
+msgstr "Panneau flottant"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/parking_panel.js:0
+msgid "Free"
+msgstr "Libre"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_user__originate_provider__freeswitch
+#: model:ir.ui.menu,name:connect_freeswitch.menu_freeswitch_root
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "FreeSWITCH"
+msgstr "FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_freeswitch_callflow
+msgid "FreeSWITCH Call Flow"
+msgstr "Flux d'appel FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_freeswitch_callflow_choice
+msgid "FreeSWITCH Callflow Choice"
+msgstr "Choix de flux d'appel FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_domain
+msgid "FreeSWITCH Domain"
+msgstr "Domaine FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_freeswitch_endpoint
+msgid "FreeSWITCH Endpoint"
+msgstr "Endpoint FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_user__freeswitch_endpoint_ids
+msgid "FreeSWITCH Endpoints"
+msgstr "Endpoints FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_freeswitch_exten
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_user__freeswitch_exten
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_connect_user_form_freeswitch
+msgid "FreeSWITCH Extension"
+msgstr "Extension FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_user__freeswitch_exten_number
+msgid "FreeSWITCH Extension Number"
+msgstr "Numéro d'extension FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_user__freeswitch_outgoing_callerid
+msgid "FreeSWITCH Outgoing CallerID"
+msgstr "Identifiant d'appelant sortant FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_freeswitch_outgoing_callerid
+msgid "FreeSWITCH Outgoing CallerId"
+msgstr "Identifiant d'appelant sortant FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_freeswitch_parking_slot
+msgid "FreeSWITCH Parking Slot"
+msgstr "Emplacement de parcage FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_freeswitch_number
+msgid "FreeSWITCH Phone Number"
+msgstr "Numéro de téléphone FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.actions.server,name:connect_freeswitch.freeswitch_settings_action
+msgid "FreeSWITCH Settings"
+msgstr "Paramètres FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_socket_url
+msgid "FreeSWITCH Socket URL"
+msgstr "URL du socket FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__parked_uuid
+msgid "FreeSWITCH UUID"
+msgstr "UUID FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__display_freeswitch_webhook_token
+msgid "FreeSWITCH Webhook Token"
+msgstr "Jeton de webhook FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_webhook_token
+msgid "FreeSWITCH Webhook Token (stored)"
+msgstr "Jeton de webhook FreeSWITCH (stocké)"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_freeswitch_template
+msgid "FreeSWITCH XML Template"
+msgstr "Modèle XML FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__freeswitch_log_level
+msgid ""
+"FreeSWITCH core and console log level. Pass as FS_LOG_LEVEL env var to the "
+"container."
+msgstr "Niveau de journal du cœur et de la console FreeSWITCH. À passer au conteneur via la variable d'environnement FS_LOG_LEVEL."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_fs_fifo__moh_sound
+msgid ""
+"FreeSWITCH sound source played while the caller is waiting. Defaults to the "
+"global `hold_music` variable defined in vars.xml (silence_stream://0 out of "
+"the box)."
+msgstr "Source sonore FreeSWITCH diffusée pendant l'attente de l'appelant. Utilise par défaut la variable globale `hold_music` définie dans vars.xml (silence_stream://0 par défaut)."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_user__freeswitch_endpoint_count
+msgid "Freeswitch Endpoint Count"
+msgstr "Nombre d'endpoints FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__friendly_name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_callerid__friendly_name
+msgid "Friendly Name"
+msgstr "Nom convivial"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__from_domain
+msgid "From Domain"
+msgstr "Domaine d'origine"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__gateway
+msgid "Gateway"
+msgstr "Passerelle"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_gateway_form
+msgid "Gateway Name"
+msgstr "Nom de la passerelle"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "Gateway Status"
+msgstr "Statut de la passerelle"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_gateway_statuses
+msgid "Gateway Statuses"
+msgstr "Statuts des passerelles"
+
+#. module: connect_freeswitch
+#: model:ir.model.constraint,message:connect_freeswitch.constraint_connect_freeswitch_gateway_name_uniq
+msgid "Gateway name must be unique!"
+msgstr "Le nom de la passerelle doit être unique !"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__gather_digits
+msgid "Gather Digits"
+msgstr "Nombre de chiffres à saisir"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__gather_input
+msgid "Gather Input"
+msgstr "Recueillir la saisie"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_callflow_form
+msgid "Gather Settings"
+msgstr "Paramètres de saisie"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_connect_fs_fifo_form
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_callflow_form
+msgid "General"
+msgstr "Général"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_event_search
+msgid "Group by Event Type"
+msgstr "Grouper par type d'événement"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_event_search
+msgid "Group by IP"
+msgstr "Grouper par IP"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_fs_fifo__timeout_action__hangup
+msgid "Hangup"
+msgstr "Raccrocher"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "Heartbeat & Retention"
+msgstr "Heartbeat et rétention"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__firewall_heartbeat_interval
+msgid "Heartbeat Interval (sec)"
+msgstr "Intervalle de heartbeat (sec)"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/endpoint_password/endpoint_password.js:0
+msgid "Hide password"
+msgstr "Masquer le mot de passe"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__gather_hints
+msgid "Hints"
+msgstr "Indications"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__firewall_authenticated_timeout
+msgid "How long an IP stays trusted after a successful authentication."
+msgstr "Durée pendant laquelle une IP reste approuvée après une authentification réussie."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__firewall_banned_timeout
+msgid "How long an automatically banned IP stays in the banned ipset."
+msgstr "Durée pendant laquelle une IP bannie automatiquement reste dans l'ipset des bannissements."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__firewall_event_retention_days
+msgid "How long firewall security events are kept in the database."
+msgstr "Durée de conservation des événements de sécurité du pare-feu dans la base de données."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__firewall_heartbeat_interval
+msgid "How often the firewall service reports its status to Odoo."
+msgstr "Fréquence à laquelle le service pare-feu signale son état à Odoo."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_ice_servers
+msgid "ICE Servers"
+msgstr "Serveurs ICE"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_blacklist__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_whitelist__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow_choice__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_callerid__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__id
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__id
+msgid "ID"
+msgstr "ID"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_settings__freeswitch_log_level__info
+msgid "INFO"
+msgstr "INFO"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__ip
+msgid "IP"
+msgstr "IP"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_gateway__inbound_ips
+msgid ""
+"IP addresses or CIDR ranges (one per line) allowed to send inbound calls "
+"without SIP authentication. Example: 185.3.68.0/24"
+msgstr "Adresses IP ou plages CIDR (une par ligne) autorisées à envoyer des appels entrants sans authentification SIP. Exemple : 185.3.68.0/24"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_blacklist__ip_or_cidr
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_whitelist__ip_or_cidr
+msgid "IP or CIDR"
+msgstr "IP ou CIDR"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_gateway_form
+msgid "Inbound IP Whitelist"
+msgstr "Liste blanche d'IP entrantes"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__inbound_ips
+msgid "Inbound IPs"
+msgstr "IP entrantes"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_user__originate_ring
+msgid "Include WebRTC client when originating click-to-call calls."
+msgstr "Inclure le client WebRTC lors du lancement des appels clic-pour-appeler."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_endpoint__originate_ring
+msgid "Include this endpoint when originating click-to-call calls."
+msgstr "Inclure cet endpoint lors du lancement des appels clic-pour-appeler."
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Incoming call"
+msgstr "Appel entrant"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__gather_input_type
+msgid "Input Type"
+msgstr "Type de saisie"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__invalid_input_message
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_callflow_form
+msgid "Invalid Input Message"
+msgstr "Message de saisie invalide"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__is_customized
+msgid "Is Customized"
+msgstr "Personnalisé"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__is_occupied
+msgid "Is Occupied"
+msgstr "Occupé"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__key
+msgid "Key"
+msgstr "Clé"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__language
+msgid "Language"
+msgstr "Langue"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_agent_form
+msgid "Last Reports"
+msgstr "Derniers rapports"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__last_seen
+msgid "Last Seen"
+msgstr "Vu pour la dernière fois"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__last_sync_at
+msgid "Last Sync At"
+msgstr "Dernière synchronisation le"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_blacklist__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_whitelist__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow_choice__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_callerid__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__write_uid
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__write_uid
+msgid "Last Updated by"
+msgstr "Mis à jour par"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_blacklist__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_whitelist__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow_choice__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_callerid__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__write_date
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__write_date
+msgid "Last Updated on"
+msgstr "Mis à jour le"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_log_level
+msgid "Log Level"
+msgstr "Niveau de journal"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "Log Levels"
+msgstr "Niveaux de journal"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_event__event_type__manual_ban_applied
+msgid "Manual Ban Applied"
+msgstr "Bannissement manuel appliqué"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_event__event_type__manual_unban_applied
+msgid "Manual Unban Applied"
+msgstr "Débannissement manuel appliqué"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__max_wait_time
+msgid "Max Wait Time"
+msgstr "Temps d'attente maximal"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_fs_fifo__max_wait_time
+msgid "Maximum time (in seconds) a caller waits in the queue before fallback."
+msgstr "Temps d'attente maximal (en secondes) d'un appelant dans la file avant le repli."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_callflow__voicemail_prompt
+msgid ""
+"Message played before recording callflow voicemail. Callflow voicemail takes"
+" precedence over user voicemail inside callflows; direct user routing keeps "
+"user voicemail behavior."
+msgstr "Message diffusé avant l'enregistrement de la messagerie vocale du flux d'appel. Dans les flux d'appel, la messagerie vocale du flux est prioritaire sur celle de l'utilisateur ; le routage direct vers un utilisateur conserve le comportement de sa messagerie vocale."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__model_friendly
+msgid "Model"
+msgstr "Modèle"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__moh_sound
+msgid "Music on Hold"
+msgstr "Musique d'attente"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_settings__freeswitch_log_level__notice
+msgid "NOTICE"
+msgstr "NOTICE"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_blacklist__name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_whitelist__name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_callerid__name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__name
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__name
+msgid "Name"
+msgstr "Nom"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/parking_panel.js:0
+msgid "No active call UUID found."
+msgstr "Aucun UUID d'appel actif trouvé."
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/parking_panel.js:0
+msgid "No active call to park. Connect first, then press Park on a free slot."
+msgstr "Aucun appel actif à parquer. Connectez-vous d'abord, puis cliquez sur Parquer sur un emplacement libre."
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/parking_panel.xml:0
+msgid "No active call. Click an occupied slot to retrieve it."
+msgstr "Aucun appel actif. Cliquez sur un emplacement occupé pour récupérer l'appel."
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/parking_panel.xml:0
+msgid "No parking slots configured."
+msgstr "Aucun emplacement de parcage configuré."
+
+#. module: connect_freeswitch
+#: model_terms:ir.actions.act_window,help:connect_freeswitch.action_firewall_blacklist
+msgid "No permanent bans yet."
+msgstr "Aucun bannissement permanent pour l'instant."
+
+#. module: connect_freeswitch
+#: model_terms:ir.actions.act_window,help:connect_freeswitch.action_firewall_whitelist
+msgid "No whitelist entries yet."
+msgstr "Aucune entrée dans la liste blanche pour l'instant."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_blacklist__note
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_whitelist__note
+msgid "Note"
+msgstr "Note"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_blacklist_form
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_whitelist_form
+msgid "Notes"
+msgstr "Notes"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_callerid__number
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_number_form
+msgid "Number"
+msgstr "Numéro"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_outgoing_route__strip
+msgid "Number of digits to strip from the beginning"
+msgstr "Nombre de chiffres à retirer au début"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_freeswitch_number
+#: model:ir.ui.menu,name:connect_freeswitch.menu_freeswitch_numbers
+msgid "Numbers"
+msgstr "Numéros"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_agent__status__offline
+msgid "Offline"
+msgstr "Hors ligne"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_gateway_form
+msgid ""
+"One IP or CIDR per line, e.g.\n"
+"185.3.68.0/24\n"
+"212.51.140.20"
+msgstr "Une IP ou un CIDR par ligne, par ex.\n185.3.68.0/24\n212.51.140.20"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_agent__status__online
+msgid "Online"
+msgstr "En ligne"
+
+#. module: connect_freeswitch
+#: model:ir.actions.server,name:connect_freeswitch.action_firewall_agent_open
+msgid "Open Firewall Agent"
+msgstr "Ouvrir l'agent du pare-feu"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/parking_panel.js:0
+msgid "Operation failed."
+msgstr "Échec de l'opération."
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_gateway_form
+msgid "Options"
+msgstr "Options"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_endpoint__originate_ring
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_user__originate_ring
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_endpoint_search
+msgid "Originate Ring"
+msgstr "Sonnerie à l'appel sortant"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_freeswitch_callerid
+#: model:ir.ui.menu,name:connect_freeswitch.menu_freeswitch_callerids
+msgid "Outgoing Caller IDs"
+msgstr "Identifiants d'appelant sortants"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_freeswitch_outgoing_route
+msgid "Outgoing Route"
+msgstr "Itinéraire sortant"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_freeswitch_outgoing_route
+#: model:ir.ui.menu,name:connect_freeswitch.menu_freeswitch_outgoing_route
+msgid "Outgoing Routes"
+msgstr "Itinéraires sortants"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_endpoint__auto_answer_header__p-auto-answer:_normal
+msgid "P-Auto-Answer: normal"
+msgstr "P-Auto-Answer: normal"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_connect_call_form_inherit_parking
+msgid "Park"
+msgstr "Parquer"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/parking_panel.js:0
+msgid "Parked"
+msgstr "Parqué"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__parked_at
+msgid "Parked At"
+msgstr "Parqué le"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__parked_by_user
+msgid "Parked By"
+msgstr "Parqué par"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__parked_call
+msgid "Parked Call"
+msgstr "Appel parqué"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__parked_caller_name
+msgid "Parked Caller Name"
+msgstr "Nom de l'appelant parqué"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__parked_caller_number
+msgid "Parked Caller Number"
+msgstr "Numéro de l'appelant parqué"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_call__fs_parked_slot
+msgid "Parked On"
+msgstr "Parqué sur"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "Parking"
+msgstr "Parcage"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_fs_parking_slot
+#: model:ir.ui.menu,name:connect_freeswitch.menu_fs_parking_slot
+msgid "Parking Slots"
+msgstr "Emplacements de parcage"
+
+#. module: connect_freeswitch
+#: model_terms:ir.actions.act_window,help:connect_freeswitch.action_fs_parking_slot
+msgid ""
+"Parking slots let users put active calls on hold and retrieve them\n"
+"               from any phone by dialing the slot extension. BLF-capable SIP phones\n"
+"               show occupied/free state on DSS keys subscribed to the slot."
+msgstr "Les emplacements de parcage permettent de mettre un appel actif en attente et de le récupérer\n               depuis n'importe quel téléphone en composant l'extension de l'emplacement. Les téléphones SIP compatibles BLF\n               affichent l'état occupé/libre sur les touches DSS abonnées à l'emplacement."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__password
+msgid "Password"
+msgstr "Mot de passe"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/endpoint_password/endpoint_password.js:0
+msgid "Password copied to clipboard"
+msgstr "Mot de passe copié dans le presse-papiers"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__pattern
+msgid "Pattern"
+msgstr "Motif"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/xml/phone_systray.xml:0
+msgid "Phone"
+msgstr "Téléphone"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_user__phone_display_mode
+msgid "Phone Display"
+msgstr "Affichage du téléphone"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__phone_number
+msgid "Phone Number"
+msgstr "Numéro de téléphone"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_number__schedule_prompt_language
+msgid ""
+"Piper TTS language used to play the public holiday prompt message to "
+"callers."
+msgstr "Langue Piper TTS utilisée pour diffuser l'annonce des jours fériés aux appelants."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__prefix
+msgid "Prefix"
+msgstr "Préfixe"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_outgoing_route__prefix
+msgid "Prefix to add after stripping"
+msgstr "Préfixe à ajouter après la troncature"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__priority
+msgid "Priority"
+msgstr "Priorité"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__schedule_prompt_language
+msgid "Prompt Language"
+msgstr "Langue des annonces"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__prompt_message
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_callflow_form
+msgid "Prompt Message"
+msgstr "Message d'annonce"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "Protected Ports"
+msgstr "Ports protégés"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__proxy
+msgid "Proxy"
+msgstr "Proxy"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__freeswitch_xmlrpc_host
+msgid ""
+"Public host of the Traefik TLS endpoint that fronts FreeSWITCH mod_xml_rpc "
+"(e.g. fs.example.com). Odoo always connects to it over verified HTTPS on "
+"port 443. Changing the host rotates the internal XML-RPC password; restart "
+"FreeSWITCH afterwards."
+msgstr "Hôte public du point de terminaison TLS Traefik exposant mod_xml_rpc de FreeSWITCH (par ex. fs.example.com). Odoo s'y connecte toujours en HTTPS vérifié sur le port 443. Modifier l'hôte renouvelle le mot de passe XML-RPC interne ; redémarrez FreeSWITCH ensuite."
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_connect_fs_fifo_form
+msgid "Queue Behavior"
+msgstr "Comportement de la file"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Ready"
+msgstr "Prêt"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__realm
+msgid "Realm"
+msgstr "Realm"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Reconnecting..."
+msgstr "Reconnexion..."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__record_calls
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__record_calls
+msgid "Record Calls"
+msgstr "Enregistrer les appels"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Recording"
+msgstr "Enregistrement"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Recording error"
+msgstr "Erreur d'enregistrement"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Recording unavailable"
+msgstr "Enregistrement indisponible"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_endpoint_form
+msgid "Regenerate"
+msgstr "Régénérer"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_outgoing_route__pattern
+msgid "Regex pattern for destination number (e.g. ^\\+\\d{7,}$)"
+msgstr "Motif regex du numéro de destination (par ex. ^\\+\\d{7,}$)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__register
+msgid "Register"
+msgstr "Enregistrer"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_registrations
+msgid "Registered Endpoints"
+msgstr "Endpoints enregistrés"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_exten__res_id
+msgid "Res"
+msgstr "ID de ressource"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_fs_parking_slot_form
+msgid "Reset Slot"
+msgstr "Réinitialiser l'emplacement"
+
+#. module: connect_freeswitch
+#: model:ir.actions.server,name:connect_freeswitch.action_fs_parking_slot_reset
+msgid "Reset Slot State"
+msgstr "Réinitialiser l'état de l'emplacement"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_template_form
+msgid "Reset to Default"
+msgstr "Réinitialiser par défaut"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__retry_seconds
+msgid "Retry Seconds"
+msgstr "Nouvelle tentative (secondes)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__ring_users
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_callflow_form
+msgid "Ring Users"
+msgstr "Faire sonner les utilisateurs"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Ringing..."
+msgstr "Sonnerie..."
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_number_form
+msgid "Routing"
+msgstr "Routage"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_freeswitch_gateway
+msgid "SIP Gateway"
+msgstr "Passerelle SIP"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_freeswitch_gateway
+#: model:ir.ui.menu,name:connect_freeswitch.menu_freeswitch_gateway
+msgid "SIP Gateways"
+msgstr "Passerelles SIP"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_endpoint__auth_password
+msgid ""
+"SIP credential. Auto-generated as a typeable passphrase (five word+digit "
+"groups). Read-only and auto-managed — use the Regenerate button to issue a "
+"new one."
+msgstr "Identifiant SIP. Généré automatiquement sous forme de phrase de passe saisissable (cinq groupes mot+chiffre). En lecture seule et géré automatiquement — utilisez le bouton Régénérer pour en créer un nouveau."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__freeswitch_domain
+msgid ""
+"SIP domain for FreeSWITCH registrations and routing. Used in sofia profile "
+"(force-register-domain) and directory XML."
+msgstr "Domaine SIP pour les enregistrements et le routage FreeSWITCH. Utilisé dans le profil sofia (force-register-domain) et dans le XML de l'annuaire."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_endpoint__auto_answer_header
+msgid ""
+"SIP header sent to auto-answer the phone during click-to-call originate."
+msgstr "En-tête SIP envoyé pour décrocher automatiquement le téléphone lors du lancement d'un appel clic-pour-appeler."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_gateway__proxy
+msgid "SIP proxy address (e.g. sip.provider.com)"
+msgstr "Adresse du proxy SIP (par ex. sip.provider.com)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_firewall_event__account_id
+msgid "SIP username from the failed REGISTER/INVITE, if known."
+msgstr "Nom d'utilisateur SIP du REGISTER/INVITE en échec, si connu."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__freeswitch_ice_servers
+msgid ""
+"STUN/TURN server URIs for WebRTC, one per line. Example: "
+"stun:stun.example.com:3478 or turn:turn.example.com:3478?transport=udp"
+msgstr "URI des serveurs STUN/TURN pour WebRTC, un par ligne. Exemple : stun:stun.example.com:3478 ou turn:turn.example.com:3478?transport=udp"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_template__section
+msgid "Section"
+msgstr "Section"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_parking_slot__sequence
+msgid "Sequence"
+msgstr "Séquence"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_status
+msgid "Server Status"
+msgstr "État du serveur"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__service
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "Service"
+msgstr "Service"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_event__event_type__service_error
+msgid "Service Error"
+msgstr "Erreur du service"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_event_search
+msgid "Service Errors"
+msgstr "Erreurs du service"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_event__event_type__service_started
+msgid "Service Started"
+msgstr "Service démarré"
+
+#. module: connect_freeswitch
+#: model:ir.model,name:connect_freeswitch.model_connect_settings
+#: model:ir.ui.menu,name:connect_freeswitch.menu_freeswitch_settings
+msgid "Settings"
+msgstr "Paramètres"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_event__event_type__settings_changed
+msgid "Settings Changed"
+msgstr "Paramètres modifiés"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__display_freeswitch_webhook_token
+msgid ""
+"Shared secret used by FreeSWITCH to authenticate against the Odoo XML curl /"
+" CDR / recording / parking endpoints. Generate a fresh value (≥24 chars, "
+"[A-Za-z0-9_-]) and copy it into the FS_WEBHOOK_TOKEN env var of the "
+"FreeSWITCH container before saving — the value is masked back to **** "
+"immediately afterwards. Visible only to administrators."
+msgstr "Secret partagé utilisé par FreeSWITCH pour s'authentifier auprès des points de terminaison XML curl / CDR / enregistrement / parcage d'Odoo. Générez une nouvelle valeur (≥ 24 caractères, [A-Za-z0-9_-]) et copiez-la dans la variable d'environnement FS_WEBHOOK_TOKEN du conteneur FreeSWITCH avant d'enregistrer — la valeur est immédiatement masquée par ****. Visible uniquement par les administrateurs."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__display_firewall_service_token
+msgid ""
+"Shared secret used by Odoo and the firewall service to authenticate each "
+"other. Generate a fresh value (≥24 chars, [A-Za-z0-9_-]) and copy it into "
+"the AGENT_TOKEN env var of the service before saving — the value is masked "
+"back to **** immediately afterwards. Visible only to administrators."
+msgstr "Secret partagé utilisé par Odoo et le service pare-feu pour s'authentifier mutuellement. Générez une nouvelle valeur (≥ 24 caractères, [A-Za-z0-9_-]) et copiez-la dans la variable d'environnement AGENT_TOKEN du service avant d'enregistrer — la valeur est immédiatement masquée par ****. Visible uniquement par les administrateurs."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_firewall_whitelist__name
+msgid "Short description, e.g. 'Office NY'"
+msgstr "Description courte, par ex. « Bureau NY »"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_firewall_blacklist__name
+msgid "Short description, e.g. 'VPS attacker'"
+msgstr "Description courte, par ex. « Attaquant VPS »"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/widgets/endpoint_password/endpoint_password.js:0
+msgid "Show password"
+msgstr "Afficher le mot de passe"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_firewall_blacklist__ip_or_cidr
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_firewall_whitelist__ip_or_cidr
+msgid ""
+"Single IP (1.2.3.4 or 2001:db8::1) or CIDR network (1.2.3.0/24 or "
+"2001:db8::/64)."
+msgstr "IP unique (1.2.3.4 ou 2001:db8::1) ou réseau CIDR (1.2.3.0/24 ou 2001:db8::/64)."
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_fs_parking_slot_form
+msgid "Slot 701"
+msgstr "Emplacement 701"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_sofia_log_level
+msgid "Sofia Log Level"
+msgstr "Niveau de journal Sofia"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__freeswitch_sofia_log_level
+msgid ""
+"Sofia SIP module log verbosity (0-9). Pass as FS_SOFIA_LOG_LEVEL env var to "
+"the container."
+msgstr "Verbosite des journaux du module SIP Sofia (0-9). À passer au conteneur via la variable d'environnement FS_SOFIA_LOG_LEVEL."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_agent__status__stale
+msgid "Stale"
+msgstr "Obsolète"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_endpoint_search
+msgid "Standalone"
+msgstr "Autonome"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Start Recording"
+msgstr "Démarrer l'enregistrement"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Starting recording"
+msgstr "Démarrage de l'enregistrement"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__status
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_agent_form
+msgid "Status"
+msgstr "Statut"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Stop Recording"
+msgstr "Arrêter l'enregistrement"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Stopping recording"
+msgstr "Arrêt de l'enregistrement"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_route__strip
+msgid "Strip"
+msgstr "Chiffres à retirer"
+
+#. module: connect_freeswitch
+#: model:ir.actions.server,name:connect_freeswitch.action_fs_parking_slot_sync
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_fs_parking_slot_form
+msgid "Sync from FreeSWITCH"
+msgstr "Synchroniser depuis FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__ts
+msgid "TS"
+msgstr "Horodatage"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_user__originate_provider
+msgid ""
+"Telephony module used to originate calls for this user. Leave empty when "
+"only one telephony module is installed."
+msgstr "Module de téléphonie utilisé pour lancer les appels de cet utilisateur. Laisser vide lorsqu'un seul module de téléphonie est installé."
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_template_form
+msgid "Template"
+msgstr "Modèle"
+
+#. module: connect_freeswitch
+#: model:ir.model.constraint,message:connect_freeswitch.constraint_connect_freeswitch_template_key_uniq
+msgid "Template key must be unique!"
+msgstr "La clé du modèle doit être unique !"
+
+#. module: connect_freeswitch
+#: model:ir.model.constraint,message:connect_freeswitch.constraint_connect_freeswitch_exten_number_uniq
+msgid "This extension number is already defined!"
+msgstr "Ce numéro d'extension est déjà défini !"
+
+#. module: connect_freeswitch
+#: model:ir.model.constraint,message:connect_freeswitch.constraint_connect_freeswitch_outgoing_callerid_number_uniq
+msgid "This number is already used!"
+msgstr "Ce numéro est déjà utilisé !"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_template_form
+msgid "This will overwrite your customizations. Continue?"
+msgstr "Cela écrasera vos personnalisations. Continuer ?"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__firewall_expire_short_timeout
+msgid "Time given to a new IP to respond to a SIP 401 challenge."
+msgstr "Temps accordé à une nouvelle IP pour répondre à un défi SIP 401."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__gather_timeout
+msgid "Timeout"
+msgstr "Délai d'attente"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__timeout_action
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_connect_fs_fifo_form
+msgid "Timeout Action"
+msgstr "Action en cas de délai d'attente"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "Timeouts (seconds)"
+msgstr "Délais d'attente (secondes)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_firewall_event__ts
+msgid "Timestamp from the service (not Odoo create_date)."
+msgstr "Horodatage fourni par le service (et non la date de création Odoo)."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_fs_fifo__timeout_action__transfer
+msgid "Transfer to Extension"
+msgstr "Transférer vers une extension"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_firewall_event__is_banned
+msgid ""
+"True if this event's IP is currently in the auto-ban set on the service. "
+"Used to enable the Unban button."
+msgstr "Vrai si l'IP de cet événement figure actuellement dans l'ensemble des bannissements automatiques du service. Sert à activer le bouton Débannir."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__firewall_authenticated_timeout
+msgid "Trust TTL (sec)"
+msgstr "TTL de confiance (sec)"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_exten_form
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_exten_tree
+msgid "Type"
+msgstr "Type"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_event_form
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_firewall_event_list
+msgid "Unban"
+msgstr "Débannir"
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/firewall.py:0
+msgid "Unban failed: %s"
+msgstr "Échec du débannissement : %s"
+
+#. module: connect_freeswitch
+#. odoo-python
+#: code:addons/connect_freeswitch/models/firewall.py:0
+msgid "Unbanned %s"
+msgstr "%s débanni"
+
+#. module: connect_freeswitch
+#. odoo-javascript
+#: code:addons/connect_freeswitch/static/src/js/phone_systray.js:0
+msgid "Unknown"
+msgstr "Inconnu"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_fs_parking_slot_form
+msgid "Unpark"
+msgstr "Récupérer"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_uptime
+msgid "Uptime"
+msgstr "Durée de fonctionnement"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__uptime_seconds
+msgid "Uptime Seconds"
+msgstr "Durée de fonctionnement (secondes)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__schedule_enabled
+msgid "Use Working Schedule"
+msgstr "Utiliser l'horaire de travail"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_freeswitch_gateway__caller_id_in_from
+msgid "Use caller ID in From header"
+msgstr "Utiliser l'identifiant d'appelant dans l'en-tête From"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__user
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_exten__dst__connect_user
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_number__closed_destination__user
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_freeswitch_number__destination__user
+msgid "User"
+msgstr "Utilisateur"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__closed_user
+msgid "User (Unavailable)"
+msgstr "Utilisateur (indisponible)"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_event__user_agent
+msgid "User Agent"
+msgstr "User-Agent"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__member_user_ids
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_connect_fs_fifo_form
+msgid "User Agents"
+msgstr "Utilisateurs agents"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_fs_fifo__voicemail_user_id
+msgid ""
+"User whose voicemail box is used after queue timeout (required when "
+"timeout_action = voicemail)."
+msgstr "Utilisateur dont la boîte vocale est utilisée après le délai d'attente de la file (requis lorsque timeout_action = voicemail)."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_gateway__username
+msgid "Username"
+msgstr "Nom d'utilisateur"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_outgoing_callerid_form
+msgid "Users"
+msgstr "Utilisateurs"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_firewall_agent__version
+msgid "Version"
+msgstr "Version"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_fs_fifo__timeout_action__voicemail
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_callflow_form
+msgid "Voicemail"
+msgstr "Messagerie vocale"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__voicemail_enabled
+msgid "Voicemail Enabled"
+msgstr "Messagerie vocale activée"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_callflow__voicemail_prompt
+msgid "Voicemail Prompt"
+msgstr "Annonce de messagerie vocale"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_fs_fifo__voicemail_user_id
+msgid "Voicemail User"
+msgstr "Utilisateur de la messagerie vocale"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_settings__freeswitch_log_level__warning
+msgid "WARNING"
+msgstr "WARNING"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_connect_user_form_freeswitch
+msgid "WebRTC"
+msgstr "WebRTC"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_user__webrtc_enabled
+msgid "WebRTC Enabled"
+msgstr "WebRTC activé"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_user__webrtc_password
+msgid "WebRTC Password"
+msgstr "Mot de passe WebRTC"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_settings__freeswitch_socket_url
+msgid "WebSocket URL for FreeSWITCH connection"
+msgstr "URL WebSocket pour la connexion FreeSWITCH"
+
+#. module: connect_freeswitch
+#: model:ir.ui.menu,name:connect_freeswitch.menu_firewall_whitelist
+msgid "Whitelist"
+msgstr "Liste blanche"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields.selection,name:connect_freeswitch.selection__connect_firewall_event__event_type__whitelist_changed
+msgid "Whitelist Changed"
+msgstr "Liste blanche modifiée"
+
+#. module: connect_freeswitch
+#: model_terms:ir.actions.act_window,help:connect_freeswitch.action_firewall_whitelist
+msgid "Whitelisted IPs and subnets bypass all automatic banning logic."
+msgstr "Les IP et sous-réseaux de la liste blanche contournent toute la logique de bannissement automatique."
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_number__schedule_id
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.view_freeswitch_number_form
+msgid "Working Schedule"
+msgstr "Horaire de travail"
+
+#. module: connect_freeswitch
+#: model:ir.actions.act_window,name:connect_freeswitch.action_freeswitch_template
+#: model:ir.ui.menu,name:connect_freeswitch.menu_freeswitch_template
+msgid "XML Templates"
+msgstr "Modèles XML"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "XML-RPC"
+msgstr "XML-RPC"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_xmlrpc_host
+msgid "XML-RPC Host"
+msgstr "Hôte XML-RPC"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_settings__freeswitch_xmlrpc_password
+msgid "XML-RPC Password"
+msgstr "Mot de passe XML-RPC"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,field_description:connect_freeswitch.field_connect_freeswitch_outgoing_callerid__callerid_users
+msgid "callerId Users"
+msgstr "Utilisateurs de l'identifiant d'appelant"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "fs.example.com"
+msgstr "fs.example.com"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "http://host.docker.internal:8081"
+msgstr "http://host.docker.internal:8081"
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "stun:stun.l.google.com:19302"
+msgstr "stun:stun.l.google.com:19302"
+
+#. module: connect_freeswitch
+#: model:ir.model.fields,help:connect_freeswitch.field_connect_firewall_event__service
+msgid "udp/tcp/ws if known."
+msgstr "udp/tcp/ws si connu."
+
+#. module: connect_freeswitch
+#: model_terms:ir.ui.view,arch_db:connect_freeswitch.connect_settings_form_freeswitch
+msgid "wss://your-fs-domain:8082"
+msgstr "wss://votre-domaine-fs:8082"
