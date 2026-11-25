@@ -1,0 +1,46 @@
+{
+    'name': 'Oduist Connect VoiceTel',
+    'version': '19.0.1.0.0',
+    'author': 'Oduist',
+    'category': 'Phone',
+    'summary': 'VoiceTel VoiceML (Twilio-compatible) integration for Oduist Connect',
+    'depends': ['connect'],
+    'external_dependencies': {
+        # The Twilio helper library is the documented client for VoiceML's
+        # Twilio-compatible API; it is pointed at the VoiceML host (ADR-066).
+        'python': ['voiceml'],
+    },
+    'data': [
+        'security/access_rules.xml',
+        'views/menu.xml',
+        'views/settings_views.xml',
+        'views/voiceml_views.xml',
+        'views/domain_views.xml',
+        'views/user_views.xml',
+        'views/exten_views.xml',
+        'views/callflow_views.xml',
+        'views/number_views.xml',
+        'views/call_views.xml',
+        'views/message_views.xml',
+        'views/message_configuration_views.xml',
+        'views/outgoing_callerid_views.xml',
+        'wizard/sms_composer_views.xml',
+        'data/voiceml.xml',
+        'data/ir_cron.xml',
+    ],
+    'assets': {
+        'web.assets_backend': [
+            'connect_voicetel/static/src/icomoon/style.css',
+            'connect_voicetel/static/src/lib/jssip.min.js',
+            'connect_voicetel/static/src/js/utils.js',
+            'connect_voicetel/static/src/components/*/*',
+            'connect_voicetel/static/src/js/core.js',
+            'connect_voicetel/static/src/widgets/phone_field/*',
+        ],
+    },
+    'post_init_hook': 'post_init_hook',
+    'images': ['static/description/icon.png'],
+    'installable': True,
+    'application': False,
+    'license': 'Other proprietary',
+}

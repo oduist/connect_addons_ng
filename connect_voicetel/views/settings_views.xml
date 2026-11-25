@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Standalone VoiceTel settings form on the shared connect.settings
+         singleton: only VoiceTel fields, opened from the VoiceTel menu. -->
+    <record id="connect_settings_form_voicetel" model="ir.ui.view">
+        <field name="name">connect.settings.form.voicetel</field>
+        <field name="model">connect.settings</field>
+        <field name="inherit_id" eval="False"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <sheet>
+                    <notebook>
+                        <page name="voicetel_api" string="VoiceML API">
+                            <group>
+                                <group string="VoiceML Account" name="voicetel_api">
+                                    <div colspan="2">
+                                        <small><strong>The Account SID and API key are issued by VoiceTel
+                                            when the VoiceML account is created.</strong></small>
+                                    </div>
+                                    <field name="voicetel_auto_sync" groups="base.group_no_one"/>
+                                    <field name="voicetel_account_sid"/>
+                                    <field name="display_voicetel_api_key" string="API Key" password="1"/>
+                                    <field name="voicetel_api_host"/>
+                                    <button colspan="2" name="voicetel_sync" type="object"
+                                            string="SYNC VOICETEL ACCOUNT" class="btn btn-primary"/>
+                                </group>
+                                <group string="Balance">
+                                    <field name="voicetel_balance" string="Current Balance" readonly="1"/>
+                                    <button class="btn btn-info" colspan="2" name="get_voicetel_balance"
+                                            type="object" string="GET VOICETEL BALANCE"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="SIP &amp; Browser Phone">
+                                    <field name="voicetel_sip_suffix"/>
+                                    <field name="voicetel_stun_server" string="STUN Server"/>
+                                    <field name="voicetel_phone_enabled" widget="boolean_toggle"/>
+                                </group>
+                                <group string="Calls">
+                                    <field name="voicetel_fetch_call_prices"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Development" groups="base.group_no_one" name="voicetel_dev">
+                            <group>
+                                <group>
+                                    <field name="voicetel_verify_requests"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.actions.server" id="voicetel_settings_action">
+        <field name="type">ir.actions.server</field>
+        <field name="name">VoiceTel Settings</field>
+        <field name="state">code</field>
+        <field name="model_id" ref="connect.model_connect_settings"/>
+        <field name="code">action = model.open_settings_form("connect_voicetel.connect_settings_form_voicetel", "VoiceTel Settings")</field>
+    </record>
+
+    <menuitem id="menu_voicetel_settings"
+              name="Settings"
+              parent="menu_voicetel_config"
+              action="voicetel_settings_action"
+              groups="connect.group_admin"
+              sequence="10"/>
+
+</odoo>

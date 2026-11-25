@@ -43,6 +43,7 @@ hide:
     <a href="Core/admin/installation/" class="mod-tile" data-cat="core" style="--c:#e66767" data-code="connect" data-label="Core" data-tip="One data model for calls, messages, recordings, users and numbers. Providers plug in underneath."><span class="mod-sym">Core</span><span class="mod-nm">Agnostic core</span><span class="mod-code">connect</span></a>
     <a href="Book/user/reading-the-docs/" class="mod-tile" data-cat="core" style="--c:#e66767" data-code="connect_book" data-label="Core" data-tip="This documentation, served inside Odoo for the modules you actually have installed."><span class="mod-sym">Bk</span><span class="mod-nm">Book</span><span class="mod-code">connect_<wbr>book</span></a>
     <a href="Twilio/" class="mod-tile" data-cat="provider" style="--c:#3987e5" data-code="connect_twilio" data-label="Providers" data-tip="Cloud telephony, browser phone, IVR, SMS and WhatsApp."><span class="mod-sym">Tw</span><span class="mod-nm">Twilio</span><span class="mod-code">connect_<wbr>twilio</span></a>
+    <a href="VoiceTel/" class="mod-tile" data-cat="provider" style="--c:#3987e5" data-code="connect_voicetel" data-label="Providers" data-tip="VoiceTel VoiceML (Twilio-compatible): browser phone, SIP domains, IVR, SMS and MMS."><span class="mod-sym">VT</span><span class="mod-nm">VoiceTel</span><span class="mod-code">connect_<wbr>voicetel</span></a>
     <a href="Telnyx/admin/telnyx-setup/" class="mod-tile" data-cat="provider" style="--c:#3987e5" data-code="connect_telnyx" data-label="Providers" data-tip="Programmable voice &amp; messaging on TeXML, with native AI Assistants."><span class="mod-sym">Tx</span><span class="mod-nm">Telnyx</span><span class="mod-code">connect_<wbr>telnyx</span></a>
     <a href="FreeSWITCH/admin/freeswitch-setup/" class="mod-tile" data-cat="provider" style="--c:#3987e5" data-code="connect_freeswitch" data-label="Providers" data-tip="Self-hosted PBX: Verto WebRTC, dialplan, FIFO queues, SIP firewall, Piper TTS."><span class="mod-sym">FS</span><span class="mod-nm">FreeSWITCH</span><span class="mod-code">connect_<wbr>freeswitch</span></a>
     <a href="Asterisk/admin/asterisk-setup/" class="mod-tile" data-cat="provider" style="--c:#3987e5" data-code="connect_asterisk" data-label="Providers" data-tip="Connect existing Asterisk, FreePBX or Issabel through an AMI sidecar."><span class="mod-sym">Ast</span><span class="mod-nm">Asterisk</span><span class="mod-code">connect_<wbr>asterisk</span></a>
@@ -79,6 +80,7 @@ Connect consists of a core module plus provider integrations:
 |--------|---------|
 | **connect** | Technology-agnostic core. Stores calls, messages, recordings and users. Handles AI transcription and summarization. |
 | **connect_twilio** | Twilio integration. Owns its numbers, extensions, call flows and caller IDs; adds Twilio Voice SDK phone widget, SIP domains, WhatsApp, TwiML apps. |
+| **connect_voicetel** | VoiceTel VoiceML integration (Twilio-compatible). Owns its numbers, extensions, call flows and caller IDs; adds a JsSIP browser phone on SIP/WSS, SIP domains with per-user credentials, VoiceML apps, SMS and MMS. |
 | **connect_freeswitch** | FreeSWITCH integration. Owns its numbers, extensions, call flows, endpoints and caller IDs; adds Verto WebRTC client, XML dialplan generation, SIP gateways. |
 | **connect_asterisk** | Asterisk integration for existing PBXs. Owns its endpoints and DID mappings; adds JsSIP web phone and AMI event pipeline via a sidecar agent. |
 | **connect_telnyx** | Telnyx integration. Owns its numbers, extensions, call flows and caller IDs; adds Telnyx WebRTC phone widget, SIP domains (credential connections), TeXML apps, SMS, WhatsApp, RCS, native AI Assistants. |
@@ -95,7 +97,7 @@ Install the **connect** core module plus the integration module(s) matching your
 ## Key Features
 
 - **Calls** — Incoming, outgoing, and internal calls with full history and partner linking
-- **Phone Widget** — Browser-based phone (Twilio Voice SDK, FreeSWITCH Verto WebRTC, Asterisk JsSIP, or Telnyx WebRTC)
+- **Phone Widget** — Browser-based phone (Twilio Voice SDK, VoiceTel JsSIP over SIP/WSS, FreeSWITCH Verto WebRTC, Asterisk JsSIP, or Telnyx WebRTC)
 - **IVR / Call Flows** — Multi-level interactive voice response with DTMF and speech input
 - **Call Recording** — Automatic or per-user recording with in-browser playback
 - **AI Transcription** — OpenAI Whisper speech-to-text and GPT-5.4 mini call summaries

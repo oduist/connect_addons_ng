@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inherit core user list to add VoiceTel-specific columns -->
+    <record id="view_connect_user_tree_voicetel" model="ir.ui.view">
+        <field name="name">connect.user.tree.voicetel</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user']" position="after">
+                <field name="voicetel_username" optional="show"/>
+                <field name="voicetel_exten" optional="show"/>
+                <field name="voicetel_outgoing_callerid" optional="hide"/>
+                <field name="voicetel_sip_enabled" string="VoiceTel SIP"/>
+                <field name="voicetel_phone_enabled" string="VoiceTel Web"/>
+                <field name="voicetel_domain" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit core user form to add VoiceTel-specific fields -->
+    <record id="view_connect_user_form_voicetel" model="ir.ui.view">
+        <field name="name">connect.user.form.voicetel</field>
+        <field name="model">connect.user</field>
+        <field name="inherit_id" ref="connect.view_connect_user_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="create_voicetel_extension" type="object"
+                        string="VoiceTel Extension" class="btn btn-primary"/>
+            </xpath>
+
+            <xpath expr="//field[@name='active']" position="after">
+                <field name="voicetel_exten" readonly="1"/>
+                <field name="voicetel_outgoing_callerid"/>
+            </xpath>
+
+            <xpath expr="//page[@name='organization']" position="before">
+                <page name="voicetel" string="VoiceTel Phone">
+                    <group>
+                        <group string="SIP Account">
+                            <field name="voicetel_sip_enabled" string="Enabled"/>
+                            <field name="voicetel_domain" string="SIP Domain"
+                                   required="voicetel_sip_enabled"/>
+                            <field name="voicetel_username" string="Username"
+                                   required="voicetel_sip_enabled"/>
+                            <field name="voicetel_password" password="1"
+                                   string="Password"
+                                   invisible="not voicetel_sip_enabled"
+                                   help="SIP digest password. Generated when left empty; hardphones and the browser phone register with it."/>
+                            <field name="voicetel_ring_timeout" string="Ring Timeout"
+                                   invisible="not voicetel_sip_enabled"
+                                   required="voicetel_sip_enabled"/>
+                            <field name="voicetel_uri" string="SIP URI"
+                                   invisible="not voicetel_sip_enabled"/>
+                            <field name="voicetel_application" string="VoiceML App"
+                                   invisible="not voicetel_sip_enabled"/>
+                        </group>
+                        <group string="Browser Phone">
+                            <field name="voicetel_phone_enabled" string="Enabled"
+                                   help="Load the VoiceTel web phone in this user's browser. Requires the SIP account."/>
+                            <field name="voicetel_ring_volume"
+                                   invisible="not voicetel_phone_enabled"/>
+                            <field name="voicetel_mask_call_number" widget="boolean_toggle"
+                                   invisible="not voicetel_phone_enabled"/>
+                            <field name="voicetel_call_popup_is_enabled" widget="boolean_toggle"
+                                   invisible="not voicetel_phone_enabled"/>
+                            <field name="voicetel_call_popup_is_sticky" widget="boolean_toggle"
+                                   invisible="not voicetel_phone_enabled or not voicetel_call_popup_is_enabled"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

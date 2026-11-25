@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="voiceml_action" model="ir.actions.act_window">
+        <field name="name">VoiceML</field>
+        <field name="res_model">connect.voicetel.voiceml</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_connect_voiceml"
+              sequence="50"
+              parent="menu_connect_voicetel"
+              name="VoiceML Apps"
+              action="voiceml_action"/>
+
+    <record id="view_connect_voiceml_tree" model="ir.ui.view">
+        <field name="name">connect.voiceml.tree</field>
+        <field name="model">connect.voicetel.voiceml</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="exten"/>
+                <field name="description"/>
+                <field name="code_type"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_connect_voiceml_form" model="ir.ui.view">
+        <field name="name">connect.voiceml.form</field>
+        <field name="model">connect.voicetel.voiceml</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="create_extension" type="object" string="Extension" class="btn btn-primary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <label class="oe_edit_only" for="name"/>
+                            <field name="name" placeholder="VoiceML name..."/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="description"/>
+                            <field name="code_type"/>
+                        </group>
+                        <group>
+                            <field name="exten_number"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="python_code" widget="ace" options="{'mode': 'python'}"
+                               invisible="code_type != 'python'"
+                               required="code_type == 'python'"/>
+                        <field name="model"
+                               invisible="code_type != 'model_method'"
+                               required="code_type == 'model_method'"/>
+                        <field name="method"
+                               invisible="code_type != 'model_method'"
+                               required="code_type == 'model_method'"/>
+                        <field name="voiceml" widget="ace"
+                               invisible="code_type != 'voiceml'"
+                               required="code_type == 'voiceml'"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_connect_voiceml_search" model="ir.ui.view">
+        <field name="name">connect.voiceml.search</field>
+        <field name="model">connect.voicetel.voiceml</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="exten_number"/>
+                <field name="voiceml"/>
+                <field name="python_code"/>
+                <field name="code_type"/>
+                <filter name="by_type" context="{'group_by': 'code_type'}"/>
+            </search>
+        </field>
+    </record>
+
+</odoo>

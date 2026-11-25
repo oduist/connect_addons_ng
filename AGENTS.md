@@ -15,6 +15,7 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_freeswitch_website`** — website widgets for FreeSWITCH number working schedules (ADR-037): Phone Status and Phone Opening Hours snippets + public JSON endpoints under `/freeswitch/schedule/*`. The only module that may depend on `website`; not auto-installed. Core `connect` owns the schedule engine (`connect.schedule` on top of `resource.calendar`).
 - **`connect_asterisk`** — Asterisk integration for existing customer PBXs (FreePBX/Issabel/plain). Owns `connect.asterisk.{endpoint,number}`; AMI events arrive via a thin sidecar agent (`oduist/asterisk-agent`, `connect_asterisk/deploy/agent/`), click-to-call via AMI Originate through the agent, JsSIP web phone over WSS directly to Asterisk, config snippet generation (pjsip wizard, manager.conf). **Asterisk** submenu under the Connect app. See ADR-026.
 - **`connect_telnyx`** — Telnyx integration (TeXML-first, ADR-032). Owns `connect.telnyx.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,texml,domain}`; SIP domain = credential connection + TeXML app SIP subdomain, per-user telephony credentials, @telnyx/webrtc phone widget, SMS/WhatsApp/RCS via messaging profile (ADR-033: `connect.telnyx.{whatsapp_sender,whatsapp_template,rcs_agent}` + composers), Ed25519 webhook validation. **Telnyx** submenu under the Connect app.
+- **`connect_voicetel`** — VoiceTel **VoiceML** integration (ADR-066). VoiceML is VoiceTel's self-hosted Twilio-compatible platform, so the module is a copy of `connect_twilio` in its own namespace: owns `connect.voicetel.{exten,callflow,callflow_choice,number,outgoing_callerid,user_callflow,message_configuration,voiceml,domain}`; the REST client is VoiceTel's own `voiceml` SDK (PyPI) with `base_url` host config and typed errors, VoiceML markup is built by the module's own `voiceml_response.py` builder (the `twilio` package is not a dependency), webhooks under `/voicetel/webhook/*` validate `X-Twilio-Signature` keyed with the account `api_key`. SIP domains live under `*.vml.voice.tel`; the browser phone is a JsSIP phone (ported from `connect_asterisk`) registered over WSS with the user's SIP credential (stored readable by its owner), so desk phones, the VoiceML Phone apps and the browser share one credential and one `<Dial><Sip>`. Recordings are downloaded into attachments on the status callback. SMS only (no WhatsApp, regions, edges or S3). **VoiceTel** submenu under the Connect app. See `specs/connect_voicetel.md`.
 - **`connect_livekit`** — LiveKit integration (self-hosted realtime stack, ADR-036). Owns `connect.livekit.{room,trunk,number,outgoing_callerid,agent}`; three levels: video rooms with public guest links + Egress recording, SIP telephony via the livekit-sip bridge (BYO carrier trunk) with a browser web phone joining rooms by short-TTL JWT, and voice-AI agents served by the `oduist/livekit-agent` sidecar (LiveKit Agents, plugin cascade Deepgram/OpenAI/ElevenLabs). LiveKit webhooks (`/livekit/webhook`) verified with the JWT WebhookReceiver. **LiveKit** submenu under the Connect app; all models admin-only.
 - **`connect_infobip`** — Infobip integration (event-driven Calls API, NO TwiML analog — ADR-036). Owns `connect.infobip.{exten,number,outgoing_callerid,user_callflow,message_configuration,whatsapp_sender,whatsapp_template}`; voice = webhook events → REST actions (Dialog bridges, platform-side `connectTimeout`), per-user WebRTC identities (no per-user SIP), vendored infobip-rtc phone widget, SMS + WhatsApp, recordings downloaded into attachments. No IVR/callflows in v1. **Infobip** submenu under the Connect app.
 - **`connect_dograh`** — Dograh AI voice agents on FreeSWITCH (ADR-041). Owns `connect.dograh.agent`; depends on `connect` AND `connect_freeswitch`. Inbound: per-call dialplan posts Dograh's `/inbound/run` webhook and attaches mod_audio_fork (L16/16 kHz) to the returned media WebSocket; outbound: Dograh calls `/dograh/api/originate`. Ships a vendored freeswitch provider package for Dograh under `connect_dograh/deploy/` (overlay image `oduist/dograh-api`). **Dograh** submenu under the Connect app.
@@ -33,7 +34,7 @@ Modular telephony integration platform for Odoo with a technology-agnostic core 
 - **`connect_project`** — provider-agnostic Project bridge — links `connect.call` to `project.task`/`project.project` (by partner, open task first); depends `connect` + `project`.
 - **`connect_helpdesk`** — provider-agnostic Helpdesk bridge (Odoo **Enterprise** `helpdesk`). Extends `connect.call` (`ticket` → `helpdesk.ticket`), `helpdesk.ticket` (`connect_calls`, stored/indexed `phone_normalized`, `get_ticket_by_number()`) and `connect.settings` (the `auto_create_tickets_*` toggles incl. default team/assignee). Matches open tickets by number at call start and auto-creates tickets at call end, mirroring `connect_crm`; posts AI summaries to ticket chatter. Owns no models and no menu — a **Helpdesk** page on the Connect settings form plus stat button/list column on tickets. Depends `['connect', 'helpdesk']`.
 
-Dependencies: `connect_twilio`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_vonage` and `connect_3cx` all depend on `connect` but are independent of each other. `connect_dograh` and `connect_pipecat` depend on `connect` + `connect_freeswitch` (FreeSWITCH add-ons). `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046). `connect_crm`, `connect_hr`, `connect_sale`, `connect_account`, `connect_project` and `connect_helpdesk` are likewise independent, provider-agnostic bridges that only depend on `connect` plus their respective host app. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module). `connect_memory` depends on `connect`; the domain module `connect_memory_sale` depends on `connect_memory` + `sale` + `account`.
+Dependencies: `connect_twilio`, `connect_voicetel`, `connect_freeswitch`, `connect_asterisk`, `connect_telnyx`, `connect_livekit`, `connect_infobip`, `connect_bird`, `connect_vonage` and `connect_3cx` all depend on `connect` but are independent of each other. `connect_dograh` and `connect_pipecat` depend on `connect` + `connect_freeswitch` (FreeSWITCH add-ons). `connect_elevenlabs` depends on `connect_twilio` (it is a Twilio add-on, ADR-046). `connect_crm`, `connect_hr`, `connect_sale`, `connect_account`, `connect_project` and `connect_helpdesk` are likewise independent, provider-agnostic bridges that only depend on `connect` plus their respective host app. **Co-installation of several providers in one database is supported** (per-user `originate_provider` selects the click-to-call module, per-user `message_provider` selects the messaging module). `connect_memory` depends on `connect`; the domain module `connect_memory_sale` depends on `connect_memory` + `sale` + `account`.
 
 ## Architecture
 
@@ -59,10 +60,10 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 
 > **Deliberately duplicated code (no mixins — ADR-031).** The exten
 > dst-Reference mechanics and the caller-ID E.164/is_default logic exist
-> as full copies in connect_twilio, connect_freeswitch, connect_telnyx
-> AND connect_infobip; the BCP-47 language selection list is copied in
-> the connect_twilio, connect_freeswitch and connect_telnyx callflows
-> (connect_infobip has no IVR in v1) AND in core
+> as full copies in connect_twilio, connect_freeswitch, connect_telnyx,
+> connect_infobip AND connect_voicetel; the BCP-47 language selection list
+> is copied in the connect_twilio, connect_freeswitch, connect_telnyx and
+> connect_voicetel callflows (connect_infobip has no IVR in v1) AND in core
 > `connect.user._get_language_selection()` (ADR-037). When you fix or
 > change one copy, apply the same change to the other modules in the
 > same commit.
@@ -87,6 +88,7 @@ Config:  _name = 'connect.<provider>.<noun>' → fully owned by the provider mod
 - `specs/connect_freeswitch.md` — FreeSWITCH module spec (models, dialplan, firewall, controllers, frontend)
 - `specs/connect_asterisk.md` — Asterisk module spec (models, agent contract, controllers, frontend)
 - `specs/connect_telnyx.md` — Telnyx module spec (models, TeXML routing, controllers, frontend)
+- `specs/connect_voicetel.md` — VoiceTel module spec (models, VoiceML routing, controllers, JsSIP phone, live-verification checklist)
 - `specs/connect_livekit.md` — LiveKit module spec (rooms, SIP bridge, AI agents, sidecar worker)
 - `specs/connect_infobip.md` — Infobip module spec (models, event-driven voice, controllers, frontend)
 - `specs/connect_dograh.md` — Dograh module spec (models, dialplan flow, controllers, vendored Dograh provider package)
@@ -212,13 +214,14 @@ Specifically:
 - Twilio webhook routes are all under `/twilio/webhook/*` and validate `X-Twilio-Signature` when enabled
 - Asterisk webhook/API routes are under `/asterisk/webhook/*` and `/asterisk/api/*` and require `Authorization: Bearer <asterisk_agent_token>`
 - Telnyx webhook routes are all under `/telnyx/webhook/*` and validate the Ed25519 `telnyx-signature-ed25519` header when enabled
+- VoiceTel webhook routes are all under `/voicetel/webhook/*` and validate `X-Twilio-Signature` (HMAC-SHA1 keyed with the VoiceML account `api_key`, URL as transmitted without fragment) when enabled
 - Infobip webhook routes are all under `/infobip/webhook/*` and require the shared `infobip_webhook_token` (`?token=` or Basic Auth password) when enabled — Infobip does not sign webhooks
 - Dograh control routes are all under `/dograh/api/*` and require `Authorization: Bearer <dograh_service_token>` (fail-closed; the same shared secret authenticates Odoo→Dograh inbound webhooks)
 - 3CX webhook routes are all under `/3cx/webhook/*` and require the `X-Connect-Api-Key: <threecx_api_key>` header (`Authorization: Bearer` also accepted); they are additionally gated on `threecx_enabled` (agent routes also on `threecx_agent_enabled`)
 - Bird events arrive on the single `/bird/webhook` route and validate the Standard-Webhooks signature (`webhook-id` / `webhook-timestamp` / `webhook-signature`, `whsec_` secret) when enabled
 - Vonage webhook routes are all under `/vonage/webhook/*` and validate the signed-callback JWT (`Authorization: Bearer`, HS256 against `vonage_signature_secret` + SHA-256 `payload_hash` body check) when enabled
 - Pipecat control routes are all under `/pipecat/*` and require `Authorization: Bearer <pipecat_service_token>`
-- Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`, LiveKit web phone in `connect_livekit/static/src/`, Infobip WebRTC phone in `connect_infobip/static/src/`, Vonage Client SDK phone in `connect_vonage/static/src/`
+- Frontend assets: Twilio phone widget in `connect_twilio/static/src/`, Verto client in `connect_freeswitch/static/src/`, JsSIP web phone in `connect_asterisk/static/src/`, Telnyx WebRTC phone in `connect_telnyx/static/src/`, VoiceTel JsSIP phone in `connect_voicetel/static/src/`, LiveKit web phone in `connect_livekit/static/src/`, Infobip WebRTC phone in `connect_infobip/static/src/`, Vonage Client SDK phone in `connect_vonage/static/src/`
 - **Module Apps Store descriptions** (`<module>/static/description/index.html`)
   follow the fixed Oduist house style. To write or regenerate one, use the
   `writing-odoo-module-description` skill (`.claude/skills/`), which carries the
@@ -368,6 +371,7 @@ connect_addons_ng/
 ├── connect_asterisk/tests/test_*.py
 ├── connect_crm/tests/test_*.py
 ├── connect_telnyx/tests/test_*.py
+├── connect_voicetel/tests/test_*.py
 ├── connect_livekit/tests/test_*.py
 ├── connect_infobip/tests/test_*.py
 ├── connect_bird/tests/test_*.py
@@ -429,6 +433,7 @@ oduflow run_odoo_tests connect_asterisk
 oduflow run_odoo_tests connect_freeswitch_website
 oduflow run_odoo_tests connect_crm
 oduflow run_odoo_tests connect_telnyx
+oduflow run_odoo_tests connect_voicetel
 oduflow run_odoo_tests connect_livekit
 oduflow run_odoo_tests connect_3cx
 oduflow run_odoo_tests connect_infobip
