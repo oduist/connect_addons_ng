@@ -269,6 +269,11 @@ pushes the new `{login, password}` to the user's **private** bus channel
 live `VertoClient` password in place (`updateCredentials`). Active calls
 are not interrupted. The password is never surfaced in any view.
 
+The browser console traces Verto RPCs only in Odoo developer mode. The
+trace shows the outbound method or inbound message type. It omits
+request parameters, responses, and event payloads in every mode. Failed
+RPCs surface a generic error with the numeric server code when available.
+
 ### Softphone recording controls
 
 The Verto phone widget exposes a recording toggle while a call is active. It
