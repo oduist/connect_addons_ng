@@ -88,6 +88,7 @@ export const phoneService = {
 
             vertoClient = new VertoClient({
                 socketUrl: config.socketUrl,
+                debug: Boolean(odoo.debug),
                 domain: config.domain,
                 login: config.login,
                 password: config.password,
