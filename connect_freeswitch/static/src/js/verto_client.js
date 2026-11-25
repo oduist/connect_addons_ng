@@ -8,6 +8,7 @@
 export class VertoClient {
     constructor(options) {
         this.socketUrl = options.socketUrl;
+        this.debug = options.debug;
         this.login = options.login;
         this.domain = (options.domain || '').trim();
         this.password = options.password;
@@ -146,8 +147,8 @@ export class VertoClient {
                 this.ws.onmessage = (event) => {
                     try {
                         this._handleMessage(JSON.parse(event.data));
-                    } catch (error) {
-                        console.error('[Verto] Message parse error:', error);
+                    } catch {
+                        console.error('[Verto] Failed to process WebSocket message');
                     }
                 };
                 
@@ -156,7 +157,7 @@ export class VertoClient {
                 };
                 
                 this.ws.onclose = (event) => {
-                    console.log('[Verto] WebSocket closed:', event.code, event.reason);
+                    console.log('[Verto] WebSocket closed:', event.code);
                     this._stopHeartbeat();
                     this._rejectPendingRequests('Connection closed');
                     
@@ -262,7 +263,7 @@ export class VertoClient {
     async _attemptCallRecovery() {
         if (!this.currentCall || !this.currentCall.callId) return;
         
-        console.log('[Verto] Attempting call recovery for:', this.currentCall.callId);
+        console.log('[Verto] Attempting call recovery');
         
         try {
             await this._sendRpc('verto.attach', {
@@ -303,7 +304,9 @@ export class VertoClient {
             params: params
         };
         
-        console.log('[Verto] Sending:', method, params);
+        if (this.debug) {
+            console.debug('[Verto] Sending:', method);
+        }
         this.ws.send(JSON.stringify(message));
         
         return new Promise((resolve, reject) => {
@@ -327,7 +330,7 @@ export class VertoClient {
         // See specs/decisions/016-verto-login-uses-user-id.md.
         if (typeof this.login === 'string' && this.login.includes('@')) {
             console.warn(
-                '[Verto] login contains "@" (' + this.login + '). ' +
+                '[Verto] login contains "@". ' +
                 'This will likely fail because mod_verto splits on "@" to ' +
                 'derive the SIP realm. Expected <login-local><id> from ' +
                 'get_webrtc_config.'
@@ -352,14 +355,21 @@ export class VertoClient {
     }
 
     _handleMessage(msg) {
-        console.log('[Verto] Received:', msg);
+        if (this.debug) {
+            console.debug(msg.method ? '[Verto] Received event' : '[Verto] Received response');
+        }
         
         if (msg.id && this.pendingRequests.has(msg.id)) {
             const { resolve, reject } = this.pendingRequests.get(msg.id);
             this.pendingRequests.delete(msg.id);
             
             if (msg.error) {
-                reject(msg.error);
+                // Server error details can contain data from the request.
+                const error = new Error('Verto RPC failed');
+                if (Number.isInteger(msg.error.code)) {
+                    error.code = msg.error.code;
+                }
+                reject(error);
             } else {
                 resolve(msg.result);
             }
@@ -395,13 +405,15 @@ export class VertoClient {
                 this._handleAttach(params);
                 break;
             case 'verto.punt':
-                this._handlePunt(params);
+                this._handlePunt();
                 break;
             case 'verto.event':
                 this._handleVertoEvent(params);
                 break;
             default:
-                console.log('[Verto] Unhandled event:', method);
+                if (this.debug) {
+                    console.debug('[Verto] Unhandled event');
+                }
         }
         
         if (msg.id) {
@@ -429,13 +441,11 @@ export class VertoClient {
     }
     
     async _handleAttach(params) {
-        console.log('[Verto] Received attach (call recovery):', params);
-
         const callId = params.callID || (params.dialogParams || {}).callID;
 
         // Only recover our active call, ignore stale sessions
         if (!this.currentCall || this.currentCall.callId !== callId) {
-            console.log('[Verto] Ignoring attach for unknown call:', callId);
+            console.log('[Verto] Ignoring attach for unknown call');
             return;
         }
 
@@ -483,8 +493,8 @@ export class VertoClient {
         });
     }
     
-    _handlePunt(params) {
-        console.log('[Verto] Server punt received:', params);
+    _handlePunt() {
+        console.log('[Verto] Server punt received');
         this.intentionalDisconnect = true;
         this._cleanupCall();
         this._setState('error');
@@ -499,7 +509,6 @@ export class VertoClient {
     }
     
     _handleDialogState(state) {
-        console.log('[Verto] Dialog state:', state);
         switch (state) {
             case 'trying':
             case 'early':
@@ -550,7 +559,7 @@ export class VertoClient {
     }
 
     async _handleInvite(params) {
-        console.log('[Verto] Incoming call:', params);
+        console.log('[Verto] Incoming call');
         const dp = params.dialogParams || {};
 
         const callerName = params.caller_id_name || dp.caller_id_name || '';
