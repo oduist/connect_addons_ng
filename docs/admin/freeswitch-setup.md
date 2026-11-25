@@ -564,6 +564,7 @@ not normalized and require the stored number to match the delivered digits.
 - Verify WSS port 48082 is accessible
 - Check that `wss.pem` certificate is valid
 - Verify the WebSocket URL in the FreeSWITCH settings matches the server
+- Enable Odoo developer mode for a browser console trace of Verto RPC methods and message types. The trace omits credentials and frame contents.
 
 ### FreeSWITCH can't reach Odoo
 
