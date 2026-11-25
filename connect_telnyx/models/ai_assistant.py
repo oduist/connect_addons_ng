@@ -9,6 +9,7 @@ from markupsafe import escape
 from odoo import api, fields, models, release
 from odoo.exceptions import AccessError, ValidationError
 from odoo.addons.connect.models.res_partner import format_number
+from odoo.addons.connect.models.compat import env_translate
 if release.version_info[0] >= 19:
     from odoo.models import Constraint
 
@@ -1267,7 +1268,8 @@ class TelnyxAIAssistant(models.Model):
         language_base = language_code.replace("-", "_").split("_", 1)[0]
         if partner:
             # Keep translatable strings literal so Odoo's extractor catalogs them.
-            localized = localized_env._(
+            localized = env_translate(
+                localized_env,
                 "Hello, %(customer_name)s. Am I speaking with "
                 "%(customer_name)s? I can register your request or connect "
                 "you with a colleague. Before I do, could you briefly tell "
@@ -1280,7 +1282,8 @@ class TelnyxAIAssistant(models.Model):
             if language_base != "en" and localized == source:
                 return self.greeting or DEFAULT_GREETING
             return localized
-        localized = localized_env._(
+        localized = env_translate(
+            localized_env,
             "Hello! I can register your request or connect you with a "
             "colleague. Before I do, could you briefly tell me what you are "
             "calling about?"
